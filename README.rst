@@ -11,7 +11,7 @@ Just run
 
 ::
 
-    pip install emcee_specfit
+    python setup.py install
 
 or 
 
