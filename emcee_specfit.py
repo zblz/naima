@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
+from scipy.interpolate import interp1d
 
 import emcee
 from triangle import corner
@@ -169,8 +170,8 @@ def _plot_chain_func(chain,p=None,last_step=False):
     nsteps=traces.shape[1]
 
     logplot=False
-    if dist.max()/dist.min()>5:
-        logplot=True
+    #if dist.max()/dist.min()>5:
+        #logplot=True
 
     f=plt.figure()
 
@@ -208,7 +209,7 @@ def _plot_chain_func(chain,p=None,last_step=False):
     xquant=[sdist[int(q*ns)] for q in quantiles]
     ax2.axvline(xquant[1],ls='--',c='k',alpha=0.5,lw=2,label='50% quantile')
     ax2.axvspan(xquant[0],xquant[2],color='0.5',alpha=0.25,label='68% CI')
-    ax2.legend()
+    #ax2.legend()
     ax2.set_xlabel(xlabel)
     ax2.set_title('posterior distribution')
     ax2.set_ylim(top=n.max()*1.05)
@@ -313,16 +314,22 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
     modelx,CI,model_MAP=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
     data=sampler.data
 
-    f=plt.figure()
+    #f,axarr=plt.subplots(4,sharex=True)
+    #ax1=axarr[0]
+    #ax2=axarr[3]
 
-    ax1=f.add_subplot(111)
+    f=plt.figure()
+    ax1=plt.subplot2grid((4,1),(0,0),rowspan=3)
+    ax2=plt.subplot2grid((4,1),(3,0),sharex=ax1)
+    for subp in [ax1,ax2]:
+        f.add_subplot(subp)
 
     datacol='r'
 
     for (ymin,ymax),conf in zip(CI,confs):
         color=np.log(conf)/np.log(20)+0.4
         ax1.fill_between(modelx,ymax,ymin,lw=0.,color='{0}'.format(color),alpha=0.5,zorder=-10)
-    ax1.loglog(modelx,model_MAP,c='k',lw=3,zorder=-5)
+    ax1.plot(modelx,model_MAP,c='k',lw=3,zorder=-5)
 
     def plot_ulims(ax,x,y,xerr):
         ax.errorbar(x,y,xerr=xerr,ls='',
@@ -340,10 +347,28 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
         if np.sum(ul)>0:
             plot_ulims(ax1,data['ene'][ul],data['flux'][ul],data['dene'][ul])
 
-    if xlabel!=None:
-        ax1.set_xlabel(xlabel)
+        modelfunc=interp1d(modelx,model_MAP)
+        difference=data['flux'][notul]-modelfunc(data['ene'][notul])
+        dflux=np.average(data['dflux'][notul],axis=1)
+        ax2.errorbar(data['ene'][notul],difference/dflux,yerr=dflux/dflux, xerr=data['dene'][notul].T,
+                zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
+                mec='w',mew=0,ms=8,color=datacol)
+        ax2.axhline(0,c='k',lw=2,ls='--')
+
+    for ax in [ax1,ax2]:
+        ax.set_xscale('log')
+    ax1.set_yscale('log')
+    for tl in ax1.get_xticklabels():
+        tl.set_visible(False)
+
+
     if ylabel!=None:
         ax1.set_ylabel(ylabel)
+    if xlabel!=None:
+        ax2.set_xlabel(xlabel)
+    ax2.set_ylabel(r'$\Delta\sigma$')
+
+    f.subplots_adjust(hspace=0)
 
     #f.show()
 

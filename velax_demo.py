@@ -46,7 +46,8 @@ def cutoffexp(pars,data):
     gamma = pars[0]
     N     = pars[1]
     ecut  = pars[2]
-    beta  = pars[3]
+    #beta  = pars[3]
+    beta  = 1.
 
     return N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta)
 
@@ -61,17 +62,18 @@ def lnprior(pars):
 	logprob = esf.uniform_prior(pars[0],-1,5) \
 			+ esf.uniform_prior(pars[1],0.,np.inf) \
 			+ esf.uniform_prior(pars[2],0.,np.inf) \
-			+ esf.uniform_prior(pars[3],0.25,np.inf)
+			#+ esf.uniform_prior(pars[3],0.25,np.inf)
 
 	return logprob
 
 ## Set initial parameters
 
-p0=np.array((2.0,1e-11,10.0,1.0))
+p0=np.array((2.0,1e-11,10.0,))
 
 ## Run sampler
 
-sampler,pos = esf.run_sampler(p0=p0,data=data,model=cutoffexp,prior=lnprior,nburn=100,nrun=100,threads=1)
+sampler,pos = esf.run_sampler(p0=p0,data=data,model=cutoffexp,prior=lnprior,
+        nwalkers=1000,nburn=500,nrun=200,threads=1)
 
 ## Diagnostic plots
 
