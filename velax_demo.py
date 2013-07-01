@@ -81,7 +81,7 @@ f.savefig('velax_corner.png')
 
 ## Chains
 
-for par in range(4):
+for par in range(len(p0)):
 	f = esf.plot_chain(sampler.chain,par)
 	f.savefig('velax_chain_par{}.png'.format(par))
 
