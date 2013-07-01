@@ -9,13 +9,13 @@ setup(name='emcee_specfit',
       author='Víctor Zabalza',
       author_email='vzabalza@gmail.com',
       py_modules=["emcee_specfit"],
-      long_descritpion=open("README.md").read(),
+      long_description=open("README.rst").read(),
       requires = [
-          'emcee>=1.2.0',
+          'emcee (>=1.2.0)',
           'triangle_plot',
           'numpy',
           'matplotlib',
-          'astropy>=0.2',
+          'astropy (>=0.2)',
           'scipy',
           ]
      )
