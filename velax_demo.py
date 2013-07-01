@@ -1,17 +1,17 @@
 #!/usr/bin/python
 
 import numpy as np
-import emcee_tools as et
+import emcee_specfit as esf
 from scipy import stats
 
 import astropy.units as u
 
-# read data
+## Read data
 
 spec=np.loadtxt('velax_cocoon.spec')
 
 ene=spec[:,0]
-dene=et.generate_energy_edges(ene)
+dene=esf.generate_energy_edges(ene)
 
 flux=spec[:,1]
 merr=spec[:,1]-spec[:,2]
@@ -58,10 +58,10 @@ def lnprior(pars):
 	Parameter limits should be done here through uniform prior ditributions
 	"""
 
-	logprob = et.uniform_prior(pars[0],-1,5) \
-			+ et.uniform_prior(pars[1],0.,np.inf) \
-			+ et.uniform_prior(pars[2],0.,np.inf) \
-			+ et.uniform_prior(pars[3],0.25,np.inf)
+	logprob = esf.uniform_prior(pars[0],-1,5) \
+			+ esf.uniform_prior(pars[1],0.,np.inf) \
+			+ esf.uniform_prior(pars[2],0.,np.inf) \
+			+ esf.uniform_prior(pars[3],0.25,np.inf)
 
 	return logprob
 
@@ -69,25 +69,25 @@ def lnprior(pars):
 
 p0=np.array((2.0,1e-11,10.0,1.0))
 
-## Run fit
+## Run sampler
 
-sampler,pos = et.run_sampler(p0=p0,data=data,model=cutoffexp,prior=lnprior,nburn=100,nrun=100,threads=1)
+sampler,pos = esf.run_sampler(p0=p0,data=data,model=cutoffexp,prior=lnprior,nburn=100,nrun=100,threads=1)
 
 ## Diagnostic plots
 
 ## Corner plot
-f = et.corner(sampler.flatchain,labels=['gamma','norm','ecut','beta'])
+f = esf.corner(sampler.flatchain,labels=['gamma','norm','ecut','beta'])
 f.savefig('velax_corner.png')
 
 ## Chains
 
 for par in range(4):
-	f = et.plot_chain(sampler.chain,par)
+	f = esf.plot_chain(sampler.chain,par)
 	f.savefig('velax_chain_par{}.png'.format(par))
 
 ## Fit
 
-f = et.plot_fit(sampler,xlabel='Energy',ylabel='Flux')
+f = esf.plot_fit(sampler,xlabel='Energy',ylabel='Flux')
 f.savefig('velax_fit.png')
 
 
