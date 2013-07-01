@@ -13,11 +13,12 @@ Just run
 
     python setup.py install
 
-or 
+or, to pull also the needed dependencies, use pip as 
 
 ::
 
-    pip install emcee_specfit.tar.gz
+    python setup.py sdist
+    pip install dist/emcee_specfit-0.1.tar.gz
 
 
 Usage
