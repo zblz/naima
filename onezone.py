@@ -38,7 +38,7 @@ sigt    = (8*np.pi/3)*erad**2
 
 heaviside = lambda x: (np.sign(x)+1)/2.
 
-class ElectronOneZoneModel:
+class ElectronOZM:
     """
     Computation of electron spectrum evolution and synchrotron and IC radiation from a homogeneous emitter.
 
@@ -531,7 +531,7 @@ class ElectronOneZoneModel:
         self.calc_ic()
 
 
-class ProtonOneZoneModel:
+class ProtonOZM:
     """
     References
     ----------
@@ -592,7 +592,7 @@ class ProtonOneZoneModel:
         L = np.log(Ep/1e12)
         Eth = 1.22e9
         return (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
-    
+
     def generate_proton_ene(self):
         self._set_default(['eprot_min','eprot_max','eprotd'])
         Neprot=int(np.log10(self.eprot_max/self.eprot_min))*self.eprotd
