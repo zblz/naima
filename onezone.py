@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# vim: set fileencoding=utf8 :
+# -*- coding: utf-8 -*-
 
 from __future__ import division
 import numpy as np
@@ -36,6 +36,8 @@ mec2eV  = mec2*eV    # m_e*c**2 in eV
 erad    = e**2./mec2
 sigt    = (8*np.pi/3)*erad**2
 
+heaviside = lambda x: (np.sign(x)+1)/2.
+
 class OneZoneModel:
 
     def __init__(self,nolog=0,debug=0,**kwargs):
@@ -69,7 +71,7 @@ class OneZoneModel:
 
     #### Default parameter values #####
     # emitter physical properties
-    DEF_B     = 1  #G
+    DEF_B     = np.sqrt(8*np.pi*4.1817e-13) #equipartition with CMB energy density (G)
     DEF_remit = 5e12
     DEF_tad   = 1e30
     # Seed spectrum properties
@@ -202,7 +204,7 @@ class OneZoneModel:
         """
         Compute injection spectrum, return as array.
         """
-        self._set_default(['gammainj','glocut','ghicut','cutoffidx','inj_norm','inj_norm_gam','fixed_ghicut'])
+        self._set_default(['gammainj','glocut','ghicut','cutoffidx','inj_norm','inj_norm_gam',])
 
         qinj=self.inj_norm*(self.gam/self.inj_norm_gam)**-self.gammainj*np.exp(-(self.gam/self.ghicut)**self.cutoffidx)
         qinj[np.where(self.gam<self.glocut)]=0.
@@ -221,7 +223,7 @@ class OneZoneModel:
         elif type(self.phn)!=list:
             self.logger.warn('Seed photon spectrum not found, calling calc_seedspec...')
             self.calc_seedspec()
-        self._set_default(['B','tad','eta'])
+        self._set_default(['B','tad',])
 
 ## Synchrotron losses
         umag=self.B**2./(8.*np.pi)
@@ -255,7 +257,6 @@ class OneZoneModel:
 
         self.gdot = np.abs(gdotsy+gdotic+gdotad)
 
-        self.tacc = self.eta*self.gam*mec2/(e*self.B*c)
         self.tsy  = self.gam/np.abs(gdotsy)
         self.tic  = self.gam/np.abs(gdotic)
 
