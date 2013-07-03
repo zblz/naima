@@ -530,3 +530,88 @@ class ElectronOneZoneModel:
         self.calc_sy()
         self.calc_ic()
 
+
+class ProtonOneZoneModel:
+    """
+    References
+    ----------
+
+    KAB06: Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
+
+    """
+
+    def __init__(self,nolog=0,debug=0,**kwargs):
+        if nolog:
+            self.logger=self
+        else:
+            self.logger=logging.getLogger('OZM')
+            if debug:
+                self.logger.setLevel(logging.DEBUG)
+        self.__dict__.update(**kwargs)
+
+# logger functions used for nolog
+    def debug(self,s):
+        pass
+    def info(self,s):
+        pass
+    def warn(self,s):
+        print 'WARN:OneZoneModel: %s'%s
+        pass
+
+    def _set_default(self,attrlist):
+        """
+        Sets the attributes in attrlist to their default value given by DEF_attr
+        if they has not already been set as self.attr
+        """
+        if type(attrlist)=='str':
+            attrlist=[attrlist,]
+        for attr in attrlist:
+            if not hasattr(self,attr):
+                setattr(self,attr,eval('self.DEF_'+attr))
+
+    # Injection spectrum properties
+    DEF_gammainj     = 2.0
+    DEF_inj_norm     = 1e35
+    DEF_inj_norm_ene = 1e9  # eV
+    DEF_cutoff_ene   = 1e14 # eV
+    DEF_cutoff_beta  = 1.0
+
+    # Proton energy array properties
+    DEF_eprot_min = 1e9
+    DEF_eprot_max = 1e15
+    DEF_eprotd    = 100
+
+    # Target properties
+    DEF_nH = 1.0 # 1/cm3
+
+
+    def sigma_inel(self,Ep):
+        """
+        Inelastic cross-section for p-p interaction. KAB06 Eq. 79
+        """
+        L = np.log(Ep/1e12)
+        Eth = 1.22e9
+        return (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
+    
+    def generate_proton_ene(self):
+        self._set_default(['eprot_min','eprot_max','eprotd'])
+        Neprot=int(np.log10(self.eprot_max/self.eprot_min))*self.eprotd
+        self.eprot=np.logspace(np.log10(self.eprot_min),np.log10(self.eprot_max),Neprot)
+
+
+    def calc_inj(self):
+        self._set_default(['gammainj','inj_norm','inj_norm_ene','cutoff_ene','cutoff_beta'])
+        if not hasattr(self,'eprot'):
+            self.generate_proton_ene()
+        self.nprot=self.inj_norm*((self.eprot/self.inj_norm_ene)**self.gammainj*
+                np.exp((self.eprot/self.cutoff_ene)**self.cutoff_beta))
+
+
+    def calc_photon_spectrum(self):
+        """
+        Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
+        """
+        pass
+
+
+
