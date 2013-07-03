@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 # vim: set fileencoding=utf8 :
+
 from __future__ import division
 import numpy as np
 np.seterr(invalid= 'ignore')
-from scipy.integrate import trapz,simps,quad,quadrature,romberg
 from scipy.special import cbrt
 
 import logging
 logging.basicConfig(level=logging.INFO)
 
+## Constants and units
 from astropy import constants
 from astropy import units as u
-
+# import constant values from astropy.constants
 constants_to_import=['c','G','m_e','e','h','k_B','R_sun']
 cntdict={}
 for cnt in constants_to_import:
@@ -22,7 +23,6 @@ for cnt in constants_to_import:
     cntdict[cnt]=value
 globals().update(cntdict)
 
-
 eV     = u.erg.to('eV')
 TeV    = u.erg.to('TeV')
 hz     = 1/h # hz in erg
@@ -32,15 +32,9 @@ hz2ev  = h*eV
 
 mec2    = m_e*c**2
 mec2eV  = mec2*eV    # m_e*c**2 in eV
-mec2TeV = mec2*TeV   # m_e*c**2 in eV
-mec2hz  = mec2*hz    # m_e*c**2 in Hz
 
 erad    = e**2./mec2
 sigt    = (8*np.pi/3)*erad**2
-
-yr = u.yr.to('s')
-
-heaviside=lambda x: (np.sign(x)+1)/2.
 
 class OneZoneModel:
 
@@ -74,15 +68,14 @@ class OneZoneModel:
                 setattr(self,attr,eval('self.DEF_'+attr))
 
     #### Default parameter values #####
-    # Accelerator and emitter physical properties
-    DEF_remit = 5e12
-    DEF_eta   = 20
-    DEF_tad   = 1e30
+    # emitter physical properties
     DEF_B     = 1  #G
+    DEF_remit = 5e12
+    DEF_tad   = 1e30
     # Seed spectrum properties
     DEF_nbb      = 10
     DEF_bb       = False
-    DEF_seedspec = 'star'
+    DEF_seedspec = ['CMB',]
     DEF_ssc      = False
     # electron spectrum matrix (lorentz factors)
     DEF_gmin  = 1e0
@@ -96,7 +89,7 @@ class OneZoneModel:
     DEF_ghicut       = 2e13/mec2eV # exponential high energy cutoff at gamma*mec2 = 20TeV
     DEF_cutoffidx    = 1.          # Exponent of exponential cutoff
     # evolve spectrum to steady-state?
-    DEF_evolve_nelec=True
+    DEF_evolve_nelec = True
     # Emitted spectrum matrix (eV)
     DEF_nened = 10 # emitted spectrum points per decade
     DEF_emin  = 1.
@@ -110,14 +103,6 @@ class OneZoneModel:
         self._set_default(['remit'])
         return (4./3.)*np.pi*self.remit**3.
 
-    def _get_star_props(self):
-        """
-        placeholder for binary system data fetching
-        """
-        Tstar=40000
-        ustar=1
-        return Tstar,ustar
-
     def _calc_bb(self,Tseed,useed,nbb):
         self.logger.info('Computing blackbody spectrum for T = {0} K, u = {1:.2e} erg/cm3'.format(Tseed,useed))
         bbepeak=3*Tseed*k_B # in erg
@@ -129,11 +114,11 @@ class OneZoneModel:
         fbb=photE/hz2erg # Hz
 # Bnu in units of erg/cm3/Hz
         Bnu=(4.*np.pi/c)*(2*h*fbb**3./c**2.)/np.expm1((h*fbb)/(k_B*Tseed))
-        clum=trapz(Bnu,fbb)
+        clum=np.trapz(Bnu,fbb)
         self.logger.debug("Lum seed BB = {0} erg/cm3".format(clum))
         Bnu*=useed/clum
         phn=Bnu/hz2erg # 1/cm3
-        clum=trapz(phn,photE)
+        clum=np.trapz(phn,photE)
         self.logger.debug("Lum seed, trapz(phn,photE) = {0:.3e} erg/cm3".format(clum))
         eint=(emaxbb/eminbb)**(1./float(nbb))
         phe=phn*photE*(eint-1)
@@ -167,13 +152,10 @@ class OneZoneModel:
             self.Tnir = 5000
             self.unir = 1.0*u.eV.to('erg')
 
-        Tstar,ustar = self._get_star_props()
-
         seeddata={
                 'CMB'  : [Tcmb,ucmb],
                 'NIR'  : [self.Tnir,self.unir],
                 'FIR'  : [self.Tfir,self.ufir],
-                'star' : [Tstar,ustar],
                 }
 
         # Allow for seedspec definitions of the type 'CMB-NIR-FIR'
@@ -225,7 +207,7 @@ class OneZoneModel:
         qinj=self.inj_norm*(self.gam/self.inj_norm_gam)**-self.gammainj*np.exp(-(self.gam/self.ghicut)**self.cutoffidx)
         qinj[np.where(self.gam<self.glocut)]=0.
 
-        self.logger.debug('calc_qinj:Injected power: %g erg/s'%(trapz(qinj*self.gam*mec2,self.gam)))
+        self.logger.debug('calc_qinj:Injected power: %g erg/s'%(np.trapz(qinj*self.gam*mec2,self.gam)))
         return qinj
 
     def calc_gdot(self):
@@ -264,7 +246,7 @@ class OneZoneModel:
                           *(1.0-0.46e-1*xx/(1+0.49e-1*t2))*np.vstack(self.gam))
 
             if self.phn[idx].size > 1:
-                gdot = trapz((-1.*dsigma*self.phn[idx]/self.photE[idx]),self.photE[idx]) # shape of gam
+                gdot = np.trapz((-1.*dsigma*self.phn[idx]/self.photE[idx]),self.photE[idx]) # shape of gam
             else:
                 gdot = (-1*dsigma*self.phn[idx]).flatten()
             setattr(self,'tic_'+seedspec,self.gam/np.abs(gdot))
@@ -296,7 +278,7 @@ class OneZoneModel:
             self.nelec = qinj
 
         self.logger.debug('Total energy in electrons: {0:.2e} erg'.format(
-            trapz(self.nelec*self.gam*mec2,self.gam)))
+            np.trapz(self.nelec*self.gam*mec2,self.gam)))
 
     def calc_sy(self):
         self.logger.debug('calc_sy')
@@ -323,14 +305,14 @@ class OneZoneModel:
         #Fx=np.where(xx<10.,1.85*cbrt(xx)*np.exp(-xx),0) # 16.1 ms per loop
 
         Psy=CS3*self.B*Fx #Pot sync radiada per un elec, shape of (outspecene,gam)
-        J=4.*np.pi*trapz(Psy*nelec,self.gam) # int over gam, shape of outspecene
+        J=4.*np.pi*np.trapz(Psy*nelec,self.gam) # int over gam, shape of outspecene
 
         # Absorption
         CA1=(c**2./enehz**2.)*CS3*self.B # shape of outspecene
         CA2=nelec/(self.gam*mec2) # shape of gam
         CA3=Fx*(1./3.+2.*xx) # shape of (outspecene,gam)
         sabs=np.vstack(CA1)*CA2*CA3 # shape of (outspecene,gam)
-        K=trapz(sabs,self.gam) #int over gamma, shape of outspecene
+        K=np.trapz(sabs,self.gam) #int over gamma, shape of outspecene
 #        print self.remit*K
         tau=self.remit*K
 
@@ -341,7 +323,7 @@ class OneZoneModel:
         self.specsy=4.*np.pi*self.remit**2.*I/h # 1/s
         self.sedsy=self.specsy*self.outspecerg # erg/s
 
-        totsylum=trapz(self.specsy,self.outspecerg)
+        totsylum=np.trapz(self.specsy,self.outspecerg)
         self.logger.info('Synchrotron emitted power: {0:.2e} erg/s'.format(totsylum))
 
     def _calc_specic(self,phn=None,photE=None,seed=None):
@@ -378,10 +360,10 @@ class OneZoneModel:
             gamint[np.isnan(gamint)]=0.
 
             # integral over gam
-            lum=trapz(gamint.squeeze()*self.nelec/self.gam**2,self.gam)
+            lum=np.trapz(gamint.squeeze()*self.nelec/self.gam**2,self.gam)
             # integral over photE
             if phn.size>1:
-                lum=trapz(lum*phn/photE**2,photE) # 1/s
+                lum=np.trapz(lum*phn/photE**2,photE) # 1/s
             else:
                 lum*=phn/photE
 
@@ -443,10 +425,10 @@ class OneZoneModel:
             self.sedic+=sedic
 
         self.logger.debug('self.specic.shape={0}'.format(self.specic.shape))
-        toticlum=trapz(self.specic,self.outspecerg)
+        toticlum=np.trapz(self.specic,self.outspecerg)
         self.logger.info('IC emitted power: %e erg/s'%toticlum)
         tev=np.where(self.outspecene>1e11)
-        tottevlum=trapz(self.specic[tev],self.outspecerg[tev])
+        tottevlum=np.trapz(self.specic[tev],self.outspecerg[tev])
         self.logger.info('TeV (>100 GeV) luminosity: %e erg/s'%tottevlum)
 
     def calc_nelec(self):
