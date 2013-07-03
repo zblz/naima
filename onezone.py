@@ -38,7 +38,93 @@ sigt    = (8*np.pi/3)*erad**2
 
 heaviside = lambda x: (np.sign(x)+1)/2.
 
-class OneZoneModel:
+class ElectronOneZoneModel:
+    """
+    Computation of electron spectrum evolution and synchrotron and IC radiation from a homogeneous emitter.
+
+    Parameters
+    ----------
+    B : float (optional)
+        Isotropic magnetic field strength in Gauss. Default: equipartition with
+        CMB (3.4e-6 G)
+
+    remit : float (optional)
+        Radius of the emitter in cm. Only used for synchrotron self-absorption
+        calculation. Default: 1e14 cm
+
+    tad : float or array_like (ngam,) (optional)
+        Adiabatic loss timescale in seconds. Can be either a single value or an
+        array of length ``ngam``, to indicate adiabatic loss timescales
+        independent or dependent on electron energy, respectively. Default: 1e10 s
+
+    seedspec: iterable (optional)
+        A list of seed spectra to use for IC calculation. Currently supported:
+        CMB, NIR, FIR. Default: ['CMB',]
+
+    bb : bool (optional)
+        Should IC seed spectra be computed as a blackbody? If false,
+        monochromatic seed spectra are used. Default: False
+
+    nbb : int (optional)
+        Number of spectral points to be computed for seed spectra blackbody.
+        Default: 10
+
+    ssc : bool (optional)
+        Whether to compute synchrotron self compton (IC on synchrotron generated
+        photons). Default: False
+
+    gmin : float (optional)
+        Minimum electron energy in units of mc2. Default: 1.0
+
+    gmax : float (optional)
+        Maximum electron energy in units of mc2. Default: 3e9
+
+    ngamd : int (optional)
+        Number of electron sprectrum points per energy decade. Default: 400
+
+    inj_norm : float (optional)
+        Normalization of injection spectrum at electron energy ``inj_norm_gam``.
+
+    inj_norm_gam : float (optional)
+        Electron energy for injection spectrum normalization. Default: 2e5 (~100GeV)
+
+    gammainj : float (optional)
+        Spectral index of injection spectrum. Default: 2.0
+
+    glocut : float (optional)
+        Low energy cutoff of injection spectrum in units of mec2. Electron can
+        evolve down to ``gmin``, but will not be injected below ``glocut``.
+        Default: 20 (1e7 eV)
+
+    ghicut : float (optional)
+        Energy of high-energy exponential cutoff in units of mec2. Default: 4e7
+        (2e13 eV)
+
+    cutoffidx : float (optional)
+        Exponent of exponential cutoff argument. An infinite ``cutoffidx`` can
+        be used to indicate a sharp cutoff. Default: 1.0
+
+    evolve_nelec : bool (optional)
+        Whether to evolve electron spectrum until steady state. Se
+        Zabalza et al (2011), A&A 527, 9, and Khangulyan et al (2007) MNRAS 380,
+        320, for a detailed explanation of steady-state electron spectrum
+        computation.
+
+    nened : int (optional)
+        Number of emitted spectrum points to be computed per decade of photon
+        energy used by ``self.generate_outspecene()``. The output spectrum
+        energies can alternatively be defined by modifying the class property
+        outspecene with an array of photon energies in eV. Default: 10
+
+    emin : float (optional)
+        Minimum photon energy of emitted spectrum in eV used by
+        ``self.generate_outspecene()``. Default: 1.0 eV
+
+    emax : float (optional)
+        Maximum photon energy of emitted spectrum in eV used by
+        ``self.generate_outspecene()``. Default: 1e13 eV
+
+    """
 
     def __init__(self,nolog=0,debug=0,**kwargs):
         if nolog:
@@ -72,12 +158,12 @@ class OneZoneModel:
     #### Default parameter values #####
     # emitter physical properties
     DEF_B     = np.sqrt(8*np.pi*4.1817e-13) #equipartition with CMB energy density (G)
-    DEF_remit = 5e12
+    DEF_remit = 1e14
     DEF_tad   = 1e30
     # Seed spectrum properties
-    DEF_nbb      = 10
-    DEF_bb       = False
     DEF_seedspec = ['CMB',]
+    DEF_bb       = False
+    DEF_nbb      = 10
     DEF_ssc      = False
     # electron spectrum matrix (lorentz factors)
     DEF_gmin  = 1e0
