@@ -28,3 +28,14 @@ The package consists of several convenience functions to which you must provide
 a model function, a probability function for the parameter priors, and the
 spectral data to be fit enclosed in a dictionary. An example is shown in the
 file `velax_demo.py`.
+
+ToDo
+----
+
+- ProtonOZM for pp interactions
+- Write standard labels for parameters as a property of
+  ``emcee.EnsembleSampler`` so that they can be accessed by other functions
+  without knowing their order.
+- For X-ray (sync) and GeV/TeV (IC) data, estimate initial magnetic field from
+  Fx/Fvhe ratio.
+
