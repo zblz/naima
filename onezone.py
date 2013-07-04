@@ -621,7 +621,7 @@ class ProtonOZM:
         self._set_default(['gammainj','inj_norm','inj_norm_ene',
             'cutoff_ene','cutoff_beta'])
 
-        return self.inj_norm*((Ep/self.inj_norm_ene)**self.gammainj*
+        return self.inj_norm*((Ep/self.inj_norm_ene)**-self.gammainj*
                 np.exp(-(Ep/self.cutoff_ene)**self.cutoff_beta))
 
     def Fgamma(self,x,Ep):
