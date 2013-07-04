@@ -125,6 +125,30 @@ class ElectronOZM:
         Maximum photon energy of emitted spectrum in eV used by
         ``self.generate_outspecene()``. Default: 1e13 eV
 
+    Output
+    ------
+
+    self.outspecene : array [eV]
+        Photon energies of computed spectrum (can also be set before calculation
+        to an arbitrary array).
+
+    self.outspecerg : array [erg]
+        As above, converted to erg.
+
+    self.specsy : array [1/s/eV]
+        Differential synchrotron spectrum: emitted synchrotron photons per unit
+        energy per second at energies given by self.outspecene.
+
+    self.sedsy : array [erg/s]
+        Synchrotron SED := self.specsy*self.outspecene*self.outspecerg
+
+    self.specic : array [1/s/eV]
+        Differential IC spectrum: emitted IC photons per unit energy per second
+        at energies given by self.outspecene.
+
+    self.sedic : array [erg/s]
+        IC SED := self.specic*self.outspecene*self.outspecerg
+
     """
 
     def __init__(self,nolog=0,debug=0,**kwargs):
@@ -556,7 +580,6 @@ class ProtonOZM:
         Exponent of the exponential cutoff of the proton distribution. Can be
         set at ``np.inf`` for a sharp cutoff. Default: 1.0
 
-
     nened : int (optional)
         Number of emitted spectrum points to be computed per decade of photon
         energy used by ``self.generate_outspecene()``. The output spectrum
@@ -571,10 +594,18 @@ class ProtonOZM:
         Maximum photon energy of emitted spectrum in TeV used by
         ``self.generate_outspecene()``. Default: 1000 TeV
 
+    Output
+    ------
+    self.outspecene : array [TeV]
+        Photon energies for computed gamma-ray spectrum
+
+    self.specpp : array [1/s/TeV]
+        Differential gamma-ray spectrum at energies given by ``self.outspecene``
+
     References
     ----------
 
-    KAB06: Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
+    Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018 [KAB06]
 
     """
 
@@ -709,8 +740,6 @@ class ProtonOZM:
         Epimin=Egamma+m_pi**2/(4*Egamma)
 
         return 2*quad(delta_integrand,Epimin,np.inf)[0]
-
-
 
     def calc_photon_spectrum(self):
         """
