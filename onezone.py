@@ -5,6 +5,7 @@ from __future__ import division
 import numpy as np
 np.seterr(invalid= 'ignore')
 from scipy.special import cbrt
+from scipy.integrate import quad
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -572,46 +573,98 @@ class ProtonOZM:
     # Injection spectrum properties
     DEF_gammainj     = 2.0
     DEF_inj_norm     = 1e35
-    DEF_inj_norm_ene = 1e9  # eV
-    DEF_cutoff_ene   = 1e14 # eV
+    DEF_inj_norm_ene = 1.0  # TeV
+    DEF_cutoff_ene   = 1e3 # TeV
     DEF_cutoff_beta  = 1.0
 
-    # Proton energy array properties
-    DEF_eprot_min = 1e9
-    DEF_eprot_max = 1e15
-    DEF_eprotd    = 100
+    ## Proton energy array properties
+    #DEF_eprot_min = 1e9
+    #DEF_eprot_max = 1e15
+    #DEF_eprotd    = 100
 
     # Target properties
     DEF_nH = 1.0 # 1/cm3
+
+    # Output spectrum properties
+    DEF_emin  = 1e-1
+    DEF_emax  = 1e3
+    DEF_nened = 10
 
 
     def sigma_inel(self,Ep):
         """
         Inelastic cross-section for p-p interaction. KAB06 Eq. 79
         """
-        L = np.log(Ep/1e12)
-        Eth = 1.22e9
-        return (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
+        L = np.log(Ep)
+        Eth = 1.22e-3
+        if Ep<=Eth:
+            sigma = 0.0
+        else:
+            sigma = (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
+        return sigma
 
-    def generate_proton_ene(self):
-        self._set_default(['eprot_min','eprot_max','eprotd'])
-        Neprot=int(np.log10(self.eprot_max/self.eprot_min))*self.eprotd
-        self.eprot=np.logspace(np.log10(self.eprot_min),np.log10(self.eprot_max),Neprot)
+    def generate_outspecene(self):
+        """
+        Generate photon energies for which to compute output radiation
+        """
+        self._set_default(['emin','emax','nened'])
 
+        self.outspecene=np.logspace(np.log10(self.emin),np.log10(self.emax),
+               np.log10(self.emax/self.emin)*self.nened)
+        self.outspecerg=self.outspecene/TeV
 
-    def calc_inj(self):
-        self._set_default(['gammainj','inj_norm','inj_norm_ene','cutoff_ene','cutoff_beta'])
-        if not hasattr(self,'eprot'):
-            self.generate_proton_ene()
-        self.nprot=self.inj_norm*((self.eprot/self.inj_norm_ene)**self.gammainj*
-                np.exp((self.eprot/self.cutoff_ene)**self.cutoff_beta))
+    def Jp(self,Ep):
+        """
+        Following Eq. 74 of KAB06 so we can use the low-energy delta-functional
+        approximation.
+        """
+        self._set_default(['gammainj','inj_norm','inj_norm_ene',
+            'cutoff_ene','cutoff_beta'])
 
+        return self.inj_norm*((Ep/self.inj_norm_ene)**self.gammainj*
+                np.exp(-(Ep/self.cutoff_ene)**self.cutoff_beta))
+
+    def Fgamma(self,x,Ep):
+        """
+        KAB06 Eq.58
+
+        Parameters
+        ----------
+        x : Egamma/Eprot
+        Ep : Eprot [TeV]
+        """
+        L=np.log(Ep)
+        B=1.30+0.14*L+0.011*L**2 # Eq59
+        beta=(1.79+0.11*L+0.008*L**2)**-1 # Eq60
+        k=(0.801+0.049*L+0.014*L**2)**-1 # Eq61
+        xb=x**beta
+
+        F1=B*(np.log(x)/x)*((1-xb)/(1+k*xb*(1-xb)))**4
+        F2=1./np.log(x)-(4*beta*xb)/(1-xb)-(4*k*beta*xb*(1-2*xb))/(1+k*xb*(1-xb))
+
+        return F1*F2
+
+    def photon_integrand(self,x,Egamma):
+        """
+        Integrand of Eq. 72
+        """
+        try:
+            return self.sigma_inel(Egamma/x)*self.Jp(Egamma/x) \
+                    *self.Fgamma(x,Egamma/x)/x
+        except ZeroDivisionError:
+            return np.nan
 
     def calc_photon_spectrum(self):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
         """
-        pass
+        if not hasattr(self,'outspecene'):
+            self.generate_outspecene()
 
+        self._set_default(['nH',])
 
+        # Integrate over x=(0,1) (Eq72)
+        I = np.array([ quad(self.photon_integrand,0.,1.,args=Egamma)[0] for Egamma in self.outspecene ])
+
+        self.specpp = c*self.nH*I
 

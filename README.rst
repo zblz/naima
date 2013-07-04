@@ -1,8 +1,10 @@
-Spectra fitting with emcee
-==========================
+Non-thermal spectral fitting with emcee
+=======================================
 
 ``emcee_specfit`` is a set of functions designed to make MCMC spectral fitting
-easier. It is based on the powerful `emcee <http://dan.iel.fm/emcee>`_ MCMC sampling package.
+of non-thermal emission easier. It is based on the powerful `emcee
+<http://dan.iel.fm/emcee>`_ MCMC sampling package.
+
 
 Installation
 ------------
