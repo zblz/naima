@@ -93,7 +93,8 @@ def lnprob(pars,data,modelfunc,priorfunc):
     # Print parameters and total_lnprob
     outstr = '{:6.2g} '*len(pars) + '{:5g}'
     outargs = list(pars) + [total_lnprob,]
-    print outstr.format(*outargs)
+# TODO: convert following print to logger
+    #print outstr.format(*outargs)
 
     return total_lnprob,((data['ene'],model),)
 
@@ -287,7 +288,8 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
         ymin,ymax=[],[]
         for fr,y in ((fmin,ymin),(fmax,ymax)):
             nf=int((fr*nwalkers))
-            print conf,fr,nf
+# TODO: logger
+            #print conf,fr,nf
             for i,x in enumerate(modelx):
                 ysort=np.sort(model[:,i])
                 y.append(ysort[nf])
@@ -297,7 +299,8 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
     MAPvar=[np.std(dist) for dist in sampler.flatchain.T]
     lnprob,blob=sampler.lnprobfn(MAPp)
     model_MAP=blob[modelidx][1]
-    print 'MAP pars:'
+# TODO: logger
+    print 'MAP pars (mean, std):'
     for p,v in zip(MAPp,MAPvar):
         print '{0:.2e} +/- {1:.2e}'.format(p,v)
 
@@ -306,9 +309,6 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
     """
     Plot data with fit confidence regions.
-
-    TODO:
-        - implement xerrors
     """
 
     modelx,CI,model_MAP=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)

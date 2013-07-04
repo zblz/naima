@@ -73,24 +73,28 @@ p0=np.array((2.0,1e-11,10.0,))
 ## Run sampler
 
 sampler,pos = esf.run_sampler(p0=p0,data=data,model=cutoffexp,prior=lnprior,
-        nwalkers=1000,nburn=500,nrun=200,threads=1)
+        nwalkers=1000,nburn=150,nrun=100,threads=1)
 
 ## Diagnostic plots
 
+outname='velax_function'
+
+print 'Generating diagnostic plots'
+
 ## Corner plot
 f = esf.corner(sampler.flatchain,labels=['gamma','norm','ecut','beta'])
-f.savefig('velax_corner.png')
+f.savefig('{0}_corner.png'.format(outname))
 
 ## Chains
 
 for par in range(len(p0)):
 	f = esf.plot_chain(sampler.chain,par)
-	f.savefig('velax_chain_par{}.png'.format(par))
+	f.savefig('{0}_chain_par{1}.png'.format(outname,par))
 
 ## Fit
 
 f = esf.plot_fit(sampler,xlabel='Energy',ylabel='Flux')
-f.savefig('velax_fit.png')
+f.savefig('{0}_fit.png'.format(outname))
 
 
 
