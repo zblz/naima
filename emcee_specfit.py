@@ -384,3 +384,22 @@ def generate_energy_edges(ene):
     elo[0]=ehi[0]
     ehi[-1]=elo[-1]
     return np.array(zip(elo,ehi))
+
+def generate_diagnostic_plots(outname,sampler):
+
+    print 'Generating diagnostic plots'
+
+    ## Corner plot
+    f = corner(sampler.flatchain,labels=['gamma','norm','ecut','beta'])
+    f.savefig('{0}_corner.png'.format(outname))
+
+    ## Chains
+
+    for par in range(sampler.chain.shape[-1]):
+        f = plot_chain(sampler.chain,par)
+        f.savefig('{0}_chain_par{1}.png'.format(outname,par))
+
+    ## Fit
+
+    f = plot_fit(sampler,xlabel='Energy',ylabel='Flux')
+    f.savefig('{0}_fit.png'.format(outname))

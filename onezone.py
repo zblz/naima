@@ -131,7 +131,7 @@ class ElectronOZM:
         if nolog:
             self.logger=self
         else:
-            self.logger=logging.getLogger('OZM')
+            self.logger=logging.getLogger('ElectronOZM')
             if debug:
                 self.logger.setLevel(logging.DEBUG)
         self.__dict__.update(**kwargs)
@@ -534,6 +534,43 @@ class ElectronOZM:
 
 class ProtonOZM:
     """
+    Compute gamma-ray spectrum of pp interactions.
+
+    Parameters
+    ----------
+    gammainj : float (optional)
+        Particle index of proton power-law distribution distribution. Default:
+        2.0
+
+    inj_norm : float (optiona)
+        Normalization of proton distribution at ``inj_norm_ene``. Default: 1e35
+
+    inj_norm_ene : float (optiona)
+        Energy at which proton distribution is normalized. Default: 1.0 TeV
+
+    cutoff_ene : float (optional)
+        Energy of the high-energy spectral cutoff of the proton distribution.
+        Default: 1000 TeV
+
+    cutoff_beta : float (optional)
+        Exponent of the exponential cutoff of the proton distribution. Can be
+        set at ``np.inf`` for a sharp cutoff. Default: 1.0
+
+
+    nened : int (optional)
+        Number of emitted spectrum points to be computed per decade of photon
+        energy used by ``self.generate_outspecene()``. The output spectrum
+        energies can alternatively be defined by modifying the class property
+        outspecene with an array of photon energies in TeV. Default: 10
+
+    emin : float (optional)
+        Minimum photon energy of emitted spectrum in TeV used by
+        ``self.generate_outspecene()``. Default: 1e-5 TeV
+
+    emax : float (optional)
+        Maximum photon energy of emitted spectrum in TeV used by
+        ``self.generate_outspecene()``. Default: 1000 TeV
+
     References
     ----------
 
@@ -545,7 +582,7 @@ class ProtonOZM:
         if nolog:
             self.logger=self
         else:
-            self.logger=logging.getLogger('OZM')
+            self.logger=logging.getLogger('ProtonOZM')
             if debug:
                 self.logger.setLevel(logging.DEBUG)
         self.__dict__.update(**kwargs)
@@ -577,31 +614,13 @@ class ProtonOZM:
     DEF_cutoff_ene   = 1e3 # TeV
     DEF_cutoff_beta  = 1.0
 
-    ## Proton energy array properties
-    #DEF_eprot_min = 1e9
-    #DEF_eprot_max = 1e15
-    #DEF_eprotd    = 100
-
     # Target properties
     DEF_nH = 1.0 # 1/cm3
 
     # Output spectrum properties
-    DEF_emin  = 1e-1
+    DEF_emin  = 1e-5
     DEF_emax  = 1e3
     DEF_nened = 10
-
-
-    def sigma_inel(self,Ep):
-        """
-        Inelastic cross-section for p-p interaction. KAB06 Eq. 79
-        """
-        L = np.log(Ep)
-        Eth = 1.22e-3
-        if Ep<=Eth:
-            sigma = 0.0
-        else:
-            sigma = (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
-        return sigma
 
     def generate_outspecene(self):
         """
@@ -644,6 +663,18 @@ class ProtonOZM:
 
         return F1*F2
 
+    def sigma_inel(self,Ep):
+        """
+        Inelastic cross-section for p-p interaction. KAB06 Eq. 79
+        """
+        L = np.log(Ep)
+        Eth = 1.22e-3
+        if Ep<=Eth:
+            sigma = 0.0
+        else:
+            sigma = (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
+        return sigma
+
     def photon_integrand(self,x,Egamma):
         """
         Integrand of Eq. 72
@@ -654,6 +685,33 @@ class ProtonOZM:
         except ZeroDivisionError:
             return np.nan
 
+    def _calc_specpp_hiE(self,Egamma):
+        """
+        Spectrum computed as in Eq. 42 for Egamma >= 0.1 TeV
+        """
+        return c*self.nH*quad(self.photon_integrand,0.,1.,args=Egamma)[0]
+
+    def _calc_specpp_loE(self,Egamma):
+        """
+        Delta-functional approximation for low energies Egamma < 0.1 TeV
+        """
+        Kpi=0.17
+
+        m_p=(constants.m_p*constants.c**2).to('TeV').value
+        m_pi=1.349766e-4 #TeV/c2
+
+        def delta_integrand(Epi):
+            Ep0=m_p+Epi/Kpi
+            qpi=c*self.nH*(self.nhat/Kpi)*self.sigma_inel(Ep0)*self.Jp(Ep0)
+
+            return qpi/np.sqrt(Epi**2+m_pi**2)
+
+        Epimin=Egamma+m_pi**2/(4*Egamma)
+
+        return 2*quad(delta_integrand,Epimin,np.inf)[0]
+
+
+
     def calc_photon_spectrum(self):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
@@ -663,8 +721,18 @@ class ProtonOZM:
 
         self._set_default(['nH',])
 
-        # Integrate over x=(0,1) (Eq72)
-        I = np.array([ quad(self.photon_integrand,0.,1.,args=Egamma)[0] for Egamma in self.outspecene ])
+        self.specpp=np.zeros_like(self.outspecene)
 
-        self.specpp = c*self.nH*I
+        if np.any(self.outspecene<0.1):
+            # compute value of nhat so that delta functional matches accurate calculation at 0.1TeV
+            self.nhat=1. # initial value, works for gammainj~2.1
+            full=self._calc_specpp_hiE(0.1)
+            delta=self._calc_specpp_loE(0.1)
+            self.nhat*=full/delta
+
+        for i,Egamma in enumerate(self.outspecene):
+            if Egamma>=0.1:
+                self.specpp[i]=self._calc_specpp_hiE(Egamma)
+            else:
+                self.specpp[i]=self._calc_specpp_loE(Egamma)
 

@@ -77,26 +77,5 @@ sampler,pos = esf.run_sampler(p0=p0,data=data,model=cutoffexp,prior=lnprior,
 
 ## Diagnostic plots
 
-outname='velax_function'
-
-print 'Generating diagnostic plots'
-
-## Corner plot
-f = esf.corner(sampler.flatchain,labels=['gamma','norm','ecut','beta'])
-f.savefig('{0}_corner.png'.format(outname))
-
-## Chains
-
-for par in range(len(p0)):
-	f = esf.plot_chain(sampler.chain,par)
-	f.savefig('{0}_chain_par{1}.png'.format(outname,par))
-
-## Fit
-
-f = esf.plot_fit(sampler,xlabel='Energy',ylabel='Flux')
-f.savefig('{0}_fit.png'.format(outname))
-
-
-
-
+esf.save_diagnostic_plots('velax_function',sampler)
 
