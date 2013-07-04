@@ -146,6 +146,9 @@ class ElectronOZM:
         Differential IC spectrum: emitted IC photons per unit energy per second
         at energies given by self.outspecene.
 
+    self.specictev : array [1/s/TeV]
+        Differential IC spectrum in units typically used by IACT community.
+
     self.sedic : array [erg/s]
         IC SED := self.specic*self.outspecene*self.outspecerg
 
@@ -483,7 +486,7 @@ class ElectronOZM:
             iclum[i]=(3./4.)*sigt*c*(Eph*mec2)*lum
 
         #iclum[np.isnan(iclum)]=0.
-        return iclum
+        return iclum/self.outspecene # return differential spectrum in 1/s/eV
 
     def calc_ic(self):
         self.logger.debug('calc_ic')
@@ -502,7 +505,8 @@ class ElectronOZM:
             self.logger.warn('Calling calc_nelec to generate gam,nelec')
             self.calc_nelec()
 
-        self.specic,self.sedic=np.zeros_like(self.outspecene),np.zeros_like(self.outspecene)
+        for spec in ['specic','specictev','sedic']:
+            setattr(self,spec,np.zeros_like(self.outspecene))
 
         if self.ssc:
             self.calc_sy()
@@ -530,10 +534,13 @@ class ElectronOZM:
         for idx,seedspec in enumerate(self.seedspec):
             # Call actual computation, detached to allow changes in subclasses
             specic=self._calc_specic(phn=self.phn[idx],photE=self.photE[idx],seed=seedspec)
-            sedic=specic*self.outspecerg # erg/s
+            specictev=specic/1e12 # 1/s/TeV
+            sedic=specic*self.outspecerg*self.outspecene # erg/s
             setattr(self,'specic_'+seedspec,specic)
+            setattr(self,'specictev_'+seedspec,specictev)
             setattr(self,'sedic_'+seedspec,sedic)
             self.specic+=specic
+            self.specictev+=specictev
             self.sedic+=sedic
 
         self.logger.debug('self.specic.shape={0}'.format(self.specic.shape))
@@ -597,10 +604,13 @@ class ProtonOZM:
     Output
     ------
     self.outspecene : array [TeV]
-        Photon energies for computed gamma-ray spectrum
+        Photon energies for computed gamma-ray spectrum.
 
     self.specpp : array [1/s/TeV]
-        Differential gamma-ray spectrum at energies given by ``self.outspecene``
+        Differential gamma-ray spectrum at energies given by ``self.outspecene``.
+
+    self.sedpp : array [erg/s]
+        Spectral energy distribution at energies given by ``self.outspecene``.
 
     References
     ----------
@@ -764,4 +774,6 @@ class ProtonOZM:
                 self.specpp[i]=self._calc_specpp_hiE(Egamma)
             else:
                 self.specpp[i]=self._calc_specpp_loE(Egamma)
+
+        self.sedpp=self.specpp*self.outspecene**2*u.TeV.to('erg') # erg/s
 
