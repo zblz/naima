@@ -34,7 +34,9 @@ def cutoffexp(pars,data):
     ecut  = pars[2]
     beta  = pars[3]
 
-    return N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta)
+    model = N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta)
+
+    return model
 
 p00=np.array((2,1e-11,10,1))
 
@@ -84,7 +86,15 @@ def lnprobmodel(model,data):
 
 def lnprob(pars,data,modelfunc,priorfunc):
 
-    model = modelfunc(pars,data)
+    modelout = modelfunc(pars,data)
+
+    # Save blobs or save model if no blobs given
+    if type(modelout)==tuple:
+        model = modelout[0]
+        blob  = modelout[1:]
+    else:
+        model = modelout
+        blob  = (np.array((data['ene'],modelout)),)
 
     lnprob_model  = lnprobmodel(model,data)
     lnprob_priors = priorfunc(pars)
@@ -94,9 +104,9 @@ def lnprob(pars,data,modelfunc,priorfunc):
     outstr = '{:6.2g} '*len(pars) + '{:5g}'
     outargs = list(pars) + [total_lnprob,]
 # TODO: convert following print to logger
-    #print outstr.format(*outargs)
+    print outstr.format(*outargs)
 
-    return total_lnprob,((data['ene'],model),)
+    return total_lnprob,blob
 
 ## Sampler funcs
 
@@ -109,8 +119,10 @@ def get_sampler(nwalkers=600,nburn=30,guess=True,p0=p00,data=None,model=cutoffex
 
     if guess:
         # guess normalization parameter from p0
-        lp,(spec,)=lnprob(p0,data,model,prior)
-        p0[1]*=np.trapz(data['flux'],data['ene'])/np.trapz(spec[1],spec[0])
+        lp,blob=lnprob(p0,data,model,prior)
+        ene=blob[0][0]
+        spec=blob[0][1]
+        p0[1]*=np.trapz(data['flux'],data['ene'])/np.trapz(spec,ene)
 
     ndim=len(p0)
     sampler=emcee.EnsembleSampler(nwalkers,ndim,lnprob,args=[data,model,prior],threads=threads)
@@ -205,11 +217,11 @@ def _plot_chain_func(chain,p=None,last_step=False):
     #for m,ls,lab in zip([np.mean(dist),np.median(dist)],('--','-.'),('mean: {0:.4g}','median: {0:.4g}')):
         #ax2.axvline(m,ls=ls,c='k',alpha=0.5,lw=2,label=lab.format(m))
     ns=len(dist)
-    quantiles=[0.16,0.5,0.84]
+    quant=[0.01,0.16,0.5,0.84,0.99]
     sdist=np.sort(dist)
-    xquant=[sdist[int(q*ns)] for q in quantiles]
-    ax2.axvline(xquant[1],ls='--',c='k',alpha=0.5,lw=2,label='50% quantile')
-    ax2.axvspan(xquant[0],xquant[2],color='0.5',alpha=0.25,label='68% CI')
+    xquant=[sdist[int(q*ns)] for q in quant]
+    ax2.axvline(xquant[quant.index(0.5)],ls='--',c='k',alpha=0.5,lw=2,label='50% quantile')
+    ax2.axvspan(xquant[quant.index(0.16)],xquant[quant.index(0.84)],color='0.5',alpha=0.25,label='68% CI')
     #ax2.legend()
     ax2.set_xlabel(xlabel)
     ax2.set_title('posterior distribution')
@@ -247,15 +259,17 @@ def _plot_chain_func(chain,p=None,last_step=False):
     f.text(0.1,0.45,'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
             'Autocorrelation times (steps): '+('{:.1f} '*npars).format(*acort) + '\n' +\
             'Distribution properties for the {8}:\n \
-            - mode: {9:.3g} \n \
-            - mean: {0:.3g} \n \
-            - median: {1:.3g} \n \
-            - std: {2:.3g} \n \
-            - 50% quantile: {3:.3g} \n \
-            - 68% CI: ({4:.3g},{5:.3g})\n \
-            - mean +/- std CI: ({6:.3g},{7:.3g})'.format(mean,median,std,
-                xquant[1],xquant[0],xquant[2],
-                mean-std,mean+std,clen,mode),
+       - mode: {9:.3g} \n \
+       - mean: {0:.3g} \n \
+       - median: {1:.3g} \n \
+       - std: {2:.3g} \n \
+       - 50% quantile: {3:.3g} \n \
+       - 68% CI: ({4:.3g},{5:.3g})\n \
+       - 99% CI: ({9:.3g},{10:.3g}\n \
+       - mean +/- std CI: ({6:.3g},{7:.3g})'.format(mean,median,std,
+                xquant[quant.index(0.5)],xquant[quant.index(0.16)],xquant[quant.index(0.84)],
+                mean-std,mean+std,clen,mode,
+                xquant[quant.index(0.01)],xquant[quant.index(0.99)]),
             ha='left',va='top')
 
 
@@ -265,7 +279,7 @@ def _plot_chain_func(chain,p=None,last_step=False):
 
     return f
 
-def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
+def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
     if last_step:
         model=np.array([m[modelidx][1] for m in sampler.blobs[-1]])
@@ -311,7 +325,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
     Plot data with fit confidence regions.
     """
 
-    modelx,CI,model_MAP=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
+    modelx,CI,model_MAP=calc_fit_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
     data=sampler.data
 
     #f,axarr=plt.subplots(4,sharex=True)
