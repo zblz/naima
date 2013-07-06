@@ -5,7 +5,10 @@ from scipy import stats
 from scipy.interpolate import interp1d
 
 import emcee
-from triangle import corner
+try:
+    from triangle import corner
+except ImportError:
+    print 'triangle.py not installed, corner plot will not be available'
 
 from astropy import constants as const
 from astropy import units as u
@@ -29,8 +32,8 @@ def cutoffexp(pars,data):
     x=data['ene']
     x0=stats.gmean(x)
 
-    gamma = pars[0]
-    N     = pars[1]
+    N     = pars[0]
+    gamma = pars[1]
     ecut  = pars[2]
     beta  = pars[3]
 
@@ -38,7 +41,7 @@ def cutoffexp(pars,data):
 
     return model
 
-p00=np.array((2,1e-11,10,1))
+p00=np.array((1e-11,2,10,1))
 
 ## Placeholder prior function: Flat
 
@@ -77,7 +80,7 @@ def lnprobmodel(model,data):
 
     totallogprob = np.sum(logprob)
 
-    if np.sum(ul)>0: 
+    if np.sum(ul)>0:
         # deal with upper limits at CL set by data['cl']
         violated_uls = np.sum(model[ul]>data['flux'][ul])
         totallogprob += violated_uls * np.log(1.-data['cl'])
@@ -90,6 +93,7 @@ def lnprob(pars,data,modelfunc,priorfunc):
 
     # Save blobs or save model if no blobs given
     if type(modelout)==tuple:
+        #print len(modelout)
         model = modelout[0]
         blob  = modelout[1:]
     else:
@@ -122,7 +126,7 @@ def get_sampler(nwalkers=600,nburn=30,guess=True,p0=p00,data=None,model=cutoffex
         lp,blob=lnprob(p0,data,model,prior)
         ene=blob[0][0]
         spec=blob[0][1]
-        p0[1]*=np.trapz(data['flux'],data['ene'])/np.trapz(spec,ene)
+        p0[0]*=np.trapz(data['flux'],data['ene'])/np.trapz(spec,ene)
 
     ndim=len(p0)
     sampler=emcee.EnsembleSampler(nwalkers,ndim,lnprob,args=[data,model,prior],threads=threads)
@@ -230,7 +234,7 @@ def _plot_chain_func(chain,p=None,last_step=False):
     # Plot distribution parameters on lower-left
 
     mean,median,std=np.mean(dist),np.median(dist),np.std(dist)
-    xmode=np.linspace(mean-std,mean+std,100)
+    xmode=np.linspace(mean-np.sqrt(3)*std,mean+np.sqrt(3)*std,100)
     mode=xmode[np.argmax(kde(xmode))]
 
     if logplot:
@@ -283,6 +287,7 @@ def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
     if last_step:
         model=np.array([m[modelidx][1] for m in sampler.blobs[-1]])
+        dists=sampler.chain[-1].T
     else:
         nsteps=len(sampler.blobs)
         model=[]
@@ -290,6 +295,7 @@ def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
             for m in sampler.blobs[i]:
                 model.append(m[modelidx][1])
         model=np.array(model)
+        dists=sampler.flatchain.T
 
     modelx=sampler.blobs[-1][0][modelidx][0]
 
@@ -309,12 +315,17 @@ def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
                 y.append(ysort[nf])
         CI.append((ymin,ymax))
 
-    MAPp=[np.mean(dist) for dist in sampler.flatchain.T]
-    MAPvar=[np.std(dist) for dist in sampler.flatchain.T]
-    lnprob,blob=sampler.lnprobfn(MAPp)
-    model_MAP=blob[modelidx][1]
+    # Find best-fit parameters as those in the chain with a highest log
+    # probability
+    #argmaxlp=np.argmax(sampler.chain
+    #lnprob=np.array([[blob[-1] for blob in step] for step in sampler.blobs])
+    index=np.unravel_index(np.argmax(sampler.lnprobability),sampler.lnprobability.shape)
+    MAPp=sampler.chain[index]
+    model_MAP=sampler.blobs[index[1]][index[0]][modelidx][1]
+    MAPvar=[np.std(dist) for dist in dists]
 # TODO: logger
-    print 'MAP pars (mean, std):'
+    print 'Maximum log probability: {0:.3g}'.format(sampler.lnprobability[index])
+    print 'Maximum Likelihood results:'
     for p,v in zip(MAPp,MAPvar):
         print '{0:.2e} +/- {1:.2e}'.format(p,v)
 
@@ -332,11 +343,18 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
     #ax1=axarr[0]
     #ax2=axarr[3]
 
+    plotdata=False
+    if modelidx==0:
+        plotdata=True
+
     f=plt.figure()
-    ax1=plt.subplot2grid((4,1),(0,0),rowspan=3)
-    ax2=plt.subplot2grid((4,1),(3,0),sharex=ax1)
-    for subp in [ax1,ax2]:
-        f.add_subplot(subp)
+    if plotdata:
+        ax1=plt.subplot2grid((4,1),(0,0),rowspan=3)
+        ax2=plt.subplot2grid((4,1),(3,0),sharex=ax1)
+        for subp in [ax1,ax2]:
+            f.add_subplot(subp)
+    else:
+        ax1=f.add_subplot(111)
 
     datacol='r'
 
@@ -351,7 +369,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
         ax.errorbar(x,0.75*y,yerr=0.25*y,ls='',lolims=True,
                 color=datacol,elinewidth=2,capsize=5,zorder=10)
 
-    if modelidx==0:
+    if plotdata:
         ul=data['ul']
         notul=-ul
         ax1.errorbar(data['ene'][notul],data['flux'][notul],
@@ -369,18 +387,27 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
                 mec='w',mew=0,ms=8,color=datacol)
         ax2.axhline(0,c='k',lw=2,ls='--')
 
-    for ax in [ax1,ax2]:
-        ax.set_xscale('log')
+        from matplotlib.ticker import MaxNLocator
+        ax2.yaxis.set_major_locator(MaxNLocator(integer='True',prune='upper'))
+
+        ax2.set_ylabel(r'$\Delta\sigma$')
+
+
+    ax1.set_xscale('log')
     ax1.set_yscale('log')
-    for tl in ax1.get_xticklabels():
-        tl.set_visible(False)
+    if plotdata:
+        ax2.set_xscale('log')
+        for tl in ax1.get_xticklabels():
+            tl.set_visible(False)
 
 
     if ylabel!=None:
         ax1.set_ylabel(ylabel)
     if xlabel!=None:
-        ax2.set_xlabel(xlabel)
-    ax2.set_ylabel(r'$\Delta\sigma$')
+        if plotdata:
+            ax2.set_xlabel(xlabel)
+        else:
+            ax1.set_xlabel(xlabel)
 
     f.subplots_adjust(hspace=0)
 
@@ -399,13 +426,16 @@ def generate_energy_edges(ene):
     ehi[-1]=elo[-1]
     return np.array(zip(elo,ehi))
 
-def generate_diagnostic_plots(outname,sampler):
+def generate_diagnostic_plots(outname,sampler,modelidxs=[0,]):
 
     print 'Generating diagnostic plots'
 
-    ## Corner plot
-    f = corner(sampler.flatchain,labels=['gamma','norm','ecut','beta'])
-    f.savefig('{0}_corner.png'.format(outname))
+    try:
+        ## Corner plot
+        f = corner(sampler.flatchain,labels=['norm','par1','par2','par3'])
+        f.savefig('{0}_corner.png'.format(outname))
+    except NameError:
+        print 'triangle.py not installed, corner plot will not be available'
 
     ## Chains
 
@@ -415,5 +445,10 @@ def generate_diagnostic_plots(outname,sampler):
 
     ## Fit
 
-    f = plot_fit(sampler,xlabel='Energy',ylabel='Flux')
-    f.savefig('{0}_fit.png'.format(outname))
+    for modelidx in modelidxs:
+        if modelidx==0:
+            labels=('Energy','Flux')
+        else:
+            labels=( None, None)
+        f = plot_fit(sampler,xlabel=labels[0],ylabel=labels[1],modelidx=modelidx,last_step=False)
+        f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))

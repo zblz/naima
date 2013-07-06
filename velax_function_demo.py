@@ -43,8 +43,8 @@ def cutoffexp(pars,data):
     x=data['ene']
     x0=stats.gmean(x)
 
-    gamma = pars[0]
-    N     = pars[1]
+    N     = pars[0]
+    gamma = pars[1]
     ecut  = pars[2]
     #beta  = pars[3]
     beta  = 1.
@@ -59,21 +59,21 @@ def lnprior(pars):
 	Parameter limits should be done here through uniform prior ditributions
 	"""
 
-	logprob = esf.uniform_prior(pars[0],-1,5) \
-			+ esf.uniform_prior(pars[1],0.,np.inf) \
+	logprob = esf.uniform_prior(pars[0],0.,np.inf) \
+            + esf.uniform_prior(pars[1],-1,5) \
 			+ esf.uniform_prior(pars[2],0.,np.inf) \
-			#+ esf.uniform_prior(pars[3],0.25,np.inf)
+			#+ esf.uniform_prior(pars[3],0.5,1.5)
 
 	return logprob
 
 ## Set initial parameters
 
-p0=np.array((2.0,1e-11,10.0,))
+p0=np.array((1e-11,2.0,10.0,))
 
 ## Run sampler
 
 sampler,pos = esf.run_sampler(p0=p0,data=data,model=cutoffexp,prior=lnprior,
-        nwalkers=250,nburn=100,nrun=100,threads=1)
+        nwalkers=500,nburn=100,nrun=100,threads=1)
 
 ## Diagnostic plots
 
