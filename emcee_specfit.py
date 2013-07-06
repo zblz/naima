@@ -269,7 +269,7 @@ def _plot_chain_func(chain,p=None,last_step=False):
     else:
         clen='whole chain'
 
-    quantiles=dict(quant,xquant)
+    quantiles=dict(zip(quant,xquant))
 
     f.text(0.1,0.45,'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
             'Autocorrelation times (steps): '+('{:.1f} '*npars).format(*acort) + '\n' +\
