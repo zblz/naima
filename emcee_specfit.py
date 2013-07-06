@@ -108,11 +108,19 @@ def lnprob(pars,data,modelfunc,priorfunc):
     outstr = '{:6.2g} '*len(pars) + '{:5g}'
     outargs = list(pars) + [total_lnprob,]
 # TODO: convert following print to logger
-    print outstr.format(*outargs)
+    #print outstr.format(*outargs)
 
     return total_lnprob,blob
 
 ## Sampler funcs
+
+def _run_mcmc(sampler,pos,nrun):
+    for i, out in enumerate(sampler.sample(pos, iterations=nrun)):
+        progress=int(100 * i / nrun)
+        if progress%5==0:
+            print("Progress of the run: {0:.0f} percent".format(int(progress)))
+    return sampler,out[0]
+
 
 def get_sampler(nwalkers=600,nburn=30,guess=True,p0=p00,data=None,model=cutoffexp,prior=flatprior,
         threads=8):
@@ -137,8 +145,9 @@ def get_sampler(nwalkers=600,nburn=30,guess=True,p0=p00,data=None,model=cutoffex
     p0=emcee.utils.sample_ball(p0,p0var,nwalkers)
 
     print 'Burning in the walkers with {0} steps...'.format(nburn)
-    burnin = sampler.run_mcmc(p0,nburn)
-    pos=burnin[0]
+    #burnin = sampler.run_mcmc(p0,nburn)
+    #pos=burnin[0]
+    sampler,pos=_run_mcmc(sampler,p0,nburn)
 
     return sampler,pos
 
@@ -149,7 +158,7 @@ def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
 
     print 'Walker burn in finished, running {0} steps...'.format(nrun)
     sampler.reset()
-    pos, prob, state, blobs = sampler.run_mcmc(pos,nrun)
+    sampler,pos=_run_mcmc(sampler,pos,nrun)
 
     return sampler,pos
 
@@ -260,20 +269,24 @@ def _plot_chain_func(chain,p=None,last_step=False):
     else:
         clen='whole chain'
 
+    quantiles=dict(quant,xquant)
+
     f.text(0.1,0.45,'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
             'Autocorrelation times (steps): '+('{:.1f} '*npars).format(*acort) + '\n' +\
-            'Distribution properties for the {8}:\n \
-       - mode: {9:.3g} \n \
-       - mean: {0:.3g} \n \
-       - median: {1:.3g} \n \
-       - std: {2:.3g} \n \
-       - 50% quantile: {3:.3g} \n \
-       - 68% CI: ({4:.3g},{5:.3g})\n \
-       - 99% CI: ({9:.3g},{10:.3g}\n \
-       - mean +/- std CI: ({6:.3g},{7:.3g})'.format(mean,median,std,
-                xquant[quant.index(0.5)],xquant[quant.index(0.16)],xquant[quant.index(0.84)],
-                mean-std,mean+std,clen,mode,
-                xquant[quant.index(0.01)],xquant[quant.index(0.99)]),
+            'Distribution properties for the {clen}:\n \
+       - mode: {mode:.3g} \n \
+       - mean: {mean:.3g} \n \
+       - median: {median:.3g} \n \
+       - std: {std:.3g} \n \
+       - 68% CI: ({quant16:.3g},{quant84:.3g})\n \
+       - 99% CI: ({quant01:.3g},{quant99:.3g})\n \
+       - mean +/- std CI: ({meanstd[0]:.3g},{meanstd[1]:.3g})'.format(
+                mean=mean,median=median,std=std,
+                quant01=quantiles[0.01],
+                quant16=quantiles[0.16],
+                quant84=quantiles[0.84],
+                quant99=quantiles[0.99],
+                meanstd=(mean-std,mean+std),clen=clen,mode=mode,),
             ha='left',va='top')
 
 
