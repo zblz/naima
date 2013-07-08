@@ -431,6 +431,21 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
 ## Convenience tools
 
 def generate_energy_edges(ene):
+    """Generate an array of energy edges from given energy array to be used as
+    abcissa error bar limits when no energy uncertainty or energy band is
+    provided
+
+    Parameters
+    ----------
+    ene : array
+        Array of energies
+
+    Returns
+    -------
+    edge_array : array with shape (2,len(ene))
+        Array of energy edge pairs corresponding to each given energy of the
+        input array.
+    """
     midene=np.sqrt((ene[1:]*ene[:-1]))
     elo,ehi=np.zeros_like(ene),np.zeros_like(ene)
     elo[1:]=ene[1:]-midene
@@ -439,7 +454,38 @@ def generate_energy_edges(ene):
     ehi[-1]=elo[-1]
     return np.array(zip(elo,ehi))
 
-def generate_diagnostic_plots(outname,sampler,modelidxs=[0,]):
+def read_data(file,enecol=0,denecol=1,fluxcol=2,dfluxcol=3):
+    """
+    read data into data dict
+    """
+    pass
+
+def generate_diagnostic_plots(outname,sampler,modelidxs=None):
+    """
+    Generate diagnostic plots:
+
+    - A corner plot of sample density in the two dimensional parameter space of
+      all parameter pairs of the run: ``outname_corner.png``
+    - A plot for each of the chain parameters showing walker progression, final
+      sample distribution and several statistical measures of this distribution:
+      ``outname_chain_parN.png``
+    - A plot for each of the models returned as blobs by the model function. The
+      maximum likelihood model is shown, as well as the 1 and 3 sigma confidence
+      level contours. The first model will be compared with observational data
+      and residuals shown. ``outname_fit_modelN.png``
+
+    Parameters
+    ----------
+    outname: str
+        Name to be used to save diagnostic plot files.
+
+    sampler: emcee.EnsembleSampler instance
+        Sampler instance from which chains, blobs and data are read.
+
+    modelidxs: iterable (optional)
+        Model numbers to be plotted. Default: All returned in sampler.blobs
+
+    """
 
     print 'Generating diagnostic plots'
 
@@ -457,6 +503,10 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=[0,]):
         f.savefig('{0}_chain_par{1}.png'.format(outname,par))
 
     ## Fit
+
+    if modelidxs==None:
+        nmodels=len(sampler.blobs[-1][0])
+        modelidxs=range(nmodels)
 
     for modelidx in modelidxs:
         if modelidx==0:
