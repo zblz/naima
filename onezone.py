@@ -39,7 +39,7 @@ sigt    = (8*np.pi/3)*erad**2
 
 heaviside = lambda x: (np.sign(x)+1)/2.
 
-class ElectronOZM:
+class ElectronOZM(object):
     """
     Computation of electron spectrum evolution and synchrotron and IC radiation from a homogeneous emitter.
 
@@ -154,13 +154,44 @@ class ElectronOZM:
 
     """
 
-    def __init__(self,nolog=0,debug=0,**kwargs):
+    def __init__(self,nolog=0,debug=0,
+        #### Default parameter values #####
+        # emitter physical properties
+        B     = np.sqrt(8*np.pi*4.1817e-13), #equipartition with CMB energy density (G)
+        remit = 1e14,
+        tad   = 1e30,
+        # Seed spectrum properties
+        seedspec = ['CMB',],
+        bb       = False,
+        nbb      = 10,
+        ssc      = False,
+        # electron spectrum matrix (lorentz factors)
+        gmin  = 1e0,
+        gmax  = 3e9,
+        ngamd = 400, # electron spectrum points per decade
+        # Injection spectrum
+        inj_norm     = 1e35,
+        inj_norm_gam = 2e5, # ~100 GeV
+        gammainj     = 2,
+        glocut       = 1e7/mec2eV,  # sharp low energy cutoff at gamma*mec2 = 10MeV
+        ghicut       = 2e13/mec2eV, # exponential high energy cutoff at gamma*mec2 = 20TeV
+        cutoffidx    = 1.,          # Exponent of exponential cutoff
+        # evolve spectrum to steady-state?
+        evolve_nelec = True,
+        # Emitted spectrum matrix (eV)
+        nened = 10, # emitted spectrum points per decade
+        emin  = 1.,
+        emax  = 1.e14,
+        #########
+        **kwargs):
+
         if nolog:
             self.logger=self
         else:
             self.logger=logging.getLogger('ElectronOZM')
             if debug:
                 self.logger.setLevel(logging.DEBUG)
+        self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
 # logger functions used for nolog
@@ -172,51 +203,10 @@ class ElectronOZM:
         print 'WARN:OneZoneModel: %s'%s
         pass
 
-    def _set_default(self,attrlist):
-        """
-        Sets the attributes in attrlist to their default value given by DEF_attr
-        if they has not already been set as self.attr
-        """
-        if type(attrlist)=='str':
-            attrlist=[attrlist,]
-        for attr in attrlist:
-            if not hasattr(self,attr):
-                setattr(self,attr,eval('self.DEF_'+attr))
-
-    #### Default parameter values #####
-    # emitter physical properties
-    DEF_B     = np.sqrt(8*np.pi*4.1817e-13) #equipartition with CMB energy density (G)
-    DEF_remit = 1e14
-    DEF_tad   = 1e30
-    # Seed spectrum properties
-    DEF_seedspec = ['CMB',]
-    DEF_bb       = False
-    DEF_nbb      = 10
-    DEF_ssc      = False
-    # electron spectrum matrix (lorentz factors)
-    DEF_gmin  = 1e0
-    DEF_gmax  = 3e9
-    DEF_ngamd = 400 # electron spectrum points per decade
-    # Injection spectrum
-    DEF_inj_norm     = 1e35
-    DEF_inj_norm_gam = 2e5 # ~100 GeV
-    DEF_gammainj     = 2
-    DEF_glocut       = 1e7/mec2eV  # sharp low energy cutoff at gamma*mec2 = 10MeV
-    DEF_ghicut       = 2e13/mec2eV # exponential high energy cutoff at gamma*mec2 = 20TeV
-    DEF_cutoffidx    = 1.          # Exponent of exponential cutoff
-    # evolve spectrum to steady-state?
-    DEF_evolve_nelec = True
-    # Emitted spectrum matrix (eV)
-    DEF_nened = 10 # emitted spectrum points per decade
-    DEF_emin  = 1.
-    DEF_emax  = 1.e14
-    #########
-
     def vemit(self):
         """
         Emitter radius from emitter volume
         """
-        self._set_default(['remit'])
         return (4./3.)*np.pi*self.remit**3.
 
     def _calc_bb(self,Tseed,useed,nbb):
@@ -255,7 +245,6 @@ class ElectronOZM:
             phn: particle photon density
             photE: photon energies
         """
-        self._set_default(['bb','nbb','seedspec'])
 
         Tcmb = 2.72548 # 0.00057 K
         ucmb = 0.261*u.eV.to('erg')
@@ -300,7 +289,6 @@ class ElectronOZM:
         Generate gamma values
         """
 
-        self._set_default(['gmin','gmax','ngamd'])
         ngam=int(np.log10(self.gmax/self.gmin))*self.ngamd
         self.gam=np.logspace(np.log10(self.gmin),np.log10(self.gmax),ngam)
 
@@ -308,7 +296,6 @@ class ElectronOZM:
         """
         Generate photon energies for which to compute output radiation
         """
-        self._set_default(['emin','emax','nened'])
 
         self.outspecene=np.logspace(np.log10(self.emin),np.log10(self.emax),
                np.log10(self.emax/self.emin)*self.nened)
@@ -318,7 +305,6 @@ class ElectronOZM:
         """
         Compute injection spectrum, return as array.
         """
-        self._set_default(['gammainj','glocut','ghicut','cutoffidx','inj_norm','inj_norm_gam',])
 
         qinj=self.inj_norm*(self.gam/self.inj_norm_gam)**-self.gammainj*np.exp(-(self.gam/self.ghicut)**self.cutoffidx)
         qinj[np.where(self.gam<self.glocut)]=0.
@@ -337,7 +323,6 @@ class ElectronOZM:
         elif type(self.phn)!=list:
             self.logger.warn('Seed photon spectrum not found, calling calc_seedspec...')
             self.calc_seedspec()
-        self._set_default(['B','tad',])
 
 ## Synchrotron losses
         umag=self.B**2./(8.*np.pi)
@@ -379,7 +364,6 @@ class ElectronOZM:
 
 #       qint(Ee)=\int_Ee^\infty Q_inj(E') dE'
     def evolve_e_spectrum(self):
-        self._set_default(['evolve_nelec',])
         self.calc_gdot()
         qinj = self._calc_qinj()
         if self.evolve_nelec:
@@ -447,23 +431,14 @@ class ElectronOZM:
         if photE==None and type(photE)==list:
             photE=self.photE[0]
         self.logger.debug('Computing IC on {0} seed photons...'.format(seed))
-# Per a fer-ho sense iterar sobre Eph descomentar seguent paragraf
-        # scattered photons: (N,1,1) np.dstack(foo).T
-#        Eph=self.outspecene/mec2eV
-#        Eph=Eph[:,np.newaxis,np.newaxis]
-        # seed photons: (1,N,1) np.vstack
-#        photE0=(self.photE/mec2)[np.newaxis,:,np.newaxis]
-#        phn=(self.phe/self.photE)[np.newaxis,:,np.newaxis]
-        # gam: (1,1,N)
         if photE.size==1:
             photE=np.array((photE,))[:,np.newaxis]
 
         photE0=(photE/mec2)[:,np.newaxis]
-        #phn=(phn)[:,np.newaxis]
 
         b=4*photE0*self.gam
         iclum=np.zeros_like(self.outspecene)
-# Iterate over Eph per save memory
+# Iterate over Eph to save memory
         for i,Eph in enumerate(self.outspecene/mec2eV):
             w=Eph/self.gam
             q=w/(b*(1-w))
@@ -482,18 +457,12 @@ class ElectronOZM:
             else:
                 lum*=phn/photE
 
-            #self.logger.debug('{0} {1}'.format(lum.shape,Eph.shape))
             iclum[i]=(3./4.)*sigt*c*(Eph*mec2)*lum
 
-        #iclum[np.isnan(iclum)]=0.
         return iclum/self.outspecene # return differential spectrum in 1/s/eV
 
     def calc_ic(self):
         self.logger.debug('calc_ic')
-        self._set_default(['ssc',])
-#        d30=lambda x:np.expand_dims(np.expand_dims(x,1),1)
-#        d31=lambda x:np.expand_dims(np.expand_dims(x,1),0)
-#        d32=lambda x:np.expand_dims(np.expand_dims(x,0),0)
 
         if not hasattr(self,'outspecene'):
             self.logger.warn('Generating outspecene...')
@@ -563,7 +532,7 @@ class ElectronOZM:
         self.calc_ic()
 
 
-class ProtonOZM:
+class ProtonOZM(object):
     """
     Compute gamma-ray spectrum of pp interactions.
 
@@ -619,7 +588,20 @@ class ProtonOZM:
 
     """
 
-    def __init__(self,nolog=0,debug=0,**kwargs):
+    def __init__(self,
+            # Injection spectrum properties
+            gammainj     = 2.0,
+            inj_norm     = 1e35,
+            inj_norm_ene = 1.0,  # TeV
+            cutoff_ene   = 1e3, # TeV
+            cutoff_beta  = 1.0,
+            # Target properties
+            nH = 1.0, # 1/cm3
+            # Output spectrum properties
+            emin  = 1e-5,
+            emax  = 1e3,
+            nened = 10,
+            nolog=0, debug=0, **kwargs):
         if nolog:
             self.logger=self
         else:
@@ -637,37 +619,10 @@ class ProtonOZM:
         print 'WARN:OneZoneModel: %s'%s
         pass
 
-    def _set_default(self,attrlist):
-        """
-        Sets the attributes in attrlist to their default value given by DEF_attr
-        if they has not already been set as self.attr
-        """
-        if type(attrlist)=='str':
-            attrlist=[attrlist,]
-        for attr in attrlist:
-            if not hasattr(self,attr):
-                setattr(self,attr,eval('self.DEF_'+attr))
-
-    # Injection spectrum properties
-    DEF_gammainj     = 2.0
-    DEF_inj_norm     = 1e35
-    DEF_inj_norm_ene = 1.0  # TeV
-    DEF_cutoff_ene   = 1e3 # TeV
-    DEF_cutoff_beta  = 1.0
-
-    # Target properties
-    DEF_nH = 1.0 # 1/cm3
-
-    # Output spectrum properties
-    DEF_emin  = 1e-5
-    DEF_emax  = 1e3
-    DEF_nened = 10
-
     def generate_outspecene(self):
         """
         Generate photon energies for which to compute output radiation
         """
-        self._set_default(['emin','emax','nened'])
 
         self.outspecene=np.logspace(np.log10(self.emin),np.log10(self.emax),
                np.log10(self.emax/self.emin)*self.nened)
@@ -678,8 +633,6 @@ class ProtonOZM:
         Following Eq. 74 of KAB06 so we can use the low-energy delta-functional
         approximation.
         """
-        self._set_default(['gammainj','inj_norm','inj_norm_ene',
-            'cutoff_ene','cutoff_beta'])
 
         return self.inj_norm*((Ep/self.inj_norm_ene)**-self.gammainj*
                 np.exp(-(Ep/self.cutoff_ene)**self.cutoff_beta))
@@ -757,8 +710,6 @@ class ProtonOZM:
         """
         if not hasattr(self,'outspecene'):
             self.generate_outspecene()
-
-        self._set_default(['nH',])
 
         self.specpp=np.zeros_like(self.outspecene)
 
