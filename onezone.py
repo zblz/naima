@@ -33,6 +33,8 @@ hz2ev  = h*eV
 
 mec2    = m_e*c**2
 mec2eV  = mec2*eV    # m_e*c**2 in eV
+mec2TeV = mec2eV/1e12
+mec2GeV = mec2eV/1e9
 
 erad    = e**2./mec2
 sigt    = (8*np.pi/3)*erad**2
@@ -43,50 +45,52 @@ class ElectronOZM(object):
     """
     Computation of electron spectrum evolution and synchrotron and IC radiation from a homogeneous emitter.
 
-    Parameters
-    ----------
+    One Zone Model parameters
+    -------------------------
     Eph : array
-        Array of output photon energies [eV].
+        Array of desired output photon energies [eV].
 
     norm : float
         Normalization of emitted spectrum [1/cm2]. Defined as
 
         .. math::
-            \mathcal{N}=\frac{A_e V_e}{4 \pi d^2}
+            \mathcal{N}=\frac{A V}{4 \pi d^2}
 
-        where :math:`A_e` is the normalization of the non-thermal particle
-        distribution [1/cm3/GeV] at momentum `norm_momentum`, :math:`V_e` is the emitting volume, and
-        :math:`d` is the distance to the source.
+        where :math:`A` is the normalization of the non-thermal particle
+        distribution [1/cm3/GeV] at enery `norm_energy`, :math:`V` is the
+        emitting volume, and :math:`d` is the distance to the source.
 
-    norm_momentum : float (optional)
-        Particle momentum [GeV/c] at which normalization parameter :math:`A_e`
+    norm_energy : float (optional)
+        Electron energy [GeV] for which normalization parameter :math:`A`
         applies. Should correspond to the decorrelation energy of the observed
-        spectrum.
+        spectrum for the emission process in consideration.
 
     index : float (optional)
-        Power-law index of the particle distribution function. The distribution function has the form:
+        Power-law index of the particle distribution function. The distribution
+        function has the form:
 
         .. math::
-            N(p)=A\left(\frac{p}{p_0}\right)^{-\Gamma} \exp{(p/E_\mathrm{cutoff})^\beta},
+            \frac{dN(E_e)}{E_e}=A\left(\frac{E_e}{E_0}\right)^{-\Gamma}
+            \exp{(p/E_\mathrm{cutoff})^\beta},
 
-        where :math:`A` is the normalization at :math:`p_0` and is embedded in
-        the parameter `norm`, :math:`p_0` is the normalization momentum
-        parameter `norm_momentum`, :math:`\Gamma` is the power-law index
+        where :math:`A` is the normalization at :math:`E_0` and is embedded in
+        the parameter `norm`, :math:`E_0` is the normalization energy
+        parameter `norm_energy`, :math:`\Gamma` is the power-law index
         parameter `index`, :math:`E_\mathrm{cutoff}` is the cutoff energy
-        parameter `cutoff`, and :math:`\beta` is the index of the exponential
+        parameter `cutoff`, and :math:`\beta` is the exponent of the exponential
         cutoff argument `beta`.
 
     cutoff : float (optional)
         Cut-off energy [TeV].
 
     beta : float (optional)
-        Exponent of exponential energy cutoff.
+        Exponent of exponential energy cutoff argument.
 
     B : float (optional)
         Isotropic magnetic field strength in microgauss. Default: equipartition with
-        CMB (3.4 uG)
+        CMB (3.24e-6 G)
 
-    seedspec: iterable of strings or floats (optional)
+    seedspec: string or iterable of strings or iterable of floats (optional)
         A list of seed spectra to use for IC calculation. Is string is one of
         CMB, NIR, FIR, precomputed tables will be used. Any floats indicate the
         temperature for a blackbody photon distribution and full computation
@@ -95,6 +99,16 @@ class ElectronOZM(object):
     ssc : bool (optional)
         Whether to compute synchrotron self compton (IC on synchrotron generated
         photons). Default: False
+
+    remit : float (optional)
+        Emitter radius in cm. Only relevant for synchrotron self-absorption and
+        synchrotron self Compton.
+
+    evolve_nelec : bool (optional)
+        Whether to evolve electron spectrum until steady state. See
+        Zabalza et al (2011), A&A 527, 9, and Khangulyan et al (2007) MNRAS 380,
+        320, for a detailed explanation of steady-state electron spectrum
+        computation.
 
 
     Computation parameters (not present in class signature)
@@ -115,18 +129,12 @@ class ElectronOZM(object):
         Maximum electron energy in units of mc2. Default: 3e9
 
     ngamd : int (optional)
-        Number of electron sprectrum points per energy decade. Default: 400
+        Number of electron spectrum points per energy decade. Default: 400
 
     glocut : float (optional)
         Low energy cutoff of injection spectrum in units of mec2. Electron can
         evolve down to ``gmin``, but will not be injected below ``glocut``.
         Default: 20 (1e7 eV)
-
-    evolve_nelec : bool (optional)
-        Whether to evolve electron spectrum until steady state. Se
-        Zabalza et al (2011), A&A 527, 9, and Khangulyan et al (2007) MNRAS 380,
-        320, for a detailed explanation of steady-state electron spectrum
-        computation.
 
     Output (as class attributes)
     ----------------------------
@@ -150,35 +158,13 @@ class ElectronOZM(object):
 
     """
 
-    comp_defaults={
-        # Seed spectrum properties
-        bb       = False,
-        nbb      = 10,
-        remit = 1e14,
-        tad   = 1e30,
-        # electron spectrum matrix (lorentz factors)
-        gmin  = 1e0,
-        gmax  = 3e9,
-        ngamd = 400, # electron spectrum points per decade
-        # Injection spectrum
-        gammainj     = 2,
-        glocut       = 1e7/mec2eV,  # sharp low energy cutoff at gamma*mec2 = 10MeV
-        # evolve spectrum to steady-state?
-        evolve_nelec = True,
-        # Emitted spectrum matrix (eV)
-        nened = 10, # emitted spectrum points per decade
-        emin  = 1.,
-        emax  = 1.e14,
-        #########
-        }
-
 
     def __init__(self,
         outspecene, # emitted photon energy array
         norm,       # normalization
         #### Default parameter values #####
         # injection
-        norm_momentum = 1e35,
+        norm_energy   = 1.0,
         index         = 2.0,
         cutoff        = 30,
         beta          = 1.0,
@@ -186,8 +172,11 @@ class ElectronOZM(object):
         B        = np.sqrt(8*np.pi*4.1817e-13), #equipartition with CMB energy density (G)
         seedspec = ['CMB',],
         ssc      = False,
+        remit    = 1e15,
+        # evolve particle spectrum to steady-state?
+        evolve_nelec = False,
         #
-        nolog=0,debug=0,**kwargs):
+        nolog=False,debug=False,**kwargs):
 
         if nolog:
             self.logger=self
@@ -196,7 +185,20 @@ class ElectronOZM(object):
             if debug:
                 self.logger.setLevel(logging.DEBUG)
 
-        self.__dict__.update(**comp_defaults)
+        computation_defaults={
+            # Seed spectrum properties
+            'bb'     : False,
+            'nbb'    : 10,
+            'tad'    : 1e30,
+            # electron spectrum matrix (lorentz factors)
+            'gmin'   : 1e0,
+            'gmax'   : 3e9,
+            'ngamd'  : 400, # electron spectrum points per decade
+            # Injection spectrum
+            'glocut' : 1e7/mec2eV,  # sharp low energy cutoff at gamma*mec2 = 10MeV
+            }
+
+        self.__dict__.update(**computation_defaults)
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
@@ -208,12 +210,6 @@ class ElectronOZM(object):
     def warn(self,s):
         print 'WARN:OneZoneModel: %s'%s
         pass
-
-    def vemit(self):
-        """
-        Emitter radius from emitter volume
-        """
-        return (4./3.)*np.pi*self.remit**3.
 
     def _calc_bb(self,Tseed,useed,nbb):
         self.logger.info('Computing blackbody spectrum for T = {0} K, u = {1:.2e} erg/cm3'.format(Tseed,useed))
@@ -298,35 +294,12 @@ class ElectronOZM(object):
         ngam=int(np.log10(self.gmax/self.gmin))*self.ngamd
         self.gam=np.logspace(np.log10(self.gmin),np.log10(self.gmax),ngam)
 
-    def generate_outspecene(self):
-        """
-        Generate photon energies for which to compute output radiation
-        """
-
-        self.outspecene=np.logspace(np.log10(self.emin),np.log10(self.emax),
-               np.log10(self.emax/self.emin)*self.nened)
-        self.outspecerg=self.outspecene/eV
-
-    def _calc_qinj(self):
-        """
-        Compute injection spectrum, return as array.
-        """
-
-        qinj=self.inj_norm*(self.gam/self.inj_norm_gam)**-self.gammainj*np.exp(-(self.gam/self.ghicut)**self.cutoffidx)
-        qinj[np.where(self.gam<self.glocut)]=0.
-
-        self.logger.debug('calc_qinj:Injected power: %g erg/s'%(np.trapz(qinj*self.gam*mec2,self.gam)))
-        return qinj
-
     def calc_gdot(self):
 # Calculem Qinj i generem el self.gam correcte!
         if not hasattr(self,'gam'):
             self.logger.warn('Generating gam...')
             self.generate_gam()
-        if not hasattr(self,'phn'):
-            self.logger.warn('Seed photon spectrum not found, calling calc_seedspec...')
-            self.calc_seedspec()
-        elif type(self.phn)!=list:
+        if not hasattr(self,'phn') or type(self.phn)!=list:
             self.logger.warn('Seed photon spectrum not found, calling calc_seedspec...')
             self.calc_seedspec()
 
@@ -365,43 +338,86 @@ class ElectronOZM(object):
         self.tsy  = self.gam/np.abs(gdotsy)
         self.tic  = self.gam/np.abs(gdotic)
 
-        self.ttot=self.gam/np.abs(self.gdot)
+        self.ttot = self.gam/np.abs(self.gdot)
 
+
+    def _calc_qinj(self):
+        """
+        Compute injection spectrum, return as array.
+        """
+
+        # convert parameters to gamma
+        cutoff_gam=self.cutoff/mec2TeV
+        norm_gam=self.norm_energy/mec2GeV
+
+        qinj=self.norm*(self.gam/norm_gam)**-self.index*np.exp(-(self.gam/cutoff_gam)**self.beta)
+
+        qinj[np.where(self.gam<self.glocut)]=0.
+
+        return qinj
 
 #       qint(Ee)=\int_Ee^\infty Q_inj(E') dE'
-    def evolve_e_spectrum(self):
-        self.calc_gdot()
-        qinj = self._calc_qinj()
-        if self.evolve_nelec:
-            # calculem els trapz terms i despres nomes els sumem
-            dgam=np.diff(self.gam)
-            tt=dgam*(qinj[1:]+qinj[:-1])/2.
-            qint = np.array([np.sum(tt[i:]) for i in range(len(qinj))])
+    def _calc_steady_state_nelec(self,qinj):
+        """
+        Evolve electron spectrum until steady state. See Zabalza et al (2011),
+        A&A 527, 9, and Khangulyan et al (2007) MNRAS 380, 320, for a detailed
+        explanation of steady-state electron spectrum computation.
 
-            self.nelec = qint/self.gdot
+        .. math::
+            N(E_e)=\frac{1}{|\dot{\gamma}|}\int_{E_e}^{\infty} Q_{inj}(E^\prime) dE^\prime
+
+        Parameters
+        ----------
+        qinj : array
+            Injection spectrum.
+
+        Output
+        ------
+        nelec : Steady-state electron distribution.
+        """
+
+        # Compute trapezium integration terms and then sum them (faster than
+        # cumsum[::-1])
+        dgam=np.diff(self.gam)
+        tt=dgam*(qinj[1:]+qinj[:-1])/2.
+        qint = np.array([np.sum(tt[i:]) for i in range(len(qinj))])
+        return qint/self.gdot
+
+    def calc_nelec(self):
+        if not hasattr(self,'phe'):
+            self.calc_seedspec()
+        self.generate_gam()
+        self.calc_gdot()
+
+        qinj = self._calc_qinj()
+
+        if self.evolve_nelec:
+            self.logger.debug('calc_nelec: L_inj*4πd² = {0:.2e} erg/s'.format(
+                np.trapz(qinj*self.gam*mec2,self.gam)))
+            self.nelec = self._calc_steady_state_nelec(qinj)
         else:
             self.nelec = qinj
 
-        self.logger.debug('Total energy in electrons: {0:.2e} erg'.format(
+        self.logger.debug('calc_nelec: E_e*4πd² = {0:.2e} erg'.format(
             np.trapz(self.nelec*self.gam*mec2,self.gam)))
 
     def calc_sy(self):
-        self.logger.debug('calc_sy')
+        self.logger.debug('calc_sy: Starting synchrotron computation...')
 
         CS1   = 6.2632e18                 # crit freq const in Hz (Pacholczyk)
         CS3   = 1.8652e-23*np.sqrt(2./3.) # Constant pot radiada * factor isotropia
 
-        if not hasattr(self,'outspecene'):
-            self.logger.warn('Generating outspecene...')
-            self.generate_outspecene()
-        elif not hasattr(self,'outspecerg'):
+        if not hasattr(self,'outspecerg'):
             self.outspecerg=self.outspecene/eV
         if not hasattr(self,'gam'):
             self.logger.warn('Calling calc_nelec to generate gam,nelec')
             self.calc_nelec()
 
+        # Bogus (large) vemit and remit to compute synchrotron
+        vemit=(4./3.)*np.pi*self.remit**3
+
         enehz = self.outspecene/hz2ev
-        nelec = self.nelec/self.vemit() # density required for sync calculation
+        nelec = self.nelec/vemit # density required for sync calculation
 
         freqcrit=CS1*(self.gam*mec2)**2.*self.B
         xx=np.vstack(enehz)/freqcrit # shape of (outspecene,gam)
@@ -418,25 +434,24 @@ class ElectronOZM(object):
         CA3=Fx*(1./3.+2.*xx) # shape of (outspecene,gam)
         sabs=np.vstack(CA1)*CA2*CA3 # shape of (outspecene,gam)
         K=np.trapz(sabs,self.gam) #int over gamma, shape of outspecene
-#        print self.remit*K
         tau=self.remit*K
 
         I=np.zeros_like(J)
         nz=np.where((J>0)*(K>0))
         I[nz]=(J[nz]/K[nz])*(-1.*np.expm1(-tau[nz])) # erg/(s*cm2*Hz)
 
-        self.specsy=4.*np.pi*self.remit**2.*I/h # 1/s
-        self.sedsy=self.specsy*self.outspecerg # erg/s
+        self.specsy=4.*np.pi*self.remit**2.*I/h/self.outspecene # 1/s
+        self.sedsy=self.specsy*self.outspecene*self.outspecerg # erg/s
 
-        totsylum=np.trapz(self.specsy,self.outspecerg)
-        self.logger.info('Synchrotron emitted power: {0:.2e} erg/s'.format(totsylum))
+        totsylum=np.trapz(self.specsy*self.outspecene,self.outspecerg)
+        self.logger.info('calc_sy: L_sy*4πd² = {0:.2e} erg/s'.format(totsylum))
 
     def _calc_specic(self,phn=None,photE=None,seed=None):
         if phn==None and type(phn)==list:
             phn=self.phn[0]
         if photE==None and type(photE)==list:
             photE=self.photE[0]
-        self.logger.debug('Computing IC on {0} seed photons...'.format(seed))
+        self.logger.debug('_calc_specic: Computing IC on {0} seed photons...'.format(seed))
         if photE.size==1:
             photE=np.array((photE,))[:,np.newaxis]
 
@@ -468,12 +483,9 @@ class ElectronOZM(object):
         return iclum/self.outspecene # return differential spectrum in 1/s/eV
 
     def calc_ic(self):
-        self.logger.debug('calc_ic')
+        self.logger.debug('calc_ic: Starting IC computation...')
 
-        if not hasattr(self,'outspecene'):
-            self.logger.warn('Generating outspecene...')
-            self.generate_outspecene()
-        elif not hasattr(self,'outspecerg'):
+        if not hasattr(self,'outspecerg'):
             self.outspecerg=self.outspecene/eV
 
         if not hasattr(self,'gam'):
@@ -520,68 +532,71 @@ class ElectronOZM(object):
 
         self.logger.debug('self.specic.shape={0}'.format(self.specic.shape))
         toticlum=np.trapz(self.specic,self.outspecerg)
-        self.logger.info('IC emitted power: %e erg/s'%toticlum)
+        self.logger.info('calc_ic: L_ic*4πd² = {0:.2e} erg/s'.format(toticlum))
         tev=np.where(self.outspecene>1e11)
-        tottevlum=np.trapz(self.specic[tev],self.outspecerg[tev])
-        self.logger.info('TeV (>100 GeV) luminosity: %e erg/s'%tottevlum)
-
-    def calc_nelec(self):
-        if not hasattr(self,'phe'):
-            self.calc_seedspec()
-        self.generate_gam()
-        self.evolve_e_spectrum()
+        if len(tev[0])>0:
+            tottevlum=np.trapz(self.specic[tev],self.outspecerg[tev])
+            self.logger.info('calc_ic: L_VHE*4πd² = {0:.2e} erg/s'.format(tottevlum))
 
     def calc_outspec(self):
-        self.generate_outspecene()
         self.calc_nelec()
         self.calc_sy()
         self.calc_ic()
+        self.spec = self.specsy + self.specic
+        self.sed  = self.sedsy  + self.sedic
 
 
 class ProtonOZM(object):
     """
-    Compute gamma-ray spectrum of pp interactions.
+    Compute gamma-ray spectrum arising from the interaction of a relativistic
+    proton distribution with stationary target protons.
 
-    Parameters
-    ----------
-    gammainj : float (optional)
-        Particle index of proton power-law distribution distribution. Default:
-        2.0
+    The particle distribution function has the form:
 
-    inj_norm : float (optiona)
-        Normalization of proton distribution at ``inj_norm_ene``. Default: 1e35
+    .. math::
+        \frac{dN(E_p)}{dE_p}=A\left(\frac{E_p}{E_0}\right)^{-\Gamma}
+        \exp{(E_p/E_\mathrm{cutoff})^\beta},
 
-    inj_norm_ene : float (optiona)
-        Energy at which proton distribution is normalized. Default: 1.0 TeV
+    where :math:`A` is the normalization at :math:`E_0` and is embedded in the
+    parameter `norm`, :math:`E_0` is the normalization energy (`norm_energy`),
+    :math:`\Gamma` is the power-law index (`index`), :math:`E_\mathrm{cutoff}`
+    is the cutoff energy (`cutoff`), and :math:`\beta` is the exponent of the
+    exponential cutoff (`beta`).
 
-    cutoff_ene : float (optional)
-        Energy of the high-energy spectral cutoff of the proton distribution.
-        Default: 1000 TeV
 
-    cutoff_beta : float (optional)
-        Exponent of the exponential cutoff of the proton distribution. Can be
-        set at ``np.inf`` for a sharp cutoff. Default: 1.0
+    One Zone Model parameters
+    -------------------------
+    Eph : array
+        Array of desired output photon energies [eV].
 
-    nened : int (optional)
-        Number of emitted spectrum points to be computed per decade of photon
-        energy used by ``self.generate_outspecene()``. The output spectrum
-        energies can alternatively be defined by modifying the class property
-        outspecene with an array of photon energies in TeV. Default: 10
+    norm : float
+        Normalization of emitted spectrum [1/cm2]. Defined as
 
-    emin : float (optional)
-        Minimum photon energy of emitted spectrum in TeV used by
-        ``self.generate_outspecene()``. Default: 1e-5 TeV
+        .. math::
+            \mathcal{N}=\frac{A_p n_p V}{4 \pi d^2}
 
-    emax : float (optional)
-        Maximum photon energy of emitted spectrum in TeV used by
-        ``self.generate_outspecene()``. Default: 1000 TeV
+        where :math:`A` is the normalization of the non-thermal particle
+        distribution [1/cm3/GeV] at enery `norm_energy`, :math:`n_p` is the
+        number density of target protons, :math:`V` is the emitting volume, and
+        :math:`d` is the distance to the source.
+
+    norm_energy : float (optional)
+        Electron energy [GeV] for which normalization parameter :math:`A`
+        applies. Should correspond to the decorrelation energy of the observed
+        spectrum for the emission process in consideration.
+
+    index : float (optional)
+        Power-law index of the particle distribution function.
+
+    cutoff : float (optional)
+        Cut-off energy [TeV].
+
+    beta : float (optional)
+        Exponent of exponential energy cutoff argument.
 
     Output
     ------
-    self.outspecene : array [TeV]
-        Photon energies for computed gamma-ray spectrum.
-
-    self.specpp : array [1/s/TeV]
+    self.specpp : array [1/s/eV]
         Differential gamma-ray spectrum at energies given by ``self.outspecene``.
 
     self.sedpp : array [erg/s]
@@ -595,28 +610,30 @@ class ProtonOZM(object):
     """
 
     def __init__(self,
+            outspecene,
+            norm,
             # Injection spectrum properties
-            gammainj     = 2.0,
-            inj_norm     = 1e35,
-            inj_norm_ene = 1.0,  # TeV
-            cutoff_ene   = 1e3, # TeV
-            cutoff_beta  = 1.0,
-            # Target properties
-            nH = 1.0, # 1/cm3
-            # Output spectrum properties
-            emin  = 1e-5,
-            emax  = 1e3,
-            nened = 10,
-            nolog=0, debug=0, **kwargs):
+            norm_energy = 1e3, # GeV
+            index       = 2.0,
+            cutoff      = 1e3, # TeV
+            beta        = 1.0,
+            nolog=False, debug=False, **kwargs):
+
         if nolog:
             self.logger=self
         else:
             self.logger=logging.getLogger('ProtonOZM')
             if debug:
                 self.logger.setLevel(logging.DEBUG)
+
+        # convert all to TeV
+        outspecene*=1e12
+        norm_energy/=1e3
+
+        self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
-# logger functions used for nolog
+# bogus logger functions used for nolog
     def debug(self,s):
         pass
     def info(self,s):
@@ -625,23 +642,12 @@ class ProtonOZM(object):
         print 'WARN:OneZoneModel: %s'%s
         pass
 
-    def generate_outspecene(self):
-        """
-        Generate photon energies for which to compute output radiation
-        """
-
-        self.outspecene=np.logspace(np.log10(self.emin),np.log10(self.emax),
-               np.log10(self.emax/self.emin)*self.nened)
-        self.outspecerg=self.outspecene/TeV
-
     def Jp(self,Ep):
         """
-        Following Eq. 74 of KAB06 so we can use the low-energy delta-functional
-        approximation.
+        Particle distribution function [1/cm3/TeV]
         """
-
-        return self.inj_norm*((Ep/self.inj_norm_ene)**-self.gammainj*
-                np.exp(-(Ep/self.cutoff_ene)**self.cutoff_beta))
+        return self.norm*((Ep/self.norm_energy)**-self.index*
+                np.exp(-(Ep/self.cutoff)**self.beta))
 
     def Fgamma(self,x,Ep):
         """
@@ -689,7 +695,7 @@ class ProtonOZM(object):
         """
         Spectrum computed as in Eq. 42 for Egamma >= 0.1 TeV
         """
-        return c*self.nH*quad(self.photon_integrand,0.,1.,args=Egamma)[0]
+        return c*quad(self.photon_integrand,0.,1.,args=Egamma)[0]
 
     def _calc_specpp_loE(self,Egamma):
         """
@@ -702,7 +708,7 @@ class ProtonOZM(object):
 
         def delta_integrand(Epi):
             Ep0=m_p+Epi/Kpi
-            qpi=c*self.nH*(self.nhat/Kpi)*self.sigma_inel(Ep0)*self.Jp(Ep0)
+            qpi=c*(self.nhat/Kpi)*self.sigma_inel(Ep0)*self.Jp(Ep0)
 
             return qpi/np.sqrt(Epi**2+m_pi**2)
 
@@ -714,17 +720,15 @@ class ProtonOZM(object):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
         """
-        if not hasattr(self,'outspecene'):
-            self.generate_outspecene()
-
-        self.specpp=np.zeros_like(self.outspecene)
 
         if np.any(self.outspecene<0.1):
             # compute value of nhat so that delta functional matches accurate calculation at 0.1TeV
-            self.nhat=1. # initial value, works for gammainj~2.1
+            self.nhat=1. # initial value, works for index~2.1
             full=self._calc_specpp_hiE(0.1)
             delta=self._calc_specpp_loE(0.1)
             self.nhat*=full/delta
+
+        self.specpp=np.zeros_like(self.outspecene)
 
         for i,Egamma in enumerate(self.outspecene):
             if Egamma>=0.1:

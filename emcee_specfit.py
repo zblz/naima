@@ -454,11 +454,20 @@ def generate_energy_edges(ene):
     ehi[-1]=elo[-1]
     return np.array(zip(elo,ehi))
 
-def read_data(file,enecol=0,denecol=1,fluxcol=2,dfluxcol=3):
+def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     """
     read data into data dict
     """
-    pass
+    if ul==None:
+        ul=np.array((False,)*len(ene))
+
+    # data is a dict with the fields:
+    # ene dene flux dflux ul cl
+    data={}
+    for val in ['ene', 'dene', 'flux', 'dflux', 'ul', 'cl']:
+        data[val]=eval(val)
+
+    return data
 
 def generate_diagnostic_plots(outname,sampler,modelidxs=None):
     """
