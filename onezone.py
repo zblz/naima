@@ -627,8 +627,8 @@ class ProtonOZM(object):
                 self.logger.setLevel(logging.DEBUG)
 
         # convert all to TeV
-        outspecene*=1e12
-        norm_energy/=1e3
+        outspecene*=u.eV.to('TeV')
+        norm_energy*=u.GeV.to('TeV')
 
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
