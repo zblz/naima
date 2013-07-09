@@ -1,9 +1,12 @@
 Non-thermal spectral fitting with emcee
 =======================================
 
-``emcee_specfit`` is a set of functions designed to make MCMC spectral fitting
-of non-thermal emission easier. It is based on the powerful `emcee
-<http://dan.iel.fm/emcee>`_ MCMC sampling package.
+``emcee_specfit`` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra
+to constrain the properties of their parent relativistic particle distributions. 
+
+The workhorse of ``emcee_specfit`` is the powerful `emcee
+<http://dan.iel.fm/emcee>`_ affine-invariant ensemble sampler for Markov chain
+Monte Carlo.
 
 
 Installation

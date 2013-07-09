@@ -45,22 +45,60 @@ class ElectronOZM(object):
 
     Parameters
     ----------
+    Eph : array
+        Array of output photon energies [eV].
+
+    norm : float
+        Normalization of emitted spectrum [1/cm2]. Defined as
+
+        .. math::
+            \mathcal{N}=\frac{A_e V_e}{4 \pi d^2}
+
+        where :math:`A_e` is the normalization of the non-thermal particle
+        distribution [1/cm3/GeV] at momentum `norm_momentum`, :math:`V_e` is the emitting volume, and
+        :math:`d` is the distance to the source.
+
+    norm_momentum : float (optional)
+        Particle momentum [GeV/c] at which normalization parameter :math:`A_e`
+        applies. Should correspond to the decorrelation energy of the observed
+        spectrum.
+
+    index : float (optional)
+        Power-law index of the particle distribution function. The distribution function has the form:
+
+        .. math::
+            N(p)=A\left(\frac{p}{p_0}\right)^{-\Gamma} \exp{(p/E_\mathrm{cutoff})^\beta},
+
+        where :math:`A` is the normalization at :math:`p_0` and is embedded in
+        the parameter `norm`, :math:`p_0` is the normalization momentum
+        parameter `norm_momentum`, :math:`\Gamma` is the power-law index
+        parameter `index`, :math:`E_\mathrm{cutoff}` is the cutoff energy
+        parameter `cutoff`, and :math:`\beta` is the index of the exponential
+        cutoff argument `beta`.
+
+    cutoff : float (optional)
+        Cut-off energy [TeV].
+
+    beta : float (optional)
+        Exponent of exponential energy cutoff.
+
     B : float (optional)
-        Isotropic magnetic field strength in Gauss. Default: equipartition with
-        CMB (3.4e-6 G)
+        Isotropic magnetic field strength in microgauss. Default: equipartition with
+        CMB (3.4 uG)
 
-    remit : float (optional)
-        Radius of the emitter in cm. Only used for synchrotron self-absorption
-        calculation. Default: 1e14 cm
+    seedspec: iterable of strings or floats (optional)
+        A list of seed spectra to use for IC calculation. Is string is one of
+        CMB, NIR, FIR, precomputed tables will be used. Any floats indicate the
+        temperature for a blackbody photon distribution and full computation
+        will be performed. Default: ['CMB',]
 
-    tad : float or array_like (ngam,) (optional)
-        Adiabatic loss timescale in seconds. Can be either a single value or an
-        array of length ``ngam``, to indicate adiabatic loss timescales
-        independent or dependent on electron energy, respectively. Default: 1e10 s
+    ssc : bool (optional)
+        Whether to compute synchrotron self compton (IC on synchrotron generated
+        photons). Default: False
 
-    seedspec: iterable (optional)
-        A list of seed spectra to use for IC calculation. Currently supported:
-        CMB, NIR, FIR. Default: ['CMB',]
+
+    Computation parameters (not present in class signature)
+    -------------------------------------------------------
 
     bb : bool (optional)
         Should IC seed spectra be computed as a blackbody? If false,
@@ -69,10 +107,6 @@ class ElectronOZM(object):
     nbb : int (optional)
         Number of spectral points to be computed for seed spectra blackbody.
         Default: 10
-
-    ssc : bool (optional)
-        Whether to compute synchrotron self compton (IC on synchrotron generated
-        photons). Default: False
 
     gmin : float (optional)
         Minimum electron energy in units of mc2. Default: 1.0
@@ -83,27 +117,10 @@ class ElectronOZM(object):
     ngamd : int (optional)
         Number of electron sprectrum points per energy decade. Default: 400
 
-    inj_norm : float (optional)
-        Normalization of injection spectrum at electron energy ``inj_norm_gam``.
-
-    inj_norm_gam : float (optional)
-        Electron energy for injection spectrum normalization. Default: 2e5 (~100GeV)
-
-    gammainj : float (optional)
-        Spectral index of injection spectrum. Default: 2.0
-
     glocut : float (optional)
         Low energy cutoff of injection spectrum in units of mec2. Electron can
         evolve down to ``gmin``, but will not be injected below ``glocut``.
         Default: 20 (1e7 eV)
-
-    ghicut : float (optional)
-        Energy of high-energy exponential cutoff in units of mec2. Default: 4e7
-        (2e13 eV)
-
-    cutoffidx : float (optional)
-        Exponent of exponential cutoff argument. An infinite ``cutoffidx`` can
-        be used to indicate a sharp cutoff. Default: 1.0
 
     evolve_nelec : bool (optional)
         Whether to evolve electron spectrum until steady state. Se
@@ -111,29 +128,8 @@ class ElectronOZM(object):
         320, for a detailed explanation of steady-state electron spectrum
         computation.
 
-    nened : int (optional)
-        Number of emitted spectrum points to be computed per decade of photon
-        energy used by ``self.generate_outspecene()``. The output spectrum
-        energies can alternatively be defined by modifying the class property
-        outspecene with an array of photon energies in eV. Default: 10
-
-    emin : float (optional)
-        Minimum photon energy of emitted spectrum in eV used by
-        ``self.generate_outspecene()``. Default: 1.0 eV
-
-    emax : float (optional)
-        Maximum photon energy of emitted spectrum in eV used by
-        ``self.generate_outspecene()``. Default: 1e13 eV
-
-    Output
-    ------
-
-    self.outspecene : array [eV]
-        Photon energies of computed spectrum (can also be set before calculation
-        to an arbitrary array).
-
-    self.outspecerg : array [erg]
-        As above, converted to erg.
+    Output (as class attributes)
+    ----------------------------
 
     self.specsy : array [1/s/eV]
         Differential synchrotron spectrum: emitted synchrotron photons per unit
@@ -154,28 +150,19 @@ class ElectronOZM(object):
 
     """
 
-    def __init__(self,nolog=0,debug=0,
-        #### Default parameter values #####
-        # emitter physical properties
-        B     = np.sqrt(8*np.pi*4.1817e-13), #equipartition with CMB energy density (G)
-        remit = 1e14,
-        tad   = 1e30,
+    comp_defaults={
         # Seed spectrum properties
-        seedspec = ['CMB',],
         bb       = False,
         nbb      = 10,
-        ssc      = False,
+        remit = 1e14,
+        tad   = 1e30,
         # electron spectrum matrix (lorentz factors)
         gmin  = 1e0,
         gmax  = 3e9,
         ngamd = 400, # electron spectrum points per decade
         # Injection spectrum
-        inj_norm     = 1e35,
-        inj_norm_gam = 2e5, # ~100 GeV
         gammainj     = 2,
         glocut       = 1e7/mec2eV,  # sharp low energy cutoff at gamma*mec2 = 10MeV
-        ghicut       = 2e13/mec2eV, # exponential high energy cutoff at gamma*mec2 = 20TeV
-        cutoffidx    = 1.,          # Exponent of exponential cutoff
         # evolve spectrum to steady-state?
         evolve_nelec = True,
         # Emitted spectrum matrix (eV)
@@ -183,7 +170,24 @@ class ElectronOZM(object):
         emin  = 1.,
         emax  = 1.e14,
         #########
-        **kwargs):
+        }
+
+
+    def __init__(self,
+        outspecene, # emitted photon energy array
+        norm,       # normalization
+        #### Default parameter values #####
+        # injection
+        norm_momentum = 1e35,
+        index         = 2.0,
+        cutoff        = 30,
+        beta          = 1.0,
+        # emitter physical properties
+        B        = np.sqrt(8*np.pi*4.1817e-13), #equipartition with CMB energy density (G)
+        seedspec = ['CMB',],
+        ssc      = False,
+        #
+        nolog=0,debug=0,**kwargs):
 
         if nolog:
             self.logger=self
@@ -191,6 +195,8 @@ class ElectronOZM(object):
             self.logger=logging.getLogger('ElectronOZM')
             if debug:
                 self.logger.setLevel(logging.DEBUG)
+
+        self.__dict__.update(**comp_defaults)
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
