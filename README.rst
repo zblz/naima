@@ -37,10 +37,11 @@ file `velax_demo.py`.
 ToDo
 ----
 
-- ProtonOZM for pp interactions
 - Write standard labels for parameters as a property of
   ``emcee.EnsembleSampler`` so that they can be accessed by other functions
   without knowing their order.
 - For X-ray (sync) and GeV/TeV (IC) data, estimate initial magnetic field from
   Fx/Fvhe ratio.
+- Convenience function to compute decorrelation energy of data and the
+  corresponding electron and/or proton energy to be used as `norm_energy`.
 
