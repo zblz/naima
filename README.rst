@@ -32,7 +32,7 @@ Usage
 The package consists of several convenience functions to which you must provide
 a model function, a probability function for the parameter priors, and the
 spectral data to be fit enclosed in a dictionary. An example is shown in the
-file `velax_demo.py`.
+file ``velax_demo.py``.
 
 ToDo
 ----
@@ -43,5 +43,5 @@ ToDo
 - For X-ray (sync) and GeV/TeV (IC) data, estimate initial magnetic field from
   Fx/Fvhe ratio.
 - Convenience function to compute decorrelation energy of data and the
-  corresponding electron and/or proton energy to be used as `norm_energy`.
+  corresponding electron and/or proton energy to be used as ``norm_energy``.
 
