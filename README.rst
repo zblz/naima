@@ -46,5 +46,5 @@ ToDo
   corresponding electron and/or proton energy to be used as ``norm_energy``.
 - Write method to derive lower/upper limits to non-present features, such as
   energy cutoffs. See `arXiv:gr-qc/0504042
-  <http://arxiv.org/abs/gr-qc/0504042v1>` for an example.
+  <http://arxiv.org/abs/gr-qc/0504042v1>`_ for an example.
 
