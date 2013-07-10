@@ -230,7 +230,7 @@ def _plot_chain_func(chain,p=None,last_step=False):
     #for m,ls,lab in zip([np.mean(dist),np.median(dist)],('--','-.'),('mean: {0:.4g}','median: {0:.4g}')):
         #ax2.axvline(m,ls=ls,c='k',alpha=0.5,lw=2,label=lab.format(m))
     ns=len(dist)
-    quant=[0.01,0.16,0.5,0.84,0.99]
+    quant=[0.01,0.1,0.16,0.5,0.84,0.9,0.99]
     sdist=np.sort(dist)
     xquant=[sdist[int(q*ns)] for q in quant]
     ax2.axvline(xquant[quant.index(0.5)],ls='--',c='k',alpha=0.5,lw=2,label='50% quantile')
@@ -272,7 +272,8 @@ def _plot_chain_func(chain,p=None,last_step=False):
     quantiles=dict(zip(quant,xquant))
 
     f.text(0.1,0.45,'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
-            'Autocorrelation times (steps): '+('{:.1f} '*npars).format(*acort) + '\n' +\
+            'Average autocorrelation time: {:.1f}'.format(np.average(acort)) + '\n' +\
+            'Gelman-Rubin statistic: {:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
             'Distribution properties for the {clen}:\n \
        - mode: {mode:.3g} \n \
        - mean: {mean:.3g} \n \
@@ -295,6 +296,23 @@ def _plot_chain_func(chain,p=None,last_step=False):
     #f.show()
 
     return f
+
+def gelman_rubin_statistic(chains):
+    """
+    Compute Gelman-Rubint statistic for convergence testing of Markov chains.
+    Gelman & Rubin (1992), Statistical Science 7, pp. 457-511
+    """
+    eta=float(chains.shape[1])
+    m=float(chains.shape[0])
+    avgchain=np.average(chains,axis=1)
+
+    W=np.sum(np.sum((chains.T-avgchain)**2,axis=1))/m/(eta-1)
+    B=eta/(m-1)*np.sum((avgchain-np.mean(chains)))
+    var=(1-1/eta)*W+1/eta*B
+
+    return np.sqrt(var/W)
+
+
 
 def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
