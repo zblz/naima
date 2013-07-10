@@ -264,41 +264,39 @@ def _plot_chain_func(chain,p,label,last_step=False):
     else:
         median=np.median(dist)
 
-    acort=[]
-    npars=chain.shape[-1]
     try:
         import acor
-        for npar in range(npars):
-            acort.append(acor.acor(chain[:,:,npar])[0])
+        acort=acor.acor(traces)[0]
     except:
-        acort=[np.nan,]*npars
+        acort=np.nan
 
     if last_step:
-        clen='last step ensemble'
+        clen='last ensemble'
     else:
         clen='whole chain'
 
     quantiles=dict(zip(quant,xquant))
 
-    f.text(0.05,0.5,'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
-            'Average autocorrelation time: {:.1f}'.format(np.average(acort)) + '\n' +\
+    chain_props='Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
+            'Autocorrelation time: {:.1f}'.format(acort) + '\n' +\
             'Gelman-Rubin statistic: {:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
             'Distribution properties for the {clen}:\n \
-       - mode: {mode:.3g} \n \
-       - mean: {mean:.3g} \n \
-       - median: {median:.3g} \n \
-       - std: {std:.3g} \n \
-       - 68% CI: ({quant16:.3g},{quant84:.3g})\n \
-       - 99% CI: ({quant01:.3g},{quant99:.3g})\n \
-       - mean +/- std CI: ({meanstd[0]:.3g},{meanstd[1]:.3g})'.format(
+    - mode: {mode:.3g} \n \
+    - mean: {mean:.3g} \n \
+    - median: {median:.3g} \n \
+    - std: {std:.3g} \n \
+    - 68% CI: ({quant16:.3g},{quant84:.3g})\n \
+    - 99% CI: ({quant01:.3g},{quant99:.3g})\n \
+    - mean +/- std CI: ({meanstd[0]:.3g},{meanstd[1]:.3g})\n'.format(
                 mean=mean,median=median,std=std,
                 quant01=quantiles[0.01],
                 quant16=quantiles[0.16],
                 quant84=quantiles[0.84],
                 quant99=quantiles[0.99],
-                meanstd=(mean-std,mean+std),clen=clen,mode=mode,),
-            ha='left',va='top')
+                meanstd=(mean-std,mean+std),clen=clen,mode=mode,)
 
+    print '\n {:-^50}\n'.format(label) + chain_props
+    f.text(0.05,0.5,chain_props,ha='left',va='top')
 
     f.tight_layout()
 
@@ -368,8 +366,8 @@ def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 # TODO: logger
     print 'Maximum log probability: {0:.3g}'.format(sampler.lnprobability[index])
     print 'Maximum Likelihood results:'
-    for p,v in zip(MAPp,MAPvar):
-        print '{0:.2e} +/- {1:.2e}'.format(p,v)
+    for p,v,label in zip(MAPp,MAPvar,sampler.labels):
+        print '{2:>10}: {0:>8.3g} +/- {1:<8.3g}'.format(p,v,label)
 
     return modelx,CI,model_MAP
 

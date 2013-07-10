@@ -184,6 +184,7 @@ class ElectronOZM(object):
             self.logger=logging.getLogger('ElectronOZM')
             if debug:
                 self.logger.setLevel(logging.DEBUG)
+        del debug
 
         computation_defaults={
             # Seed spectrum properties
