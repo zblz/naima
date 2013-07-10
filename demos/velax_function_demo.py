@@ -2,7 +2,6 @@
 
 import numpy as np
 import emcee_specfit as esf
-from scipy import stats
 
 import astropy.units as u
 
@@ -21,11 +20,7 @@ dflux=np.array(zip(merr,perr))
 ul=(dflux[:,0]==0.)
 cl=0.99
 
-# data is a dict with the fields:
-# ene dene flux dflux ul cl
-data={}
-for val in ['ene', 'dene', 'flux', 'dflux', 'ul', 'cl']:
-    data[val]=eval(val)
+data=esf.build_data_dict(ene,dene,flux,dflux,ul,cl)
 
 ## Model definition
 
@@ -34,14 +29,15 @@ def cutoffexp(pars,data):
     Powerlaw with exponential cutoff
 
     Parameters:
-        - 0: PL index
-        - 1: PL normalization
+        - 0: PL normalization
+        - 1: PL index
         - 2: cutoff energy
         - 3: cutoff exponent (beta)
     """
 
     x=data['ene']
-    x0=stats.gmean(x)
+    # take logarithmic mean of first and last data points as normalization energy
+    x0=np.sqrt(x[0]*x[-1])
 
     N     = pars[0]
     gamma = pars[1]
@@ -68,12 +64,13 @@ def lnprior(pars):
 
 ## Set initial parameters
 
-p0=np.array((1e-11,2.0,10.0,))
+p0=np.array((1e-9,1.4,14.0,))
+labels=['norm','index','cutoff','beta']
 
 ## Run sampler
 
-sampler,pos = esf.run_sampler(p0=p0,data=data,model=cutoffexp,prior=lnprior,
-        nwalkers=500,nburn=100,nrun=100,threads=1)
+sampler,pos = esf.run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
+        prior=lnprior, nwalkers=1000, nburn=100, nrun=100, threads=8)
 
 ## Diagnostic plots
 

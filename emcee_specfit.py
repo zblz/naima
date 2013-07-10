@@ -18,7 +18,7 @@ mec2=(const.m_e*const.c**2).to('erg').value
 
 ## Placeholder model: Powerlaw with exponential
 
-def cutoffexp(pars,data):
+def _cutoffexp(pars,data):
     """
     Powerlaw with exponential cutoff
 
@@ -42,11 +42,6 @@ def cutoffexp(pars,data):
     return model
 
 p00=np.array((1e-11,2,10,1))
-
-## Placeholder prior function: Flat
-
-def flatprior(pars):
-    return 0.0
 
 ## Likelihood functions
 
@@ -118,33 +113,45 @@ def _run_mcmc(sampler,pos,nrun):
     for i, out in enumerate(sampler.sample(pos, iterations=nrun)):
         progress=int(100 * i / nrun)
         if progress%5==0:
-            print("Progress of the run: {0:.0f} percent".format(int(progress)))
+            print("Progress of the run: {:.0f} percent".format(int(progress)))
     return sampler,out[0]
 
 
-def get_sampler(nwalkers=600,nburn=30,guess=True,p0=p00,data=None,model=cutoffexp,prior=flatprior,
-        threads=8):
+def get_sampler(nwalkers=500, nburn=30, guess=True, p0=p00, data=None,
+        model=_cutoffexp, prior=lambda x: 0.0, labels=None, threads=8):
+    #TODO docstring
 
     if data==None:
         print 'Need to provide data!'
         raise TypeError
+
+    # Add parameter labels if not provided or too short
+    if labels == None:
+        # First is normalization
+        labels = ['norm',]+['par{}'.format(i) for i in range(1,len(p0))]
+    elif len(labels)<len(p0):
+        labels+=['par{}'.format(i) for i in range(len(labels),len(p0))]
 
     if guess:
         # guess normalization parameter from p0
         lp,blob=lnprob(p0,data,model,prior)
         ene=blob[0][0]
         spec=blob[0][1]
-        p0[0]*=np.trapz(data['flux'],data['ene'])/np.trapz(spec,ene)
+        p0[labels.index('norm')]*=np.trapz(data['flux']*data['ene'],data['ene'])/np.trapz(spec*ene,ene)
 
     ndim=len(p0)
+
     sampler=emcee.EnsembleSampler(nwalkers,ndim,lnprob,args=[data,model,prior],threads=threads)
-    sampler.data=data
+
+    # Add data and parameters properties to sampler
+    sampler.data = data
+    sampler.labels = labels
 
     # Initialize walkers in a ball of relative size 10% in all dimensions
     p0var=np.array([ pp/10. for pp in p0])
     p0=emcee.utils.sample_ball(p0,p0var,nwalkers)
 
-    print 'Burning in the walkers with {0} steps...'.format(nburn)
+    print 'Burning in the walkers with {} steps...'.format(nburn)
     #burnin = sampler.run_mcmc(p0,nburn)
     #pos=burnin[0]
     sampler,pos=_run_mcmc(sampler,p0,nburn)
@@ -153,10 +160,12 @@ def get_sampler(nwalkers=600,nburn=30,guess=True,p0=p00,data=None,model=cutoffex
 
 
 def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
+    #TODO docstring
+
     if sampler==None or pos==None:
         sampler,pos=get_sampler(**kwargs)
 
-    print 'Walker burn in finished, running {0} steps...'.format(nrun)
+    print 'Walker burn in finished, running {} steps...'.format(nrun)
     sampler.reset()
     sampler,pos=_run_mcmc(sampler,pos,nrun)
 
@@ -165,19 +174,19 @@ def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
 
 ## Plot funcs
 
-def plot_chain(chain,p=None,**kwargs):
+def plot_chain(sampler,p=None,**kwargs):
     if p==None:
-        npars=chain.shape[-1]
-        for pp in range(npars):
-            _plot_chain_func(chain,pp,**kwargs)
+        npars=sampler.chain.shape[-1]
+        for pp,label in zip(range(npars),sampler.labels):
+            _plot_chain_func(sampler.chain,pp,label,**kwargs)
         fig = None
     else:
-        fig = _plot_chain_func(chain,p,**kwargs)
+        fig = _plot_chain_func(sampler.chain,p,sampler.labels[p],**kwargs)
 
     return fig
 
 
-def _plot_chain_func(chain,p=None,last_step=False):
+def _plot_chain_func(chain,p,label,last_step=False):
     if len(chain.shape)>2:
         traces=chain[:,:,p]
         if last_step==True:
@@ -213,14 +222,14 @@ def _plot_chain_func(chain,p=None,last_step=False):
         #ax1.plot(traces[i,:],c=colors[i])
         ax1.plot(t,c=c,lw=1)
     ax1.set_xlabel('step')
-    ax1.set_ylabel('Parameter {0}'.format(p))
+    ax1.set_ylabel(label)
     ax1.set_title('Walker traces')
     if logplot:
         ax1.set_yscale('log')
 
     #nbins=25 if last_step else 100
     nbins=min(max(25,int(len(dist)/100.)),100)
-    xlabel='Parameter {0}'.format(p)
+    xlabel=label
     if logplot:
         dist=np.log10(dist)
         xlabel='log10('+xlabel+')'
@@ -240,7 +249,7 @@ def _plot_chain_func(chain,p=None,last_step=False):
     ax2.set_title('posterior distribution')
     ax2.set_ylim(top=n.max()*1.05)
 
-    # Plot distribution parameters on lower-left
+    # Print distribution parameters on lower-left
 
     mean,median,std=np.mean(dist),np.median(dist),np.std(dist)
     xmode=np.linspace(mean-np.sqrt(3)*std,mean+np.sqrt(3)*std,100)
@@ -271,7 +280,7 @@ def _plot_chain_func(chain,p=None,last_step=False):
 
     quantiles=dict(zip(quant,xquant))
 
-    f.text(0.1,0.45,'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
+    f.text(0.05,0.5,'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
             'Average autocorrelation time: {:.1f}'.format(np.average(acort)) + '\n' +\
             'Gelman-Rubin statistic: {:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
             'Distribution properties for the {clen}:\n \
@@ -302,6 +311,8 @@ def gelman_rubin_statistic(chains):
     Compute Gelman-Rubint statistic for convergence testing of Markov chains.
     Gelman & Rubin (1992), Statistical Science 7, pp. 457-511
     """
+    # normalize it so it doesn't do strange things with very low values
+    chains=chains.copy()/np.average(chains)
     eta=float(chains.shape[1])
     m=float(chains.shape[0])
     avgchain=np.average(chains,axis=1)
@@ -518,7 +529,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None):
 
     try:
         ## Corner plot
-        f = corner(sampler.flatchain,labels=['norm','par1','par2','par3'])
+        f = corner(sampler.flatchain,labels=sampler.labels)
         f.savefig('{0}_corner.png'.format(outname))
     except NameError:
         print 'triangle.py not installed, corner plot will not be available'
@@ -526,7 +537,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None):
     ## Chains
 
     for par in range(sampler.chain.shape[-1]):
-        f = plot_chain(sampler.chain,par)
+        f = plot_chain(sampler,par)
         f.savefig('{0}_chain_par{1}.png'.format(outname,par))
 
     ## Fit
