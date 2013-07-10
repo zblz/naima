@@ -47,4 +47,7 @@ ToDo
 - Write method to derive lower/upper limits to non-present features, such as
   energy cutoffs. See `arXiv:gr-qc/0504042
   <http://arxiv.org/abs/gr-qc/0504042v1>`_ for an example.
+- Add Gelman-Rubin statistic as test for convergence. See `last page of talk by
+  Phil Gregory
+  <http://www.astro.ufl.edu/~eford/astrostats/Florida2Mar2010.pdf>`_.
 
