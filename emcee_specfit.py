@@ -100,8 +100,8 @@ def lnprob(pars,data,modelfunc,priorfunc):
     total_lnprob  = lnprob_model + lnprob_priors
 
     # Print parameters and total_lnprob
-    outstr = '{:6.2g} '*len(pars) + '{:5g}'
-    outargs = list(pars) + [total_lnprob,]
+    outstr = '{:8.2g} '*len(pars) + '{:5.2f} '*3
+    outargs = list(pars) + [lnprob_model,lnprob_priors,total_lnprob]
 # TODO: convert following print to logger
     #print outstr.format(*outargs)
 
@@ -137,7 +137,7 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=p00, data=None,
         lp,blob=lnprob(p0,data,model,prior)
         ene=blob[0][0]
         spec=blob[0][1]
-        p0[labels.index('norm')]*=np.trapz(data['flux']*data['ene'],data['ene'])/np.trapz(spec*ene,ene)
+        p0[labels.index('norm')]*=np.trapz(data['flux']*data['ene'],data['ene'])/np.trapz(spec*data['ene'],data['ene'])
 
     ndim=len(p0)
 
