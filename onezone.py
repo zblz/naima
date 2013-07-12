@@ -164,7 +164,7 @@ class ElectronOZM(object):
         norm,       # normalization
         #### Default parameter values #####
         # injection
-        norm_energy   = 1e9,
+        norm_energy   = 20e12, # corresponding to a scattered energy of 1 TeV
         index         = 2.0,
         cutoff        = 30e12,
         beta          = 1.0,
@@ -192,9 +192,9 @@ class ElectronOZM(object):
             'nbb'    : 10,
             'tad'    : 1e30,
             # electron spectrum matrix (lorentz factors)
-            'gmin'   : 1e0,
-            'gmax'   : 3e9,
-            'ngamd'  : 400, # electron spectrum points per decade
+            'gmin'   : 1e6,
+            'gmax'   : 3e10,
+            'ngamd'  : 300, # electron spectrum points per decade
             # Injection spectrum
             'glocut' : 1e7/mec2eV,  # sharp low energy cutoff at gamma*mec2 = 10MeV
             }

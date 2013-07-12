@@ -100,7 +100,7 @@ def lnprob(pars,data,modelfunc,priorfunc):
     total_lnprob  = lnprob_model + lnprob_priors
 
     # Print parameters and total_lnprob
-    outstr = '{:8.2g} '*len(pars) + '{:5.2f} '*3
+    outstr = '{:8.2g} '*len(pars) + '{:8.3g} '*3
     outargs = list(pars) + [lnprob_model,lnprob_priors,total_lnprob]
 # TODO: convert following print to logger
     #print outstr.format(*outargs)
@@ -113,7 +113,15 @@ def _run_mcmc(sampler,pos,nrun):
     for i, out in enumerate(sampler.sample(pos, iterations=nrun)):
         progress=int(100 * i / nrun)
         if progress%5==0:
-            print("Progress of the run: {:.0f} percent".format(int(progress)))
+            print("Progress of the run: {:.0f} percent ({} of {} steps)".format(int(progress),i,nrun))
+            npars=out[0].shape[-1]
+            paravg,parstd=[],[]
+            for npar in range(npars):
+                paravg.append(np.average(out[0][:,npar]))
+                parstd.append(np.std(out[0][:,npar]))
+            print("  Last ensemble parameters: "+("{:-^10} "*npars).format(*sampler.labels))
+            print("  Last ensemble average   : "+("{:^10.3g} "*npars).format(*paravg))
+            print("  Last ensemble std       : "+("{:^10.3g} "*npars).format(*parstd))
     return sampler,out[0]
 
 
@@ -137,7 +145,7 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=p00, data=None,
         lp,blob=lnprob(p0,data,model,prior)
         ene=blob[0][0]
         spec=blob[0][1]
-        p0[labels.index('norm')]*=np.trapz(data['flux']*data['ene'],data['ene'])/np.trapz(spec*data['ene'],data['ene'])
+        p0[labels.index('norm')]*=np.trapz(data['flux'],data['ene'])/np.trapz(spec,data['ene'])
 
     ndim=len(p0)
 
@@ -419,8 +427,12 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
         if np.sum(ul)>0:
             plot_ulims(ax1,data['ene'][ul],data['flux'][ul],data['dene'][ul])
 
-        modelfunc=interp1d(modelx,model_MAP)
-        difference=data['flux'][notul]-modelfunc(data['ene'][notul])
+        if len(model_MAP)!=len(data['ene']):
+            modelfunc=interp1d(modelx,model_MAP)
+            difference=data['flux'][notul]-modelfunc(data['ene'][notul])
+        else:
+            difference=data['flux'][notul]-model_MAP[notul]
+
         dflux=np.average(data['dflux'][notul],axis=1)
         ax2.errorbar(data['ene'][notul],difference/dflux,yerr=dflux/dflux, xerr=data['dene'][notul].T,
                 zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
@@ -534,9 +546,9 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None):
 
     ## Chains
 
-    for par in range(sampler.chain.shape[-1]):
+    for par,label in zip(range(sampler.chain.shape[-1]),sampler.labels):
         f = plot_chain(sampler,par)
-        f.savefig('{0}_chain_par{1}.png'.format(outname,par))
+        f.savefig('{0}_chain_{1}.png'.format(outname,label))
 
     ## Fit
 
