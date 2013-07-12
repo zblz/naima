@@ -1,10 +1,10 @@
 Non-thermal spectral fitting with emcee
 =======================================
 
-``emcee_specfit`` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra
-to constrain the properties of their parent relativistic particle distributions. 
+``gammafit`` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra to
+constrain the properties of their parent relativistic particle distributions. 
 
-The workhorse of ``emcee_specfit`` is the powerful `emcee
+The workhorse of ``gammafit`` is the powerful `emcee
 <http://dan.iel.fm/emcee>`_ affine-invariant ensemble sampler for Markov chain
 Monte Carlo.
 
@@ -23,7 +23,7 @@ or, to pull also the needed dependencies, use pip as
 ::
 
     python setup.py sdist
-    pip install dist/emcee_specfit-0.1.tar.gz
+    pip install dist/gammafit-0.1.tar.gz
 
 
 Usage

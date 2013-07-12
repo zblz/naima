@@ -3,12 +3,12 @@
 
 from setuptools import setup
 
-setup(name='emcee_specfit',
+setup(name='gammafit',
       version='0.1',
-      description='MCMC spectral fitting with emcee',
+      description='Derivation of non-thermal particle distributions through MCMC spectral fitting',
       author='Víctor Zabalza',
       author_email='vzabalza@gmail.com',
-      py_modules=["emcee_specfit"],
+      py_modules=["gammafit"],
       long_description=open("README.rst").read(),
       requires = [
           'emcee (>=1.2.0)',
