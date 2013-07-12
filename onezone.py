@@ -632,11 +632,6 @@ class ProtonOZM(object):
             if debug:
                 self.logger.setLevel(logging.DEBUG)
 
-        # convert all to TeV
-        outspecene*=u.eV.to('TeV')
-        norm_energy*=u.eV.to('TeV')
-        cutoff*=u.eV.to('TeV')
-
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
@@ -653,8 +648,11 @@ class ProtonOZM(object):
         """
         Particle distribution function [1/cm3/TeV/norm]
         """
-        return ((Ep/self.norm_energy)**-self.index*
-                np.exp(-(Ep/self.cutoff)**self.beta))
+        norm_energy=self.norm_energy*u.eV.to('TeV')
+        cutoff=self.cutoff*u.eV.to('TeV')
+
+        return ((Ep/norm_energy)**-self.index*
+                np.exp(-(Ep/cutoff)**self.beta))
 
     def Fgamma(self,x,Ep):
         """
@@ -727,6 +725,8 @@ class ProtonOZM(object):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
         """
+        # convert outspecene to TeV
+        outspecene=self.outspecene*u.eV.to('TeV')
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
@@ -734,16 +734,16 @@ class ProtonOZM(object):
         self.logger.info('E_p(E>1.22 GeV)*4πd²/nH = {0:.2e} erg'.format(self.norm*Ep))
 
 
-        if np.any(self.outspecene<0.1):
+        if np.any(outspecene<0.1):
             # compute value of nhat so that delta functional matches accurate calculation at 0.1TeV
             self.nhat=1. # initial value, works for index~2.1
             full=self._calc_specpp_hiE(0.1)
             delta=self._calc_specpp_loE(0.1)
             self.nhat*=full/delta
 
-        self.specpp=np.zeros_like(self.outspecene)
+        self.specpp=np.zeros_like(outspecene)
 
-        for i,Egamma in enumerate(self.outspecene):
+        for i,Egamma in enumerate(outspecene):
             if Egamma>=0.1:
                 self.specpp[i]=self._calc_specpp_hiE(Egamma)
             else:
@@ -751,11 +751,11 @@ class ProtonOZM(object):
 
         self.specpp*=self.norm
 
-        self.sedpp=self.specpp*self.outspecene**2*u.TeV.to('erg') # erg/s
+        self.sedpp=self.specpp*outspecene**2*u.TeV.to('erg') # erg/s
         self.specpptev=self.specpp.copy()
         self.specpp/=u.TeV.to('eV')
 
-        totpplum=np.trapz(self.specpptev*self.outspecene,self.outspecene*u.TeV.to('erg'))
+        totpplum=np.trapz(self.specpptev*outspecene,outspecene*u.TeV.to('erg'))
         self.logger.info('L_pp*4πd²/nH  = {0:.2e} erg/s'.format(totpplum))
 
     def calc_outspec(self):

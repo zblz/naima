@@ -5,6 +5,7 @@ from scipy import stats
 from scipy.interpolate import interp1d
 
 import emcee
+
 try:
     from triangle import corner
 except ImportError:
@@ -142,9 +143,11 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=p00, data=None,
 
     if guess:
         # guess normalization parameter from p0
-        lp,blob=lnprob(p0,data,model,prior)
-        ene=blob[0][0]
-        spec=blob[0][1]
+        modelout=model(p0,data)
+        if type(modelout)==tuple:
+            spec=modelout[0]
+        else:
+            spec=modelout
         p0[labels.index('norm')]*=np.trapz(data['flux'],data['ene'])/np.trapz(spec,data['ene'])
 
     ndim=len(p0)
