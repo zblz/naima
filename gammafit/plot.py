@@ -57,9 +57,9 @@ def _plot_chain_func(chain,p,label,last_step=False):
 
     colors=np.where(np.arange(nwalkers)/float(nwalkers)>0.95,'#550000','0.5')
 
+    ax1.set_rasterization_zorder(1)
     for t,c in zip(traces,colors): #range(nwalkers):
-        #ax1.plot(traces[i,:],c=colors[i])
-        ax1.plot(t,c=c,lw=1)
+        ax1.plot(t,c=c,lw=1,alpha=0.9,zorder=0)
     ax1.set_xlabel('step')
     ax1.set_ylabel(label)
     ax1.set_title('Walker traces')
@@ -137,7 +137,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
     print '\n {:-^50}\n'.format(label) + chain_props
     f.text(0.05,0.5,chain_props,ha='left',va='top')
 
-    f.tight_layout()
+    #f.tight_layout()
 
     #f.show()
 

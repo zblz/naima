@@ -49,7 +49,7 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
 
     return data
 
-def generate_diagnostic_plots(outname,sampler,modelidxs=None):
+def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False):
     """
     Generate diagnostic plots:
 
@@ -74,22 +74,35 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None):
     modelidxs: iterable (optional)
         Model numbers to be plotted. Default: All returned in sampler.blobs
 
+    pdf: bool (optional)
+        Whether to save plots to multipage pdf.
+
     """
 
-    print 'Generating diagnostic plots'
-
-    try:
-        ## Corner plot
-        f = corner(sampler.flatchain,labels=sampler.labels)
-        f.savefig('{0}_corner.png'.format(outname))
-    except NameError:
-        print 'triangle.py not installed, corner plot will not be available'
+    if pdf:
+        print 'Generating diagnostic plots in file {}_plots.pdf'.format(outname)
+        from matplotlib.backends.backend_pdf import PdfPages
+        outpdf=PdfPages('{}_plots.pdf'.format(outname))
 
     ## Chains
 
     for par,label in zip(range(sampler.chain.shape[-1]),sampler.labels):
         f = plot_chain(sampler,par)
-        f.savefig('{0}_chain_{1}.png'.format(outname,label))
+        if pdf:
+            f.savefig(outpdf,format='pdf')
+        else:
+            f.savefig('{0}_chain_{1}.png'.format(outname,label))
+
+    ## Corner plot
+
+    try:
+        f = corner(sampler.flatchain,labels=sampler.labels)
+        if pdf:
+            f.savefig(outpdf,format='pdf')
+        else:
+            f.savefig('{0}_corner.png'.format(outname))
+    except NameError:
+        print 'triangle.py not installed, corner plot will not be available'
 
     ## Fit
 
@@ -102,5 +115,15 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None):
             labels=('Energy','Flux')
         else:
             labels=( None, None)
-        f = plot_fit(sampler,xlabel=labels[0],ylabel=labels[1],modelidx=modelidx,last_step=False)
-        f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
+        try:
+            f = plot_fit(sampler,xlabel=labels[0],ylabel=labels[1],modelidx=modelidx,last_step=False)
+            if pdf:
+                f.savefig(outpdf,format='pdf')
+            else:
+                f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
+        except:
+            # Maybe one of the returned models does not conform to the needed format
+            pass
+
+    if pdf:
+        outpdf.close()

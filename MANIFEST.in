@@ -1,6 +1,8 @@
 include README.rst
 
-recursive-include packagename *.pyx *.c
+recursive-include gammafit *.pyx *.c 
+recursive-include gammafit/examples *_demo.py velax_cocoon.spec
+
 
 recursive-include docs *
 recursive-include licenses *

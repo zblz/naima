@@ -19,10 +19,7 @@ data=gammafit.build_data_dict(ene,dene,flux,dflux,ul,cl)
 
 ## Model definition
 
-import onezone
-
-
-for B in np.logspace(-7,-4,7):
+for B in np.logspace(-6.5,-4,6):
 
     def ElectronOZM(pars,data):
 
@@ -31,7 +28,7 @@ for B in np.logspace(-7,-4,7):
 
         outspecene=data['ene']*1e12
 
-        ozm=onezone.ElectronOZM(outspecene, norm, index=index, B=B,
+        ozm=gammafit.ElectronOZM(outspecene, norm, index=index, B=B,
                 norm_energy=5e13,
                 cutoff=1e50, nolog=True, evolve_nelec=True,
                 gmin=1e6,gmax=3e10)
@@ -41,8 +38,8 @@ for B in np.logspace(-7,-4,7):
 
         model=ozm.specictev # 1/s/cm2/TeV
 
-        nelec=ozm.nelec[:-1]*onezone.mec2*ozm.gam[:-1]*np.diff(ozm.gam)
-        elec_energy=ozm.gam[:-1]*onezone.mec2TeV
+        nelec=ozm.nelec[:-1]*gammafit.mec2*ozm.gam[:-1]*np.diff(ozm.gam)
+        elec_energy=ozm.gam[:-1]*gammafit.mec2TeV
 
         del ozm
 

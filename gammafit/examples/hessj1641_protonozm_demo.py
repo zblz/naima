@@ -20,8 +20,6 @@ data=gammafit.build_data_dict(ene,dene,flux,dflux,ul,cl)
 
 ## Model definition
 
-import onezone
-
 def ProtonOZM(pars,data):
 
     # Add two spectral points at edges of spectra
@@ -42,7 +40,7 @@ def ProtonOZM(pars,data):
     norm=pars[0]
     index=pars[1]
 
-    ozm=onezone.ProtonOZM(outspecene*1e12,
+    ozm=gammafit.ProtonOZM(outspecene*1e12,
             norm=norm,
             norm_energy=norm_ene*1e12,
             index=index,
