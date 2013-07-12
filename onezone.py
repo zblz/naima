@@ -5,7 +5,7 @@ from __future__ import division
 import numpy as np
 np.seterr(invalid= 'ignore')
 from scipy.special import cbrt
-from scipy.integrate import quad
+from scipy.integrate import fixed_quad,quad
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -648,8 +648,8 @@ class ProtonOZM(object):
         """
         Particle distribution function [1/cm3/TeV/norm]
         """
-        norm_energy=self.norm_energy*u.eV.to('TeV')
-        cutoff=self.cutoff*u.eV.to('TeV')
+        norm_energy=self.norm_energy/1e12
+        cutoff=self.cutoff/1e12
 
         return ((Ep/norm_energy)**-self.index*
                 np.exp(-(Ep/cutoff)**self.beta))
@@ -663,14 +663,14 @@ class ProtonOZM(object):
         x : Egamma/Eprot
         Ep : Eprot [TeV]
         """
-        L=np.log(Ep)
-        B=1.30+0.14*L+0.011*L**2 # Eq59
-        beta=(1.79+0.11*L+0.008*L**2)**-1 # Eq60
-        k=(0.801+0.049*L+0.014*L**2)**-1 # Eq61
-        xb=x**beta
+        L    = np.log(Ep)
+        B    = 1.30+0.14*L+0.011*L**2 # Eq59
+        beta = (1.79+0.11*L+0.008*L**2)**-1 # Eq60
+        k    = (0.801+0.049*L+0.014*L**2)**-1 # Eq61
+        xb   = x**beta
 
-        F1=B*(np.log(x)/x)*((1-xb)/(1+k*xb*(1-xb)))**4
-        F2=1./np.log(x)-(4*beta*xb)/(1-xb)-(4*k*beta*xb*(1-2*xb))/(1+k*xb*(1-xb))
+        F1 = B*(np.log(x)/x)*((1-xb)/(1+k*xb*(1-xb)))**4
+        F2 = 1./np.log(x)-(4*beta*xb)/(1-xb)-(4*k*beta*xb*(1-2*xb))/(1+k*xb*(1-xb))
 
         return F1*F2
 
@@ -680,10 +680,8 @@ class ProtonOZM(object):
         """
         L = np.log(Ep)
         Eth = 1.22e-3
-        if Ep<=Eth:
-            sigma = 0.0
-        else:
-            sigma = (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
+        sigma = (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
+        sigma *= heaviside(Ep-Eth) # only return values above threshold
         return sigma
 
     def photon_integrand(self,x,Egamma):
@@ -700,7 +698,12 @@ class ProtonOZM(object):
         """
         Spectrum computed as in Eq. 42 for Egamma >= 0.1 TeV
         """
-        return c*quad(self.photon_integrand,0.,1.,args=Egamma)[0]
+        # Fixed quad with n=40 is about 15 times faster and is always within
+        # 0.5% of the result of adaptive quad for Egamma>0.1
+        #result=c*quad(self.photon_integrand,0.,1.,args=Egamma)[0]
+        result=c*fixed_quad(self.photon_integrand,0.,1.,args=[Egamma,],n=40)[0]
+
+        return result
 
     def _calc_specpp_loE(self,Egamma):
         """
@@ -727,10 +730,11 @@ class ProtonOZM(object):
         """
         # convert outspecene to TeV
         outspecene=self.outspecene*u.eV.to('TeV')
+        cutoff=self.cutoff*u.eV.to('TeV')
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
-        Ep = quad(lambda x: x*self.Jp(x),Eth,1e3*self.cutoff)[0]*u.TeV.to('erg')
+        Ep = quad(lambda x: x*self.Jp(x),Eth,1e3*cutoff)[0]*u.TeV.to('erg')
         self.logger.info('E_p(E>1.22 GeV)*4πd²/nH = {0:.2e} erg'.format(self.norm*Ep))
 
 
