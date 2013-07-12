@@ -44,3 +44,4 @@ ToDo
 - Write method to derive lower/upper limits to non-present features, such as
   energy cutoffs. See `arXiv:gr-qc/0504042
   <http://arxiv.org/abs/gr-qc/0504042v1>`_ for an example.
+- Finish integration into astropy affiliated template

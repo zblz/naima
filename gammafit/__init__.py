@@ -125,3 +125,5 @@ if not _ASTROPY_SETUP_:
 
 from .gammafit import *
 from .onezone import *
+from .plot import *
+from .utils import *

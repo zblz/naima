@@ -36,7 +36,7 @@ LONG_DESCRIPTION = open("README.rst").read()
 AUTHOR = 'Victor Zabalza'
 AUTHOR_EMAIL = 'vzabalza@gmail.com'
 LICENSE = 'BSD'
-URL = 'http://astropy.org'
+URL = 'http://github.com/zblz/gammafit'
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
 VERSION = '0.0.dev'
@@ -98,7 +98,7 @@ setup(name=PACKAGENAME,
           'matplotlib',
           'astropy (>=0.2)',
           'scipy',
-          ]
+          ],
       #install_requires=['astropy'],
       provides=[PACKAGENAME],
       author=AUTHOR,
