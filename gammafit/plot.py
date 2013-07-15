@@ -162,7 +162,7 @@ def gelman_rubin_statistic(chains):
 
 
 
-def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
+def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
     if last_step:
         model=np.array([m[modelidx][1] for m in sampler.blobs[-1]])
@@ -194,6 +194,17 @@ def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
                 y.append(ysort[nf])
         CI.append((ymin,ymax))
 
+
+    return modelx,CI
+
+def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
+    """
+    Plot data with fit confidence regions.
+    """
+
+    modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
+
+# Find model_MAP
     # Find best-fit parameters as those in the chain with a highest log
     # probability
     #argmaxlp=np.argmax(sampler.chain
@@ -208,14 +219,6 @@ def calc_fit_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
     for p,v,label in zip(MAPp,MAPvar,sampler.labels):
         print '{2:>10}: {0:>8.3g} +/- {1:<8.3g}'.format(p,v,label)
 
-    return modelx,CI,model_MAP
-
-def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
-    """
-    Plot data with fit confidence regions.
-    """
-
-    modelx,CI,model_MAP=calc_fit_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
     data=sampler.data
 
     #f,axarr=plt.subplots(4,sharex=True)

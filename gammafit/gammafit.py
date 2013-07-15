@@ -114,7 +114,7 @@ def _run_mcmc(sampler,pos,nrun):
             for npar in range(npars):
                 paravg.append(np.average(out[0][:,npar]))
                 parstd.append(np.std(out[0][:,npar]))
-            print("  Last ensemble parameters: "+("{:-^10} "*npars).format(*sampler.labels))
+            print("                            "+("{:-^10} "*npars).format(*sampler.labels))
             print("  Last ensemble average   : "+("{:^10.3g} "*npars).format(*paravg))
             print("  Last ensemble std       : "+("{:^10.3g} "*npars).format(*parstd))
     return sampler,out[0]

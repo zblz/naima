@@ -37,6 +37,15 @@ AUTHOR = 'Victor Zabalza'
 AUTHOR_EMAIL = 'vzabalza@gmail.com'
 LICENSE = 'BSD'
 URL = 'http://github.com/zblz/gammafit'
+CLASSIFIERS = [
+ "Programming Language :: Python",
+ "Development Status :: 4 - Beta",
+ "Intended Audience :: Science/Research",
+ "License :: OSI Approved :: BSD License",
+ "Operating System :: OS Independent",
+ "Topic :: Scientific/Engineering :: Astronomy",
+ "Topic :: Scientific/Engineering :: Physics",
+]
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
 VERSION = '0.0.dev'
@@ -106,6 +115,7 @@ setup(name=PACKAGENAME,
       license=LICENSE,
       url=URL,
       long_description=LONG_DESCRIPTION,
+      classifiers=CLASSIFIERS,
       cmdclass=cmdclassd,
       zip_safe=False,
       use_2to3=True

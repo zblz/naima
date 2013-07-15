@@ -11,6 +11,7 @@ __pycache__
 
 # Other generated files
 */version.py
+MANIFEST
 
 # Sphinx
 _build
@@ -33,6 +34,7 @@ distribute-*.tar.gz
 .*.swp
 *~
 *.png
+*.pdf
 
 # Mac OSX
 .DS_Store

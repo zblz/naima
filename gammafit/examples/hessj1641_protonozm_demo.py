@@ -93,4 +93,4 @@ sampler,pos = gammafit.run_sampler(p0=p0,data=data,model=ProtonOZM,prior=lnprior
 
 ## Diagnostic plots
 
-gammafit.generate_diagnostic_plots('hessj1641_prot',sampler,modelidxs=[0,1,])
+gammafit.generate_diagnostic_plots('hessj1641_prot',sampler,modelidxs=[0,1,],pdf=True)
