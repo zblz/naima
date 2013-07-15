@@ -16,14 +16,7 @@ Just run
 
 ::
 
-    python setup.py install
-
-or, to pull also the needed dependencies, use pip as 
-
-::
-
-    python setup.py sdist
-    pip install dist/gammafit-0.1.tar.gz
+    [sudo] pip install gammafit
 
 
 Usage
