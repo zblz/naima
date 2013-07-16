@@ -13,8 +13,8 @@ try:
         distribute.activate()
         imp.reload(pkg_resources)
 except:  # There are several types of exceptions that can occur here
-        from distribute_setup import use_setuptools
-            use_setuptools()
+    from distribute_setup import use_setuptools
+    use_setuptools()
 
 import glob
 import os
