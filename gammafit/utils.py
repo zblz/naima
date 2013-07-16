@@ -121,9 +121,9 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False):
                 f.savefig(outpdf,format='pdf')
             else:
                 f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
-        except:
+        except Exception as e:
             # Maybe one of the returned models does not conform to the needed format
-            pass
+            print e
 
     if pdf:
         outpdf.close()

@@ -19,7 +19,8 @@ data=gammafit.build_data_dict(ene,dene,flux,dflux,ul,cl)
 
 ## Model definition
 
-for B in np.logspace(-6.5,-4,6):
+#for B in np.logspace(-6.5,-4,6):
+for B in [1e-6,1e-5]:
 
     def ElectronOZM(pars,data):
 
@@ -74,5 +75,5 @@ for B in np.logspace(-6.5,-4,6):
 
 ## Diagnostic plots
 
-    gammafit.generate_diagnostic_plots('hessj1641_elec_B{0:.1f}'.format(np.log10(B)),sampler,modelidxs=[0,1,])
+    gammafit.generate_diagnostic_plots('hessj1641_elec_B{0:.1f}'.format(np.log10(B)),sampler,modelidxs=[0,1,],pdf=True)
 

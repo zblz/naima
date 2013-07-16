@@ -76,3 +76,9 @@ sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=cutoff
 
 gammafit.generate_diagnostic_plots('velax_function',sampler)
 
+## Save sampler
+
+import pickle
+sampler.pool=None
+pickle.dump(sampler,open('velax_function_sampler.pk','wb'))
+

@@ -212,12 +212,14 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
     index=np.unravel_index(np.argmax(sampler.lnprobability),sampler.lnprobability.shape)
     MAPp=sampler.chain[index]
     model_MAP=sampler.blobs[index[1]][index[0]][modelidx][1]
-    MAPvar=[np.std(dist) for dist in dists]
+    MAPvar=[np.std(dist) for dist in sampler.flatchain.T]
 # TODO: logger
-    print 'Maximum log probability: {0:.3g}'.format(sampler.lnprobability[index])
-    print 'Maximum Likelihood results:'
+    infostr='Maximum log probability: {0:.3g}\n'.format(sampler.lnprobability[index])
+    infostr+='Maximum Likelihood values:\n'
     for p,v,label in zip(MAPp,MAPvar,sampler.labels):
-        print '{2:>10}: {0:>8.3g} +/- {1:<8.3g}'.format(p,v,label)
+        infostr+='{2:>10}: {0:>8.3g} +/- {1:<8.3g}\n'.format(p,v,label)
+
+    print infostr
 
     data=sampler.data
 
@@ -286,6 +288,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
         for tl in ax1.get_xticklabels():
             tl.set_visible(False)
 
+    ax1.text(0.05,0.05,infostr,ha='left',va='bottom',transform=ax1.transAxes,family='monospace')
 
     if ylabel!=None:
         ax1.set_ylabel(ylabel)
