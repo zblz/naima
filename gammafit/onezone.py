@@ -4,8 +4,6 @@
 from __future__ import division
 import numpy as np
 np.seterr(invalid= 'ignore')
-from scipy.special import cbrt
-from scipy.integrate import fixed_quad,quad
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -408,6 +406,8 @@ class ElectronOZM(object):
             np.trapz(self.nelec*self.gam*mec2,self.gam)))
 
     def calc_sy(self):
+        from scipy.special import cbrt
+
         self.logger.debug('calc_sy: Starting synchrotron computation...')
 
         CS1   = 6.2632e18                 # crit freq const in Hz (Pacholczyk)
@@ -703,6 +703,7 @@ class ProtonOZM(object):
         """
         Spectrum computed as in Eq. 42 for Egamma >= 0.1 TeV
         """
+        from scipy.integrate import fixed_quad,quad
         # Fixed quad with n=40 is about 15 times faster and is always within
         # 0.5% of the result of adaptive quad for Egamma>0.1
         #result=c*quad(self.photon_integrand,0.,1.,args=Egamma)[0]
@@ -714,6 +715,7 @@ class ProtonOZM(object):
         """
         Delta-functional approximation for low energies Egamma < 0.1 TeV
         """
+        from scipy.integrate import fixed_quad,quad
         Kpi=0.17
 
         m_p=(constants.m_p*constants.c**2).to('TeV').value
@@ -733,6 +735,7 @@ class ProtonOZM(object):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
         """
+        from scipy.integrate import fixed_quad,quad
         # convert outspecene to TeV
         outspecene=self.outspecene*u.eV.to('TeV')
         cutoff=self.cutoff*u.eV.to('TeV')
