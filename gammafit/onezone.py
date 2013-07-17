@@ -42,11 +42,12 @@ sigt    = (8*np.pi/3)*erad**2
 heaviside = lambda x: (np.sign(x)+1)/2.
 
 class ElectronOZM(object):
-    """
+    r"""Synchrotron and IC emission from a leptonic population
+
     Computation of electron spectrum evolution and synchrotron and IC radiation from a homogeneous emitter.
 
-    One Zone Model parameters
-    -------------------------
+    Parameters
+    ----------
     Eph : array
         Array of desired output photon energies [eV].
 
@@ -54,6 +55,7 @@ class ElectronOZM(object):
         Normalization of emitted spectrum [1/cm2]. Defined as
 
         .. math::
+
             \mathcal{N}=\frac{A V}{4 \pi d^2}
 
         where :math:`A` is the normalization of the non-thermal particle
@@ -70,6 +72,7 @@ class ElectronOZM(object):
         function has the form:
 
         .. math::
+
             \frac{dN(E_e)}{E_e}=A\left(\frac{E_e}{E_0}\right)^{-\Gamma}
             \exp{(p/E_\mathrm{cutoff})^\beta},
 
@@ -111,8 +114,8 @@ class ElectronOZM(object):
         computation.
 
 
-    Computation parameters (not present in class signature)
-    -------------------------------------------------------
+    Other parameters
+    ----------------
 
     bb : bool (optional)
         Should IC seed spectra be computed as a blackbody? If false,
@@ -136,24 +139,24 @@ class ElectronOZM(object):
         evolve down to ``gmin``, but will not be injected below ``glocut``.
         Default: 20 (1e7 eV)
 
-    Output (as class attributes)
-    ----------------------------
+    Attributes
+    ----------
 
-    self.specsy : array [1/s/eV]
+    specsy : array [1/s/eV]
         Differential synchrotron spectrum: emitted synchrotron photons per unit
         energy per second at energies given by `Eph`.
 
-    self.sedsy : array [erg/s]
+    sedsy : array [erg/s]
         Synchrotron SED := self.specsy*self.outspecene**2*u.eV.to('erg')
 
-    self.specic : array [1/s/eV]
+    specic : array [1/s/eV]
         Differential IC spectrum: emitted IC photons per unit energy per second
         at energies given by `Eph`.
 
-    self.specictev : array [1/s/TeV]
+    specictev : array [1/s/TeV]
         Differential IC spectrum in units typically used by IACT community.
 
-    self.sedic : array [erg/s]
+    sedic : array [erg/s]
         IC SED := self.specic*self.outspecene**2*u.eV.to('erg')
 
     """
@@ -361,7 +364,7 @@ class ElectronOZM(object):
 
 #       qint(Ee)=\int_Ee^\infty Q_inj(E') dE'
     def _calc_steady_state_nelec(self,qinj):
-        """
+        r"""
         Evolve electron spectrum until steady state. See Zabalza et al (2011),
         A&A 527, 9, and Khangulyan et al (2007) MNRAS 380, 320, for a detailed
         explanation of steady-state electron spectrum computation.
@@ -549,13 +552,15 @@ class ElectronOZM(object):
 
 
 class ProtonOZM(object):
-    """
+    r"""OneZoneModel for pp interaction gamma-ray emission
+
     Compute gamma-ray spectrum arising from the interaction of a relativistic
     proton distribution with stationary target protons.
 
     The particle distribution function has the form:
 
     .. math::
+
         \frac{dN(E_p)}{dE_p}=A\left(\frac{E_p}{E_0}\right)^{-\Gamma}
         \exp{(E_p/E_\mathrm{cutoff})^\beta},
 
@@ -566,8 +571,8 @@ class ProtonOZM(object):
     exponential cutoff (`beta`).
 
 
-    One Zone Model parameters
-    -------------------------
+    Parameters
+    ----------
     Eph : array
         Array of desired output photon energies [eV].
 
@@ -596,16 +601,16 @@ class ProtonOZM(object):
     beta : float (optional)
         Exponent of exponential energy cutoff argument.
 
-    Output
-    ------
-    self.specpp : array [1/s/eV]
+    Attributes
+    ----------
+    specpp : array [1/s/eV]
         Differential gamma-ray spectrum at energies given by `Eph`.
 
-    self.specpptev : array [1/s/TeV]
+    specpptev : array [1/s/TeV]
         Differential gamma-ray spectrum at energies given by `Eph` in units
         typically used by IACT community.
 
-    self.sedpp : array [erg/s]
+    sedpp : array [erg/s]
         Spectral energy distribution at energies given by `Eph`.
 
     References
