@@ -123,7 +123,7 @@ if not _ASTROPY_SETUP_:
     del os, warn, config_dir  # clean up namespace
 
 
-from .gammafit import *
+from .core import *
 from .onezone import *
 from .plot import *
 from .utils import *

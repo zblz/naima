@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
-from scipy.interpolate import interp1d
 
-from .plot import *
+from .plot import plot_fit, plot_chain
 
 __all__ = ["generate_energy_edges","build_data_dict","generate_diagnostic_plots"]
 
@@ -96,13 +93,14 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False):
     ## Corner plot
 
     try:
+        from .plot import corner
         f = corner(sampler.flatchain,labels=sampler.labels)
         if pdf:
             f.savefig(outpdf,format='pdf')
         else:
             f.savefig('{0}_corner.png'.format(outname))
     except NameError:
-        print 'triangle.py not installed, corner plot will not be available'
+        print 'triangle.py not installed, corner plot not available'
 
     ## Fit
 

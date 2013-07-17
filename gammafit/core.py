@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 import numpy as np
-from scipy import stats
-from scipy.interpolate import interp1d
-
-import emcee
 
 from astropy import constants as const
 from astropy import units as u
 
 mec2TeV=(const.m_e*const.c**2).to('eV').value/1e12
 mec2=(const.m_e*const.c**2).to('erg').value
+
+__all__=["normal_prior","uniform_prior","get_sampler","run_sampler"]
 
 ## Placeholder model: Powerlaw with exponential
 
@@ -25,7 +23,7 @@ def _cutoffexp(pars,data):
     """
 
     x=data['ene']
-    x0=stats.gmean(x)
+    x0=np.exp(np.average(np.log(x)))
 
     N     = pars[0]
     gamma = pars[1]
@@ -123,6 +121,9 @@ def _run_mcmc(sampler,pos,nrun):
 def get_sampler(nwalkers=500, nburn=30, guess=True, p0=p00, data=None,
         model=_cutoffexp, prior=lambda x: 0.0, labels=None, threads=8):
     #TODO docstring
+
+    import emcee
+
 
     if data==None:
         print 'Need to provide data!'

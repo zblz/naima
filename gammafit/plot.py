@@ -2,7 +2,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
-from scipy.interpolate import interp1d
 
 __all__ = ["corner","plot_chain","plot_fit"]
 
@@ -264,6 +263,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
             plot_ulims(ax1,data['ene'][ul],data['flux'][ul],data['dene'][ul])
 
         if len(model_MAP)!=len(data['ene']):
+            from scipy.interpolate import interp1d
             modelfunc=interp1d(modelx,model_MAP)
             difference=data['flux'][notul]-modelfunc(data['ene'][notul])
         else:
