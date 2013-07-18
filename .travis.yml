@@ -38,19 +38,14 @@ virtualenv:
 before_install:
    # We do this to make sure we get the dependencies so pip works below
    - sudo apt-get update -qq
-   - sudo apt-get install -qq python-numpy python-sphinx cython libatlas-dev liblapack-dev gfortran python-scipy python-matplotlib
+   - sudo apt-get install -q python-numpy python-sphinx cython libatlas-dev liblapack-dev gfortran python-scipy python-matplotlib
    - if [[ $SETUP_CMD == build_sphinx* ]]; then sudo apt-get install -qq python-sphinx graphviz texlive-latex-extra dvipng python-matplotlib; fi
 
 install:
    - export PYTHONIOENCODING=UTF8 # just in case
    - rm -f $VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/no-global-site-packages.txt # force use of system-wide packages
    - pip -q install --upgrade "numpy==$NUMPY_VERSION" --use-mirrors
-   #- pip -q install --upgrade Cython --use-mirrors
-   #- if [[ $SETUP_CMD == build_sphinx* ]]; then pip -q install sphinx==1.1.3 --use-mirrors; fi
-   #- pip -q install --upgrade distribute
-   #- pip -q install git+http://github.com/matplotlib/matplotlib.git#egg=matplotlib
-   #- pip -q install scipy
-   - pip -q install emcee
+   - pip -q install emcee triangle_plot
 
    - if [[ $ASTROPY_VERSION == stable ]]; then pip -q install astropy --use-mirrors; fi
    - if [[ $ASTROPY_VERSION == development ]]; then pip -q install git+http://github.com/astropy/astropy.git#egg=astropy --use-mirrors; fi
