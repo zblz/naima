@@ -2,10 +2,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-__all__ = ["corner","plot_chain","plot_fit"]
+__all__ = ["plot_chain","plot_fit"]
 
 try:
     from triangle import corner
+    __all__ += ["corner",]
 except ImportError:
     print 'triangle.py not installed, corner plot will not be available'
 
