@@ -124,13 +124,14 @@ class ElectronOZM(object):
         Default: 10
 
     gmin : float (optional)
-        Minimum electron energy in units of mc2. Default: 1.0
+        Minimum electron energy in units of mc2. Default: 1e4
 
     gmax : float (optional)
-        Maximum electron energy in units of mc2. Default: 3e9
+        Maximum electron energy in units of mc2. Default: 3e10
 
     ngamd : int (optional)
-        Number of electron spectrum points per energy decade. Default: 400
+        Number of electron spectrum points per energy decade. Critical for
+        accurate IC spectrum in the deep Klein-Nishina regime. Default: 300
 
     glocut : float (optional)
         Low energy cutoff of injection spectrum in units of mec2. Electron can
@@ -193,7 +194,7 @@ class ElectronOZM(object):
             'nbb'    : 10,
             'tad'    : 1e30,
             # electron spectrum matrix (lorentz factors)
-            'gmin'   : 1e6,
+            'gmin'   : 1e4,
             'gmax'   : 3e10,
             'ngamd'  : 300, # electron spectrum points per decade
             # Injection spectrum

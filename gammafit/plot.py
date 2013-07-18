@@ -261,7 +261,9 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
                 yerr=data['dflux'][notul].T, xerr=data['dene'][notul].T,
                 zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
                 mec='w',mew=0,ms=8,color=datacol)
-        if np.sum(ul)>0:
+        #print ul
+        #print data['ene'][ul],data['flux'][ul],data['dene'][ul]
+        if np.any(ul):
             plot_ulims(ax1,data['ene'][ul],data['flux'][ul],data['dene'][ul])
 
         if len(model_MAP)!=len(data['ene']):
