@@ -1,6 +1,6 @@
-emcee (>=1.2.0)
+emcee
 triangle_plot
 numpy
 matplotlib
-astropy (>=0.2)
+astropy
 scipy
