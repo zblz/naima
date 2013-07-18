@@ -3,7 +3,7 @@
 
 from __future__ import division
 import numpy as np
-np.seterr(invalid= 'ignore')
+np.seterr(all='ignore')
 
 import logging
 logging.basicConfig(level=logging.INFO)

@@ -34,7 +34,7 @@ def _cutoffexp(pars,data):
 
     return model
 
-p00=np.array((1e-11,2,10,1))
+_p00=np.array((1e-11,2,10,1))
 
 ## Likelihood functions
 
@@ -77,19 +77,26 @@ def lnprobmodel(model,data):
 
 def lnprob(pars,data,modelfunc,priorfunc):
 
-    modelout = modelfunc(pars,data)
-
-    # Save blobs or save model if no blobs given
-    if type(modelout)==tuple:
-        #print len(modelout)
-        model = modelout[0]
-        blob  = modelout[1:]
-    else:
-        model = modelout
-        blob  = (np.array((data['ene'],modelout)),)
-
-    lnprob_model  = lnprobmodel(model,data)
     lnprob_priors = priorfunc(pars)
+
+# If prior is -np.inf, avoid calling the function as invalid calls may be made, and the result will be discarded anyway
+    if not np.isinf(lnprob_priors):
+        modelout = modelfunc(pars,data)
+
+        # Save blobs or save model if no blobs given
+        if type(modelout)==tuple:
+            #print len(modelout)
+            model = modelout[0]
+            blob  = modelout[1:]
+        else:
+            model = modelout
+            blob  = (np.array((data['ene'],modelout)),)
+
+        lnprob_model  = lnprobmodel(model,data)
+    else:
+        lnprob_model = 0.0
+        blob=None
+
     total_lnprob  = lnprob_model + lnprob_priors
 
     # Print parameters and total_lnprob
@@ -115,10 +122,11 @@ def _run_mcmc(sampler,pos,nrun):
             print("                            "+("{:-^10} "*npars).format(*sampler.labels))
             print("  Last ensemble average   : "+("{:^10.3g} "*npars).format(*paravg))
             print("  Last ensemble std       : "+("{:^10.3g} "*npars).format(*parstd))
+            print("  Last ensemble <lnprob>  : {:.3f}, max: {:.3f}".format(np.average(out[1]),np.max(out[1])))
     return sampler,out[0]
 
 
-def get_sampler(nwalkers=500, nburn=30, guess=True, p0=p00, data=None,
+def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
         model=_cutoffexp, prior=lambda x: 0.0, labels=None, threads=8):
     #TODO docstring
 
