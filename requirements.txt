@@ -1,7 +1,0 @@
-gammafit
-emcee
-triangle_plot
-numpy
-matplotlib
-astropy
-scipy
