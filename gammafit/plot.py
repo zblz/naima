@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
 
 __all__ = ["corner","plot_chain","plot_fit"]
 
@@ -25,6 +24,7 @@ def plot_chain(sampler,p=None,**kwargs):
 
 
 def _plot_chain_func(chain,p,label,last_step=False):
+    from scipy import stats
     if len(chain.shape)>2:
         traces=chain[:,:,p]
         if last_step==True:
@@ -162,6 +162,7 @@ def gelman_rubin_statistic(chains):
 
 
 def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
+    from scipy import stats
 
     if last_step:
         model=np.array([m[modelidx][1] for m in sampler.blobs[-1]])
