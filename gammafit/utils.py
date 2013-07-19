@@ -110,7 +110,9 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False):
 
     for modelidx in modelidxs:
         if modelidx==0:
-            labels=('Energy','Flux')
+            labels=('Energy [TeV]',r'Differential Flux [1/cm$^2$/s/TeV]')
+        elif modelidx==1:
+            labels=('Particle Energy [TeV]',r'Particle energy distribution [erg$\times 4\pi d^2$]')
         else:
             labels=( None, None)
         try:

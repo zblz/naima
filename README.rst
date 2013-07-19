@@ -40,3 +40,4 @@ ToDo
 - Finish integration into astropy affiliated template
 - Write tutorial.
 - Tests, tests, tests, tests
+- Add confidence levels around model_MAP on residuals plot

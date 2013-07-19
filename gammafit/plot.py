@@ -198,7 +198,7 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
     return modelx,CI
 
-def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
+def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs):
     """
     Plot data with fit confidence regions.
     """
@@ -221,6 +221,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
         infostr+='{2:>10}: {0:>8.3g} +/- {1:<8.3g}\n'.format(p,v,label)
 
     print infostr
+    infostr=''
 
     data=sampler.data
 
@@ -245,8 +246,8 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
 
     for (ymin,ymax),conf in zip(CI,confs):
         color=np.log(conf)/np.log(20)+0.4
-        ax1.fill_between(modelx,ymax,ymin,lw=0.,color='{0}'.format(color),alpha=0.5,zorder=-10)
-    ax1.plot(modelx,model_MAP,c='k',lw=3,zorder=-5)
+        ax1.fill_between(modelx,ymax,ymin,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
+    #ax1.plot(modelx,model_MAP,c='k',lw=3,zorder=-5)
 
     def plot_ulims(ax,x,y,xerr):
         ax.errorbar(x,y,xerr=xerr,ls='',
@@ -291,6 +292,17 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1],**kwargs):
         ax2.set_xscale('log')
         for tl in ax1.get_xticklabels():
             tl.set_visible(False)
+    else:
+# restrict y axis to 5 decades to avoid autoscaling deep exponentials
+        xmin,xmax,ymin,ymax=ax1.axis()
+        ymin=max(ymin,ymax/1e5)
+        ax1.set_ylim(bottom=ymin)
+    # scale x axis to largest model_MAP x point within 5 decades of maximum
+        hi=np.where(model_MAP>ymin)
+        xmax=np.max(modelx[hi])
+        ax1.set_xlim(right=10**np.ceil(np.log10(xmax)))
+
+
 
     ax1.text(0.05,0.05,infostr,ha='left',va='bottom',transform=ax1.transAxes,family='monospace')
 
