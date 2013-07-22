@@ -305,6 +305,9 @@ class ElectronOZM(object):
         self.gam=np.logspace(np.log10(self.gmin),np.log10(self.gmax),ngam)
 
     def calc_gdot(self):
+        """
+        Compute electron synchrotron and IC energy losses
+        """
 # Calculem Qinj i generem el self.gam correcte!
         if not hasattr(self,'gam'):
             self.logger.warn('Generating gam...')
