@@ -1,4 +1,6 @@
 include README.rst
+include LICENSE.rst
+include distribute_setup.py
 
 recursive-include gammafit *.pyx *.c 
 recursive-include gammafit/examples *_demo.py velax_cocoon.spec

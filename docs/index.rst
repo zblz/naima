@@ -1,8 +1,7 @@
 Documentation
 =============
 
-This is an affiliated package for the AstroPy package. The documentation for
-this package is here:
+The preliminary documentation for gammafit is here:
 
 .. toctree::
   :maxdepth: 2
