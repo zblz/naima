@@ -521,7 +521,8 @@ class ElectronOZM(object):
 
         if self.ssc:
             self.calc_sy()
-# compute density of synchrotron photons in rsync radius
+            # compute density of synchrotron photons in rsync radius
+            # use Atoyan & Aharonian (1996, MNRAS 278 525)
             rsyn=self.remit
             umean=2.24
             syf=umean/(4*np.pi*rsyn**2*c)
@@ -536,7 +537,7 @@ class ElectronOZM(object):
                 self.phn.append(syphn)
                 self.photE.append(syphotE)
         else:
-            # check if there is SSC spectrum in seedspec, remove it
+            # if there is SSC spectrum in seedspec, remove it
             if 'SSC' in self.seedspec:
                 idx=self.seedspec.index('SSC')
                 for ll in [self.seedspec,self.phe,self.photE,self.phn]:
@@ -660,15 +661,6 @@ class ProtonOZM(object):
 
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
-
-# bogus logger functions used for nolog
-    def debug(self,s):
-        pass
-    def info(self,s):
-        pass
-    def warn(self,s):
-        print 'WARN:OneZoneModel: %s'%s
-        pass
 
     def Jp(self,Ep):
         """
