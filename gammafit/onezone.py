@@ -42,7 +42,21 @@ heaviside = lambda x: (np.sign(x)+1)/2.
 class ElectronOZM(object):
     r"""Synchrotron and IC emission from a leptonic population
 
-    Computation of electron spectrum evolution and synchrotron and IC radiation from a homogeneous emitter.
+    Computation of electron spectrum evolution and synchrotron and IC radiation
+    from a homogeneous emitter.
+
+    The particle distribution function has the form:
+
+    .. math::
+
+        \frac{dN(E_e)}{dE_e}=A\left(\frac{E_e}{E_0}\right)^{-\Gamma}
+        \exp{(E_e/E_\mathrm{cutoff})^\beta},
+
+    where :math:`A` is the normalization at :math:`E_0` and is embedded in the
+    parameter `norm`, :math:`E_0` is the normalization energy (`norm_energy`),
+    :math:`\Gamma` is the power-law index (`index`), :math:`E_\mathrm{cutoff}`
+    is the cutoff energy (`cutoff`), and :math:`\beta` is the exponent of the
+    exponential cutoff (`beta`).
 
     Parameters
     ----------
@@ -66,20 +80,7 @@ class ElectronOZM(object):
         spectrum for the emission process in consideration.
 
     index : float (optional)
-        Power-law index of the particle distribution function. The distribution
-        function has the form:
-
-        .. math::
-
-            \frac{dN(E_e)}{E_e}=A\left(\frac{E_e}{E_0}\right)^{-\Gamma}
-            \exp{(p/E_\mathrm{cutoff})^\beta},
-
-        where :math:`A` is the normalization at :math:`E_0` and is embedded in
-        the parameter `norm`, :math:`E_0` is the normalization energy
-        parameter `norm_energy`, :math:`\Gamma` is the power-law index
-        parameter `index`, :math:`E_\mathrm{cutoff}` is the cutoff energy
-        parameter `cutoff`, and :math:`\beta` is the exponent of the exponential
-        cutoff argument `beta`.
+        Power-law index of the particle distribution function.
 
     cutoff : float (optional)
         Cut-off energy [eV].
@@ -91,7 +92,7 @@ class ElectronOZM(object):
         Isotropic magnetic field strength in microgauss. Default: equipartition with
         CMB (3.24e-6 G)
 
-    seedspec: string or iterable of strings or iterable of floats (optional)
+    seedspec: string or iterable of strings (optional)
         A list of seed spectra to use for IC calculation. Strings can be one or
         more of CMB, NIR, FIR, for which radiation fields with temperatures of
         2.72 K, 70 K, and 5000 K, and energy densities of 0.261, 0.5, and 1
