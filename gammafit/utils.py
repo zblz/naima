@@ -8,9 +8,11 @@ __all__ = ["generate_energy_edges","build_data_dict","generate_diagnostic_plots"
 ## Convenience tools
 
 def generate_energy_edges(ene):
-    """Generate an array of energy edges from given energy array to be used as
+    """Generate energy bin edges from given energy array.
+    
+    Generate an array of energy edges from given energy array to be used as
     abcissa error bar limits when no energy uncertainty or energy band is
-    provided
+    provided. 
 
     Parameters
     ----------
@@ -41,9 +43,10 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     ene : array (Nene)
         Spectrum energies
 
-    dene : array (Nene,2)
+    dene : array (Nene,2) or None
         Difference from energy points to lower (column 0) and upper (column 1)
-        energy edges. Currently only used on plots.
+        energy edges. Currently only used on plots. If ``None`` is given, they
+        will be generated with function ``generate_energy_edges``.
 
     flux : array (Nene)
         Spectrum flux values.
@@ -62,6 +65,9 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     """
     if ul==None:
         ul=np.array((False,)*len(ene))
+
+    if dene==None:
+        dene=generate_energy_edges(ene)
 
     # data is a dict with the fields:
     # ene dene flux dflux ul cl
