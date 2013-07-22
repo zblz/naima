@@ -92,10 +92,10 @@ class ElectronOZM(object):
         CMB (3.24e-6 G)
 
     seedspec: string or iterable of strings or iterable of floats (optional)
-        A list of seed spectra to use for IC calculation. Is string is one of
-        CMB, NIR, FIR, precomputed tables will be used. Any floats indicate the
-        temperature for a blackbody photon distribution and full computation
-        will be performed. Default: ['CMB',]
+        A list of seed spectra to use for IC calculation. Strings can be one or
+        more of CMB, NIR, FIR, for which radiation fields with temperatures of
+        2.72 K, 70 K, and 5000 K, and energy densities of 0.261, 0.5, and 1
+        eV/cm`^{-3}` will be used. Default: ['CMB',]
 
     ssc : bool (optional)
         Whether to compute synchrotron self compton (IC on synchrotron generated
