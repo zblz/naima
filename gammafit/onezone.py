@@ -39,6 +39,17 @@ sigt    = (8*np.pi/3)*erad**2
 
 heaviside = lambda x: (np.sign(x)+1)/2.
 
+class BogusLogger(object):
+    # logger functions used for nolog
+    def debug(self,s):
+        pass
+    def info(self,s):
+        pass
+    def warn(self,s):
+        print 'WARN:OneZoneModel: %s'%s
+        pass
+
+
 class ElectronOZM(object):
     r"""Synchrotron and IC emission from a leptonic population
 
@@ -96,7 +107,7 @@ class ElectronOZM(object):
         A list of seed spectra to use for IC calculation. Strings can be one or
         more of CMB, NIR, FIR, for which radiation fields with temperatures of
         2.72 K, 70 K, and 5000 K, and energy densities of 0.261, 0.5, and 1
-        eV/cm`^{-3}` will be used. Default: ['CMB',]
+        eV/cm:math:`^{-3}` will be used. Default: ['CMB',]
 
     ssc : bool (optional)
         Whether to compute synchrotron self compton (IC on synchrotron generated
@@ -182,7 +193,7 @@ class ElectronOZM(object):
         nolog=False,debug=False,**kwargs):
 
         if nolog:
-            self.logger=self
+            self.logger=BogusLogger()
         else:
             self.logger=logging.getLogger('ElectronOZM')
             if debug:
@@ -206,14 +217,6 @@ class ElectronOZM(object):
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
-# logger functions used for nolog
-    def debug(self,s):
-        pass
-    def info(self,s):
-        pass
-    def warn(self,s):
-        print 'WARN:OneZoneModel: %s'%s
-        pass
 
     def _calc_bb(self,seed,Tseed,useed,nbb):
         self.logger.info('calc_seedspec: Using blackbody {0} seed spectrum '
@@ -249,6 +252,7 @@ class ElectronOZM(object):
     def calc_seedspec(self):
         """
         Compute seed photon spectrum for IC.
+
         Outputs (as attributes of class):
             phn: particle photon density
             photE: photon energies
@@ -390,6 +394,9 @@ class ElectronOZM(object):
         return qint/self.gdot
 
     def calc_nelec(self):
+        """
+        Generate electron distribution
+        """
         if not hasattr(self,'phe'):
             self.calc_seedspec()
         self.generate_gam()
@@ -408,6 +415,9 @@ class ElectronOZM(object):
             np.trapz(self.nelec*self.gam*mec2,self.gam)))
 
     def calc_sy(self):
+        """
+        Compute synchrotron spectrum
+        """
         from scipy.special import cbrt
 
         self.logger.debug('calc_sy: Starting synchrotron computation...')
@@ -491,6 +501,9 @@ class ElectronOZM(object):
         return iclum/self.outspecene # return differential spectrum in 1/s/eV
 
     def calc_ic(self):
+        """
+        Compute IC spectrum
+        """
         self.logger.debug('calc_ic: Starting IC computation...')
 
         if not hasattr(self,'outspecerg'):
@@ -546,6 +559,9 @@ class ElectronOZM(object):
             self.logger.info('calc_ic: L_vhe*4πd² = {0:.2e} erg/s'.format(tottevlum))
 
     def calc_outspec(self):
+        """
+        Generate electron distribution and compute all spectra
+        """
         self.calc_nelec()
         self.calc_sy()
         self.calc_ic()
@@ -633,7 +649,7 @@ class ProtonOZM(object):
             nolog=False, debug=False, **kwargs):
 
         if nolog:
-            self.logger=self
+            self.logger=BogusLogger()
         else:
             self.logger=logging.getLogger('ProtonOZM')
             if debug:
@@ -691,7 +707,7 @@ class ProtonOZM(object):
         sigma *= heaviside(Ep-Eth) # only return values above threshold
         return sigma
 
-    def photon_integrand(self,x,Egamma):
+    def _photon_integrand(self,x,Egamma):
         """
         Integrand of Eq. 72
         """
@@ -709,7 +725,7 @@ class ProtonOZM(object):
         # Fixed quad with n=40 is about 15 times faster and is always within
         # 0.5% of the result of adaptive quad for Egamma>0.1
         #result=c*quad(self.photon_integrand,0.,1.,args=Egamma)[0]
-        result=c*fixed_quad(self.photon_integrand,0.,1.,args=[Egamma,],n=40)[0]
+        result=c*fixed_quad(self._photon_integrand,0.,1.,args=[Egamma,],n=40)[0]
 
         return result
 
@@ -773,4 +789,7 @@ class ProtonOZM(object):
         self.logger.info('L_pp*4πd²/nH  = {0:.2e} erg/s'.format(totpplum))
 
     def calc_outspec(self):
+        """
+        Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
+        """
         self._calc_photon_spectrum()
