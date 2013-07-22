@@ -19,7 +19,7 @@ def generate_energy_edges(ene):
 
     Returns
     -------
-    edge_array : array with shape (2,len(ene))
+    edge_array : array with shape (len(ene),2)
         Array of energy edge pairs corresponding to each given energy of the
         input array.
     """
@@ -33,7 +33,32 @@ def generate_energy_edges(ene):
 
 def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     """
-    read data into data dict
+    Read data into data dict
+
+    Parameters
+    ----------
+
+    ene : array (Nene)
+        Spectrum energies
+
+    dene : array (Nene,2)
+        Difference from energy points to lower (column 0) and upper (column 1)
+        energy edges. Currently only used on plots.
+
+    flux : array (Nene)
+        Spectrum flux values.
+
+    dflux : array (Nene,2) or (Nene)
+        Spectrum flux uncertainties. If shape is (Nene, 2), columns 0 and 1
+        correspond to lower and upper uncertainties, respectively.
+
+    ul : array of bool (optional)
+        Boolean array indicating which of the flux values given in ``flux``
+        correspond to upper limits.
+
+    cl : float (optional)
+        Confidence level of the flux upper limits given by ``ul``.
+
     """
     if ul==None:
         ul=np.array((False,)*len(ene))
