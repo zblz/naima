@@ -26,18 +26,3 @@ The package consists of several convenience functions to which you must provide
 a model function, a probability function for the parameter priors, and the
 spectral data to be fit enclosed in a dictionary. An example is shown in the
 file ``velax_demo.py``.
-
-ToDo
-----
-
-- For X-ray (sync) and GeV/TeV (IC) data, estimate initial magnetic field from
-  Fx/Fvhe ratio.
-- Write Convenience function to compute decorrelation energy of data and the
-  corresponding electron and/or proton energy to be used as ``norm_energy``.
-- Write method to derive lower/upper limits to non-present features, such as
-  energy cutoffs. See `arXiv:gr-qc/0504042
-  <http://arxiv.org/abs/gr-qc/0504042v1>`_ for an example.
-- Finish integration into astropy affiliated template
-- Write tutorial.
-- Tests, tests, tests, tests
-- Add confidence levels around model_MAP on residuals plot
