@@ -1,5 +1,5 @@
-Non-thermal spectral fitting with emcee
-=======================================
+Derivation of non-thermal particle distribution
+===============================================
 
 ``gammafit`` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra to
 constrain the properties of their parent relativistic particle distributions. 
@@ -45,4 +45,5 @@ Usage
 The package consists of several convenience functions to which you must provide
 a model function, a probability function for the parameter priors, and the
 spectral data to be fit enclosed in a dictionary. An example is shown in the
-file ``velax_demo.py``.
+file ``velax_demo.py``. Preliminary documentation can be found at
+`gammafit.readthedocs.org <http://gammafit.readthedocs.org>`_.

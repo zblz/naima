@@ -1,10 +1,8 @@
-Documentation
-=============
+.. include:: ../README.rst
 
-The preliminary documentation for gammafit is here:
 
-.. toctree::
-  :maxdepth: 2
+API Documentation
+=================
 
-  gammafit/index.rst
+.. automodapi:: gammafit
 

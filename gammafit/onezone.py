@@ -39,7 +39,7 @@ sigt    = (8*np.pi/3)*erad**2
 
 heaviside = lambda x: (np.sign(x)+1)/2.
 
-class BogusLogger(object):
+class _BogusLogger(object):
     # logger functions used for nolog
     def debug(self,s):
         pass
@@ -193,7 +193,7 @@ class ElectronOZM(object):
         nolog=False,debug=False,**kwargs):
 
         if nolog:
-            self.logger=BogusLogger()
+            self.logger=_BogusLogger()
         else:
             self.logger=logging.getLogger('ElectronOZM')
             if debug:
@@ -649,7 +649,7 @@ class ProtonOZM(object):
             nolog=False, debug=False, **kwargs):
 
         if nolog:
-            self.logger=BogusLogger()
+            self.logger=_BogusLogger()
         else:
             self.logger=logging.getLogger('ProtonOZM')
             if debug:

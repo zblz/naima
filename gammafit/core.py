@@ -125,9 +125,10 @@ def _run_mcmc(sampler,pos,nrun):
             print("  Last ensemble <lnprob>  : {:.3f}, max: {:.3f}".format(np.average(out[1]),np.max(out[1])))
     return sampler,out[0]
 
+_prior=lambda x: 0.0
 
 def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
-        model=_cutoffexp, prior=lambda x: 0.0, labels=None, threads=8):
+        model=_cutoffexp, prior=_prior, labels=None, threads=8):
     #TODO docstring
 
     import emcee
