@@ -25,7 +25,7 @@ def test_electronozm():
     ozm.calc_outspec()
 
     lsy=np.trapz(ozm.specsy*ozm.outspecene**2*u.eV.to('erg'),ozm.outspecene)
-    assert_almost_equal(lsy,0.071977121013375542)
+    assert_almost_equal(lsy,0.016769058688230903)
     lic=np.trapz(ozm.specic*ozm.outspecene**2*u.eV.to('erg'),ozm.outspecene)
     assert_almost_equal(lic,212291612.87657347)
 
@@ -36,7 +36,7 @@ def test_electronozm_evolve():
     ozm.calc_outspec()
 
     lsy=np.trapz(ozm.specsy*ozm.outspecene**2*u.eV.to('erg'),ozm.outspecene)
-    assert_almost_equal(lsy,24621524791.758739)
+    assert_almost_equal(lsy,5718447729.5694494)
     lic=np.trapz(ozm.specic*ozm.outspecene**2*u.eV.to('erg'),ozm.outspecene)
     assert_almost_equal(lic,1.0514223815442389e+20)
 

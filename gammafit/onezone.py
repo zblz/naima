@@ -417,7 +417,7 @@ class ElectronOZM(object):
         self.logger.info('calc_nelec: E_e*4πd²   = {0:.2e} erg'.format(
             np.trapz(self.nelec*self.gam*mec2,self.gam)))
 
-    def _calc_sy_AKP(self):
+    def calc_sy(self):
         """
         Compute sync for random magnetic field according to approximation of
         Aharonian, Kelner, Prosekin 2010
