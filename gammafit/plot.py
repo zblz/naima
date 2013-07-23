@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import matplotlib.pyplot as plt
 import numpy as np
 
 __all__ = ["plot_chain","plot_fit"]
@@ -13,6 +12,7 @@ except ImportError:
 ## Plot funcs
 
 def plot_chain(sampler,p=None,**kwargs):
+    import matplotlib.pyplot as plt
     if p==None:
         npars=sampler.chain.shape[-1]
         for pp,label in zip(range(npars),sampler.labels):
@@ -25,6 +25,7 @@ def plot_chain(sampler,p=None,**kwargs):
 
 
 def _plot_chain_func(chain,p,label,last_step=False):
+    import matplotlib.pyplot as plt
     from scipy import stats
     if len(chain.shape)>2:
         traces=chain[:,:,p]
@@ -202,6 +203,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
     """
     Plot data with fit confidence regions.
     """
+    import matplotlib.pyplot as plt
 
     modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
 
