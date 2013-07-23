@@ -417,64 +417,18 @@ class ElectronOZM(object):
         self.logger.info('calc_nelec: E_e*4πd²   = {0:.2e} erg'.format(
             np.trapz(self.nelec*self.gam*mec2,self.gam)))
 
-    def _calc_sy_classic(self):
-        """
-        Compute synchrotron spectrum
-        """
-        from scipy.special import cbrt
-
-        self.logger.debug('calc_sy: Starting synchrotron computation...')
-
-        CS1   = 6.2632e18                 # crit freq const in Hz (Pacholczyk)
-        CS3   = 1.8652e-23*np.sqrt(2./3.) # Constant pot radiada * factor isotropia
-
-        # Bogus (large) vemit and remit to compute synchrotron
-        vemit=(4./3.)*np.pi*self.remit**3
-
-        enehz = self.outspecene/hz2ev
-        nelec = self.nelec/vemit # density required for sync calculation
-
-        freqcrit=CS1*(self.gam*mec2)**2.*self.B
-        xx=np.vstack(enehz)/freqcrit # shape of (outspecene,gam)
-
-        Fx=1.85*cbrt(xx)*np.exp(-xx)*heaviside(10-xx) # 13.9 ms per loop
-        #Fx=np.where(xx<10.,1.85*cbrt(xx)*np.exp(-xx),0) # 16.1 ms per loop
-
-        Psy=CS3*self.B*Fx #Pot sync radiada per un elec, shape of (outspecene,gam)
-        J=4.*np.pi*np.trapz(Psy*nelec,self.gam) # int over gam, shape of outspecene
-
-        # Absorption
-        CA1=(c**2./enehz**2.)*CS3*self.B # shape of outspecene
-        CA2=nelec/(self.gam*mec2) # shape of gam
-        CA3=Fx*(1./3.+2.*xx) # shape of (outspecene,gam)
-        sabs=np.vstack(CA1)*CA2*CA3 # shape of (outspecene,gam)
-        K=np.trapz(sabs,self.gam) #int over gamma, shape of outspecene
-        tau=self.remit*K
-
-        I=np.zeros_like(J)
-        nz=np.where((J>0)*(K>0))
-        I[nz]=(J[nz]/K[nz])*(-1.*np.expm1(-tau[nz])) # erg/(s*cm2*Hz)
-
-        specsy=4.*np.pi*self.remit**2.*I/h/self.outspecene # 1/s
-        sedsy=self.specsy*self.outspecene*self.outspecerg # erg/s
-
-        return specsy,sedsy
-
     def _calc_sy_AKP(self):
         """
         Compute sync for random magnetic field according to approximation of
         Aharonian, Kelner, Prosekin 2010
         """
         from scipy.special import cbrt
-        def Ftilde(x):
-            """
-            AKP10 Eq. D6
 
-            """
-            ft1=2.15*x**(1./3.)*(1+3.06*x)**(1./6.)
-            ft2=1+0.884*x**(2./3.)+0.471*x**(4./3.)
-            ft3=1+1.64*x**(2./3.)+0.974*x**(4./3.)
-            return ft1*(ft2/ft3)*np.exp(-x)
+        if not hasattr(self,'outspecerg'):
+            self.outspecerg=self.outspecene/eV
+        if not hasattr(self,'gam'):
+            self.logger.warn('Calling calc_nelec to generate gam,nelec')
+            self.calc_nelec()
 
         def Gtilde(x):
             """
@@ -503,27 +457,11 @@ class ElectronOZM(object):
         spec=np.trapz(np.vstack(nelec)*dNdE,gam,axis=0)
 
         # convert from 1/s/erg to 1/s/eV
-        specsy=spec/u.erg.to('eV')
-        sedsy=spec*self.outspecerg**2.
-
-        return specsy,sedsy
-
-    def calc_sy(self,method='AKP'):
-
-        if not hasattr(self,'outspecerg'):
-            self.outspecerg=self.outspecene/eV
-        if not hasattr(self,'gam'):
-            self.logger.warn('Calling calc_nelec to generate gam,nelec')
-            self.calc_nelec()
-
-        if method=='AKP':
-            self.specsy,self.sedsy=self._calc_sy_AKP()
-        else:
-            self.specsy,self.sedsy=self._calc_sy_classic()
+        self.specsy=spec/u.erg.to('eV')
+        self.sedsy=spec*self.outspecerg**2.
 
         totsylum=np.trapz(self.specsy*self.outspecene,self.outspecerg)
         self.logger.info('calc_sy: L_sy*4πd²  = {0:.2e} erg/s'.format(totsylum))
-
 
     def _calc_specic(self,phn=None,photE=None,seed=None):
         if phn==None and type(phn)==list:
