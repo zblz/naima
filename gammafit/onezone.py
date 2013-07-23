@@ -417,7 +417,7 @@ class ElectronOZM(object):
         self.logger.info('calc_nelec: E_e*4πd²   = {0:.2e} erg'.format(
             np.trapz(self.nelec*self.gam*mec2,self.gam)))
 
-    def calc_sy(self):
+    def _calc_sy_classic(self):
         """
         Compute synchrotron spectrum
         """
@@ -427,12 +427,6 @@ class ElectronOZM(object):
 
         CS1   = 6.2632e18                 # crit freq const in Hz (Pacholczyk)
         CS3   = 1.8652e-23*np.sqrt(2./3.) # Constant pot radiada * factor isotropia
-
-        if not hasattr(self,'outspecerg'):
-            self.outspecerg=self.outspecene/eV
-        if not hasattr(self,'gam'):
-            self.logger.warn('Calling calc_nelec to generate gam,nelec')
-            self.calc_nelec()
 
         # Bogus (large) vemit and remit to compute synchrotron
         vemit=(4./3.)*np.pi*self.remit**3
@@ -461,20 +455,21 @@ class ElectronOZM(object):
         nz=np.where((J>0)*(K>0))
         I[nz]=(J[nz]/K[nz])*(-1.*np.expm1(-tau[nz])) # erg/(s*cm2*Hz)
 
-        self.specsy=4.*np.pi*self.remit**2.*I/h/self.outspecene # 1/s
-        self.sedsy=self.specsy*self.outspecene*self.outspecerg # erg/s
+        specsy=4.*np.pi*self.remit**2.*I/h/self.outspecene # 1/s
+        sedsy=self.specsy*self.outspecene*self.outspecerg # erg/s
 
-        totsylum=np.trapz(self.specsy*self.outspecene,self.outspecerg)
-        self.logger.info('calc_sy: L_sy*4πd²  = {0:.2e} erg/s'.format(totsylum))
+        return specsy,sedsy
 
-    def calc_sy_new(self):
+    def _calc_sy_AKP(self):
         """
         Compute sync for random magnetic field according to approximation of
         Aharonian, Kelner, Prosekin 2010
         """
+        from scipy.special import cbrt
         def Ftilde(x):
             """
             AKP10 Eq. D6
+
             """
             ft1=2.15*x**(1./3.)*(1+3.06*x)**(1./6.)
             ft2=1+0.884*x**(2./3.)+0.471*x**(4./3.)
@@ -484,34 +479,51 @@ class ElectronOZM(object):
         def Gtilde(x):
             """
             AKP10 Eq. D7
+
+            Slight performance gain in using cbrt(x)**3 vs x**(n/3.)
             """
-            gt1=1.808*x**(1./3.)/np.sqrt(1+3.4*x**(2./3.))
-            gt2=1+2.210*x**(2./3.)+0.347*x**(4./3.)
-            gt3=1+1.353*x**(2./3.)+0.217*x**(4./3.)
+            gt1=1.808*cbrt(x)/np.sqrt(1+3.4*cbrt(x)**2.)
+            gt2=1+2.210*cbrt(x)**2.+0.347*cbrt(x)**4.
+            gt3=1+1.353*cbrt(x)**2.+0.217*cbrt(x)**4.
             return gt1*(gt2/gt3)*np.exp(-x)
 
+        self.logger.debug('calc_sy: Starting synchrotron computation with AKB2010...')
+
+        # 100 gamma points per energy decade is enough for accurate SYN
+        newngam=100*np.log10(self.gmax/self.gmin)
+        oldngam=self.gam.shape[0]
+        ratio=int(np.round(oldngam/newngam))
+        gam=self.gam[::ratio]
+        nelec=self.nelec[::ratio]
+
         CS1=np.sqrt(3)*e**3*self.B/(2*np.pi*m_e*c**2*hbar*self.outspecerg)
-        Ec=3*e*hbar*self.B*self.gam**2/(2*m_e*c) # erg
+        Ec=3*e*hbar*self.B*gam**2/(2*m_e*c) # erg
         EgEc=self.outspecerg/np.vstack(Ec)
         dNdE=CS1*Gtilde(EgEc)
-        spec=np.trapz(np.vstack(self.nelec)*dNdE,self.gam,axis=0)
+        spec=np.trapz(np.vstack(nelec)*dNdE,gam,axis=0)
 
-# convert from 1/s/erg to 1/s/eV
-        self.specsy=spec/u.erg.to('eV')
-        self.sedsy=spec*self.outspecerg**2.
+        # convert from 1/s/erg to 1/s/eV
+        specsy=spec/u.erg.to('eV')
+        sedsy=spec*self.outspecerg**2.
+
+        return specsy,sedsy
+
+    def calc_sy(self,method='AKP'):
+
+        if not hasattr(self,'outspecerg'):
+            self.outspecerg=self.outspecene/eV
+        if not hasattr(self,'gam'):
+            self.logger.warn('Calling calc_nelec to generate gam,nelec')
+            self.calc_nelec()
+
+        if method=='AKP':
+            self.specsy,self.sedsy=self._calc_sy_AKP()
+        else:
+            self.specsy,self.sedsy=self._calc_sy_classic()
 
         totsylum=np.trapz(self.specsy*self.outspecene,self.outspecerg)
         self.logger.info('calc_sy: L_sy*4πd²  = {0:.2e} erg/s'.format(totsylum))
 
-        #spec=np.zeros_like(self.outspecerg)
-        #for i,Eg in enumerate(self.outspecerg):
-            #CS1=np.sqrt(3)*e**3*self.B/(2*np.pi*m_e*c**2*hbar*Eg)
-            #Ec=3*e*hbar*self.B*self.gam**2/(2*m_e*c) # erg
-            #EgEc=Eg/Ec
-            #dNdE=CS1*Gtilde(EgEc)
-            #spec[i]=np.trapz(self.nelec*dNdE,self.gam)
-
-        
 
     def _calc_specic(self,phn=None,photE=None,seed=None):
         if phn==None and type(phn)==list:
