@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 from astropy import constants
 from astropy import units as u
 # import constant values from astropy.constants
-constants_to_import=['c','G','m_e','e','h','k_B','R_sun']
+constants_to_import=['c','G','m_e','e','h','hbar','k_B','R_sun']
 cntdict={}
 for cnt in constants_to_import:
     if cnt == 'e':
@@ -466,6 +466,52 @@ class ElectronOZM(object):
 
         totsylum=np.trapz(self.specsy*self.outspecene,self.outspecerg)
         self.logger.info('calc_sy: L_sy*4πd²  = {0:.2e} erg/s'.format(totsylum))
+
+    def calc_sy_new(self):
+        """
+        Compute sync for random magnetic field according to approximation of
+        Aharonian, Kelner, Prosekin 2010
+        """
+        def Ftilde(x):
+            """
+            AKP10 Eq. D6
+            """
+            ft1=2.15*x**(1./3.)*(1+3.06*x)**(1./6.)
+            ft2=1+0.884*x**(2./3.)+0.471*x**(4./3.)
+            ft3=1+1.64*x**(2./3.)+0.974*x**(4./3.)
+            return ft1*(ft2/ft3)*np.exp(-x)
+
+        def Gtilde(x):
+            """
+            AKP10 Eq. D7
+            """
+            gt1=1.808*x**(1./3.)/np.sqrt(1+3.4*x**(2./3.))
+            gt2=1+2.210*x**(2./3.)+0.347*x**(4./3.)
+            gt3=1+1.353*x**(2./3.)+0.217*x**(4./3.)
+            return gt1*(gt2/gt3)*np.exp(-x)
+
+        CS1=np.sqrt(3)*e**3*self.B/(2*np.pi*m_e*c**2*hbar*self.outspecerg)
+        Ec=3*e*hbar*self.B*self.gam**2/(2*m_e*c) # erg
+        EgEc=self.outspecerg/np.vstack(Ec)
+        dNdE=CS1*Gtilde(EgEc)
+        spec=np.trapz(np.vstack(self.nelec)*dNdE,self.gam,axis=0)
+
+# convert from 1/s/erg to 1/s/eV
+        self.specsy=spec/u.erg.to('eV')
+        self.sedsy=spec*self.outspecerg**2.
+
+        totsylum=np.trapz(self.specsy*self.outspecene,self.outspecerg)
+        self.logger.info('calc_sy: L_sy*4πd²  = {0:.2e} erg/s'.format(totsylum))
+
+        #spec=np.zeros_like(self.outspecerg)
+        #for i,Eg in enumerate(self.outspecerg):
+            #CS1=np.sqrt(3)*e**3*self.B/(2*np.pi*m_e*c**2*hbar*Eg)
+            #Ec=3*e*hbar*self.B*self.gam**2/(2*m_e*c) # erg
+            #EgEc=Eg/Ec
+            #dNdE=CS1*Gtilde(EgEc)
+            #spec[i]=np.trapz(self.nelec*dNdE,self.gam)
+
+        
 
     def _calc_specic(self,phn=None,photE=None,seed=None):
         if phn==None and type(phn)==list:
