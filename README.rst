@@ -12,11 +12,31 @@ Monte Carlo.
 Installation
 ------------
 
-Just run
+For a system-wide installation, run
 
 ::
 
-    [sudo] pip install gammafit
+    sudo pip install gammafit
+
+or, for a user-only installation, run
+
+::
+
+    pip install --user gammafit
+
+
+If you want to install from the latest development source (recommended until a
+version stable is released), clone this repository
+
+::
+
+    git clone https://github.com/zblz/gammafit
+
+enter directory ``gammafit``, and run
+
+::
+
+    python setup.py install --user
 
 
 Usage
