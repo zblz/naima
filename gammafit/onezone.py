@@ -434,7 +434,7 @@ class ElectronOZM(object):
             """
             AKP10 Eq. D7
 
-            Slight performance gain in using cbrt(x)**3 vs x**(n/3.)
+            Factor ~2 performance gain in using cbrt(x)**n vs x**(n/3.)
             """
             gt1=1.808*cbrt(x)/np.sqrt(1+3.4*cbrt(x)**2.)
             gt2=1+2.210*cbrt(x)**2.+0.347*cbrt(x)**4.
@@ -451,7 +451,7 @@ class ElectronOZM(object):
         nelec=self.nelec[::ratio]
 
         CS1=np.sqrt(3)*e**3*self.B/(2*np.pi*m_e*c**2*hbar*self.outspecerg)
-        Ec=3*e*hbar*self.B*gam**2/(2*m_e*c) # erg
+        Ec=3*e*hbar*self.B*gam**2/(2*m_e*c) # Critical energy, erg
         EgEc=self.outspecerg/np.vstack(Ec)
         dNdE=CS1*Gtilde(EgEc)
         spec=np.trapz(np.vstack(nelec)*dNdE,gam,axis=0)

@@ -47,3 +47,11 @@ a model function, a probability function for the parameter priors, and the
 spectral data to be fit enclosed in a dictionary. An example is shown in the
 file ``velax_demo.py``. Preliminary documentation can be found at
 `gammafit.readthedocs.org <http://gammafit.readthedocs.org>`_.
+
+Attribution
+-----------
+
+A publication describing the radiation models and the method for derivation of
+the particle distribution is in preparation. In the meantime, if you use
+``gammafit`` for your research, please link back to this webpage when mentioning
+``gammafit`` in your publication.
