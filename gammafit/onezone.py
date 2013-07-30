@@ -8,6 +8,10 @@ np.seterr(all='ignore')
 import logging
 logging.basicConfig(level=logging.INFO)
 
+# Ignore warnings in convergence of ProtonOZM integrals for worng parameters
+import warnings
+warnings.filterwarnings('ignore')
+
 ## Constants and units
 from astropy import constants
 from astropy import units as u
@@ -180,7 +184,7 @@ class ElectronOZM(object):
         # injection
         norm_energy   = 20e12, # corresponding to a scattered energy of 1 TeV
         index         = 2.0,
-        cutoff        = 30e12,
+        cutoff        = 30e16, # Default to no cutoff in TeV region
         beta          = 1.0,
         # emitter physical properties
         B        = np.sqrt(8*np.pi*4.1817e-13), #equipartition with CMB energy density (G)

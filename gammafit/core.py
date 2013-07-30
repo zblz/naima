@@ -9,32 +9,6 @@ mec2=(const.m_e*const.c**2).to('erg').value
 
 __all__=["normal_prior","uniform_prior","get_sampler","run_sampler"]
 
-## Placeholder model: Powerlaw with exponential
-
-def _cutoffexp(pars,data):
-    """
-    Powerlaw with exponential cutoff
-
-    Parameters:
-        - 0: PL index
-        - 1: PL normalization
-        - 2: cutoff energy
-        - 3: cutoff exponent (beta)
-    """
-
-    x=data['ene']
-    x0=np.exp(np.average(np.log(x)))
-
-    N     = pars[0]
-    gamma = pars[1]
-    ecut  = pars[2]
-    beta  = pars[3]
-
-    model = N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta)
-
-    return model
-
-_p00=np.array((1e-11,2,10,1))
 
 ## Likelihood functions
 
@@ -79,7 +53,8 @@ def lnprob(pars,data,modelfunc,priorfunc):
 
     lnprob_priors = priorfunc(pars)
 
-# If prior is -np.inf, avoid calling the function as invalid calls may be made, and the result will be discarded anyway
+# If prior is -np.inf, avoid calling the function as invalid calls may be made,
+# and the result will be discarded anyway
     if not np.isinf(lnprob_priors):
         modelout = modelfunc(pars,data)
 
@@ -113,19 +88,44 @@ def _run_mcmc(sampler,pos,nrun):
     for i, out in enumerate(sampler.sample(pos, iterations=nrun)):
         progress=int(100 * i / nrun)
         if progress%5==0:
-            print("Progress of the run: {:.0f} percent ({} of {} steps)".format(int(progress),i,nrun))
+            print("\nProgress of the run: {:.0f} percent ({} of {} steps)".format(int(progress),i,nrun))
             npars=out[0].shape[-1]
             paravg,parstd=[],[]
             for npar in range(npars):
                 paravg.append(np.average(out[0][:,npar]))
                 parstd.append(np.std(out[0][:,npar]))
             print("                            "+("{:-^10} "*npars).format(*sampler.labels))
-            print("  Last ensemble average   : "+("{:^10.3g} "*npars).format(*paravg))
-            print("  Last ensemble std       : "+("{:^10.3g} "*npars).format(*parstd))
-            print("  Last ensemble <lnprob>  : {:.3f}, max: {:.3f}".format(np.average(out[1]),np.max(out[1])))
+            print("  Last ensemble average : "+("{:^10.3g} "*npars).format(*paravg))
+            print("  Last ensemble std     : "+("{:^10.3g} "*npars).format(*parstd))
+            print("  Last ensemble lnprob  :  avg: {:.3f}, max: {:.3f}".format(np.average(out[1]),np.max(out[1])))
     return sampler,out[0]
 
+## Placeholder model: Powerlaw with exponential
+
+def _cutoffexp(pars,data):
+    """
+    Powerlaw with exponential cutoff
+
+    Parameters:
+        - 0: PL normalization
+        - 1: PL index
+        - 2: cutoff energy
+    """
+
+    ene=data['ene']
+    ene0=np.exp(np.average(np.log(ene)))
+
+    N     = pars[0]
+    gamma = pars[1]
+    ecut  = pars[2]
+
+    model = N*(ene/ene0)**-gamma*np.exp(-(ene/ecut))
+
+    return model
+
+# Placeholder prior and initial parameters
 _prior=lambda x: 0.0
+_p00=np.array((1e-11,2,10))
 
 def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
         model=_cutoffexp, prior=_prior, labels=None, threads=8):

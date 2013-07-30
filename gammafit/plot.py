@@ -295,11 +295,11 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
         for tl in ax1.get_xticklabels():
             tl.set_visible(False)
     else:
-# restrict y axis to 5 decades to avoid autoscaling deep exponentials
+# restrict y axis to 10 decades to avoid autoscaling deep exponentials
         xmin,xmax,ymin,ymax=ax1.axis()
-        ymin=max(ymin,ymax/1e5)
+        ymin=max(ymin,ymax/1e10)
         ax1.set_ylim(bottom=ymin)
-    # scale x axis to largest model_MAP x point within 5 decades of maximum
+    # scale x axis to largest model_MAP x point within 10 decades of maximum
         hi=np.where(model_MAP>ymin)
         xmax=np.max(modelx[hi])
         ax1.set_xlim(right=10**np.ceil(np.log10(xmax)))
