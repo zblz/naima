@@ -45,8 +45,8 @@ Usage
 The package consists of several convenience functions to which you must provide
 a model function, a probability function for the parameter priors, and the
 spectral data to be fit enclosed in a dictionary. An example is shown in the
-file ``velax_demo.py``. Preliminary documentation can be found at
-`gammafit.readthedocs.org <http://gammafit.readthedocs.org>`_.
+file ``examples/CrabNebula_function.py``. Preliminary documentation can be found
+at `gammafit.readthedocs.org <http://gammafit.readthedocs.org>`_.
 
 Attribution
 -----------
