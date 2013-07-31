@@ -125,7 +125,10 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False):
 
     try:
         from .plot import corner
-        f = corner(sampler.flatchain,labels=sampler.labels)
+        from .plot import find_ML
+
+        ML,MLp,MLvar,model_ML = find_ML(sampler,0)
+        f = corner(sampler.flatchain,labels=sampler.labels,truths=MLp,quantiles=[0.16,0.5,0.84])
         if pdf:
             f.savefig(outpdf,format='pdf')
         else:

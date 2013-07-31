@@ -30,14 +30,12 @@ def _plot_chain_func(chain,p,label,last_step=False):
     if len(chain.shape)>2:
         traces=chain[:,:,p]
         if last_step==True:
-#keep only last step
+            #keep only last step
             dist=traces[:,-1]
         else:
-#convert chain to flatchain
+            #convert chain to flatchain
             dist=traces.flatten()
     else:
-# we have a flatchain, plot everything
-        #dist=chain[:,p]
         print 'we need the chain to plot the traces, not a flatchain!'
         return None
 
@@ -45,14 +43,13 @@ def _plot_chain_func(chain,p,label,last_step=False):
     nsteps=traces.shape[1]
 
     logplot=False
-    #if dist.max()/dist.min()>5:
-        #logplot=True
+    if np.abs(dist.max()/dist.min())>10.:
+        logplot=True
 
     f=plt.figure()
 
     ax1=f.add_subplot(221)
     ax2=f.add_subplot(122)
-    #ax3=f.add_subplot(223)
 
 # plot five percent of the traces darker
 
@@ -61,7 +58,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
     ax1.set_rasterization_zorder(1)
     for t,c in zip(traces,colors): #range(nwalkers):
         ax1.plot(t,c=c,lw=1,alpha=0.9,zorder=0)
-    ax1.set_xlabel('step')
+    ax1.set_xlabel('step number')
     ax1.set_ylabel(label)
     ax1.set_title('Walker traces')
     if logplot:
@@ -189,7 +186,7 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
         ymin,ymax=[],[]
         for fr,y in ((fmin,ymin),(fmax,ymax)):
             nf=int((fr*nwalkers))
-# TODO: logger
+            # TODO: logger
             #print conf,fr,nf
             for i,x in enumerate(modelx):
                 ysort=np.sort(model[:,i])
@@ -199,6 +196,20 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
     return modelx,CI
 
+def find_ML(sampler,modelidx):
+    """
+    Find Maximum Likelihood parameters as those in the chain with a highest log
+    probability
+    """
+    index=np.unravel_index(np.argmax(sampler.lnprobability),sampler.lnprobability.shape)
+    MLp=sampler.chain[index]
+    model_ML=sampler.blobs[index[1]][index[0]][modelidx][1]
+    MLvar=[np.std(dist) for dist in sampler.flatchain.T]
+    ML=sampler.lnprobability[index]
+
+    return ML,MLp,MLvar,model_ML
+
+
 def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs):
     """
     Plot data with fit confidence regions.
@@ -206,30 +217,17 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
     import matplotlib.pyplot as plt
 
     modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
-
-# Find model_MAP
-    # Find best-fit parameters as those in the chain with a highest log
-    # probability
-    #argmaxlp=np.argmax(sampler.chain
-    #lnprob=np.array([[blob[-1] for blob in step] for step in sampler.blobs])
-    index=np.unravel_index(np.argmax(sampler.lnprobability),sampler.lnprobability.shape)
-    MAPp=sampler.chain[index]
-    model_MAP=sampler.blobs[index[1]][index[0]][modelidx][1]
-    MAPvar=[np.std(dist) for dist in sampler.flatchain.T]
-# TODO: logger
-    infostr='Maximum log probability: {0:.3g}\n'.format(sampler.lnprobability[index])
+    ML,MLp,MLvar,model_ML = find_ML(sampler,modelidx)
+    infostr='Maximum log probability: {0:.3g}\n'.format(ML)
     infostr+='Maximum Likelihood values:\n'
-    for p,v,label in zip(MAPp,MAPvar,sampler.labels):
+    for p,v,label in zip(MLp,MLvar,sampler.labels):
         infostr+='{2:>10}: {0:>8.3g} +/- {1:<8.3g}\n'.format(p,v,label)
 
+    # TODO: logger
     print infostr
     #infostr=''
 
     data=sampler.data
-
-    #f,axarr=plt.subplots(4,sharex=True)
-    #ax1=axarr[0]
-    #ax2=axarr[3]
 
     plotdata=False
     if modelidx==0:
@@ -249,7 +247,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
     for (ymin,ymax),conf in zip(CI,confs):
         color=np.log(conf)/np.log(20)+0.4
         ax1.fill_between(modelx,ymax,ymin,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
-    #ax1.plot(modelx,model_MAP,c='k',lw=3,zorder=-5)
+    #ax1.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
 
     def plot_ulims(ax,x,y,xerr):
         ax.errorbar(x,y,xerr=xerr,ls='',
@@ -264,17 +262,16 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
                 yerr=data['dflux'][notul].T, xerr=data['dene'][notul].T,
                 zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
                 mec='w',mew=0,ms=8,color=datacol)
-        #print ul
-        #print data['ene'][ul],data['flux'][ul],data['dene'][ul]
+
         if np.any(ul):
             plot_ulims(ax1,data['ene'][ul],data['flux'][ul],data['dene'][ul])
 
-        if len(model_MAP)!=len(data['ene']):
+        if len(model_ML)!=len(data['ene']):
             from scipy.interpolate import interp1d
-            modelfunc=interp1d(modelx,model_MAP)
+            modelfunc=interp1d(modelx,model_ML)
             difference=data['flux'][notul]-modelfunc(data['ene'][notul])
         else:
-            difference=data['flux'][notul]-model_MAP[notul]
+            difference=data['flux'][notul]-model_ML[notul]
 
         dflux=np.average(data['dflux'][notul],axis=1)
         ax2.errorbar(data['ene'][notul],difference/dflux,yerr=dflux/dflux, xerr=data['dene'][notul].T,
@@ -295,12 +292,14 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
         for tl in ax1.get_xticklabels():
             tl.set_visible(False)
     else:
-# restrict y axis to 10 decades to avoid autoscaling deep exponentials
+        ndecades=6
+        # restrict y axis to ndecades to avoid autoscaling deep exponentials
         xmin,xmax,ymin,ymax=ax1.axis()
-        ymin=max(ymin,ymax/1e10)
+        ymin=max(ymin,ymax/10**ndecades)
         ax1.set_ylim(bottom=ymin)
-    # scale x axis to largest model_MAP x point within 10 decades of maximum
-        hi=np.where(model_MAP>ymin)
+        # scale x axis to largest model_ML x point within ndecades decades of
+        # maximum
+        hi=np.where(model_ML>ymin)
         xmax=np.max(modelx[hi])
         ax1.set_xlim(right=10**np.ceil(np.log10(xmax)))
 
@@ -317,8 +316,6 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
             ax1.set_xlabel(xlabel)
 
     f.subplots_adjust(hspace=0)
-
-    #f.show()
 
     return f
 
