@@ -14,6 +14,11 @@ dflux=np.array(zip(merr,perr))
 
 data=gammafit.build_data_dict(ene,None,flux,dflux)
 
+## Set initial parameters
+
+p0=np.array((3e18,3.2,45.0,))
+labels=['norm','index','cutoff']
+
 ## Model definition
 
 def ElectronIC(pars,data):
@@ -60,11 +65,6 @@ def lnprior(pars):
 			#+ gammafit.uniform_prior(pars[3],0.5,1.5)
 
 	return logprob
-
-## Set initial parameters
-
-p0=np.array((3e18,3.2,45.0,))
-labels=['norm','index','cutoff']
 
 ## Run sampler
 

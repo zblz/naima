@@ -14,6 +14,11 @@ dflux=np.array(zip(merr,perr))
 
 data=gammafit.build_data_dict(ene,None,flux,dflux)
 
+## Set initial parameters
+
+p0=np.array((1.5e-12,2.4,15.0,))
+labels=['norm','index','cutoff']
+
 ## Model definition
 
 def cutoffexp(pars,data):
@@ -53,15 +58,10 @@ def lnprior(pars):
 
 	return logprob
 
-## Set initial parameters
-
-p0=np.array((1.5e-12,2.4,15.0,))
-labels=['norm','index','cutoff']
-
 ## Run sampler
 
 sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-        prior=lnprior, nwalkers=1000, nburn=100, nrun=100, threads=8)
+        prior=lnprior, nwalkers=1000, nburn=200, nrun=100, threads=8)
 
 ## Diagnostic plots
 

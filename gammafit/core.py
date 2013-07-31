@@ -86,8 +86,8 @@ def lnprob(pars,data,modelfunc,priorfunc):
 
 def _run_mcmc(sampler,pos,nrun):
     for i, out in enumerate(sampler.sample(pos, iterations=nrun)):
-        progress=int(100 * i / nrun)
-        if progress%5==0:
+        progress=(100. * float(i) / float(nrun))
+        if progress%5<(5./float(nrun)):
             print("\nProgress of the run: {:.0f} percent ({} of {} steps)".format(int(progress),i,nrun))
             npars=out[0].shape[-1]
             paravg,parstd=[],[]

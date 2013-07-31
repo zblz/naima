@@ -223,7 +223,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
         infostr+='{2:>10}: {0:>8.3g} +/- {1:<8.3g}\n'.format(p,v,label)
 
     print infostr
-    infostr=''
+    #infostr=''
 
     data=sampler.data
 

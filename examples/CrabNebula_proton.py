@@ -16,6 +16,11 @@ dflux=np.array(zip(merr,perr))
 
 data=gammafit.build_data_dict(ene,None,flux,dflux)
 
+## Set initial parameters
+
+p0=np.array((5e-25,2.34,80.,))
+labels=['norm','index','cutoff']
+
 ## Model definition
 
 def ppgamma(pars,data):
@@ -66,11 +71,6 @@ def lnprior(pars):
 			+ gammafit.uniform_prior(pars[2],0.,np.inf) \
 
 	return logprob
-
-## Set initial parameters
-
-p0=np.array((5e-25,2.34,80.,))
-labels=['norm','index','cutoff']
 
 ## Run sampler
 
