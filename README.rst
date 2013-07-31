@@ -12,25 +12,12 @@ Monte Carlo.
 Installation
 ------------
 
-For a system-wide installation, run
+To install from the latest development source (recommended until a version
+stable is released), clone this repository
 
 ::
 
-    sudo pip install gammafit
-
-or, for a user-only installation, run
-
-::
-
-    pip install --user gammafit
-
-
-If you want to install from the latest development source (recommended until a
-version stable is released), clone this repository
-
-::
-
-    git clone https://github.com/zblz/gammafit
+    git clone http://github.com/zblz/gammafit
 
 enter directory ``gammafit``, and run
 
@@ -44,9 +31,10 @@ Usage
 
 The package consists of several convenience functions to which you must provide
 a model function, a probability function for the parameter priors, and the
-spectral data to be fit enclosed in a dictionary. An example is shown in the
-file ``examples/CrabNebula_function.py``. Preliminary documentation can be found
-at `gammafit.readthedocs.org <http://gammafit.readthedocs.org>`_.
+spectral data to be fit enclosed in a dictionary. Three examples (derivation of
+electron and proton distributions, as well as function fitting) are shown in the
+directory ``examples``. Preliminary documentation can be found at
+`gammafit.readthedocs.org <http://gammafit.readthedocs.org>`_.
 
 Attribution
 -----------

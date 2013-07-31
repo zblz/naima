@@ -75,7 +75,7 @@ def lnprior(pars):
 ## Run sampler
 
 sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ppgamma,
-        prior=lnprior, nwalkers=250, nburn=100, nrun=100, threads=8)
+        prior=lnprior, nwalkers=500, nburn=200, nrun=100, threads=8)
 
 ## Diagnostic plots
 
