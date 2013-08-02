@@ -8,10 +8,6 @@ np.seterr(all='ignore')
 import logging
 logging.basicConfig(level=logging.INFO)
 
-# Ignore warnings in convergence of ProtonOZM integrals for worng parameters
-import warnings
-warnings.filterwarnings('ignore')
-
 ## Constants and units
 from astropy import constants
 from astropy import units as u

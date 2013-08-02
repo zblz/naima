@@ -77,7 +77,7 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
 
     return data
 
-def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False):
+def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,converttosed=None):
     """
     Generate diagnostic plots:
 
@@ -128,7 +128,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False):
         from .plot import find_ML
 
         ML,MLp,MLvar,model_ML = find_ML(sampler,0)
-        f = corner(sampler.flatchain,labels=sampler.labels,truths=MLp,quantiles=[0.16,0.5,0.84])
+        f = corner(sampler.flatchain,labels=sampler.labels,truths=MLp,quantiles=[0.16,0.5,0.84],verbose=False)
         if pdf:
             f.savefig(outpdf,format='pdf')
         else:
@@ -142,15 +142,22 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False):
         nmodels=len(sampler.blobs[-1][0])
         modelidxs=range(nmodels)
 
-    for modelidx in modelidxs:
+    if converttosed==None:
+        converttosed=[False for idx in modelidxs]
+
+    for modelidx,tosed in zip(modelidxs,converttosed):
         if modelidx==0:
-            labels=('Energy [TeV]',r'Differential Flux [1/cm$^2$/s/TeV]')
+            if tosed:
+                labels=('Energy [TeV]',r'E$^2$dN/dE [erg/cm$^2$/s]')
+            else:
+                labels=('Energy [TeV]',r'dN/dE [1/cm$^2$/s/TeV]')
         elif modelidx==1:
             labels=('Particle Energy [TeV]',r'Particle energy distribution [erg$\times 4\pi d^2$]')
         else:
             labels=( None, None)
         try:
-            f = plot_fit(sampler,xlabel=labels[0],ylabel=labels[1],modelidx=modelidx,last_step=False)
+            f = plot_fit(sampler, xlabel=labels[0], ylabel=labels[1],
+                    modelidx=modelidx, last_step=False, converttosed=tosed)
             if pdf:
                 f.savefig(outpdf,format='pdf')
             else:

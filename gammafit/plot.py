@@ -210,7 +210,7 @@ def find_ML(sampler,modelidx):
     return ML,MLp,MLvar,model_ML
 
 
-def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs):
+def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],converttosed=False,**kwargs):
     """
     Plot data with fit confidence regions.
     """
@@ -244,9 +244,14 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
 
     datacol='r'
 
+    if converttosed:
+        sedf=modelx**2*1.6021765 # TeV to erg
+    else:
+        sedf=np.ones_like(modelx)
+
     for (ymin,ymax),conf in zip(CI,confs):
         color=np.log(conf)/np.log(20)+0.4
-        ax1.fill_between(modelx,ymax,ymin,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
+        ax1.fill_between(modelx,ymax*sedf,ymin*sedf,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
     #ax1.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
 
     def plot_ulims(ax,x,y,xerr):
@@ -258,13 +263,18 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
     if plotdata:
         ul=data['ul']
         notul=-ul
-        ax1.errorbar(data['ene'][notul],data['flux'][notul],
-                yerr=data['dflux'][notul].T, xerr=data['dene'][notul].T,
+        if converttosed:
+            sedf=data['ene']**2*1.6021765
+        else:
+            sedf=np.ones_like(data['ene'])
+
+        ax1.errorbar(data['ene'][notul],data['flux'][notul]*sedf[notul],
+                yerr=data['dflux'][notul].T*sedf[notul], xerr=data['dene'][notul].T,
                 zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
-                mec='w',mew=0,ms=8,color=datacol)
+                mec='w',mew=0,ms=6,color=datacol)
 
         if np.any(ul):
-            plot_ulims(ax1,data['ene'][ul],data['flux'][ul],data['dene'][ul])
+            plot_ulims(ax1,data['ene'][ul],data['flux'][ul]*sedf[ul],data['dene'][ul])
 
         if len(model_ML)!=len(data['ene']):
             from scipy.interpolate import interp1d
@@ -276,7 +286,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
         dflux=np.average(data['dflux'][notul],axis=1)
         ax2.errorbar(data['ene'][notul],difference/dflux,yerr=dflux/dflux, xerr=data['dene'][notul].T,
                 zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
-                mec='w',mew=0,ms=8,color=datacol)
+                mec='w',mew=0,ms=6,color=datacol)
         ax2.axhline(0,c='k',lw=2,ls='--')
 
         from matplotlib.ticker import MaxNLocator
@@ -292,7 +302,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],**kwargs
         for tl in ax1.get_xticklabels():
             tl.set_visible(False)
     else:
-        ndecades=6
+        ndecades=10
         # restrict y axis to ndecades to avoid autoscaling deep exponentials
         xmin,xmax,ymin,ymax=ax1.axis()
         ymin=max(ymin,ymax/10**ndecades)

@@ -79,7 +79,7 @@ sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ppgamm
 
 ## Diagnostic plots
 
-gammafit.generate_diagnostic_plots('CrabNebula_proton',sampler)
+gammafit.generate_diagnostic_plots('CrabNebula_proton',sampler,converttosed=[True,False])
 
 ## Save sampler
 

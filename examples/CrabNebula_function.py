@@ -64,8 +64,8 @@ sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=cutoff
         prior=lnprior, nwalkers=1000, nburn=200, nrun=100, threads=8)
 
 ## Diagnostic plots
-
-gammafit.generate_diagnostic_plots('CrabNebula_function',sampler)
+# Only convert first model to SED
+gammafit.generate_diagnostic_plots('CrabNebula_function',sampler,converttosed=[True,False])
 
 ## Save sampler
 

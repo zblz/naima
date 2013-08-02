@@ -73,7 +73,7 @@ sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=Electr
 
 ## Diagnostic plots
 
-gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler)
+gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler,converttosed=[True,False])
 
 ## Save sampler
 
