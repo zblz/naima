@@ -542,7 +542,7 @@ class ElectronOZM(object):
         for idx,seedspec in enumerate(self.seedspec):
             # Call actual computation, detached to allow changes in subclasses
             specic=self._calc_specic(phn=self.phn[idx],photE=self.photE[idx],seed=seedspec)
-            specictev=specic*u.eV.to('TeV') # 1/s/TeV
+            specictev=specic/u.eV.to('TeV') # 1/s/TeV
             sedic=specic*self.outspecerg*self.outspecene # erg/s
             #setattr(self,'specic_'+seedspec,specic)
             #setattr(self,'specictev_'+seedspec,specictev)

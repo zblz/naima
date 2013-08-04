@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 
-__all__ = ["plot_chain","plot_fit"]
+__all__ = ["plot_chain","plot_fit","plot_CI"]
 
 try:
     from triangle import corner
@@ -193,8 +193,22 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
                 y.append(ysort[nf])
         CI.append((ymin,ymax))
 
-
     return modelx,CI
+
+def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs):
+
+    modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
+
+    if converttosed:
+        sedf=modelx**2*1.6021765 # TeV to erg
+    else:
+        sedf=np.ones_like(modelx)
+
+    for (ymin,ymax),conf in zip(CI,confs):
+        color=np.log(conf)/np.log(20)+0.4
+        ax.fill_between(modelx,ymax*sedf,ymin*sedf,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
+    #ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
+
 
 def find_ML(sampler,modelidx):
     """
@@ -209,14 +223,13 @@ def find_ML(sampler,modelidx):
 
     return ML,MLp,MLvar,model_ML
 
-
-def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],converttosed=False,**kwargs):
+def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],converttosed=False,figure=None,**kwargs):
     """
     Plot data with fit confidence regions.
     """
     import matplotlib.pyplot as plt
 
-    modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
+    modelx=sampler.blobs[-1][0][modelidx][0]
     ML,MLp,MLvar,model_ML = find_ML(sampler,modelidx)
     infostr='Maximum log probability: {0:.3g}\n'.format(ML)
     infostr+='Maximum Likelihood values:\n'
@@ -233,7 +246,11 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],convertt
     if modelidx==0:
         plotdata=True
 
-    f=plt.figure()
+    if figure==None:
+        f=plt.figure()
+    else:
+        f=figure
+
     if plotdata:
         ax1=plt.subplot2grid((4,1),(0,0),rowspan=3)
         ax2=plt.subplot2grid((4,1),(3,0),sharex=ax1)
@@ -244,15 +261,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],convertt
 
     datacol='r'
 
-    if converttosed:
-        sedf=modelx**2*1.6021765 # TeV to erg
-    else:
-        sedf=np.ones_like(modelx)
-
-    for (ymin,ymax),conf in zip(CI,confs):
-        color=np.log(conf)/np.log(20)+0.4
-        ax1.fill_between(modelx,ymax*sedf,ymin*sedf,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
-    #ax1.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
+    plot_CI(ax1,sampler,modelidx,converttosed=converttosed,confs=confs,**kwargs)
 
     def plot_ulims(ax,x,y,xerr):
         ax.errorbar(x,y,xerr=xerr,ls='',
@@ -302,7 +311,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],convertt
         for tl in ax1.get_xticklabels():
             tl.set_visible(False)
     else:
-        ndecades=10
+        ndecades=5
         # restrict y axis to ndecades to avoid autoscaling deep exponentials
         xmin,xmax,ymin,ymax=ax1.axis()
         ymin=max(ymin,ymax/10**ndecades)

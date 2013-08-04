@@ -59,7 +59,7 @@ def lnprob(pars,data,modelfunc,priorfunc):
         modelout = modelfunc(pars,data)
 
         # Save blobs or save model if no blobs given
-        if type(modelout)==tuple:
+        if (type(modelout)==tuple or type(modelout)==list) and (type(modelout)!=np.ndarray):
             #print len(modelout)
             model = modelout[0]
             blob  = modelout[1:]
@@ -148,7 +148,7 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
     if guess:
         # guess normalization parameter from p0
         modelout=model(p0,data)
-        if type(modelout)==tuple:
+        if (type(modelout)==tuple or type(modelout)==list) and (type(modelout)!=np.ndarray):
             spec=modelout[0]
         else:
             spec=modelout
@@ -166,10 +166,11 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
     p0var=np.array([ pp/10. for pp in p0])
     p0=emcee.utils.sample_ball(p0,p0var,nwalkers)
 
-    print 'Burning in the walkers with {} steps...'.format(nburn)
-    #burnin = sampler.run_mcmc(p0,nburn)
-    #pos=burnin[0]
-    sampler,pos=_run_mcmc(sampler,p0,nburn)
+    if nburn>0:
+        print 'Burning in the {} walkers with {} steps...'.format(nwalkers,nburn)
+        sampler,pos = _run_mcmc(sampler,p0,nburn)
+    else:
+        pos=p0
 
     return sampler,pos
 
@@ -180,7 +181,7 @@ def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
     if sampler==None or pos==None:
         sampler,pos=get_sampler(**kwargs)
 
-    print 'Walker burn in finished, running {} steps...'.format(nrun)
+    print '\nWalker burn in finished, running {} steps...'.format(nrun)
     sampler.reset()
     sampler,pos=_run_mcmc(sampler,pos,nrun)
 
