@@ -714,9 +714,11 @@ class ProtonOZM(object):
         """
         from scipy.integrate import fixed_quad,quad
         # Fixed quad with n=40 is about 15 times faster and is always within
-        # 0.5% of the result of adaptive quad for Egamma>0.1
-        #result=c*quad(self.photon_integrand,0.,1.,args=Egamma)[0]
-        result=c*fixed_quad(self._photon_integrand,0.,1.,args=[Egamma,],n=40)[0]
+        # 0.5% of the result of adaptive quad for Egamma>0.1 
+        # WARNING: It also produces artifacts for steep distributions (e.g.
+        # Maxwellian) at ~500 GeV. Reverting to adaptative quadrature
+        #result=c*fixed_quad(self._photon_integrand,0.,1.,args=[Egamma,],n=40)[0]
+        result=c*quad(self._photon_integrand,0.,1.,args=Egamma,epsrel=1e-3,epsabs=1e-50)[0]
 
         return result
 
@@ -754,18 +756,20 @@ class ProtonOZM(object):
         Ep = quad(lambda x: x*self.Jp(x),Eth,1e3*cutoff)[0]*u.TeV.to('erg')
         self.logger.info('E_p(E>1.22 GeV)*4πd²/nH = {0:.2e} erg'.format(self.norm*Ep))
 
+        if not hasattr(self,'Et'):
+            self.Et=0.1 # Energy at which we change from delta functional to accurate calculation
 
-        if np.any(outspecene<0.1):
+        if np.any(outspecene<self.Et):
             # compute value of nhat so that delta functional matches accurate calculation at 0.1TeV
             self.nhat=1. # initial value, works for index~2.1
-            full=self._calc_specpp_hiE(0.1)
-            delta=self._calc_specpp_loE(0.1)
+            full=self._calc_specpp_hiE(self.Et)
+            delta=self._calc_specpp_loE(self.Et)
             self.nhat*=full/delta
 
         self.specpp=np.zeros_like(outspecene)
 
         for i,Egamma in enumerate(outspecene):
-            if Egamma>=0.1:
+            if Egamma>=self.Et:
                 self.specpp[i]=self._calc_specpp_hiE(Egamma)
             else:
                 self.specpp[i]=self._calc_specpp_loE(Egamma)

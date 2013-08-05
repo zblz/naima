@@ -88,7 +88,7 @@ def _run_mcmc(sampler,pos,nrun):
     for i, out in enumerate(sampler.sample(pos, iterations=nrun)):
         progress=(100. * float(i) / float(nrun))
         if progress%5<(5./float(nrun)):
-            print("\nProgress of the run: {:.0f} percent ({} of {} steps)".format(int(progress),i,nrun))
+            print("\nProgress of the run: {0:.0f} percent ({1} of {2} steps)".format(int(progress),i,nrun))
             npars=out[0].shape[-1]
             paravg,parstd=[],[]
             for npar in range(npars):
@@ -141,9 +141,9 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
     # Add parameter labels if not provided or too short
     if labels == None:
         # First is normalization
-        labels = ['norm',]+['par{}'.format(i) for i in range(1,len(p0))]
+        labels = ['norm',]+['par{0}'.format(i) for i in range(1,len(p0))]
     elif len(labels)<len(p0):
-        labels+=['par{}'.format(i) for i in range(len(labels),len(p0))]
+        labels+=['par{0}'.format(i) for i in range(len(labels),len(p0))]
 
     if guess:
         # guess normalization parameter from p0
@@ -167,7 +167,7 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
     p0=emcee.utils.sample_ball(p0,p0var,nwalkers)
 
     if nburn>0:
-        print 'Burning in the {} walkers with {} steps...'.format(nwalkers,nburn)
+        print 'Burning in the {0} walkers with {1} steps...'.format(nwalkers,nburn)
         sampler,pos = _run_mcmc(sampler,p0,nburn)
     else:
         pos=p0
@@ -181,7 +181,7 @@ def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
     if sampler==None or pos==None:
         sampler,pos=get_sampler(**kwargs)
 
-    print '\nWalker burn in finished, running {} steps...'.format(nrun)
+    print '\nWalker burn in finished, running {0} steps...'.format(nrun)
     sampler.reset()
     sampler,pos=_run_mcmc(sampler,pos,nrun)
 
