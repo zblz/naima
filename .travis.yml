@@ -8,7 +8,7 @@ python:
 
 env:
     # try all python versions with the latest stable numpy and astropy
-    - ASTROPY_VERSION=stable NUMPY_VERSION=1.7.1 SETUP_CMD='test'
+    - ASTROPY_VERSION=stable SETUP_CMD='test'
 
 #matrix:
     #include:
@@ -44,7 +44,6 @@ before_install:
 install:
    - export PYTHONIOENCODING=UTF8 # just in case
    - rm -f $VIRTUAL_ENV/lib/python$TRAVIS_PYTHON_VERSION/no-global-site-packages.txt # force use of system-wide packages
-   - pip -q install --upgrade "numpy==$NUMPY_VERSION" --use-mirrors
    - pip -q install emcee triangle_plot
 
    - if [[ $ASTROPY_VERSION == stable ]]; then pip -q install astropy --use-mirrors; fi
