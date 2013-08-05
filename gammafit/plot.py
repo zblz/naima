@@ -115,8 +115,8 @@ def _plot_chain_func(chain,p,label,last_step=False):
     quantiles=dict(zip(quant,xquant))
 
     chain_props='Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
-            'Autocorrelation time: {:.1f}'.format(acort) + '\n' +\
-            'Gelman-Rubin statistic: {:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
+            'Autocorrelation time: {0:.1f}'.format(acort) + '\n' +\
+            'Gelman-Rubin statistic: {0:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
             'Distribution properties for the {clen}:\n \
     - mode: {mode:.3g} \n \
     - mean: {mean:.3g} \n \
@@ -132,7 +132,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
                 quant99=quantiles[0.99],
                 meanstd=(mean-std,mean+std),clen=clen,mode=mode,)
 
-    print '\n {:-^50}\n'.format(label) + chain_props
+    print '\n {0:-^50}\n'.format(label) + chain_props
     f.text(0.05,0.5,chain_props,ha='left',va='top')
 
     #f.tight_layout()
