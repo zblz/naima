@@ -46,7 +46,7 @@ class _BogusLogger(object):
     def info(self,s):
         pass
     def warn(self,s):
-        print 'WARN:OneZoneModel: %s'%s
+        print('WARN:OneZoneModel: %s'%s)
         pass
 
 

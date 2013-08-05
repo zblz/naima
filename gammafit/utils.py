@@ -108,7 +108,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
     """
 
     if pdf:
-        print 'Generating diagnostic plots in file {}_plots.pdf'.format(outname)
+        print('Generating diagnostic plots in file {}_plots.pdf'.format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
         outpdf=PdfPages('{}_plots.pdf'.format(outname))
 
@@ -134,7 +134,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
         else:
             f.savefig('{0}_corner.png'.format(outname))
     except NameError:
-        print 'triangle.py not installed, corner plot not available'
+        print('triangle.py not installed, corner plot not available')
 
     ## Fit
 
@@ -164,7 +164,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
                 f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
         except Exception as e:
             # Maybe one of the returned models does not conform to the needed format
-            print e
+            print(e)
 
     if pdf:
         outpdf.close()

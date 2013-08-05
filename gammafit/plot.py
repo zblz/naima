@@ -7,7 +7,7 @@ try:
     from triangle import corner
     __all__ += ["corner",]
 except ImportError:
-    print 'triangle.py not installed, corner plot will not be available'
+    print('triangle.py not installed, corner plot will not be available')
 
 ## Plot funcs
 
@@ -36,7 +36,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
             #convert chain to flatchain
             dist=traces.flatten()
     else:
-        print 'we need the chain to plot the traces, not a flatchain!'
+        print('we need the chain to plot the traces, not a flatchain!')
         return None
 
     nwalkers=traces.shape[0]
@@ -132,7 +132,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
                 quant99=quantiles[0.99],
                 meanstd=(mean-std,mean+std),clen=clen,mode=mode,)
 
-    print '\n {0:-^50}\n'.format(label) + chain_props
+    print('\n {0:-^50}\n'.format(label) + chain_props)
     f.text(0.05,0.5,chain_props,ha='left',va='top')
 
     #f.tight_layout()
@@ -238,7 +238,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
         infostr+='{2:>10}: {0:>8.3g} +/- {1:<8.3g}\n'.format(p,v,label)
 
     # TODO: logger
-    print infostr
+    print(infostr)
     #infostr=''
 
     data=sampler.data

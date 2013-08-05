@@ -135,7 +135,7 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
 
 
     if data==None:
-        print 'Need to provide data!'
+        print('Need to provide data!')
         raise TypeError
 
     # Add parameter labels if not provided or too short
@@ -167,7 +167,7 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
     p0=emcee.utils.sample_ball(p0,p0var,nwalkers)
 
     if nburn>0:
-        print 'Burning in the {0} walkers with {1} steps...'.format(nwalkers,nburn)
+        print('Burning in the {0} walkers with {1} steps...'.format(nwalkers,nburn))
         sampler,pos = _run_mcmc(sampler,p0,nburn)
     else:
         pos=p0
@@ -181,7 +181,7 @@ def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
     if sampler==None or pos==None:
         sampler,pos=get_sampler(**kwargs)
 
-    print '\nWalker burn in finished, running {0} steps...'.format(nrun)
+    print('\nWalker burn in finished, running {0} steps...'.format(nrun))
     sampler.reset()
     sampler,pos=_run_mcmc(sampler,pos,nrun)
 
