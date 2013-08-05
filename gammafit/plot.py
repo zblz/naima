@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
 import numpy as np
 
 __all__ = ["plot_chain","plot_fit","plot_CI"]
