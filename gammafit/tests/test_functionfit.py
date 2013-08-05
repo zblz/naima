@@ -46,20 +46,15 @@ spec=np.loadtxt(specfile)
 specfile.close()
 
 ene=spec[:,0]
-dene=gammafit.generate_energy_edges(ene)
-
 flux=spec[:,1]
 merr=spec[:,1]-spec[:,2]
 perr=spec[:,3]-spec[:,1]
-dflux=np.array(zip(merr,perr))
+dflux=np.array(list(zip(merr,perr)))
 
-ul=(dflux[:,0]==0.)
-cl=0.99
-
+data=build_data_dict(ene,None,flux,dflux,)
 
 
 def test_function_sampler():
-    data=build_data_dict(ene,dene,flux,dflux,ul,cl)
 
 ## Model definition
 

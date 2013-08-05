@@ -12,7 +12,7 @@ ene=spec[:,0]
 flux=spec[:,3]
 perr=spec[:,4]
 merr=spec[:,5]
-dflux=np.array(zip(merr,perr))
+dflux=np.array(list(zip(merr,perr)))
 
 data=gammafit.build_data_dict(ene,None,flux,dflux)
 

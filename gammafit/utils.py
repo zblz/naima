@@ -31,7 +31,7 @@ def generate_energy_edges(ene):
     ehi[:-1]=midene-ene[:-1]
     elo[0]=ehi[0]
     ehi[-1]=elo[-1]
-    return np.array(zip(elo,ehi))
+    return np.array(list(zip(elo,ehi)))
 
 def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     """
@@ -140,7 +140,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
 
     if modelidxs==None:
         nmodels=len(sampler.blobs[-1][0])
-        modelidxs=range(nmodels)
+        modelidxs=list(range(nmodels))
 
     if converttosed==None:
         converttosed=[False for idx in modelidxs]
