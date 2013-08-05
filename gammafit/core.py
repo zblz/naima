@@ -75,8 +75,8 @@ def lnprob(pars,data,modelfunc,priorfunc):
     total_lnprob  = lnprob_model + lnprob_priors
 
     # Print parameters and total_lnprob
-    outstr = '{:8.2g} '*len(pars) + '{:8.3g} '*3
-    outargs = list(pars) + [lnprob_model,lnprob_priors,total_lnprob]
+    #outstr = '{:8.2g} '*len(pars) + '{:8.3g} '*3
+    #outargs = list(pars) + [lnprob_model,lnprob_priors,total_lnprob]
 # TODO: convert following print to logger
     #print outstr.format(*outargs)
 
@@ -94,10 +94,10 @@ def _run_mcmc(sampler,pos,nrun):
             for npar in range(npars):
                 paravg.append(np.average(out[0][:,npar]))
                 parstd.append(np.std(out[0][:,npar]))
-            print("                            "+("{:-^10} "*npars).format(*sampler.labels))
-            print("  Last ensemble average : "+("{:^10.3g} "*npars).format(*paravg))
-            print("  Last ensemble std     : "+("{:^10.3g} "*npars).format(*parstd))
-            print("  Last ensemble lnprob  :  avg: {:.3f}, max: {:.3f}".format(np.average(out[1]),np.max(out[1])))
+            print("                            "+(" ".join(["{%i:-^10}"%i for i in range(npars)])).format(*sampler.labels))
+            print("  Last ensemble average : "+(" ".join(["{%i:^10.3g}"%i for i in range(npars)])).format(*paravg))
+            print("  Last ensemble std     : "+(" ".join(["{%i:^10.3g}"%i for i in range(npars)])).format(*parstd))
+            print("  Last ensemble lnprob  :  avg: {0:.3f}, max: {1:.3f}".format(np.average(out[1]),np.max(out[1])))
     return sampler,out[0]
 
 ## Placeholder model: Powerlaw with exponential
