@@ -223,7 +223,8 @@ def find_ML(sampler,modelidx):
 
     return ML,MLp,MLvar,model_ML
 
-def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],converttosed=False,figure=None,**kwargs):
+def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
+        converttosed=False,figure=None,residualCI=True,**kwargs):
     """
     Plot data with fit confidence regions.
     """
@@ -302,6 +303,18 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],convertt
         ax2.yaxis.set_major_locator(MaxNLocator(integer='True',prune='upper'))
 
         ax2.set_ylabel(r'$\Delta\sigma$')
+
+        if len(model_ML)==len(data['ene']) and residualCI:
+            modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
+
+            for (ymin,ymax),conf in zip(CI,confs):
+                color=np.log(conf)/np.log(20)+0.4
+                ax2.fill_between(modelx[notul],(np.array(ymax)[notul]-model_ML[notul])/dflux,
+                        (np.array(ymin)[notul]-model_ML[notul])/dflux,lw=0.,
+                        color='{0}'.format(color), alpha=0.6,zorder=-10)
+            #ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
+
+
 
 
     ax1.set_xscale('log')
