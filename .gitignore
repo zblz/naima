@@ -38,3 +38,10 @@ distribute-*.tar.gz
 
 # Mac OSX
 .DS_Store
+
+.project
+.pydevproject
+.settings
+docs/_generated/
+gammafit/gammafit.cfg
+
