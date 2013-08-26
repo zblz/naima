@@ -77,7 +77,7 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
 
     return data
 
-def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,converttosed=None):
+def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,converttosed=None,**kwargs):
     """
     Generate diagnostic plots:
 
@@ -115,7 +115,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
     ## Chains
 
     for par,label in zip(range(sampler.chain.shape[-1]),sampler.labels):
-        f = plot_chain(sampler,par)
+        f = plot_chain(sampler,par,**kwargs)
         if pdf:
             f.savefig(outpdf,format='pdf')
         else:
@@ -128,7 +128,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
         from .plot import find_ML
 
         ML,MLp,MLvar,model_ML = find_ML(sampler,0)
-        f = corner(sampler.flatchain,labels=sampler.labels,truths=MLp,quantiles=[0.16,0.5,0.84],verbose=False)
+        f = corner(sampler.flatchain,labels=sampler.labels,truths=MLp,quantiles=[0.16,0.5,0.84],verbose=False,**kwargs)
         if pdf:
             f.savefig(outpdf,format='pdf')
         else:
@@ -157,7 +157,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
             labels=( None, None)
         try:
             f = plot_fit(sampler, xlabel=labels[0], ylabel=labels[1],
-                    modelidx=modelidx, last_step=False, converttosed=tosed)
+                    modelidx=modelidx, converttosed=tosed,**kwargs)
             if pdf:
                 f.savefig(outpdf,format='pdf')
             else:
