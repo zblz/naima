@@ -408,13 +408,13 @@ class ElectronOZM(object):
         qinj = self._calc_qinj()
 
         if self.evolve_nelec:
-            self.logger.info('calc_nelec: L_inj*4πd² = {0:.2e} erg/s'.format(
+            self.logger.info('calc_nelec: L_inj/4πd² = {0:.2e} erg/s/cm²'.format(
                 np.trapz(qinj*self.gam*mec2,self.gam)))
             self.nelec = self._calc_steady_state_nelec(qinj)
         else:
             self.nelec = qinj
 
-        self.logger.info('calc_nelec: E_e*4πd²   = {0:.2e} erg'.format(
+        self.logger.info('calc_nelec: E_e/4πd²   = {0:.2e} erg/cm²'.format(
             np.trapz(self.nelec*self.gam*mec2,self.gam)))
 
     def calc_sy(self):
@@ -461,7 +461,7 @@ class ElectronOZM(object):
         self.sedsy=spec*self.outspecerg**2.
 
         totsylum=np.trapz(self.specsy*self.outspecene,self.outspecerg)
-        self.logger.info('calc_sy: L_sy*4πd²  = {0:.2e} erg/s'.format(totsylum))
+        self.logger.info('calc_sy: L_sy/4πd²  = {0:.2e} erg/s/cm²'.format(totsylum))
 
     def _calc_specic(self,phn=None,photE=None,seed=None):
         if phn==None and type(phn)==list:
@@ -552,11 +552,11 @@ class ElectronOZM(object):
             self.sedic+=sedic
 
         toticlum=np.trapz(self.specic*self.outspecene,self.outspecerg)
-        self.logger.info('calc_ic: L_ic*4πd²  = {0:.2e} erg/s'.format(toticlum))
+        self.logger.info('calc_ic: L_ic/4πd²  = {0:.2e} erg/s/cm²'.format(toticlum))
         tev=np.where(self.outspecene>1e11)
         if len(tev[0])>0:
             tottevlum=np.trapz(self.specic[tev]*self.outspecene[tev],self.outspecerg[tev])
-            self.logger.info('calc_ic: L_vhe*4πd² = {0:.2e} erg/s'.format(tottevlum))
+            self.logger.info('calc_ic: L_vhe/4πd² = {0:.2e} erg/s/cm²'.format(tottevlum))
 
     def calc_outspec(self):
         """
@@ -754,7 +754,7 @@ class ProtonOZM(object):
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
         Ep = quad(lambda x: x*self.Jp(x),Eth,1e3*cutoff)[0]*u.TeV.to('erg')
-        self.logger.info('E_p(E>1.22 GeV)*4πd²/nH = {0:.2e} erg'.format(self.norm*Ep))
+        self.logger.info('E_p(E>1.22 GeV)*nH/4πd² = {0:.2e} erg/cm5'.format(self.norm*Ep))
 
         if not hasattr(self,'Et'):
             self.Et=0.1 # Energy at which we change from delta functional to accurate calculation
@@ -781,7 +781,7 @@ class ProtonOZM(object):
         self.specpp/=u.TeV.to('eV')
 
         totpplum=np.trapz(self.specpptev*outspecene,outspecene*u.TeV.to('erg'))
-        self.logger.info('L_pp*4πd²/nH  = {0:.2e} erg/s'.format(totpplum))
+        self.logger.info('L_pp*nH/4πd²  = {0:.2e} erg/s'.format(totpplum))
 
     def calc_outspec(self):
         """
