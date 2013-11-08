@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 from astropy import constants
 from astropy import units as u
 # import constant values from astropy.constants
-constants_to_import=['c','G','m_e','e','h','hbar','k_B','R_sun']
+constants_to_import=['c','G','m_e','e','h','hbar','k_B','R_sun','sigma_sb']
 cntdict={}
 for cnt in constants_to_import:
     if cnt == 'e':
@@ -33,9 +33,11 @@ mec2    = m_e*c**2
 mec2eV  = mec2*eV    # m_e*c**2 in eV
 mec2TeV = mec2eV/1e12
 mec2GeV = mec2eV/1e9
+Ktomec2 = 1.6863699549e-10
 
-erad    = e**2./mec2
-sigt    = (8*np.pi/3)*erad**2
+erad = e**2./mec2
+sigt = (8*np.pi/3)*erad**2
+ar   = 4*sigma_sb/c
 
 heaviside = lambda x: (np.sign(x)+1)/2.
 
@@ -104,18 +106,14 @@ class ElectronOZM(object):
         CMB (3.24e-6 G)
 
     seedspec: string or iterable of strings (optional)
-        A list of seed spectra to use for IC calculation. Strings can be one or
+        A list of gray-body seed spectra to use for IC calculation. Strings can be one or
         more of CMB, NIR, FIR, for which radiation fields with temperatures of
         2.72 K, 70 K, and 5000 K, and energy densities of 0.261, 0.5, and 1
-        eV/cm:math:`^{-3}` will be used. Default: ['CMB',]
-
-    ssc : bool (optional)
-        Whether to compute synchrotron self compton (IC on synchrotron generated
-        photons). Default: False
-
-    remit : float (optional)
-        Emitter radius [cm]. Only relevant for synchrotron self-absorption and
-        synchrotron self Compton.
+        eV/cm:math:`^{-3}` will be used. Custom gray-bodies can be included by
+        using a list composed of: name, gray body temperature (K), and photon
+        field energy density (erg/cm:math:`^{-3}`). If the photon field energy
+        density if set to 0, its blackbody energy density will be computed
+        through the Stefan-Boltzman law. Default: ['CMB',]
 
     evolve_nelec : bool (optional)
         Whether to evolve electron spectrum until steady state. See
@@ -185,7 +183,6 @@ class ElectronOZM(object):
         # emitter physical properties
         B        = np.sqrt(8*np.pi*4.1817e-13), #equipartition with CMB energy density (G)
         seedspec = ['CMB',],
-        ssc      = False,
         remit    = 1e15,
         # evolve particle spectrum to steady-state?
         evolve_nelec = False,
@@ -217,84 +214,44 @@ class ElectronOZM(object):
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
+        self._process_input_seed()
 
-    def _calc_bb(self,seed,Tseed,useed,nbb):
-        self.logger.info('calc_seedspec: Using blackbody {0} seed spectrum '
-                         'at T = {1:.2e} K, u = {2:.2e} erg/cm3'.format(seed,Tseed,useed))
-        bbepeak=3*Tseed*k_B # in erg
-        self.logger.debug("E_peakbb = {0:.2e} eV = {1:.2e} erg".format(bbepeak*eV,bbepeak))
-        eminbb=bbepeak/np.sqrt(1000.) #erg
-        emaxbb=bbepeak*np.sqrt(100.) #erg
-        bbepeak*=eV
-        photE=np.logspace(np.log10(eminbb),np.log10(emaxbb),self.nbb) # in erg
-        fbb=photE/hz2erg # Hz
-# Bnu in units of erg/cm3/Hz
-        Bnu=(4.*np.pi/c)*(2*h*fbb**3./c**2.)/np.expm1((h*fbb)/(k_B*Tseed))
-        clum=np.trapz(Bnu,fbb)
-        self.logger.debug("Lum seed BB = {0} erg/cm3".format(clum))
-        Bnu*=useed/clum
-        phn=Bnu/hz2erg # 1/cm3
-        clum=np.trapz(phn,photE)
-        self.logger.debug("Lum seed, trapz(phn,photE) = {0:.3e} erg/cm3".format(clum))
-        eint=(emaxbb/eminbb)**(1./float(nbb))
-        phe=phn*photE*(eint-1)
-        self.logger.debug("Lum seed, sum(phe)         = {0:.3e} erg/cm3".format(np.sum(phe)))
-        return photE,phe,phn
-
-    def _calc_mono(self,seed,Tseed,useed):
-        phe=np.array((useed,)) # erg/cm3
-        photE=np.array((3*k_B*Tseed,)) # erg
-        phn=phe/photE # 1/cm3
-        self.logger.info('calc_seedspec: Using monochromatic {0} seed spectrum '
-                         'at T = {1:.2e} K, u = {2:.2e} erg/cm3'.format(seed,Tseed,useed))
-        return photE,phe,phn
-
-    def calc_seedspec(self):
+    def _process_input_seed(self):
         """
-        Compute seed photon spectrum for IC.
-
-        Outputs (as attributes of class):
-            phn: particle photon density
-            photE: photon energies
+        take input list of seedspecs and fix them into usable format
         """
 
         Tcmb = 2.72548 # 0.00057 K
-        ucmb = 0.261*u.eV.to('erg')
+        Tfir = 70
+        ufir = 0.5*u.eV.to('erg')
+        Tnir = 5000
+        unir = 1.0*u.eV.to('erg')
 
-        if not hasattr(self,'Tfir'):
-            self.Tfir = 70
-            self.ufir = 0.5*u.eV.to('erg')
-
-        if not hasattr(self,'Tnir'):
-            self.Tnir = 5000
-            self.unir = 1.0*u.eV.to('erg')
-
-        seeddata={
-                'CMB'  : [Tcmb,ucmb],
-                'NIR'  : [self.Tnir,self.unir],
-                'FIR'  : [self.Tfir,self.ufir],
-                }
-
-        # Allow for seedspec definitions of the type 'CMB-NIR-FIR'
+        # Allow for seedspec definitions of the type 'CMB-NIR-FIR' or 'CMB'
         if type(self.seedspec)!=list:
             self.seedspec=self.seedspec.split('-')
 
-        self.photE,self.phe,self.phn=[],[],[]
-
-        for seed in self.seedspec:
-            try:
-                Tseed,useed=seeddata[seed]
-            except KeyError:
-                self.logger.debug('Seedspec {0} not available, removing it.'.format(seed))
-                self.seedspec.remove(seed)
-                continue
-            if  self.bb:
-                pe,pu,pn=self._calc_bb(seed,Tseed,useed,self.nbb)
-            else:
-                pe,pu,pn=self._calc_mono(seed,Tseed,useed)
-            self.photE.append(pe)
-            self.phe.append(pu)
-            self.phn.append(pn)
+        self.seeduf=np.zeros(len(self.seedspec))
+        self.seedT=np.zeros(len(self.seedspec))
+        for idx,inseed in enumerate(self.seedspec):
+            if type(inseed) == str:
+                if inseed=='CMB':
+                    self.seedT[idx]  = Tcmb
+                    self.seeduf[idx] = 1.0
+                elif inseed=='FIR':
+                    self.seedT[idx]  = Tfir
+                    self.seeduf[idx] = ufir/(ar*Tfir**4)
+                elif inseed=='NIR':
+                    self.seedT[idx]  = Tnir
+                    self.seeduf[idx] = unir/(ar*Tnir**4)
+            elif type(inseed)==list and len(inseed)==3:
+                name,T,uu = inseed
+                self.seedspec[idx] = name
+                self.seedT[idx]    = T
+                if uu == 0:
+                    self.seeduf[idx] = 1.0
+                else:
+                    self.seeduf[idx] = uu/(ar*T**4)
 
     def generate_gam(self):
         """
@@ -304,6 +261,26 @@ class ElectronOZM(object):
         ngam=int(np.log10(self.gmax/self.gmin))*self.ngamd
         self.gam=np.logspace(np.log10(self.gmin),np.log10(self.gmax),ngam)
 
+
+    def _gdot_iso_ic_on_planck(self,electron_energy,soft_photon_temperature):
+        """
+        IC energy losses computation for isotropic interaction with a
+        blackbody photon spectrum following Khangulyan, Aharonian, and
+        Kelner 2013 (arXiv:1310.7971).
+        electron_energy and soft_photon_temperature are in units of m_ec^2
+        """
+        def g(x,a):
+            tmp=1+a[2]*x**a[3]
+            tmp2=a[0]*x**a[1]/tmp+1.
+            return 1./tmp2
+        aiso=[0.682,-0.362,1.281,0.826]
+        ciso=5.68
+        t=4.*electron_energy*soft_photon_temperature
+        G0=ciso*t*np.log(1+0.722*t/ciso)/(1+ciso*t/0.822)
+        tmp=2.63187357438e+16*soft_photon_temperature**2
+        Edotiso=tmp*G0*g(t,aiso)
+        return Edotiso
+
     def calc_gdot(self):
         """
         Compute electron synchrotron and IC energy losses
@@ -312,9 +289,6 @@ class ElectronOZM(object):
         if not hasattr(self,'gam'):
             self.logger.warn('Generating gam...')
             self.generate_gam()
-        if not hasattr(self,'phn') or type(self.phn)!=list:
-            self.logger.warn('Seed photon spectrum not found, calling calc_seedspec...')
-            self.calc_seedspec()
 
 ## Synchrotron losses
         umag=self.B**2./(8.*np.pi)
@@ -329,22 +303,9 @@ class ElectronOZM(object):
 ## IC losses
         gdotic=np.zeros_like(self.gam)
         for idx, seedspec in enumerate(self.seedspec):
-# If seed photon spectrum is not moonochromatic, we need to iterate over photE0
-            photE0=self.photE[idx]/mec2
-#        change xx to photE0*np.hstack(gam), int over axis=1
-            xx=4.0*photE0*np.vstack(self.gam) # shape of (photE,gam)
-            t1=np.log(1.0+0.16*xx)
-            t2=xx**2.0
-            dsigma=(c*0.1387e-23*t1/(1.0+0.139e+1*xx)
-                          *(1.0-0.46e-1*xx/(1+0.49e-1*t2))*np.vstack(self.gam))
-
-            if self.phn[idx].size > 1:
-                gdot = np.trapz((-1.*dsigma*self.phn[idx]/self.photE[idx]),self.photE[idx]) # shape of gam
-            else:
-                gdot = (-1*dsigma*self.phn[idx]).flatten()
+            gdot = self.seeduf[idx] * self._gdot_iso_ic_on_planck(self.gam,self.seedT[idx]*Ktomec2)
             setattr(self,'tic_'+seedspec,self.gam/np.abs(gdot))
             gdotic+=gdot
-            #gdotic/=self.photE
 
         self.gdot = np.abs(gdotsy+gdotic+gdotad)
 
@@ -400,8 +361,6 @@ class ElectronOZM(object):
         """
         Generate electron distribution
         """
-        if not hasattr(self,'phe'):
-            self.calc_seedspec()
         self.generate_gam()
         self.calc_gdot()
 
@@ -463,41 +422,46 @@ class ElectronOZM(object):
         totsylum=np.trapz(self.specsy*self.outspecene,self.outspecerg)
         self.logger.info('calc_sy: L_sy/4πd²  = {0:.2e} erg/s/cm²'.format(totsylum))
 
-    def _calc_specic(self,phn=None,photE=None,seed=None):
-        if phn==None and type(phn)==list:
-            phn=self.phn[0]
-        if photE==None and type(photE)==list:
-            photE=self.photE[0]
+    def _calc_specic(self,seed=None):
         self.logger.debug('_calc_specic: Computing IC on {0} seed photons...'.format(seed))
-        if photE.size==1:
-            photE=np.array((photE,))[:,np.newaxis]
 
-        photE0=(photE/mec2)[:,np.newaxis]
+        def iso_ic_on_planck(electron_energy,
+                soft_photon_temperature,gamma_energy):
+            """
+            IC cross-section for isotropic interaction with a blackbody
+            photon spectrum following Khangulyan, Aharonian, and Kelner 2013
+            (arXiv:1310.7971).
 
-        b=4*photE0*self.gam
-        iclum=np.zeros_like(self.outspecene)
-# Iterate over Eph to save memory
-        for i,Eph in enumerate(self.outspecene/mec2eV):
-            w=Eph/self.gam
-            q=w/(b*(1-w))
-            fic=(2*q*np.log(q)
-                    +(1+2*q)*(1-q)
-                    +(1./2.)*(b*q)**2*(1-q)/(1+b*q)
-                    )
-            gamint=fic*heaviside(1-q)*heaviside(q-1./(4*self.gam**2))
-            gamint[np.isnan(gamint)]=0.
+            `electron_energy`, `soft_photon_temperature`, and
+            `gamma_energy` are in units of m_ec^2
+            """
+            def g(x,a):
+                tmp=1+a[2]*x**a[3]
+                tmp2=a[0]*x**a[1]/tmp+1.
+                return 1./tmp2
+            gamma_energy=np.vstack(gamma_energy)
+            a3=[0.192,0.448,0.546,1.377]
+            a4=[1.69,0.549,1.06,1.406]
+            z=gamma_energy/electron_energy
+            x=z/(1-z)/(4.*electron_energy*soft_photon_temperature)
+            tmp=1.644934*x
+            F=(1.644934+tmp)/(1.+tmp)*np.exp(-x)
+            cross_section=F*(z**2/(2*(1-z))*g(x,a3)+g(x,a4))
+            tmp=2.6433905738281024e+16*(soft_photon_temperature/electron_energy)**2
+            cross_section=tmp*cross_section
+            condition=((gamma_energy < electron_energy)*(electron_energy>1))
+            return np.where(condition, cross_section,
+                    np.zeros_like(cross_section))
 
-            # integral over gam
-            lum=np.trapz(gamint.squeeze()*self.nelec/self.gam**2,self.gam)
-            # integral over photE
-            if phn.size>1:
-                lum=np.trapz(lum*phn/photE**2,photE) # 1/s
-            else:
-                lum*=phn/photE
+        idx=self.seedspec.index(seed)
+        uf=self.seeduf[idx]
+        T=self.seedT[idx]*Ktomec2
 
-            iclum[i]=(3./4.)*sigt*c*(Eph*mec2)*lum
+        Eph=(self.outspecene/mec2eV)
+        gamint = iso_ic_on_planck(self.gam,T,Eph)
+        lum=uf*Eph*np.trapz(self.nelec*gamint,self.gam)
 
-        return iclum/self.outspecene # return differential spectrum in 1/s/eV
+        return lum/self.outspecene # return differential spectrum in 1/s/eV
 
     def calc_ic(self):
         """
@@ -515,38 +479,14 @@ class ElectronOZM(object):
         for spec in ['specic','specictev','sedic']:
             setattr(self,spec,np.zeros_like(self.outspecene))
 
-        if self.ssc:
-            self.calc_sy()
-            # compute density of synchrotron photons in rsync radius
-            # use Atoyan & Aharonian (1996, MNRAS 278 525)
-            rsyn=self.remit
-            umean=2.24
-            syf=umean/(4*np.pi*rsyn**2*c)
-            syphn=self.specsy*syf
-            syphotE=self.outspecerg.copy()
-            if 'SSC' in self.seedspec:
-                idx=self.seedspec.index('SSC')
-                self.phn[idx]=syphn
-                self.photE[idx]=syphotE
-            else:
-                self.seedspec.append('SSC')
-                self.phn.append(syphn)
-                self.photE.append(syphotE)
-        else:
-            # if there is SSC spectrum in seedspec, remove it
-            if 'SSC' in self.seedspec:
-                idx=self.seedspec.index('SSC')
-                for ll in [self.seedspec,self.phe,self.photE,self.phn]:
-                    del ll[idx]
-
         for idx,seedspec in enumerate(self.seedspec):
             # Call actual computation, detached to allow changes in subclasses
-            specic=self._calc_specic(phn=self.phn[idx],photE=self.photE[idx],seed=seedspec)
+            specic=self._calc_specic(seed=seedspec)
             specictev=specic/u.eV.to('TeV') # 1/s/TeV
             sedic=specic*self.outspecerg*self.outspecene # erg/s
-            #setattr(self,'specic_'+seedspec,specic)
-            #setattr(self,'specictev_'+seedspec,specictev)
-            #setattr(self,'sedic_'+seedspec,sedic)
+            setattr(self,'specic_'+seedspec,specic)
+            setattr(self,'specictev_'+seedspec,specictev)
+            setattr(self,'sedic_'+seedspec,sedic)
             self.specic+=specic
             self.specictev+=specictev
             self.sedic+=sedic
