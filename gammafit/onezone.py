@@ -156,7 +156,7 @@ class ElectronOZM(object):
         energy per second at energies given by `Eph`.
 
     sedsy : array [erg/s]
-        Synchrotron SED := self.specsy*self.outspecene**2*u.eV.to('erg')
+        Synchrotron SED
 
     specic : array [1/s/eV]
         Differential IC spectrum: emitted IC photons per unit energy per second
@@ -166,7 +166,10 @@ class ElectronOZM(object):
         Differential IC spectrum in units typically used by IACT community.
 
     sedic : array [erg/s]
-        IC SED := self.specic*self.outspecene**2*u.eV.to('erg')
+        IC SED
+
+    We : float [erg]
+        Total energy in electrons.
 
     """
 
@@ -373,8 +376,8 @@ class ElectronOZM(object):
         else:
             self.nelec = qinj
 
-        self.logger.info('calc_nelec: E_e/4πd²   = {0:.2e} erg/cm²'.format(
-            np.trapz(self.nelec*self.gam*mec2,self.gam)))
+        self.We=np.trapz(self.nelec*(self.gam*mec2),self.gam))
+        self.logger.info('calc_nelec: W_e/4πd²   = {0:.2e} erg/cm²'.format(self.We)
 
     def calc_sy(self):
         """
@@ -571,6 +574,11 @@ class ProtonOZM(object):
     sedpp : array [erg/s]
         Spectral energy distribution at energies given by `Eph`.
 
+    Wp : float [erg*[1/cm5]]
+        Total energy required in protons in units of erg/cm5. To obtain
+        intrinsic total energy, this value should be multiplied by a factor
+        4πd²/nH.
+
     References
     ----------
 
@@ -633,9 +641,10 @@ class ProtonOZM(object):
         Inelastic cross-section for p-p interaction. KAB06 Eq. 79
         """
         L = np.log(Ep)
-        Eth = 1.22e-3
-        sigma = (34.3 + 1.88*L + 0.25*L**2)*(1-(Eth/Ep)**4)**2
-        sigma *= heaviside(Ep-Eth) # only return values above threshold
+        sigma = 34.3 + 1.88*L + 0.25*L**2
+        if Ep<=0.1:
+            Eth = 1.22e-3
+            sigma *= (1-(Eth/Ep)**4)**2 * heaviside(Ep-Eth)
         return sigma
 
     def _photon_integrand(self,x,Egamma):
@@ -693,23 +702,24 @@ class ProtonOZM(object):
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
-        Ep = quad(lambda x: x*self.Jp(x),Eth,1e3*cutoff)[0]*u.TeV.to('erg')
-        self.logger.info('E_p(E>1.22 GeV)*nH/4πd² = {0:.2e} erg/cm5'.format(self.norm*Ep))
+        Ep = quad(lambda x: x*self.Jp(x),Eth,np.Inf)[0]*u.TeV.to('erg')
+        self.Wp=self.norm*Ep
+        self.logger.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e} erg*[1/cm5]'.format(self.Wp))
 
-        if not hasattr(self,'Et'):
-            self.Et=0.1 # Energy at which we change from delta functional to accurate calculation
+        if not hasattr(self,'Etrans'):
+            self.Etrans=0.1 # Energy at which we change from delta functional to accurate calculation
 
-        if np.any(outspecene<self.Et):
+        if np.any(outspecene<self.Etrans):
             # compute value of nhat so that delta functional matches accurate calculation at 0.1TeV
             self.nhat=1. # initial value, works for index~2.1
-            full=self._calc_specpp_hiE(self.Et)
-            delta=self._calc_specpp_loE(self.Et)
+            full=self._calc_specpp_hiE(self.Etrans)
+            delta=self._calc_specpp_loE(self.Etrans)
             self.nhat*=full/delta
 
         self.specpp=np.zeros_like(outspecene)
 
         for i,Egamma in enumerate(outspecene):
-            if Egamma>=self.Et:
+            if Egamma>=self.Etrans:
                 self.specpp[i]=self._calc_specpp_hiE(Egamma)
             else:
                 self.specpp[i]=self._calc_specpp_loE(Egamma)

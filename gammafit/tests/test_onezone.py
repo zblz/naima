@@ -5,8 +5,6 @@ from numpy.testing import assert_approx_equal
 
 electronozmpars={
         'seedspec':'CMB',
-        'bb':True,
-        'nbb':10,
         'index':2.0,
         'cutoff':1e13,
         'beta':1.0,
@@ -14,8 +12,6 @@ electronozmpars={
         'gmin':1e4,
         'gmax':1e10,
         }
-
-
 
 def test_electronozm():
     from ..onezone import ElectronOZM
@@ -26,7 +22,7 @@ def test_electronozm():
     lsy=np.trapz(ozm.specsy*ozm.outspecene**2*u.eV.to('erg'),ozm.outspecene)
     assert_approx_equal(lsy,0.016769058688230903)
     lic=np.trapz(ozm.specic*ozm.outspecene**2*u.eV.to('erg'),ozm.outspecene)
-    assert_approx_equal(lic,212291612.87657347)
+    assert_approx_equal(lic,214080823.28721327)
 
 def test_electronozm_evolve():
     from ..onezone import ElectronOZM
