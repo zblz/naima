@@ -648,7 +648,7 @@ class ProtonOZM(object):
         if Ep<=0.1:
             Eth = 1.22e-3
             sigma *= (1-(Eth/Ep)**4)**2 * heaviside(Ep-Eth)
-        return sigma*u.mbarn.to('cm2')
+        return sigma*1e-27 # convert from mbarn to cm2
 
     def _photon_integrand(self,x,Egamma):
         """
@@ -670,7 +670,7 @@ class ProtonOZM(object):
         # WARNING: It also produces artifacts for steep distributions (e.g.
         # Maxwellian) at ~500 GeV. Reverting to adaptative quadrature
         #result=c*fixed_quad(self._photon_integrand,0.,1.,args=[Egamma,],n=40)[0]
-        result=c*quad(self._photon_integrand,0.,1.,args=Egamma,epsrel=1e-3,epsabs=1e-50)[0]
+        result=c*quad(self._photon_integrand,0.,1.,args=Egamma,epsrel=1e-3,epsabs=0)[0]
 
         return result
 
@@ -692,7 +692,7 @@ class ProtonOZM(object):
 
         Epimin=Egamma+m_pi**2/(4*Egamma)
 
-        return 2*quad(delta_integrand,Epimin,np.inf)[0]
+        return 2*quad(delta_integrand,Epimin,np.inf,epsrel=1e-3,epsabs=0)[0]
 
     def _calc_photon_spectrum(self):
         """
