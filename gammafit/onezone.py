@@ -376,8 +376,8 @@ class ElectronOZM(object):
         else:
             self.nelec = qinj
 
-        self.We=np.trapz(self.nelec*(self.gam*mec2),self.gam))
-        self.logger.info('calc_nelec: W_e/4πd²   = {0:.2e} erg/cm²'.format(self.We)
+        self.We=np.trapz(self.nelec*(self.gam*mec2),self.gam)
+        self.logger.info('calc_nelec: W_e/4πd²   = {0:.2e} erg/cm²'.format(self.We))
 
     def calc_sy(self):
         """
