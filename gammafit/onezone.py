@@ -701,7 +701,6 @@ class ProtonOZM(object):
         from scipy.integrate import fixed_quad,quad
         # convert outspecene to TeV
         outspecene=self.outspecene*u.eV.to('TeV')
-        cutoff=self.cutoff*u.eV.to('TeV')
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
