@@ -541,10 +541,10 @@ class ProtonOZM(object):
         Normalization of emitted spectrum [1/cm2]. Defined as
 
         .. math::
-            \mathcal{N}=\frac{A_p n_p V}{4 \pi d^2}
+            \mathcal{N}=\frac{A_p n_H V}{4 \pi d^2}
 
-        where :math:`A` is the normalization of the non-thermal particle
-        distribution [1/cm3/GeV] at enery `norm_energy`, :math:`n_p` is the
+        where :math:`A_p` is the normalization of the non-thermal particle
+        distribution [1/TeV] at enery `norm_energy`, :math:`n_H` is the
         number density of target protons, :math:`V` is the emitting volume, and
         :math:`d` is the distance to the source.
 
@@ -608,12 +608,12 @@ class ProtonOZM(object):
 
     def Jp(self,Ep):
         """
-        Particle distribution function [1/cm3/TeV/norm]
+        Particle distribution function [1/TeV]
         """
         norm_energy=self.norm_energy/1e12
         cutoff=self.cutoff/1e12
 
-        return ((Ep/norm_energy)**-self.index*
+        return self.norm*((Ep/norm_energy)**-self.index*
                 np.exp(-(Ep/cutoff)**self.beta))
 
     def Fgamma(self,x,Ep):
@@ -638,14 +638,14 @@ class ProtonOZM(object):
 
     def sigma_inel(self,Ep):
         """
-        Inelastic cross-section for p-p interaction. KAB06 Eq. 79
+        Inelastic cross-section for p-p interaction. KAB06 Eq. 73, 79
         """
         L = np.log(Ep)
         sigma = 34.3 + 1.88*L + 0.25*L**2
         if Ep<=0.1:
             Eth = 1.22e-3
             sigma *= (1-(Eth/Ep)**4)**2 * heaviside(Ep-Eth)
-        return sigma
+        return sigma*u.mbarn.to('cm2')
 
     def _photon_integrand(self,x,Egamma):
         """
@@ -702,16 +702,15 @@ class ProtonOZM(object):
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
-        Ep = quad(lambda x: x*self.Jp(x),Eth,np.Inf)[0]*u.TeV.to('erg')
-        self.Wp=self.norm*Ep
+        self.Wp = quad(lambda x: x*self.Jp(x),Eth,np.Inf)[0]*u.TeV.to('erg')
         self.logger.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e} erg*[1/cm5]'.format(self.Wp))
 
         if not hasattr(self,'Etrans'):
             self.Etrans=0.1 # Energy at which we change from delta functional to accurate calculation
 
-        if np.any(outspecene<self.Etrans):
+        self.nhat=1. # initial value, works for index~2.1
+        if np.any(outspecene<self.Etrans) and np.any(outspecene>=self.Etrans):
             # compute value of nhat so that delta functional matches accurate calculation at 0.1TeV
-            self.nhat=1. # initial value, works for index~2.1
             full=self._calc_specpp_hiE(self.Etrans)
             delta=self._calc_specpp_loE(self.Etrans)
             self.nhat*=full/delta
@@ -723,8 +722,6 @@ class ProtonOZM(object):
                 self.specpp[i]=self._calc_specpp_hiE(Egamma)
             else:
                 self.specpp[i]=self._calc_specpp_loE(Egamma)
-
-        self.specpp*=self.norm
 
         self.sedpp=self.specpp*outspecene**2*u.TeV.to('erg') # erg/s
         self.specpptev=self.specpp.copy()
