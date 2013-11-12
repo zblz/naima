@@ -557,10 +557,10 @@ class ProtonOZM(object):
         Power-law index of the particle distribution function.
 
     cutoff : float (optional)
-        Cut-off energy [eV].
+        Cut-off energy [eV]. Default: None
 
     beta : float (optional)
-        Exponent of exponential energy cutoff argument.
+        Exponent of exponential energy cutoff argument. Default: 2
 
     Attributes
     ----------
@@ -592,7 +592,7 @@ class ProtonOZM(object):
             # Injection spectrum properties
             norm_energy = 1e12, # eV
             index       = 2.0,
-            cutoff      = 1e15, # eV
+            cutoff      = None, # eV
             beta        = 1.0,
             nolog=False, debug=False, **kwargs):
 
@@ -611,10 +611,13 @@ class ProtonOZM(object):
         Particle distribution function [1/TeV]
         """
         norm_energy=self.norm_energy/1e12
-        cutoff=self.cutoff/1e12
-
-        return self.norm*((Ep/norm_energy)**-self.index*
-                np.exp(-(Ep/cutoff)**self.beta))
+        if self.cutoff==None:
+            Jp = self.norm*(Ep/norm_energy)**-self.index
+        else:
+            cutoff=self.cutoff/1e12
+            Jp = self.norm*((Ep/norm_energy)**-self.index*
+                    np.exp(-(Ep/cutoff)**self.beta))
+        return Jp
 
     def Fgamma(self,x,Ep):
         """
