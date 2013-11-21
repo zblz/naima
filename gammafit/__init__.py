@@ -130,4 +130,5 @@ from .utils import *
 try:
     import sherpamod
 except ImportError:
+    from warnings import warn
     warn("Sherpa modules require 'sherpa'")
