@@ -127,3 +127,7 @@ from .core import *
 from .onezone import *
 from .plot import *
 from .utils import *
+try:
+    import sherpamod
+except ImportError:
+    warn("Sherpa modules require 'sherpa'")
