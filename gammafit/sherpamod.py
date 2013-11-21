@@ -30,10 +30,14 @@ def _mergex(xlo,xhi,midpoints=False):
 class InverseCompton(ArithmeticModel):
     def __init__(self,name='IC'):
         self.index   = Parameter(name, 'index', 2.0, min=-10, max=10)
-        self.ref     = Parameter(name, 'ref', 20, min=0, frozen=True)
+        self.ref     = Parameter(name, 'ref', 20, min=0, frozen=True, units='TeV')
         self.ampl    = Parameter(name, 'ampl', 1, min=0)
-        self.cutoff  = Parameter(name, 'cutoff', 1e15, min=0,frozen=True)
+        self.cutoff  = Parameter(name, 'cutoff', 0.0, min=0,frozen=True, units='TeV')
         self.beta    = Parameter(name, 'beta', 1, min=0, max=10, frozen=True)
+        self.TFIR    = Parameter(name, 'TFIR', 70, min=0, frozen=True, units='K')
+        self.uFIR    = Parameter(name, 'uFIR', 0.0, min=0, frozen=True, units='eV/cm3') # 0.2eV/cm3 typical in outer disk
+        self.TNIR    = Parameter(name, 'TNIR', 3800, min=0, frozen=True, units='K')
+        self.uNIR    = Parameter(name, 'uNIR', 0.0, min=0, frozen=True, units='eV/cm3') # 0.2eV/cm3 typical in outer disk
         ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,self.cutoff,self.beta))
         self._use_caching = True
         self.cache = 10
@@ -49,11 +53,21 @@ class InverseCompton(ArithmeticModel):
     @modelCacher1d
     def calc(self,p,xlo,xhi):
 
-        index,ref,ampl,cutoff,beta = p
+        index,ref,ampl,cutoff,beta,TFIR,uFIR,TNIR,uNIR = p
 
         # Sherpa provides xlo, xhi in KeV, we convert to eV and merge into a
         # single array
         outspec=_mergex(xlo,xhi)*1e3
+
+        if cutoff==0.0:
+            cutoff=1e100
+
+        # Build seedspec definition
+        seedspec=['CMB',]
+        if uFIR>0.0:
+            seedspec.append(['FIR',TFIR,uFIR*eV])
+        if uNIR>0.0:
+            seedspec.append(['NIR',TNIR,uNIR*eV])
 
         ozm=ElectronOZM(outspec,
                 ampl,
@@ -61,7 +75,7 @@ class InverseCompton(ArithmeticModel):
                 norm_energy=ref*1e12,
                 cutoff=cutoff*1e12,
                 beta=beta,
-                seedspec=['CMB',],
+                seedspec=seedspec,
                 nolog=True,
                 gmin=1e5,
                 gmax=1e10,
