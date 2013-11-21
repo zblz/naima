@@ -8,6 +8,7 @@ from .onezone import ElectronOZM, ProtonOZM
 from sherpa.models.parameter import Parameter, tinyval
 from sherpa.models.model import ArithmeticModel, modelCacher1d
 
+eV = 1.602176565e-12
 
 def _mergex(xlo,xhi,midpoints=False):
     """
@@ -38,7 +39,9 @@ class InverseCompton(ArithmeticModel):
         self.uFIR    = Parameter(name, 'uFIR', 0.0, min=0, frozen=True, units='eV/cm3') # 0.2eV/cm3 typical in outer disk
         self.TNIR    = Parameter(name, 'TNIR', 3800, min=0, frozen=True, units='K')
         self.uNIR    = Parameter(name, 'uNIR', 0.0, min=0, frozen=True, units='eV/cm3') # 0.2eV/cm3 typical in outer disk
-        ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,self.cutoff,self.beta))
+        self.verbose = Parameter(name, 'verbose', 0, min=0, frozen=True)
+        ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,self.cutoff,self.beta,
+            self.TFIR, self.uFIR, self.TNIR, self.uNIR, self.verbose))
         self._use_caching = True
         self.cache = 10
 
@@ -53,7 +56,7 @@ class InverseCompton(ArithmeticModel):
     @modelCacher1d
     def calc(self,p,xlo,xhi):
 
-        index,ref,ampl,cutoff,beta,TFIR,uFIR,TNIR,uNIR = p
+        index,ref,ampl,cutoff,beta,TFIR,uFIR,TNIR,uNIR,verbose = p
 
         # Sherpa provides xlo, xhi in KeV, we convert to eV and merge into a
         # single array
@@ -89,7 +92,8 @@ class InverseCompton(ArithmeticModel):
         # Do a trapz integration to obtain the photons per bin
         photons=(outspec[1:]-outspec[:-1])*((model[1:]+model[:-1])/2.)
 
-        print outspec.min(), outspec.max(),len(outspec), p, np.trapz((outspec*1.60217656e-12)*model,outspec)
+        if verbose:
+            print self.thawedpars, np.trapz((outspec*1.60217656e-12)*model,outspec)
 
         return photons
 
@@ -101,7 +105,8 @@ class Synchrotron(ArithmeticModel):
         self.cutoff  = Parameter(name, 'cutoff', 1e15, min=0,frozen=True)
         self.beta    = Parameter(name, 'beta', 1, min=0, max=10, frozen=True)
         self.B       = Parameter(name, 'B', 1, min=0, max=10, frozen=True)
-        ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,self.cutoff,self.beta,self.B))
+        self.verbose = Parameter(name, 'verbose', 0, min=0, frozen=True)
+        ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,self.cutoff,self.beta,self.B,self.verbose))
         self._use_caching = True
         self.cache = 10
 
@@ -116,7 +121,7 @@ class Synchrotron(ArithmeticModel):
     @modelCacher1d
     def calc(self,p,xlo,xhi):
 
-        index,ref,ampl,cutoff,beta,B = p
+        index,ref,ampl,cutoff,beta,B,verbose = p
 
         # Sherpa provides xlo, xhi in KeV, we convert to eV and merge into a
         # single array
@@ -143,7 +148,8 @@ class Synchrotron(ArithmeticModel):
         # Do a trapz integration to obtain the photons per bin
         photons=(outspec[1:]-outspec[:-1])*((model[1:]+model[:-1])/2.)
 
-        print outspec.min(), outspec.max(),len(outspec), p, np.trapz((outspec*1.60217656e-12)*model,outspec)
+        if verbose:
+            print self.thawedpars, np.trapz((outspec*1.60217656e-12)*model,outspec)
 
         return photons
 
@@ -154,7 +160,8 @@ class PionDecay(ArithmeticModel):
         self.ampl    = Parameter(name,  'ampl',    100,    min=0)
         self.cutoff  = Parameter(name,  'cutoff',  0,    min=0,    frozen=True)
         self.beta    = Parameter(name,  'beta',    1,    min=0,    max=10,       frozen=True)
-        ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,self.cutoff,self.beta))
+        self.verbose = Parameter(name, 'verbose', 0, min=0, frozen=True)
+        ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,self.cutoff,self.beta,self.verbose))
         self._use_caching = True
         self.cache = 10
 
@@ -169,7 +176,7 @@ class PionDecay(ArithmeticModel):
     @modelCacher1d
     def calc(self,p,xlo,xhi):
 
-        index,ref,ampl,cutoff,beta = p
+        index,ref,ampl,cutoff,beta,verbose = p
 
         if cutoff == 0:
             cutoff=None
@@ -198,6 +205,7 @@ class PionDecay(ArithmeticModel):
         # Do a trapz integration to obtain the photons per bin
         photons=(outspec[1:]-outspec[:-1])*((model[1:]+model[:-1])/2.)
 
-        print outspec.min(), outspec.max(),len(outspec), p, np.trapz((outspec*1.60217656e-12)*model,outspec)
+        if verbose:
+            print self.thawedpars, np.trapz((outspec*1.60217656e-12)*model,outspec)
 
         return photons
