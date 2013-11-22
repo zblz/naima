@@ -26,7 +26,7 @@
 # be accessible, and the documentation will not build correctly.
 
 # Load all of the global Astropy configuration
-from astropy.sphinx.conf import *
+#from astropy.sphinx.conf import *
 
 
 # -- General configuration ----------------------------------------------------
