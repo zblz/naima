@@ -226,9 +226,9 @@ class ElectronOZM(object):
 
         Tcmb = 2.72548 # 0.00057 K
         Tfir = 70
-        ufir = 0.5*u.eV.to('erg')
+        ufir = 0.2*u.eV.to('erg')
         Tnir = 5000
-        unir = 1.0*u.eV.to('erg')
+        unir = 0.2*u.eV.to('erg')
 
         # Allow for seedspec definitions of the type 'CMB-NIR-FIR' or 'CMB'
         if type(self.seedspec)!=list:
@@ -247,6 +247,8 @@ class ElectronOZM(object):
                 elif inseed=='NIR':
                     self.seedT[idx]  = Tnir
                     self.seeduf[idx] = unir/(ar*Tnir**4)
+                else:
+                    self.logger.warn('Will not use seed {0} because it is not CMB, FIR or NIR'.format(inseed))
             elif type(inseed)==list and len(inseed)==3:
                 name,T,uu = inseed
                 self.seedspec[idx] = name
