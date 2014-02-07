@@ -7,7 +7,7 @@ try:
     from triangle import corner
     __all__ += ["corner",]
 except ImportError:
-    print('triangle.py not installed, corner plot will not be available')
+    print('triangle-plot not installed, corner plot will not be available')
 
 ## Plot funcs
 
@@ -231,7 +231,7 @@ def find_ML(sampler,modelidx):
     return ML,MLp,MLvar,model_ML
 
 def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
-        converttosed=False,figure=None,residualCI=True,**kwargs):
+        converttosed=False,figure=None,residualCI=True,plotdata=False,**kwargs):
     """
     Plot data with fit confidence regions.
     """
@@ -250,7 +250,6 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
 
     data=sampler.data
 
-    plotdata=False
     if modelidx==0:
         plotdata=True
 
@@ -291,7 +290,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
                 mec='w',mew=0,ms=6,color=datacol)
 
         if np.any(ul):
-            plot_ulims(ax1,data['ene'][ul],data['flux'][ul]*sedf[ul],data['dene'][ul])
+            plot_ulims(ax1,data['ene'][ul],data['flux'][ul]*sedf[ul],data['dene'][ul].T)
 
         if len(model_ML)!=len(data['ene']):
             from scipy.interpolate import interp1d

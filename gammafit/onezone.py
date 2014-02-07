@@ -290,7 +290,7 @@ class ElectronOZM(object):
         """
 # Calculem Qinj i generem el self.gam correcte!
         if not hasattr(self,'gam'):
-            self.logger.warn('Generating gam...')
+            self.logger.info('Generating gam...')
             self.generate_gam()
 
 ## Synchrotron losses
@@ -389,7 +389,7 @@ class ElectronOZM(object):
         if not hasattr(self,'outspecerg'):
             self.outspecerg=self.outspecene/eV
         if not hasattr(self,'gam'):
-            self.logger.warn('Calling calc_nelec to generate gam,nelec')
+            self.logger.info('Calling calc_nelec to generate gam,nelec')
             self.calc_nelec()
 
         def Gtilde(x):
@@ -476,7 +476,7 @@ class ElectronOZM(object):
             self.outspecerg=self.outspecene/eV
 
         if not hasattr(self,'gam'):
-            self.logger.warn('Calling calc_nelec to generate gam,nelec')
+            self.logger.info('Calling calc_nelec to generate gam,nelec')
             self.calc_nelec()
 
         for spec in ['specic','specictev','sedic']:
