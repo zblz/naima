@@ -197,6 +197,9 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
 def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs):
 
+    envconf=1000000
+    confs+=[envconf,]
+
     modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
 
     if converttosed:
@@ -205,8 +208,12 @@ def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs)
         sedf=np.ones_like(modelx)
 
     for (ymin,ymax),conf in zip(CI,confs):
-        color=np.log(conf)/np.log(20)+0.4
-        ax.fill_between(modelx,ymax*sedf,ymin*sedf,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
+        if conf==envconf:
+            for yy in (ymin,ymax):
+                ax.plot(modelx,yy*sedf,lw=1.,color='0.7',ls=':',zorder=-10)
+        else:
+            color=np.log(conf)/np.log(20)+0.4
+            ax.fill_between(modelx,ymax*sedf,ymin*sedf,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
     #ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
 
 
