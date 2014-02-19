@@ -177,7 +177,7 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
     modelx=sampler.blobs[-1][0][modelidx][0]
 
-    nwalkers=len(model)
+    nwalkers=len(model)-1
     CI=[]
     for conf in confs:
         fmin=stats.norm.cdf(-conf)
@@ -314,10 +314,11 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
             modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
 
             for (ymin,ymax),conf in zip(CI,confs):
-                color=np.log(conf)/np.log(20)+0.4
-                ax2.fill_between(modelx[notul],(np.array(ymax)[notul]-model_ML[notul])/dflux,
-                        (np.array(ymin)[notul]-model_ML[notul])/dflux,lw=0.,
-                        color='{0}'.format(color), alpha=0.6,zorder=-10)
+                if conf<100:
+                    color=np.log(conf)/np.log(20)+0.4
+                    ax2.fill_between(modelx[notul],(np.array(ymax)[notul]-model_ML[notul])/dflux,
+                            (np.array(ymin)[notul]-model_ML[notul])/dflux,lw=0.,
+                            color='{0}'.format(color), alpha=0.6,zorder=-10)
             #ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
 
 
