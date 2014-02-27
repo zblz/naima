@@ -162,8 +162,8 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
     sampler.data = data
     sampler.labels = labels
 
-    # Initialize walkers in a ball of relative size 10% in all dimensions
-    p0var=np.array([ pp/10. for pp in p0])
+    # Initialize walkers in a ball of relative size 2% in all dimensions
+    p0var=np.array([ 0.02*pp for pp in p0])
     p0=emcee.utils.sample_ball(p0,p0var,nwalkers)
 
     if nburn>0:
