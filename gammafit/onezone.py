@@ -616,12 +616,18 @@ class ProtonOZM(object):
         Particle distribution function [1/TeV]
         """
         norm_energy = self.norm_energy/1e12
-        if self.cutoff is None:
-            Jp = self.norm*(Ep/norm_energy)**-self.index
+        if hasattr(self,'index1') and hasattr(self,'index2') and hasattr(self,'E_break'):
+            E_break = self.E_break/1e12
+            Jp = self.norm*np.where(Ep<=E_break,
+                    (Ep/norm_energy)**-self.index1,
+                    (E_break/norm_energy)**(self.index2-self.index1)*(Ep/norm_energy)**-self.index2)
         else:
-            cutoff = self.cutoff/1e12
-            Jp = self.norm*((Ep/norm_energy)**-self.index*
-                            np.exp(-(Ep/cutoff)**self.beta))
+            if self.cutoff is None:
+                Jp = self.norm*(Ep/norm_energy)**-self.index
+            else:
+                cutoff = self.cutoff/1e12
+                Jp = self.norm*((Ep/norm_energy)**-self.index*
+                                np.exp(-(Ep/cutoff)**self.beta))
         return Jp
 
     def Fgamma(self, x, Ep):
