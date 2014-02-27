@@ -108,6 +108,8 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
     """
 
     if pdf:
+        from matplotlib import pyplot as plt
+        plt.rc('pdf',fonttype = 42)
         print('Generating diagnostic plots in file {}_plots.pdf'.format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
         outpdf=PdfPages('{}_plots.pdf'.format(outname))
