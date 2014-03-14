@@ -198,7 +198,7 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs):
 
     envconf=1000000
-    confs+=[envconf,]
+    #confs+=[envconf,]
 
     modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
 
