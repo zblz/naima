@@ -148,11 +148,13 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
         converttosed=[False for idx in modelidxs]
 
     for modelidx,tosed in zip(modelidxs,converttosed):
+        modelx=sampler.blobs[-1][0][modelidx][0]
+        xunit='eV' if np.max(modelx)>1e8 else 'TeV'
         if modelidx==0:
             if tosed:
-                labels=('Energy [TeV]',r'E$^2$dN/dE [erg/cm$^2$/s]')
+                labels=('Energy [{0}]'.format(xunit),r'$E^2$d$N$/d$E$ [erg/cm$^2$/s]')
             else:
-                labels=('Energy [TeV]',r'dN/dE [1/cm$^2$/s/TeV]')
+                labels=('Energy [{0}]'.format(xunit),r'd$N$/d$E$ [1/cm$^2$/s/{0}]'.format(xunit))
         elif modelidx==1:
             labels=('Particle Energy [TeV]',r'Particle energy distribution [erg$\times 4\pi d^2$]')
         else:

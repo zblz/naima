@@ -203,7 +203,11 @@ def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs)
     modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
 
     if converttosed:
-        sedf=modelx**2*1.6021765 # TeV to erg
+# try to find whether modelx is eV or TeV
+        toerg=1.6021765
+        if np.max(modelx)>1e8:
+            toerg/=1e12
+        sedf=modelx**2*toerg # TeV to erg
     else:
         sedf=np.ones_like(modelx)
 
@@ -280,7 +284,10 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
         ul=data['ul']
         notul=-ul
         if converttosed:
-            sedf=data['ene']**2*1.6021765
+            toerg=1.6021765
+            if np.max(modelx)>1e8:
+                toerg/=1e12
+            sedf=data['ene']**2*toerg
         else:
             sedf=np.ones_like(data['ene'])
 
