@@ -133,7 +133,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
                 meanstd=(mean-std,mean+std),clen=clen,mode=mode,)
 
     print('\n {0:-^50}\n'.format(label) + chain_props)
-    f.text(0.05,0.5,chain_props,ha='left',va='top')
+    f.text(0.05,0.45,chain_props,ha='left',va='top')
 
     #f.tight_layout()
 
