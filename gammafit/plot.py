@@ -272,7 +272,10 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
 
     datacol='r'
 
-    plot_CI(ax1,sampler,modelidx,converttosed=converttosed,confs=confs,**kwargs)
+    if confs is not None:
+        plot_CI(ax1,sampler,modelidx,converttosed=converttosed,confs=confs,**kwargs)
+    else:
+        residualCI=False
 
     def plot_ulims(ax,x,y,xerr):
         ax.errorbar(x,y,xerr=xerr,ls='',
