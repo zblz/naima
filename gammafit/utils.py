@@ -35,7 +35,7 @@ def generate_energy_edges(ene):
 
 def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     """
-    Read data into data dict
+    Read data into data dict.
 
     Parameters
     ----------
@@ -62,6 +62,10 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     cl : float (optional)
         Confidence level of the flux upper limits given by ``ul``.
 
+    Returns
+    -------
+    data : dict
+        Data stored in a `dict`.
     """
     if ul==None:
         ul=np.array((False,)*len(ene))
@@ -79,7 +83,7 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
 
 def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,converttosed=None,**kwargs):
     """
-    Generate diagnostic plots:
+    Generate diagnostic plots.
 
     - A corner plot of sample density in the two dimensional parameter space of
       all parameter pairs of the run: ``outname_corner.png``
@@ -93,18 +97,17 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
 
     Parameters
     ----------
-    outname: str
+    outname : str
         Name to be used to save diagnostic plot files.
 
-    sampler: emcee.EnsembleSampler instance
+    sampler : `emcee.EnsembleSampler` instance
         Sampler instance from which chains, blobs and data are read.
 
-    modelidxs: iterable (optional)
+    modelidxs : iterable (optional)
         Model numbers to be plotted. Default: All returned in sampler.blobs
 
-    pdf: bool (optional)
+    pdf : bool (optional)
         Whether to save plots to multipage pdf.
-
     """
 
     if pdf:
