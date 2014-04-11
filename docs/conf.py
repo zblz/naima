@@ -43,6 +43,8 @@ setup_cfg = dict(conf.items('metadata'))
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.1'
 
+del intersphinx_mapping['h5py']
+
 intersphinx_mapping['astropy'] = ('http://docs.astropy.org/en/latest/', None)
 intersphinx_mapping['emcee'] = ('http://dan.iel.fm/emcee/current/', None)
 
