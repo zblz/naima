@@ -153,17 +153,18 @@ class ElectronOZM(object):
 
     Attributes
     ----------
-
     specsy : array [1/s/eV]
-        Differential synchrotron spectrum: emitted synchrotron photons per unit
-        energy per second at energies given by `Eph`.
+        Differential synchrotron spectrum:
+        emitted synchrotron photons per unit
+        energy per second at energies given by ``Eph``.
 
     sedsy : array [erg/s]
         Synchrotron SED
 
     specic : array [1/s/eV]
-        Differential IC spectrum: emitted IC photons per unit energy per second
-        at energies given by `Eph`.
+        Differential IC spectrum: emitted IC photons
+        per unit energy per second
+        at energies given by ``Eph``.
 
     specictev : array [1/s/TeV]
         Differential IC spectrum in units typically used by IACT community.
@@ -173,7 +174,6 @@ class ElectronOZM(object):
 
     We : float [erg]
         Total energy in electrons.
-
     """
 
     def __init__(self,
