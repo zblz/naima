@@ -11,6 +11,9 @@ logging.basicConfig(level=logging.INFO)
 ## Constants and units
 from astropy import constants
 from astropy import units as u
+
+__all__ = ['ElectronOZM', 'ProtonOZM']
+
 # import constant values from astropy.constants
 constants_to_import = ['c', 'G', 'm_e', 'e', 'h', 'hbar', 'k_B', 'R_sun',
                        'sigma_sb']
@@ -57,7 +60,7 @@ class _BogusLogger(object):
 
 
 class ElectronOZM(object):
-    r"""Synchrotron and IC emission from a leptonic population
+    r"""Synchrotron and IC emission from a leptonic population.
 
     Computation of electron spectrum evolution and synchrotron and IC radiation
     from a homogeneous emitter.
@@ -518,7 +521,7 @@ class ElectronOZM(object):
 
 
 class ProtonOZM(object):
-    r"""OneZoneModel for pp interaction gamma-ray emission
+    r"""OneZoneModel for pp interaction gamma-ray emission.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
     proton distribution with stationary target protons.

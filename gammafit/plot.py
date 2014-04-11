@@ -144,6 +144,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
 def gelman_rubin_statistic(chains):
     """
     Compute Gelman-Rubint statistic for convergence testing of Markov chains.
+
     Gelman & Rubin (1992), Statistical Science 7, pp. 457-511
     """
     # normalize it so it doesn't do strange things with very low values
