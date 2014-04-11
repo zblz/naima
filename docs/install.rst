@@ -26,10 +26,3 @@ or, for a system-wide installation, run
 ::
 
     sudo pip install gammafit
-
-
-..Virualenv
-..---------
-
-..Alternatively, 
-

@@ -1,0 +1,4 @@
+API Documentation
+=================
+
+.. automodapi:: gammafit
