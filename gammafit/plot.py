@@ -3,13 +3,6 @@ import numpy as np
 
 __all__ = ["plot_chain","plot_fit","plot_CI"]
 
-try:
-    from triangle import corner
-    __all__ += ["corner",]
-except ImportError:
-    print('triangle-plot not installed, corner plot will not be available')
-
-## Plot funcs
 
 def plot_chain(sampler,p=None,**kwargs):
     import matplotlib.pyplot as plt
