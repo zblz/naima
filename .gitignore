@@ -43,5 +43,6 @@ distribute-*.tar.gz
 .pydevproject
 .settings
 docs/_generated/
+docs/api/
 gammafit/gammafit.cfg
 
