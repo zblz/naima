@@ -5,7 +5,22 @@ __all__ = ["plot_chain","plot_fit","plot_CI"]
 
 
 def plot_chain(sampler,p=None,**kwargs):
-    import matplotlib.pyplot as plt
+    """Plot chain.
+    
+    ``kwargs`` are passed to ``_plot_chain_func``.
+    
+    Parameters
+    ----------
+    sampler : `emcee.EnsembleSampler`
+        Sampler
+    p : TODO
+        TODO
+    
+    Returns
+    -------
+    figure : `matplotlib.figure.Figure`
+        Figure
+    """
     if p==None:
         npars=sampler.chain.shape[-1]
         for pp,label in zip(range(npars),sampler.labels):
@@ -155,6 +170,8 @@ def gelman_rubin_statistic(chains):
 
 
 def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
+    """Calculate confidence interval.
+    """
     from scipy import stats
 
     if last_step:
@@ -190,6 +207,23 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
     return modelx,CI
 
 def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs):
+    """Plot confidence interval.
+    
+    ``kwargs`` are passed ot ``calc_CI``.
+    
+    Parameters
+    ----------
+    ax : `matplotlib.Axes`
+        Axes to plot on.
+    sampler : `emcee.EnsembleSampler`
+        Sampler
+    modelidx : int
+        Model index
+    converttosed : bool
+        Convert to SED?
+    confs : list
+        TODO
+    """
 
     envconf=1000000
     #confs+=[envconf,]
