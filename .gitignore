@@ -46,3 +46,6 @@ docs/_generated/
 docs/api/
 gammafit/gammafit.cfg
 
+.coverage
+htmlcov
+
