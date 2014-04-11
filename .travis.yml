@@ -86,9 +86,10 @@ install:
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_WHEEL_COMMAND "pytest==2.5.1"; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_WHEEL_COMMAND "pytest-xdist==1.10"; fi
     - $PIP_WHEEL_COMMAND "astropy"
+    - if $OPTIONAL_DEPS; then $PIP_WHEEL_COMMAND "scipy==0.13.1"; fi
+    - if $OPTIONAL_DEPS; then $PIP_WHEEL_COMMAND "emcee==2.0.0"; fi
 
     # OPTIONAL DEPENDENCIES
-    - if $OPTIONAL_DEPS; then $PIP_WHEEL_COMMAND "scipy==0.13.1"; fi
     - if $OPTIONAL_DEPS; then $PIP_WHEEL_COMMAND "h5py==2.1.3"; fi
 
     # DOCUMENTATION DEPENDENCIES
@@ -97,6 +98,7 @@ install:
     # currently 2.7, so that's fine
     - if [[ $SETUP_CMD == build_sphinx* ]]; then $PIP_WHEEL_COMMAND "Sphinx==1.2.1"; fi
     - if [[ $SETUP_CMD == build_sphinx* ]]; then $PIP_WHEEL_COMMAND "matplotlib==1.3.0"; fi
+    - if [[ $SETUP_CMD == build_sphinx* ]]; then $PIP_WHEEL_COMMAND "triangle_plot"; fi
 
     # COVERAGE DEPENDENCIES
     - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_WHEEL_COMMAND "pytest-cov" ; fi
