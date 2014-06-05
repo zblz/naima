@@ -11,6 +11,9 @@ logging.basicConfig(level=logging.INFO)
 ## Constants and units
 from astropy import constants
 from astropy import units as u
+
+__all__ = ['ElectronOZM', 'ProtonOZM']
+
 # import constant values from astropy.constants
 constants_to_import = ['c', 'G', 'm_e', 'e', 'h', 'hbar', 'k_B', 'R_sun',
                        'sigma_sb']
@@ -57,7 +60,7 @@ class _BogusLogger(object):
 
 
 class ElectronOZM(object):
-    r"""Synchrotron and IC emission from a leptonic population
+    r"""Synchrotron and IC emission from a leptonic population.
 
     Computation of electron spectrum evolution and synchrotron and IC radiation
     from a homogeneous emitter.
@@ -153,17 +156,18 @@ class ElectronOZM(object):
 
     Attributes
     ----------
-
     specsy : array [1/s/eV]
-        Differential synchrotron spectrum: emitted synchrotron photons per unit
-        energy per second at energies given by `Eph`.
+        Differential synchrotron spectrum:
+        emitted synchrotron photons per unit
+        energy per second at energies given by ``Eph``.
 
     sedsy : array [erg/s]
         Synchrotron SED
 
     specic : array [1/s/eV]
-        Differential IC spectrum: emitted IC photons per unit energy per second
-        at energies given by `Eph`.
+        Differential IC spectrum: emitted IC photons
+        per unit energy per second
+        at energies given by ``Eph``.
 
     specictev : array [1/s/TeV]
         Differential IC spectrum in units typically used by IACT community.
@@ -173,7 +177,6 @@ class ElectronOZM(object):
 
     We : float [erg]
         Total energy in electrons.
-
     """
 
     def __init__(self,
@@ -518,7 +521,7 @@ class ElectronOZM(object):
 
 
 class ProtonOZM(object):
-    r"""OneZoneModel for pp interaction gamma-ray emission
+    r"""OneZoneModel for pp interaction gamma-ray emission.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
     proton distribution with stationary target protons.

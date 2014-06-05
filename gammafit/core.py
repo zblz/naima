@@ -2,7 +2,6 @@
 import numpy as np
 
 from astropy import constants as const
-from astropy import units as u
 
 mec2TeV=(const.m_e*const.c**2).to('eV').value/1e12
 mec2=(const.m_e*const.c**2).to('erg').value
@@ -15,12 +14,16 @@ __all__=["normal_prior","uniform_prior","get_sampler","run_sampler"]
 # Prior functions
 
 def uniform_prior(value,umin,umax):
+    """Uniform prior distribution.
+    """
     if umin <= value <= umax:
         return 0.0
     else:
         return - np.inf
 
 def normal_prior(value,mean,sigma):
+    """Normal prior distribution.
+    """
     return - 0.5 * (2 * np.pi * sigma) - (value - mean) ** 2 / (2. * sigma)
 
 # Probability function
@@ -104,7 +107,7 @@ def _run_mcmc(sampler,pos,nrun):
 
 def _cutoffexp(pars,data):
     """
-    Powerlaw with exponential cutoff
+    Powerlaw with exponential cutoff.
 
     Parameters:
         - 0: PL normalization
@@ -128,11 +131,42 @@ _prior=lambda x: 0.0
 _p00=np.array((1e-11,2,10))
 
 def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
-        model=_cutoffexp, prior=_prior, labels=None, threads=8):
-    #TODO docstring
+                model=_cutoffexp, prior=_prior, labels=None, threads=8):
+    """Make an MCMC sampler.
+    
+    Parameters
+    ----------
+    nwalkers : int
+        Number of walkers
+    nburn : int
+        TODO
+    guess : bool
+        TODO
+    p0 : array
+        Initial position vector.
+    data : TODO
+        Data
+    model : TODO
+        TODO
+    prior : TODO
+        TODO
+    labels : TODO
+        TODO
+    threads : int
+        Number of threads to use for sampling.
 
+    Returns
+    -------
+    sampler : `emcee.EnsembleSampler`
+        Sampler
+    pos : `numpy.array`
+        Position array
+
+    See also
+    --------
+    emcee.EnsembleSampler
+    """
     import emcee
-
 
     if data==None:
         print('Need to provide data!')
@@ -176,7 +210,26 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
 
 
 def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
-    #TODO docstring
+    """Run an MCMC sampler.
+    
+    Extra ``kwargs`` are passed to `get_sampler`.
+    
+    Parameters
+    ----------
+    nrun : int
+        TODO
+    sampler : `emcee.EnsembleSampler`
+        Sampler
+    pos : TODO
+        TODO
+    
+    Returns
+    -------
+    sampler : `emcee.EnsembleSampler`
+        Modified input ``sampler``
+    pos : TODO
+        TODO
+    """
 
     if sampler==None or pos==None:
         sampler,pos=get_sampler(**kwargs)
