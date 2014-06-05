@@ -368,6 +368,8 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
         ax2.set_xscale('log')
         for tl in ax1.get_xticklabels():
             tl.set_visible(False)
+        ax1.set_xlim(10**np.floor(np.log10(np.min(data['ene']-data['dene'][:,0]))),
+                10**np.ceil(np.log10(np.max(data['ene']+data['dene'][:,1]))))
     else:
         ndecades=5
         # restrict y axis to ndecades to avoid autoscaling deep exponentials
