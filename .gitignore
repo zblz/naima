@@ -12,6 +12,9 @@ __pycache__
 # Other generated files
 */version.py
 MANIFEST
+*/cython_version.py
+htmlcov
+.coverage
 
 # Sphinx
 _build
@@ -45,7 +48,4 @@ distribute-*.tar.gz
 docs/_generated/
 docs/api/
 gammafit/gammafit.cfg
-
-.coverage
-htmlcov
 

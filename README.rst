@@ -43,3 +43,4 @@ A publication describing the radiation models and the method for derivation of
 the particle distribution is in preparation. In the meantime, if you use
 ``gammafit`` for your research, please link back to this webpage when mentioning
 ``gammafit`` in your publication.
+
