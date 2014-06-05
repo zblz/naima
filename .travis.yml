@@ -43,7 +43,7 @@ env:
         - NUMPY_VERSION=1.6.2
         - NUMPY_VERSION=1.7.1
         - NUMPY_VERSION=1.8.1
-        - SETUP_CMD="egg_info" ASTROPY_VERSION="none" ADDITIONAL_DEPENDENCIES_STRICT_NUMPY="" ADDITIONAL_DEPENDENCIES_ANY_NUMPY=""
+        #- SETUP_CMD="egg_info" ASTROPY_VERSION="none" ADDITIONAL_DEPENDENCIES_STRICT_NUMPY="" ADDITIONAL_DEPENDENCIES_ANY_NUMPY="
 
 matrix:
     # some version of numpy do not work on some versions of python
