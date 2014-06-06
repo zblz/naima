@@ -13,7 +13,8 @@ logging.basicConfig(level=logging.INFO)
 ## Constants and units
 from astropy import units as u
 # import constant values from astropy.constants
-from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e
+import astropy.constants as const
+from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p
 e = e.gauss
 
 mec2 = (m_e*c**2).cgs
@@ -582,7 +583,7 @@ class ProtonOZM(object):
                  outspecene,
                  norm,
                  # Injection spectrum properties
-                 norm_energy=1e12,  # eV
+                 norm_energy=1e12*u.eV,  # eV
                  index=2.0,
                  cutoff=None,  # eV
                  beta=1.0,
@@ -598,29 +599,39 @@ class ProtonOZM(object):
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
-        # convert quantities to values
-        for var,unit in [('outspecene',u.eV),('norm_energy',u.erg),('cutoff',u.eV)]:
-            if isinstance(getattr(self,var),u.Quantity):
-                setattr(self,var, getattr(self,var).to(unit).value)
+        self._update_values()
 
+    def _update_values(self):
+        # convert values to quantities, and quantities to default unit
+        for var,unit in [('outspecene',u.eV),('norm_energy',u.eV),('cutoff',u.eV),
+                ('E_break',u.eV)]:
+            # cutoff or E_break might not be set
+            if hasattr(self,var) and getattr(self,var) is not None:
+                if isinstance(getattr(self,var),u.Quantity):
+                    setattr(self,var, getattr(self,var).to(unit))
+                else:
+                    setattr(self,var, getattr(self,var)*unit)
+
+        for var in ['norm_energy','cutoff','E_break']:
+            if hasattr(self,var) and getattr(self,var) is not None:
+                setattr(self,'_'+var,getattr(self,var).to('TeV').value)
 
     def Jp(self, Ep):
         """
         Particle distribution function [1/TeV]
         """
-        norm_energy = self.norm_energy/1e12
-        if hasattr(self,'index1') and hasattr(self,'index2') and hasattr(self,'E_break'):
-            E_break = self.E_break/1e12
-            Jp = self.norm*np.where(Ep<=E_break,
-                    (Ep/norm_energy)**-self.index1,
-                    (E_break/norm_energy)**(self.index2-self.index1)*(Ep/norm_energy)**-self.index2)
+        if hasattr(self,'index1') and hasattr(self,'index2') and hasattr(self,'_E_break'):
+            Jp = self.norm*np.where(Ep<=self._E_break,
+                    (Ep/self._norm_energy)**-self.index1,
+                    ((self._E_break/self._norm_energy)**(self.index2-self.index1)
+                        *(Ep/self._norm_energy)**-self.index2)
+                    )
         else:
             if self.cutoff is None:
-                Jp = self.norm*(Ep/norm_energy)**-self.index
+                Jp = self.norm*(Ep/self._norm_energy)**-self.index
             else:
-                cutoff = self.cutoff/1e12
-                Jp = self.norm*((Ep/norm_energy)**-self.index*
-                                np.exp(-(Ep/cutoff)**self.beta))
+                Jp = self.norm*((Ep/self._norm_energy)**-self.index*
+                                np.exp(-(Ep/self._cutoff)**self.beta))
         return Jp
 
     def Fgamma(self, x, Ep):
@@ -675,74 +686,74 @@ class ProtonOZM(object):
         #from scipy.integrate import fixed_quad
         #result=c*fixed_quad(self._photon_integrand, 0., 1., args = [Egamma, ], n = 40)[0]
         from scipy.integrate import quad
-        result = c*quad(self._photon_integrand, 0., 1., args=Egamma,
+        Egamma = Egamma.to('TeV').value
+        result = c.cgs.value*quad(self._photon_integrand, 0., 1., args=Egamma,
                         epsrel=1e-3, epsabs=0)[0]
 
-        return result
+        return result * u.Unit('1/(s TeV)')
+
+    # variables for integrand
+    _c=c.cgs.value
+    _Kpi=0.17
+    _mp = (m_p*c**2).to('TeV').value
+    _m_pi = 1.349766e-4  # TeV/c2
+
+    def _delta_integrand(self,Epi):
+        Ep0 = self._mp+Epi/self._Kpi
+        qpi = self._c*(self.nhat/self._Kpi)*self.sigma_inel(Ep0)*self.Jp(Ep0)
+        return qpi/np.sqrt(Epi**2+self._m_pi**2)
 
     def _calc_specpp_loE(self, Egamma):
         """
         Delta-functional approximation for low energies Egamma < 0.1 TeV
         """
         from scipy.integrate import quad
-        Kpi = 0.17
+        Egamma = Egamma.to('TeV').value
+        Epimin = Egamma+self._m_pi**2/(4*Egamma)
 
-        m_p = (constants.m_p*constants.c**2).to('TeV').value
-        m_pi = 1.349766e-4  # TeV/c2
+        result = 2*quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3,
+                epsabs=0)[0]
 
-        def delta_integrand(Epi):
-            Ep0 = m_p+Epi/Kpi
-            qpi = c*(self.nhat/Kpi)*self.sigma_inel(Ep0)*self.Jp(Ep0)
-
-            return qpi/np.sqrt(Epi**2+m_pi**2)
-
-        Epimin = Egamma+m_pi**2/(4*Egamma)
-
-        return 2*quad(delta_integrand, Epimin, np.inf, epsrel=1e-3, epsabs=0)[0]
+        return result * u.Unit('1/(s TeV)')
 
     def _calc_photon_spectrum(self):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
         """
         from scipy.integrate import quad
-        # convert outspecene to TeV
-        outspecene = self.outspecene*u.eV.to('TeV')
+        self._update_values()
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
-        self.Wp = quad(lambda x: x*self.Jp(x), Eth, np.Inf)[0]*u.TeV.to('erg')
-        self.logger.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e}'
-                         'erg*[1/cm5]'.format(self.Wp))
+        self.Wp = (quad(lambda x: x*self.Jp(x), Eth, np.Inf)[0]*u.TeV).to('erg')/u.cm**5
+        self.logger.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e}'.format(self.Wp))
 
         if not hasattr(self, 'Etrans'):
             # Energy at which we change from delta functional to accurate calculation
-            self.Etrans = 0.1
+            self.Etrans = 0.1*u.TeV
+        elif not isinstance(self.Etrans,u.Quantity):
+            self.Etrans *= u.TeV
 
         self.nhat = 1.  # initial value, works for index~2.1
-        if np.any(outspecene<self.Etrans) and np.any(outspecene >= self.Etrans):
+        if np.any(self.outspecene<self.Etrans) and np.any(self.outspecene >= self.Etrans):
             # compute value of nhat so that delta functional matches accurate
             # calculation at 0.1TeV
             full = self._calc_specpp_hiE(self.Etrans)
             delta = self._calc_specpp_loE(self.Etrans)
-            self.nhat *= full/delta
+            self.nhat *= (full/delta).decompose().value
 
-        self.specpp = np.zeros_like(outspecene)
+        self.specpp = np.zeros(len(self.outspecene)) * u.Unit('1/(s TeV)')
 
-        for i, Egamma in enumerate(outspecene):
+        for i, Egamma in enumerate(self.outspecene):
             if Egamma >= self.Etrans:
                 self.specpp[i] = self._calc_specpp_hiE(Egamma)
             else:
                 self.specpp[i] = self._calc_specpp_loE(Egamma)
 
-        self.specpp = self.specpp * u.Unit('1/(s TeV)')
-
-
-        outspec=(self.outspecene*u.eV).to('erg')
-
-        self.sedpp = self.specpp*outspecene*u.TeV*outspec  # erg/s
+        self.sedpp = (self.specpp*self.outspecene**2).to('erg/s')  # erg/s
         self.specpp = self.specpp.to('1/(s eV)')
 
-        totpplum = np.trapz(self.specpp*self.outspecene*u.eV, outspec)
+        totpplum = np.trapz(self.specpp*self.outspecene, self.outspecene).to('erg/s')
         self.logger.info('L_pp*nH/4πd²  = {0:.2e}'.format(totpplum))
 
     def calc_outspec(self):
