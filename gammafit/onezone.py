@@ -5,43 +5,22 @@ from __future__ import division
 import numpy as np
 np.seterr(all='ignore')
 
+__all__ = ['ElectronOZM', 'ProtonOZM']
+
 import logging
 logging.basicConfig(level=logging.INFO)
 
 ## Constants and units
-from astropy import constants
 from astropy import units as u
-
-__all__ = ['ElectronOZM', 'ProtonOZM']
-
 # import constant values from astropy.constants
-constants_to_import = ['c', 'G', 'm_e', 'e', 'h', 'hbar', 'k_B', 'R_sun',
-                       'sigma_sb']
-cntdict = {}
-for cnt in constants_to_import:
-    if cnt == 'e':
-        value = getattr(constants, cnt).gauss.value
-    else:
-        value = getattr(constants, cnt).cgs.value
-    cntdict[cnt] = value
-globals().update(cntdict)
+from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e
+e = e.gauss
 
-eV = u.erg.to('eV')
-TeV = u.erg.to('TeV')
-hz = 1/h  # hz in erg
+mec2 = (m_e*c**2).cgs
 
-hz2erg = h
-hz2ev = h*eV
-
-mec2 = m_e*c**2
-mec2eV = mec2*eV    # m_e*c**2 in eV
-mec2TeV = mec2eV/1e12
-mec2GeV = mec2eV/1e9
-Ktomec2 = 1.6863699549e-10
-
-erad = e**2./mec2
+erad = (e**2./mec2).cgs
 sigt = (8*np.pi/3)*erad**2
-ar = 4*sigma_sb/c
+ar = (4*sigma_sb/c).cgs
 
 heaviside = lambda x: (np.sign(x)+1)/2.
 
@@ -181,14 +160,14 @@ class ElectronOZM(object):
                  norm,       # normalization
                  #### Default parameter values #####
                  # injection
-                 norm_energy=20e12,  # corresponding to a scattered energy of 1 TeV
+                 norm_energy=20e12*u.eV,  # corresponding to a scattered energy of 1 TeV
                  index=2.0,
-                 cutoff=30e16,  # Default to no cutoff in TeV region
+                 cutoff=30e16*u.eV,  # Default to no cutoff in TeV region
                  beta=1.0,
                  # emitter physical properties
-                 B=np.sqrt(8*np.pi*4.1817e-13),  # equipartition with CMB energy density (G)
+                 B=np.sqrt(8*np.pi*4.1817e-13)*u.G,  # equipartition with CMB energy density (G)
                  seedspec=['CMB', ],
-                 remit=1e15,
+                 remit=1e15*u.cm,
                  # evolve particle spectrum to steady-state?
                  evolve_nelec=False,
                  #
@@ -212,18 +191,20 @@ class ElectronOZM(object):
             'gmax': 3e10,
             'ngamd': 300,  # electron spectrum points per decade
             # Injection spectrum
-            'glocut': 1e7/mec2eV,  # sharp low energy cutoff at gamma*mec2 = 10MeV
+            'glocut': (1e7*u.eV/mec2).cgs,  # sharp low energy cutoff at gamma*mec2 = 10MeV
         }
 
         self.__dict__.update(**computation_defaults)
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
-        # convert quantities to values
-        for var,unit in [('outspecene',u.eV),('norm_energy',u.erg),('cutoff',u.eV),
+        # convert values to quantities and quantities to the default units
+        for var,unit in [('outspecene',u.eV),('norm_energy',u.eV),('cutoff',u.eV),
                 ('B',u.G),('remit',u.cm),('tad',u.s)]:
             if isinstance(getattr(self,var),u.Quantity):
-                setattr(self,var, getattr(self,var).to(unit).value)
+                setattr(self,var, getattr(self,var).to(unit))
+            else:
+                setattr(self,var, getattr(self,var)*unit)
 
         self._process_input_seed()
 
@@ -282,6 +263,8 @@ class ElectronOZM(object):
         Kelner 2013 (arXiv:1310.7971).
         electron_energy and soft_photon_temperature are in units of m_ec^2
         """
+        Ktomec2 = 1.6863699549e-10
+        soft_photon_temperature *= Ktomec2
         def g(x, a):
             tmp = 1+a[2]*x**a[3]
             tmp2 = a[0]*x**a[1]/tmp+1.
@@ -304,9 +287,11 @@ class ElectronOZM(object):
             self.generate_gam()
 
 ## Synchrotron losses
-        umag = self.B**2./(8.*np.pi)
-        cgdot = -(4./3.)*c*sigt/mec2*self.gam**2.
-        gdotsy = cgdot*umag
+        # astropy cgs magnetic units (in particular B**2) do not convert properly
+        # strip units
+        umag = self.B.to('G').value**2./(8.*np.pi)
+        cgdot = -(4./3.)*c.cgs.value*sigt.cgs.value/mec2.cgs.value*self.gam**2.
+        gdotsy = cgdot*umag * u.Unit('1/s')
         #gdoticthom = cgdot*np.sum(self.phe)
         #self.ticthom = self.gam/np.abs(gdoticthom)
 
@@ -314,10 +299,10 @@ class ElectronOZM(object):
         gdotad = -1.0*self.gam/self.tad
 
 ## IC losses
-        gdotic = np.zeros_like(self.gam)
+        gdotic = np.zeros_like(self.gam) * u.Unit('1/s')
         for idx, seedspec in enumerate(self.seedspec):
             gdot = self.seeduf[idx] * \
-                self._gdot_iso_ic_on_planck(self.gam, self.seedT[idx]*Ktomec2)
+                self._gdot_iso_ic_on_planck(self.gam, self.seedT[idx]) * u.Unit('1/s')
             setattr(self, 'tic_'+seedspec, self.gam/np.abs(gdot))
             gdotic += gdot
 
@@ -334,8 +319,8 @@ class ElectronOZM(object):
         """
 
         # convert parameters to gamma
-        cutoff_gam = self.cutoff/mec2eV
-        norm_gam = self.norm_energy/mec2eV
+        cutoff_gam = (self.cutoff/mec2).cgs.value
+        norm_gam = (self.norm_energy/mec2).cgs.value
 
         qinj = self.norm*(self.gam/norm_gam)**-self.index*\
                 np.exp(-(self.gam/cutoff_gam)**self.beta)
@@ -369,18 +354,18 @@ class ElectronOZM(object):
         dgam = np.diff(self.gam)
         tt = dgam*(qinj[1:]+qinj[:-1])/2.
         qint = np.array([np.sum(tt[i:]) for i in range(len(qinj))])
-        return qint/self.gdot
+        return qint/self.gdot.value
 
     def calc_nelec(self):
         """
         Generate electron distribution
         """
         self.generate_gam()
-        self.calc_gdot()
 
         qinj = self._calc_qinj()
 
         if self.evolve_nelec:
+            self.calc_gdot()
             self.logger.info('calc_nelec: L_inj/4πd² = {0:.2e} erg/s/cm²'.format(
                 np.trapz(qinj*self.gam*mec2, self.gam)))
             self.nelec = self._calc_steady_state_nelec(qinj)
@@ -388,7 +373,7 @@ class ElectronOZM(object):
             self.nelec = qinj
 
         self.We = np.trapz(self.nelec*(self.gam*mec2), self.gam)
-        self.logger.info('calc_nelec: W_e/4πd²   = {0:.2e} erg/cm²'.format(self.We))
+        self.logger.info('calc_nelec: W_e/4πd²   = {0:.2e} / cm²'.format(self.We))
 
     def calc_sy(self):
         """
@@ -397,8 +382,6 @@ class ElectronOZM(object):
         """
         from scipy.special import cbrt
 
-        if not hasattr(self, 'outspecerg'):
-            self.outspecerg = self.outspecene/eV
         if not hasattr(self, 'gam'):
             self.logger.info('Calling calc_nelec to generate gam, nelec')
             self.calc_nelec()
@@ -423,18 +406,23 @@ class ElectronOZM(object):
         gam = self.gam[::ratio]
         nelec = self.nelec[::ratio]
 
-        CS1 = np.sqrt(3)*e**3*self.B/(2*np.pi*m_e*c**2*hbar*self.outspecerg)
-        Ec = 3*e*hbar*self.B*gam**2/(2*m_e*c)  # Critical energy, erg
-        EgEc = self.outspecerg/np.vstack(Ec)
+        # strip units, ensuring correct conversion
+        # astropy units do not convert correctly for gyroradius calculation when using 
+        # cgs (SI is fine, see https://github.com/astropy/astropy/issues/1687)
+        CS1 = np.sqrt(3)*e.value**3*self.B.to('G').value/(2*np.pi*m_e.cgs.value*c.cgs.value**2
+                *hbar.cgs.value*self.outspecene.to('erg').value)
+        Ec = 3*e.value*hbar.cgs.value*self.B.to('G').value*gam**2/(2*(m_e*c).cgs.value)  # Critical energy, erg
+        EgEc = self.outspecene.to('erg').value/np.vstack(Ec)
         dNdE = CS1*Gtilde(EgEc)
-        spec = np.trapz(np.vstack(nelec)*dNdE, gam, axis=0)
+        # return units
+        spec = np.trapz(np.vstack(nelec)*dNdE, gam, axis=0) /u.s/u.erg
 
         # convert from 1/s/erg to 1/s/eV
-        self.specsy = spec/u.erg.to('eV') * u.Unit('1/(s eV)')
-        self.sedsy = spec*self.outspecerg**2. * u.Unit('erg/s')
+        self.specsy = spec.to('1/(s eV)')
+        self.sedsy = (spec*self.outspecene**2.).to('erg/s')
 
-        totsylum = np.trapz(self.specsy*self.outspecene, self.outspecerg)
-        self.logger.info('calc_sy: L_sy/4πd²  = {0:.2e} erg/s/cm²'.format(totsylum))
+        totsylum = np.trapz(self.specsy*self.outspecene, self.outspecene).to('erg/s')
+        self.logger.info('calc_sy: L_sy/4πd²  = {0:.2e} / cm²'.format(totsylum))
 
     def _calc_specic(self, seed=None):
         self.logger.debug('_calc_specic: Computing IC on {0} seed photons...'.format(seed))
@@ -446,9 +434,11 @@ class ElectronOZM(object):
             photon spectrum following Khangulyan, Aharonian, and Kelner 2013
             (arXiv:1310.7971).
 
-            `electron_energy`, `soft_photon_temperature`, and
-            `gamma_energy` are in units of m_ec^2
+            `electron_energy` and `gamma_energy` are in units of m_ec^2
+            `soft_photon_temperature` is in units of K
             """
+            Ktomec2 = 1.6863699549e-10
+            soft_photon_temperature *= Ktomec2
             def g(x, a):
                 tmp = 1+a[2]*x**a[3]
                 tmp2 = a[0]*x**a[1]/tmp+1.
@@ -469,11 +459,11 @@ class ElectronOZM(object):
 
         idx = self.seedspec.index(seed)
         uf = self.seeduf[idx]
-        T = self.seedT[idx]*Ktomec2
+        T = self.seedT[idx]
 
-        Eph = (self.outspecene/mec2eV)
+        Eph = (self.outspecene/mec2).cgs.value
         gamint = iso_ic_on_planck(self.gam, T, Eph)
-        lum = uf*Eph*np.trapz(self.nelec*gamint, self.gam)
+        lum = uf*Eph*np.trapz(self.nelec*gamint, self.gam) * u.Unit('1/s')
 
         return lum/self.outspecene  # return differential spectrum in 1/s/eV
 
@@ -483,32 +473,29 @@ class ElectronOZM(object):
         """
         self.logger.debug('calc_ic: Starting IC computation...')
 
-        if not hasattr(self, 'outspecerg'):
-            self.outspecerg = self.outspecene/eV
-
         if not hasattr(self, 'gam'):
             self.logger.info('Calling calc_nelec to generate gam, nelec')
             self.calc_nelec()
 
-        for spec,unit in zip(['specic', 'sedic'],[u.Unit('1/(s eV)'),u.Unit('erg/s')]):
-            setattr(self, spec, np.zeros_like(self.outspecene) * unit)
+        self.specic = np.zeros(len(self.outspecene)) * u.Unit('1/(s eV)')
+        self.sedic  = np.zeros(len(self.outspecene)) * u.Unit('erg/s')
 
         for idx, seedspec in enumerate(self.seedspec):
             # Call actual computation, detached to allow changes in subclasses
-            specic = self._calc_specic(seed=seedspec) * u.Unit('1/(s eV)')
-            sedic = specic * self.outspecerg*u.erg * self.outspecene*u.eV # erg/s
+            specic = self._calc_specic(seed=seedspec).to('1/(s eV)')
+            sedic = (specic*self.outspecene**2).to('erg/s')
             setattr(self, 'specic_'+seedspec, specic)
             setattr(self, 'sedic_'+seedspec, sedic)
             self.specic += specic
             self.sedic += sedic
 
-        toticlum = np.trapz(self.specic*self.outspecene*u.eV, self.outspecerg*u.erg)
-        self.logger.info('calc_ic: L_ic/4πd²  = {0:.2e} /cm²'.format(toticlum))
-        tev = np.where(self.outspecene>1e11)
+        toticlum = np.trapz(self.specic*self.outspecene, self.outspecene).to('erg/s')
+        self.logger.info('calc_ic: L_ic/4πd²  = {0:.2e} / cm²'.format(toticlum))
+        tev = np.where(self.outspecene>100*u.GeV)
         if len(tev[0])>0:
-            tottevlum = np.trapz(self.specic[tev]*self.outspecene[tev]*u.eV,
-                    self.outspecerg[tev]*u.erg)
-            self.logger.info('calc_ic: L_vhe/4πd² = {0:.2e} /cm²'.format(tottevlum))
+            tottevlum = np.trapz(self.specic[tev]*self.outspecene[tev],
+                    self.outspecene[tev]).to('erg/s')
+            self.logger.info('calc_ic: L_vhe/4πd² = {0:.2e} / cm²'.format(tottevlum))
 
     def calc_outspec(self):
         """
