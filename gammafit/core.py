@@ -132,28 +132,37 @@ _p00=np.array((1e-11,2,10))
 
 def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
                 model=_cutoffexp, prior=_prior, labels=None, threads=8):
-    """Make an MCMC sampler.
-    
+    """Generate a new MCMC sampler.
+
     Parameters
     ----------
     nwalkers : int
-        Number of walkers
+        The number of Goodman & Weare “walkers”.
     nburn : int
-        TODO
-    guess : bool
-        TODO
+        Number of burn-in steps. After ``nburn`` steps, the sampler is reset and
+        chain history discarded. It is necessary to settle the sampler into the
+        maximum of the parameter space density.
     p0 : array
-        Initial position vector.
-    data : TODO
-        Data
-    model : TODO
-        TODO
-    prior : TODO
-        TODO
-    labels : TODO
-        TODO
+        Initial position vector. The distribution for the ``nwalkers`` walkers
+        will be computed as a multidimensional gaussian of width 10% around the
+        initial position vector ``p0``.
+    data : dict
+        Dictionary containing the observed spectrum.
+    model : function
+        A function that takes a vector in the parameter space and the data
+        dictionary, and returns the expected fluxes at the energies in the
+        spectrum.
+    prior : function
+        A function that takes a vector in the parameter space and returns the
+        log-likelihood of the Bayesian prior. Parameter limits can be specified
+        through a uniform prior, returning 0. if the vector is within the
+        parameter bounds and ``-np.inf`` otherwise.
+    labels : iterable of strings
+        Labels for the parameters included in the position vector `p0`.
     threads : int
         Number of threads to use for sampling.
+    guess : bool (optional)
+        Whether to attempt to guess the normalization (first) parameter of the model.
 
     Returns
     -------
@@ -164,7 +173,7 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
 
     See also
     --------
-    emcee.EnsembleSampler
+    `emcee.EnsembleSampler`
     """
     import emcee
 
@@ -211,24 +220,27 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
 
 def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
     """Run an MCMC sampler.
-    
-    Extra ``kwargs`` are passed to `get_sampler`.
-    
+
+    If no sampler or initial position vector is provided, extra ``kwargs`` are
+    passed to `get_sampler` to generate a new sampler.
+
     Parameters
     ----------
     nrun : int
-        TODO
+        Number of steps to run
     sampler : `emcee.EnsembleSampler`
         Sampler
-    pos : TODO
-        TODO
-    
+    pos : array
+        A list of initial position vectors for the walkers. It should have
+        dimensions of ``(nwalkers,dim)``, where ``dim`` is the number of free
+        parameters.
+
     Returns
     -------
     sampler : `emcee.EnsembleSampler`
-        Modified input ``sampler``
-    pos : TODO
-        TODO
+        Sampler containing the paths of the walkers during the ``nrun`` steps.
+    pos : array
+        List of final position vectors after the run.
     """
 
     if sampler==None or pos==None:
