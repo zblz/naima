@@ -5,17 +5,17 @@ __all__ = ["plot_chain","plot_fit","plot_CI"]
 
 
 def plot_chain(sampler,p=None,**kwargs):
-    """Plot chain.
-    
-    ``kwargs`` are passed to ``_plot_chain_func``.
-    
+    """Generate a diagnostic plot of the sampler chains.
+
     Parameters
     ----------
     sampler : `emcee.EnsembleSampler`
-        Sampler
-    p : TODO
-        TODO
-    
+        Sampler containing the chains to be plotted.
+    p : int (optional)
+        Index of the parameter to plot. If omitted, all chains are plotted.
+    last_step : bool (optional)
+        Whether to plot the last step of the chain or the complete chain (default).
+
     Returns
     -------
     figure : `matplotlib.figure.Figure`
@@ -151,7 +151,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
 
 def gelman_rubin_statistic(chains):
     """
-    Compute Gelman-Rubint statistic for convergence testing of Markov chains.
+    Compute Gelman-Rubin statistic for convergence testing of Markov chains.
 
     Gelman & Rubin (1992), Statistical Science 7, pp. 457-511
     """
@@ -208,9 +208,7 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
 def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs):
     """Plot confidence interval.
-    
-    ``kwargs`` are passed ot ``calc_CI``.
-    
+
     Parameters
     ----------
     ax : `matplotlib.Axes`
@@ -220,12 +218,14 @@ def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs)
     modelidx : int
         Model index
     converttosed : bool
-        Convert to SED?
-    confs : list
-        TODO
+        Convert from differential spectrum to SED.
+    confs : list (optional)
+        List of confidence levels (in sigma) to use for generating the confidence intervals.
+    last_step : bool (optional)
+        Whether to only use the positions in the final step of the run (default) or the whole chain.
     """
 
-    envconf=1000000
+    #envconf=1000000
     #confs+=[envconf,]
 
     modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
@@ -252,7 +252,7 @@ def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs)
 def find_ML(sampler,modelidx):
     """
     Find Maximum Likelihood parameters as those in the chain with a highest log
-    probability
+    probability.
     """
     index=np.unravel_index(np.argmax(sampler.lnprobability),sampler.lnprobability.shape)
     MLp=sampler.chain[index]
@@ -266,6 +266,28 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
         converttosed=False,figure=None,residualCI=True,plotdata=False,**kwargs):
     """
     Plot data with fit confidence regions.
+
+    Additional ``kwargs`` are passed to `plotCI`.
+
+    Parameters
+    ----------
+    sampler : `emcee.EnsembleSampler`
+        Sampler with a stored chain.
+    modelidx : int
+        Model index to plot.
+    xlabel : str
+        Label for the ``x`` axis of the plot.
+    ylabel : str
+        Label for the ``y`` axis of the plot.
+    converttosed : bool
+        Convert from differential spectrum to SED.
+    confs : list (optional)
+        List of confidence levels (in sigma) to use for generating the confidence intervals.
+    figure : `matplotlib.figure`
+        `matplotlib` figure to plot on. If omitted a new one will be generated.
+    residualCI : bool
+        Whether to plot the confidence interval bands in the residual plot.
+
     """
     import matplotlib.pyplot as plt
 
