@@ -169,9 +169,6 @@ class ElectronOZM(object):
         per unit energy per second
         at energies given by ``Eph``.
 
-    specictev : array [1/s/TeV]
-        Differential IC spectrum in units typically used by IACT community.
-
     sedic : array [erg/s]
         IC SED
 
@@ -221,6 +218,12 @@ class ElectronOZM(object):
         self.__dict__.update(**computation_defaults)
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
+
+        # convert quantities to values
+        for var,unit in [('outspecene',u.eV),('norm_energy',u.erg),('cutoff',u.eV),
+                ('B',u.G),('remit',u.cm),('tad',u.s)]:
+            if isinstance(getattr(self,var),u.Quantity):
+                setattr(self,var, getattr(self,var).to(unit).value)
 
         self._process_input_seed()
 
@@ -427,8 +430,8 @@ class ElectronOZM(object):
         spec = np.trapz(np.vstack(nelec)*dNdE, gam, axis=0)
 
         # convert from 1/s/erg to 1/s/eV
-        self.specsy = spec/u.erg.to('eV')
-        self.sedsy = spec*self.outspecerg**2.
+        self.specsy = spec/u.erg.to('eV') * u.Unit('1/(s eV)')
+        self.sedsy = spec*self.outspecerg**2. * u.Unit('erg/s')
 
         totsylum = np.trapz(self.specsy*self.outspecene, self.outspecerg)
         self.logger.info('calc_sy: L_sy/4πd²  = {0:.2e} erg/s/cm²'.format(totsylum))
@@ -487,27 +490,25 @@ class ElectronOZM(object):
             self.logger.info('Calling calc_nelec to generate gam, nelec')
             self.calc_nelec()
 
-        for spec in ['specic', 'specictev', 'sedic']:
-            setattr(self, spec, np.zeros_like(self.outspecene))
+        for spec,unit in zip(['specic', 'sedic'],[u.Unit('1/(s eV)'),u.Unit('erg/s')]):
+            setattr(self, spec, np.zeros_like(self.outspecene) * unit)
 
         for idx, seedspec in enumerate(self.seedspec):
             # Call actual computation, detached to allow changes in subclasses
-            specic = self._calc_specic(seed=seedspec)
-            specictev = specic/u.eV.to('TeV')  # 1/s/TeV
-            sedic = specic*self.outspecerg*self.outspecene  # erg/s
+            specic = self._calc_specic(seed=seedspec) * u.Unit('1/(s eV)')
+            sedic = specic * self.outspecerg*u.erg * self.outspecene*u.eV # erg/s
             setattr(self, 'specic_'+seedspec, specic)
-            setattr(self, 'specictev_'+seedspec, specictev)
             setattr(self, 'sedic_'+seedspec, sedic)
             self.specic += specic
-            self.specictev += specictev
             self.sedic += sedic
 
-        toticlum = np.trapz(self.specic*self.outspecene, self.outspecerg)
-        self.logger.info('calc_ic: L_ic/4πd²  = {0:.2e} erg/s/cm²'.format(toticlum))
+        toticlum = np.trapz(self.specic*self.outspecene*u.eV, self.outspecerg*u.erg)
+        self.logger.info('calc_ic: L_ic/4πd²  = {0:.2e} /cm²'.format(toticlum))
         tev = np.where(self.outspecene>1e11)
         if len(tev[0])>0:
-            tottevlum = np.trapz(self.specic[tev]*self.outspecene[tev], self.outspecerg[tev])
-            self.logger.info('calc_ic: L_vhe/4πd² = {0:.2e} erg/s/cm²'.format(tottevlum))
+            tottevlum = np.trapz(self.specic[tev]*self.outspecene[tev]*u.eV,
+                    self.outspecerg[tev]*u.erg)
+            self.logger.info('calc_ic: L_vhe/4πd² = {0:.2e} /cm²'.format(tottevlum))
 
     def calc_outspec(self):
         """
@@ -575,10 +576,6 @@ class ProtonOZM(object):
     specpp : array [1/s/eV]
         Differential gamma-ray spectrum at energies given by `Eph`.
 
-    specpptev : array [1/s/TeV]
-        Differential gamma-ray spectrum at energies given by `Eph` in units
-        typically used by IACT community.
-
     sedpp : array [erg/s]
         Spectral energy distribution at energies given by `Eph`.
 
@@ -613,6 +610,12 @@ class ProtonOZM(object):
 
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
+
+        # convert quantities to values
+        for var,unit in [('outspecene',u.eV),('norm_energy',u.erg),('cutoff',u.eV)]:
+            if isinstance(getattr(self,var),u.Quantity):
+                setattr(self,var, getattr(self,var).to(unit).value)
+
 
     def Jp(self, Ep):
         """
@@ -744,12 +747,16 @@ class ProtonOZM(object):
             else:
                 self.specpp[i] = self._calc_specpp_loE(Egamma)
 
-        self.sedpp = self.specpp*outspecene**2*u.TeV.to('erg')  # erg/s
-        self.specpptev = self.specpp.copy()
-        self.specpp /= u.TeV.to('eV')
+        self.specpp = self.specpp * u.Unit('1/(s TeV)')
 
-        totpplum = np.trapz(self.specpptev*outspecene, outspecene*u.TeV.to('erg'))
-        self.logger.info('L_pp*nH/4πd²  = {0:.2e} erg/s'.format(totpplum))
+
+        outspec=(self.outspecene*u.eV).to('erg')
+
+        self.sedpp = self.specpp*outspecene*u.TeV*outspec  # erg/s
+        self.specpp = self.specpp.to('1/(s eV)')
+
+        totpplum = np.trapz(self.specpp*self.outspecene*u.eV, outspec)
+        self.logger.info('L_pp*nH/4πd²  = {0:.2e}'.format(totpplum))
 
     def calc_outspec(self):
         """
