@@ -129,7 +129,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
     ## Corner plot
 
     try:
-        from .plot import corner
+        from triangle import corner
         from .plot import find_ML
 
         ML,MLp,MLvar,model_ML = find_ML(sampler,0)
@@ -138,8 +138,8 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
             f.savefig(outpdf,format='pdf')
         else:
             f.savefig('{0}_corner.png'.format(outname))
-    except NameError:
-        print('triangle.py not installed, corner plot not available')
+    except ImportError:
+        print('triangle_plot not installed, corner plot not available')
 
     ## Fit
 
