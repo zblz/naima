@@ -287,9 +287,11 @@ class ElectronOZM(object):
             self.generate_gam()
 
 ## Synchrotron losses
-        umag = self.B**2./(8.*np.pi)
-        cgdot = -(4./3.)*c*sigt/mec2*self.gam**2.
-        gdotsy = cgdot*umag
+        # astropy cgs magnetic units (in particular B**2) do not convert properly
+        # strip units
+        umag = self.B.to('G').value**2./(8.*np.pi)
+        cgdot = -(4./3.)*c.cgs.value*sigt.cgs.value/mec2.cgs.value*self.gam**2.
+        gdotsy = cgdot*umag * u.Unit('1/s')
         #gdoticthom = cgdot*np.sum(self.phe)
         #self.ticthom = self.gam/np.abs(gdoticthom)
 
@@ -297,10 +299,10 @@ class ElectronOZM(object):
         gdotad = -1.0*self.gam/self.tad
 
 ## IC losses
-        gdotic = np.zeros_like(self.gam)
+        gdotic = np.zeros_like(self.gam) * u.Unit('1/s')
         for idx, seedspec in enumerate(self.seedspec):
             gdot = self.seeduf[idx] * \
-                self._gdot_iso_ic_on_planck(self.gam, self.seedT[idx])
+                self._gdot_iso_ic_on_planck(self.gam, self.seedT[idx]) * u.Unit('1/s')
             setattr(self, 'tic_'+seedspec, self.gam/np.abs(gdot))
             gdotic += gdot
 
@@ -352,7 +354,7 @@ class ElectronOZM(object):
         dgam = np.diff(self.gam)
         tt = dgam*(qinj[1:]+qinj[:-1])/2.
         qint = np.array([np.sum(tt[i:]) for i in range(len(qinj))])
-        return qint/self.gdot
+        return qint/self.gdot.value
 
     def calc_nelec(self):
         """
@@ -459,9 +461,9 @@ class ElectronOZM(object):
         uf = self.seeduf[idx]
         T = self.seedT[idx]
 
-        Eph = (self.outspecene/mec2eV)
+        Eph = (self.outspecene/mec2).cgs.value
         gamint = iso_ic_on_planck(self.gam, T, Eph)
-        lum = uf*Eph*np.trapz(self.nelec*gamint, self.gam)
+        lum = uf*Eph*np.trapz(self.nelec*gamint, self.gam) * u.Unit('1/s')
 
         return lum/self.outspecene  # return differential spectrum in 1/s/eV
 
@@ -471,32 +473,29 @@ class ElectronOZM(object):
         """
         self.logger.debug('calc_ic: Starting IC computation...')
 
-        if not hasattr(self, 'outspecerg'):
-            self.outspecerg = self.outspecene/eV
-
         if not hasattr(self, 'gam'):
             self.logger.info('Calling calc_nelec to generate gam, nelec')
             self.calc_nelec()
 
-        for spec,unit in zip(['specic', 'sedic'],[u.Unit('1/(s eV)'),u.Unit('erg/s')]):
-            setattr(self, spec, np.zeros_like(self.outspecene) * unit)
+        self.specic = np.zeros(len(self.outspecene)) * u.Unit('1/(s eV)')
+        self.sedic  = np.zeros(len(self.outspecene)) * u.Unit('erg/s')
 
         for idx, seedspec in enumerate(self.seedspec):
             # Call actual computation, detached to allow changes in subclasses
-            specic = self._calc_specic(seed=seedspec) * u.Unit('1/(s eV)')
-            sedic = specic * self.outspecerg*u.erg * self.outspecene*u.eV # erg/s
+            specic = self._calc_specic(seed=seedspec).to('1/(s eV)')
+            sedic = (specic*self.outspecene**2).to('erg/s')
             setattr(self, 'specic_'+seedspec, specic)
             setattr(self, 'sedic_'+seedspec, sedic)
             self.specic += specic
             self.sedic += sedic
 
-        toticlum = np.trapz(self.specic*self.outspecene*u.eV, self.outspecerg*u.erg)
-        self.logger.info('calc_ic: L_ic/4πd²  = {0:.2e} /cm²'.format(toticlum))
-        tev = np.where(self.outspecene>1e11)
+        toticlum = np.trapz(self.specic*self.outspecene, self.outspecene).to('erg/s')
+        self.logger.info('calc_ic: L_ic/4πd²  = {0:.2e} / cm²'.format(toticlum))
+        tev = np.where(self.outspecene>100*u.GeV)
         if len(tev[0])>0:
-            tottevlum = np.trapz(self.specic[tev]*self.outspecene[tev]*u.eV,
-                    self.outspecerg[tev]*u.erg)
-            self.logger.info('calc_ic: L_vhe/4πd² = {0:.2e} /cm²'.format(tottevlum))
+            tottevlum = np.trapz(self.specic[tev]*self.outspecene[tev],
+                    self.outspecene[tev]).to('erg/s')
+            self.logger.info('calc_ic: L_vhe/4πd² = {0:.2e} / cm²'.format(tottevlum))
 
     def calc_outspec(self):
         """
