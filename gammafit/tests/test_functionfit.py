@@ -4,6 +4,9 @@ import numpy as np
 from astropy.tests.helper import pytest
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, uniform_prior
+# Use batch backend to avoid $DISPLAY errors
+import matplotlib
+matplotlib.use("Agg")
 
 try:
     import emcee
