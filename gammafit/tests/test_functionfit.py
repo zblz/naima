@@ -1,15 +1,17 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from StringIO import StringIO
 import numpy as np
-
-import astropy.units as u
-
-import gammafit
+from astropy.tests.helper import pytest
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, uniform_prior
 
-## Read data
-from StringIO import StringIO
+try:
+    import emcee
+    HAS_EMCEE = True
+except ImportError:
+    HAS_EMCEE = False
 
+## Read data
 specfile=StringIO(
 """
 #
@@ -54,6 +56,7 @@ dflux=np.array(list(zip(merr,perr)))
 data=build_data_dict(ene,None,flux,dflux,)
 
 
+@pytest.mark.skipif('not HAS_EMCEE')
 def test_function_sampler():
 
 ## Model definition

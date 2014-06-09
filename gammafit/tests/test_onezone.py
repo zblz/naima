@@ -2,6 +2,14 @@
 from astropy import units as u
 import numpy as np
 from numpy.testing import assert_approx_equal
+from astropy.tests.helper import pytest
+
+try:
+    import emcee
+    HAS_EMCEE = True
+except ImportError:
+    HAS_EMCEE = False
+
 
 electronozmpars={
         'seedspec':'CMB',
@@ -13,6 +21,8 @@ electronozmpars={
         'gmax':1e10,
         }
 
+
+@pytest.mark.skipif('not HAS_EMCEE')
 def test_electronozm():
     from ..onezone import ElectronOZM
 
@@ -23,6 +33,7 @@ def test_electronozm():
     assert_approx_equal(lsy,0.016769058688230903)
     lic=np.trapz(ozm.specic*ozm.outspecene**2*u.eV.to('erg'),ozm.outspecene)
     assert_approx_equal(lic,214080823.28721327)
+
 
 #def test_electronozm_evolve():
     #from ..onezone import ElectronOZM
@@ -35,6 +46,8 @@ def test_electronozm():
     #lic=np.trapz(ozm.specic*ozm.outspecene**2*u.eV.to('erg'),ozm.outspecene)
     #assert_approx_equal(lic,1.0514223815442389e+20)
 
+
+@pytest.mark.skipif('not HAS_EMCEE')
 def test_protonozm():
     from ..onezone import ProtonOZM
 
