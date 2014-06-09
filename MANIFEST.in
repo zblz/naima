@@ -2,7 +2,7 @@ include README.rst
 include LICENSE.rst
 
 include ez_setup.py
-include setuptools_bootstrap.py
+include ah_bootstrap.py
 
 recursive-include gammafit *.pyx *.c 
 recursive-include gammafit/examples *.py CrabNebula_HESS_2006.dat
