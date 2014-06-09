@@ -14,43 +14,37 @@ except ImportError:
 ## Read data
 specfile=StringIO(
 """
-#
-#
-# Energy: TeV
-# Flux: cm^{-2}.s^{-1}.TeV^{-1}
+# Crab Nebula spectrum measured by HESS taken from table 5 of
+# Aharonian et al. 2006, A&A 457, 899
+# ADS bibcode: 2006A&A...457..899A
 
-0.7185 1.055e-11  7.266e-12 1.383e-11 
-0.8684 1.304e-11  1.091e-11 1.517e-11 
-1.051 9.211e-12  7.81e-12 1.061e-11 
-1.274 8.515e-12  7.557e-12 9.476e-12 
-1.546 5.378e-12  4.671e-12 6.087e-12 
-1.877 4.455e-12  3.95e-12 4.962e-12 
-2.275 3.754e-12  3.424e-12 4.088e-12 
-2.759 2.418e-12  2.15e-12 2.688e-12 
-3.352 1.605e-12  1.425e-12 1.788e-12 
-4.078 1.445e-12  1.319e-12 1.574e-12 
-4.956 9.24e-13  8.291e-13 1.021e-12 
-6.008 7.348e-13  6.701e-13 8.019e-13 
-7.271 3.863e-13  3.409e-13 4.333e-13 
-8.795 3.579e-13  3.222e-13 3.954e-13 
-10.65 1.696e-13  1.447e-13 1.955e-13 
-12.91 1.549e-13  1.343e-13 1.765e-13 
-15.65 6.695e-14  5.561e-14 7.925e-14 
-18.88 2.105e-14  7.146e-15 3.425e-14 
-22.62 3.279e-14  2.596e-14 4.03e-14 
-26.87 3.026e-14  2.435e-14 3.692e-14 
-31.61 1.861e-14  1.423e-14 2.373e-14 
-36.97 5.653e-15  3.484e-15 8.57e-15 
-43.08 3.479e-15  1.838e-15 5.889e-15 
-52.37 1.002e-15  1.693e-16 2.617e-15 
+# Column 1: Mean energy (TeV)
+# Column 2: Excess events
+# Column 3: Significance
+# Column 4: Differential flux (1/cm2/s/TeV)
+# Column 5: Upper 1-sigma flux error
+# Column 6: Lower 1-sigma flux error
+
+0.519  975   42.9  1.81e-10  0.06e-10  0.06e-10
+0.729  1580  56.0  7.27e-11  0.20e-11  0.19e-11
+1.06   1414  55.3  3.12e-11  0.09e-11  0.09e-11
+1.55   1082  47.3  1.22e-11  0.04e-11  0.04e-11
+2.26   762   39.5  4.60e-12  0.18e-12  0.18e-12
+3.3    443   29.5  1.53e-12  0.08e-12  0.08e-12
+4.89   311   24.9  6.35e-13  0.39e-13  0.38e-13
+7.18   186   19.6  2.27e-13  0.18e-13  0.17e-13
+10.4   86    13.1  6.49e-14  0.77e-14  0.72e-14
+14.8   36    8.1   1.75e-14  0.33e-14  0.30e-14
+20.9   23    7.5   7.26e-15  1.70e-15  1.50e-15
+30.5   4     2.9   9.58e-16  5.60e-16  4.25e-16
 """)
 spec=np.loadtxt(specfile)
 specfile.close()
 
 ene=spec[:,0]
-flux=spec[:,1]
-merr=spec[:,1]-spec[:,2]
-perr=spec[:,3]-spec[:,1]
+flux=spec[:,3]
+merr=spec[:,4]
+perr=spec[:,5]
 dflux=np.array(list(zip(merr,perr)))
 
 data=build_data_dict(ene,None,flux,dflux,)
@@ -110,6 +104,6 @@ def test_function_sampler():
 
 ## Diagnostic plots
 
-    #generate_diagnostic_plots('velax_function',sampler)
+    generate_diagnostic_plots('velax_function',sampler)
 
 
