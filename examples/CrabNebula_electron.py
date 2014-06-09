@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import numpy as np
 import gammafit
+import astropy.units as u
+from astropy.constants import m_e,c
 
 ## Read data
 
@@ -25,16 +27,16 @@ def ElectronIC(pars,data):
 
     norm   = pars[0]
     index  = pars[1]
-    cutoff = pars[2]*1e12
+    cutoff = pars[2]*u.TeV
 
-    outspecene=data['ene']*1e12
+    outspecene=data['ene']*u.TeV
 
     ozm=gammafit.ElectronOZM(
             outspecene, norm,
             index=index,
             cutoff=cutoff,
             seedspec=['CMB',],
-            norm_energy=1e13,
+            norm_energy=10.*u.TeV,
             nolog=True,
             evolve_nelec=False,
             )
@@ -42,14 +44,17 @@ def ElectronIC(pars,data):
     ozm.calc_nelec()
     ozm.calc_ic()
 
-    model=ozm.specictev # 1/s/cm2/TeV
+    # convert to same units as observed differential spectrum
+    model=ozm.specic.to('1/(s TeV)')
 
-    nelec=ozm.nelec[:-1]*gammafit.mec2*ozm.gam[:-1]*np.diff(ozm.gam)
-    elec_energy=ozm.gam[:-1]*gammafit.mec2TeV
+    mec2=m_e*c**2
+
+    nelec=ozm.nelec[:-1]*mec2.cgs.value*ozm.gam[:-1]*np.diff(ozm.gam)
+    elec_energy=ozm.gam[:-1]*mec2.to('TeV').value
 
     del ozm
 
-    return model, np.array((data['ene'],model)), np.array((elec_energy,nelec))
+    return model.value, np.array((data['ene'],model)), np.array((elec_energy,nelec))
 
 ## Prior definition
 

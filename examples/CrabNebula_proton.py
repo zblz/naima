@@ -28,23 +28,23 @@ def ppgamma(pars,data):
     enemid=np.sqrt(data['ene'][0]*data['ene'][-1])
     # peak gamma energy production is ~0.1*Ep, so enemid corresponds to Ep=10*enemid
     # If a cutoff is present, this should be reduced
-    norm_ene = 5.*enemid
+    norm_ene = 5.*enemid*u.TeV
 
     norm   = pars[0]
     index  = pars[1]
-    cutoff = pars[2]
+    cutoff = pars[2]*u.TeV
 
     ozm=gammafit.ProtonOZM(
-            data['ene']*1e12, norm,
-            cutoff      = cutoff*1e12,
+            data['ene']*u.TeV, norm,
+            cutoff      = cutoff,
             index       = index,
-            norm_energy = norm_ene*1e12,
+            norm_energy = norm_ene,
             nolog       = True,
             )
 
     ozm.calc_outspec()
 
-    model=ozm.specpptev # 1/s/cm2/TeV
+    model=ozm.specpp.to('1/(s TeV)') # 1/s/cm2/TeV
 
     # compute proton distribution for blob
     Epmin=data['ene'][0]*1e-2
@@ -55,7 +55,7 @@ def ppgamma(pars,data):
 
     del(ozm)
 
-    return model, np.array((data['ene'],model)), \
+    return model.value, np.array((data['ene'],model)), \
             np.array((protonene,protondist))
 
 ## Prior definition
@@ -68,7 +68,7 @@ def lnprior(pars):
 
 	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
             + gammafit.uniform_prior(pars[1],-1,5) \
-			+ gammafit.uniform_prior(pars[2],0.,np.inf) \
+	    + gammafit.uniform_prior(pars[2],0.,np.inf)
 
 	return logprob
 
