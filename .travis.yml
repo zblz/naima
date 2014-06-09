@@ -79,8 +79,9 @@ matrix:
           env: ASTROPY_VERSION=development NUMPY_VERSION=$LATEST_NUMPY_STABLE SETUP_CMD='test --coverage'
 
         # one documentation build (leave it for readthedocs)
-        #- python: 2.7
+        - python: 2.7
           #env: NUMPY_VERSION=$LATEST_NUMPY_STABLE SETUP_CMD='build_sphinx -w -n'
+          env: NUMPY_VERSION=$LATEST_NUMPY_STABLE SETUP_CMD='build_sphinx -n'
 
 before_install:
     - pip install --upgrade setuptools

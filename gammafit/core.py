@@ -174,7 +174,7 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
 
     See also
     --------
-    `emcee.EnsembleSampler`
+    emcee.EnsembleSampler
     """
     import emcee
 
