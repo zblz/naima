@@ -84,15 +84,15 @@ class ElectronOZM(object):
 
         - A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
           radiation fields with temperatures of 2.72 K, 70 K, and 5000 K, and
-          energy densities of 0.261, 0.5, and 1 eV/cm:math:`^{-3}` will be used
+          energy densities of 0.261, 0.5, and 1 eV/cm³ will be used
         - A list of length three composed of:
-            - A name for the seed photon field
-            - Its temperature as a :class:`~astropy.units.Quantity` float
-              instance.
-            - Its photon field energy density as a
-              :class:`~astropy.units.Quantity` float instance. If the photon
-              field energy density if set to 0, its blackbody energy density
-              will be computed through the Stefan-Boltzman law.
+            1. A name for the seed photon field
+            2. Its temperature as a :class:`~astropy.units.Quantity` float
+               instance.
+            3. Its photon field energy density as a
+               :class:`~astropy.units.Quantity` float instance. If the photon
+               field energy density if set to 0, its blackbody energy density
+               will be computed through the Stefan-Boltzman law.
 
     evolve_nelec : bool (optional)
         Whether to evolve electron spectrum until steady state. See Zabalza et
@@ -524,7 +524,7 @@ class ProtonOZM(object):
 
     Parameters
     ----------
-    Eph : array
+    Eph : :class:`~astropy.units.quantity.Quantity` array instance
         Array of desired output photon energies [eV].
 
     norm : float
@@ -538,29 +538,29 @@ class ProtonOZM(object):
         number density of target protons, :math:`V` is the emitting volume, and
         :math:`d` is the distance to the source.
 
-    norm_energy : float (optional)
+    norm_energy : :class:`~astropy.units.quantity.Quantity` float instance, optional
         Electron energy [eV] for which normalization parameter :math:`A`
         applies. Should correspond to the decorrelation energy of the observed
         spectrum for the emission process in consideration.
 
-    index : float (optional)
+    index : float, optional
         Power-law index of the particle distribution function.
 
-    cutoff : float (optional)
+    cutoff : :class:`~astropy.units.quantity.Quantity` float instance, optional
         Cut-off energy [eV]. Default: None
 
-    beta : float (optional)
+    beta : float, optional
         Exponent of exponential energy cutoff argument. Default: 2
 
     Attributes
     ----------
-    specpp : array [1/s/eV]
+    specpp : :class:`~astropy.units.quantity.Quantity` array instance [1/s/eV]
         Differential gamma-ray spectrum at energies given by `Eph`.
 
-    sedpp : array [erg/s]
+    sedpp : :class:`~astropy.units.quantity.Quantity` array instance [erg/s]
         Spectral energy distribution at energies given by `Eph`.
 
-    Wp : float [erg*[1/cm5]]
+    Wp : :class:`~astropy.units.quantity.Quantity` float instance [erg*[1/cm5]]
         Total energy required in protons in units of erg/cm5. To obtain
         intrinsic total energy, this value should be multiplied by a factor
         4πd²/nH.

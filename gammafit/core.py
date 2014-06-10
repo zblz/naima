@@ -202,9 +202,9 @@ def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
     ----------
     nrun : int, optional
         Number of steps to run
-    sampler : :class:`~emcee.EnsembleSampler` instance, optional
-        Sampler.
-    pos : :class:`~numpy.ndarray`, optional
+    sampler : :class:`~emcee.EnsembleSampler` instance
+        Sampler
+    pos : array
         A list of initial position vectors for the walkers. It should have
         dimensions of ``(nwalkers,dim)``, where ``dim`` is the number of free
         parameters. `emcee.utils.sample_ball` can be used to generate a
