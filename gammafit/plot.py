@@ -276,27 +276,18 @@ def plot_CI(ax, sampler, modelidx=0,sed=True,confs=[3,1,0.5],e_unit=u.eV,**kwarg
         Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
     """
 
-    envconf=1000000
-    #confs+=[envconf,]
-
     modelx,CI = calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
     modely = sampler.blobs[-1][0][modelidx][1]
 
     f_unit, sedf = _sed_conversion(modelx,modely,sed)
 
     for (ymin,ymax),conf in zip(CI,confs):
-        if conf==envconf:
-            for yy in (ymin,ymax):
-                ax.plot(modelx.to(e_unit).value,
-                        (yy*sedf).to(f_unit).value,
-                        lw=1.,color='0.7',ls=':',zorder=-10)
-        else:
-            color=np.log(conf)/np.log(20)+0.4
-            ax.fill_between(modelx.to(e_unit).value,
-                    (ymax*sedf).to(f_unit).value,
-                    (ymin*sedf).to(f_unit).value,
-                    lw=0.,color='{0}'.format(color),
-                    alpha=0.6,zorder=-10)
+        color=np.log(conf)/np.log(20)+0.4
+        ax.fill_between(modelx.to(e_unit).value,
+                (ymax*sedf).to(f_unit).value,
+                (ymin*sedf).to(f_unit).value,
+                lw=0.,color='{0}'.format(color),
+                alpha=0.6,zorder=-10)
 
     #ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
 
