@@ -115,9 +115,9 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,sed=None,
     if pdf:
         from matplotlib import pyplot as plt
         plt.rc('pdf',fonttype = 42)
-        print('Generating diagnostic plots in file {}_plots.pdf'.format(outname))
+        print('Generating diagnostic plots in file {0}_plots.pdf'.format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
-        outpdf=PdfPages('{}_plots.pdf'.format(outname))
+        outpdf=PdfPages('{0}_plots.pdf'.format(outname))
 
     ## Chains
 
@@ -189,7 +189,6 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,sed=None,
         try:
             x=modelx.unit
             y=modely.unit
-            print x,y
         except AttributeError:
             log.warn('Units not added correctly, not plotting model {0}'.format(modelidx))
             continue

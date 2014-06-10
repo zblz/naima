@@ -10,7 +10,7 @@ matplotlib.use('Agg')
 import gammafit
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, uniform_prior
-from ..plot import plot_chain, plot_CI, plot_fit
+from ..plot import plot_chain, plot_fit, plot_data
 
 ## Read data
 from StringIO import StringIO
@@ -132,6 +132,16 @@ def test_fit_plots():
                 f = plot_fit(sampler,modelidx=idx,sed=sed,
                         last_step=last_step,plotdata=not(idx))
                 del f
+
+def test_plot_data():
+    # only plot data
+    f = plot_data(sampler,)
+    f = plot_data(sampler,sed=True)
+    f = plot_data(sampler,sed=True,figure=f)
+    # try to break it
+    f = plot_data(sampler,plotdata=False)
+    f = plot_data(sampler,confs=[3,1,0.5])
+    del f
 
 def test_fit_data_units():
 

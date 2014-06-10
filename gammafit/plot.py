@@ -3,7 +3,7 @@ import numpy as np
 import astropy.units as u
 from astropy.logger import log
 
-__all__ = ["plot_chain","plot_fit","plot_CI"]
+__all__ = ["plot_chain","plot_fit","plot_data"]
 
 
 def plot_chain(sampler,p=None,**kwargs):
@@ -501,3 +501,34 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
 
     return f
 
+
+def plot_data(sampler,xlabel=None,ylabel=None,
+        sed=False,figure=None,**kwargs):
+    """
+    Plot spectral data.
+
+    Additional ``kwargs`` are passed to `plot_fit`, except ``confs`` and
+    ``plotdata``.
+
+    Parameters
+    ----------
+    sampler : `emcee.EnsembleSampler`
+        Sampler with a stored chain.
+    xlabel : str, optional
+        Label for the ``x`` axis of the plot.
+    ylabel : str, optional
+        Label for the ``y`` axis of the plot.
+    sed : bool, optional
+        Whether to plot SED or differential spectrum.
+    figure : `matplotlib.figure`, optional
+        `matplotlib` figure to plot on. If omitted a new one will be generated.
+
+    """
+    for par in ['confs','plotdata']:
+        if par in kwargs:
+            kwargs.pop(par)
+
+    f = plot_fit(sampler,confs=None,xlabel=xlabel,ylabel=ylabel,
+        sed=sed,figure=figure,plotdata=True,**kwargs)
+
+    return f

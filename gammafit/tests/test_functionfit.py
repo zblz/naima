@@ -3,7 +3,7 @@ from StringIO import StringIO
 import numpy as np
 from astropy.tests.helper import pytest
 from ..utils import build_data_dict, generate_diagnostic_plots
-from ..core import run_sampler, uniform_prior
+from ..core import run_sampler, get_sampler, uniform_prior, normal_prior
 # Use batch backend to avoid $DISPLAY errors
 import matplotlib
 matplotlib.use("Agg")
@@ -44,11 +44,11 @@ specfile=StringIO(
 spec=np.loadtxt(specfile)
 specfile.close()
 
-ene=spec[:,0]
-flux=spec[:,3]
+ene=spec[:,0]*u.TeV
+flux=spec[:,3]*u.Unit('1/(cm2 s TeV)')
 merr=spec[:,4]
 perr=spec[:,5]
-dflux=np.array(list(zip(merr,perr)))
+dflux=np.array((merr,perr))*u.Unit('1/(cm2 s TeV)')
 
 data=build_data_dict(ene,None,flux,dflux,)
 
@@ -90,7 +90,7 @@ def test_function_sampler():
         """
 
         logprob = uniform_prior(pars[0],0.,np.inf) \
-                + uniform_prior(pars[1],-1,5) \
+                + normal_prior(pars[1],1.4,0.5) \
                 + uniform_prior(pars[2],0.,np.inf)
 
         return logprob
@@ -100,16 +100,22 @@ def test_function_sampler():
     p0=np.array((1e-9,1.4,14.0,))
     labels=['norm','index','cutoff','beta']
 
-## Run sampler
+## Initialize in different ways to test argument validation
+
+    sampler,pos = get_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
+            prior=lnprior, nwalkers=10, nburn=0, threads=1)
+
+    # labels
+    sampler,pos = run_sampler(data=data, p0=p0, labels=None, model=cutoffexp,
+            prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
+    sampler,pos = run_sampler(data=data, p0=p0, labels=labels[:2], model=cutoffexp,
+            prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
+
+    # no prior
+    sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
+            prior=None, nwalkers=10, nrun=2, nburn=0, threads=1)
 
     sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
             prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
-
-## Diagnostic plots
-
-    generate_diagnostic_plots('test_function_1',sampler)
-    generate_diagnostic_plots('test_function_2',sampler,sed=True)
-    generate_diagnostic_plots('test_function_3',sampler,sed=[True,])
-    generate_diagnostic_plots('test_function_4',sampler,sed=False)
 
 
