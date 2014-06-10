@@ -165,40 +165,17 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,sed=None,
             continue
 
         try:
-            xunit=modelx.unit
+            e_unit = modelx.unit
+            f_unit = modely.unit
         except AttributeError:
-            xunit=u.eV if np.max(modelx)>1e8 else u.TeV
-            log.warn('The energy array in the binary blob does not use Quantities! '
-                    'Guessing units: {0}'.format(xunit))
-            for step in sampler.blobs:
-                for walkerblob in step:
-                    walkerblob[modelidx][0] *= xunit
-
-        try:
-            f=modely.unit
-        except AttributeError:
-            log.warn('The flux array in the binary blob does not use Quantities! '
-                    'Assuming 1/(s cm2 TeV)...')
-            for step in sampler.blobs:
-                for walkerblob in step:
-                    walkerblob[modelidx][1] *= u.Unit('1/(s cm2 TeV)')
-
-        # Check that units were included correctly
-        modelx=sampler.blobs[-1][0][modelidx][0]
-        modely=sampler.blobs[-1][0][modelidx][1]
-        try:
-            x=modelx.unit
-            y=modely.unit
-        except AttributeError:
-            log.warn('Units not added correctly, not plotting model {0}'.format(modelidx))
+            log.warn('Not plotting model {0} because of lack of units'.format(modelidx))
             continue
 
-        if len(modelx) == len(modely):
-            f = plot_fit(sampler, modelidx=modelidx, sed=plot_sed, **kwargs)
-            if pdf:
-                f.savefig(outpdf,format='pdf')
-            else:
-                f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
+        f = plot_fit(sampler, modelidx=modelidx, sed=plot_sed, **kwargs)
+        if pdf:
+            f.savefig(outpdf,format='pdf')
+        else:
+            f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
 
     if pdf:
         outpdf.close()

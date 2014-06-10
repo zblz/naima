@@ -5,6 +5,8 @@ omit =
    *setup_package*
    *version*
    gammafit/_astropy_init.py
+   gammafit/conftest.py
+   gammafit/validator.py
 
 [report]
 exclude_lines =
@@ -12,16 +14,16 @@ exclude_lines =
    pragma: no cover
 
    # Don't complain about packages we have installed
-   except ImportError
+   except ImportError.*
 
    # Don't complain if tests don't hit assertions
-   raise AssertionError
-   raise NotImplementedError
-   raise TypeError
-   raise ValueError
+   raise AssertionError.*
+   raise NotImplementedError.*
+   raise TypeError.*
+   raise ValueError.*
 
    # Don't complain if tests don't hit warnings
-   log.warn\(.*\)
+   log.warn.*
 
    # Don't complain about script hooks
    def main\(.*\):

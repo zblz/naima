@@ -83,12 +83,20 @@ def cutoffexp(pars,data):
 
     flux = N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta) * u.Unit('1/(cm2 s TeV)')
 
+    models = []
     # save a broken powerlaw in luminosity units
-    model = N*np.where(x<=x0,
+    models.append( N*np.where(x<=x0,
             (x/x0)**-(gamma-1),
-            (x/x0)**-gamma) * (x**2).to('erg TeV').value * u.Unit('erg/s')
+            (x/x0)**-gamma) * (x**2).to('erg TeV').value * u.Unit('erg/s') )
 
-    return flux, (x,flux), (x,model)
+    # save a model with no units to check that it is dealt with gracefully
+    models.append( 1e-10*np.ones(len(x)) )
+    # save a model with wrong length to check that it is dealt with gracefully
+    models.append( 1e-10*np.ones(len(x)*2) * u.Unit('erg/s') )
+
+    outlist = [(x,model) for model in models]
+
+    return [flux, (x,flux),] + outlist
 
 
 ## Prior definition
