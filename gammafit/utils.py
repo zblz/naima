@@ -16,12 +16,12 @@ def generate_energy_edges(ene):
 
     Parameters
     ----------
-    ene : array
-        Array of energies
+    ene : `astropy.units.Quantity` array instance
+        1-D array of energies with associated phsyical units.
 
     Returns
     -------
-    edge_array : array with shape (len(ene),2)
+    edge_array : `astropy.units.Quantity` array instance of shape ``(len(ene),2)``
         Array of energy edge pairs corresponding to each given energy of the
         input array.
     """

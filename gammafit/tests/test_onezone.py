@@ -24,6 +24,9 @@ electronozmpars={
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_electronozm():
+    """
+    test sync and IC calculation
+    """
     from ..onezone import ElectronOZM
 
     ozm = ElectronOZM(np.logspace(0,15,1000)*u.eV, 1, **electronozmpars)
@@ -37,7 +40,28 @@ def test_electronozm():
     assert( lic.unit == u.erg/u.s )
     assert_approx_equal(lic.value, 2.832788802e-4)
 
+def test_seed_input():
+    """
+    test initialization of different input formats for seed photon fields
+    """
+    from ..onezone import ElectronOZM
+
+    ozm = ElectronOZM(np.logspace(0,15,1000)*u.eV, 1,
+            seedspec = 'CMB')
+
+    ozm = ElectronOZM(np.logspace(0,15,1000)*u.eV, 1,
+            seedspec = ['CMB','FIR','NIR'],)
+
+    ozm = ElectronOZM(np.logspace(0,15,1000)*u.eV, 1,
+            seedspec = ['CMB',['test',5000*u.K,0],],)
+
+    ozm = ElectronOZM(np.logspace(0,15,1000)*u.eV, 1,
+            seedspec = ['CMB',['test2',5000*u.K,15*u.eV/u.cm**3],],)
+
 def test_electronozm_evolve():
+    """
+    test electron evolution
+    """
     from ..onezone import ElectronOZM
 
     ozm = ElectronOZM(np.logspace(0,15,1000)*u.eV, 1, evolve_nelec=True, **electronozmpars)
@@ -54,6 +78,9 @@ def test_electronozm_evolve():
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_protonozm():
+    """
+    test ProtonOZM
+    """
     from ..onezone import ProtonOZM
 
     # Exponential cutoff powerlaw

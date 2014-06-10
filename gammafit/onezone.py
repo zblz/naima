@@ -4,11 +4,11 @@
 from __future__ import division
 import numpy as np
 np.seterr(all='ignore')
+from .validator import *
 
 __all__ = ['ElectronOZM', 'ProtonOZM']
 
-import logging
-logging.basicConfig(level=logging.INFO)
+from astropy.logger import log
 
 ## Constants and units
 from astropy import units as u
@@ -21,23 +21,9 @@ mec2 = (m_e*c**2).cgs
 
 erad = (e**2./mec2).cgs
 sigt = (8*np.pi/3)*erad**2
-ar = (4*sigma_sb/c).cgs
+ar = (4*sigma_sb/c).to('erg/(cm3 K4)')
 
 heaviside = lambda x: (np.sign(x)+1)/2.
-
-
-class _BogusLogger(object):
-    # logger functions used for nolog
-    def debug(self, s):
-        pass
-
-    def info(self, s):
-        pass
-
-    def warn(self, s):
-        print('WARN:OneZoneModel: {0}'.format(s))
-        pass
-
 
 class ElectronOZM(object):
     r"""Synchrotron and IC emission from a leptonic population.
@@ -60,7 +46,7 @@ class ElectronOZM(object):
 
     Parameters
     ----------
-    Eph : array
+    Eph : :class:`~astropy.units.quantity.Quantity` array instance
         Array of desired output photon energies [eV].
 
     norm : float
@@ -74,7 +60,7 @@ class ElectronOZM(object):
         distribution [1/cm3/eV] at enery `norm_energy`, :math:`V` is the
         emitting volume, and :math:`d` is the distance to the source.
 
-    norm_energy : float (optional)
+    norm_energy : :class:`~astropy.units.quantity.Quantity` float instance, optional
         Electron energy [eV] for which normalization parameter :math:`A`
         applies. Should correspond to the decorrelation energy of the observed
         spectrum for the emission process in consideration.
@@ -82,25 +68,31 @@ class ElectronOZM(object):
     index : float (optional)
         Power-law index of the particle distribution function.
 
-    cutoff : float (optional)
+    cutoff : :class:`~astropy.units.quantity.Quantity` float instance, optional
         Cut-off energy [eV].
 
     beta : float (optional)
         Exponent of exponential energy cutoff argument.
 
-    B : float (optional)
-        Isotropic magnetic field strength in microgauss. Default: equipartition
+    B : :class:`~astropy.units.quantity.Quantity` float instance, optional
+        Isotropic magnetic field strength. Default: equipartition
         with CMB (3.24e-6 G)
 
     seedspec: string or iterable of strings (optional)
-        A list of gray-body seed spectra to use for IC calculation. Strings can
-        be one or more of CMB, NIR, FIR, for which radiation fields with
-        temperatures of 2.72 K, 70 K, and 5000 K, and energy densities of 0.261,
-        0.5, and 1 eV/cm:math:`^{-3}` will be used. Custom gray-bodies can be
-        included by using a list composed of: name, gray body temperature (K),
-        and photon field energy density (erg/cm:math:`^{-3}`). If the photon
-        field energy density if set to 0, its blackbody energy density will be
-        computed through the Stefan-Boltzman law. Default: ['CMB', ]
+        A list of gray-body seed spectra to use for IC calculation.
+        Each of the items of the iterable can be:
+
+        - A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
+          radiation fields with temperatures of 2.72 K, 70 K, and 5000 K, and
+          energy densities of 0.261, 0.5, and 1 eV/cm:math:`^{-3}` will be used
+        - A list of length three composed of:
+            - A name for the seed photon field
+            - Its temperature as a :class:`~astropy.units.Quantity` float
+              instance.
+            - Its photon field energy density as a
+              :class:`~astropy.units.Quantity` float instance. If the photon
+              field energy density if set to 0, its blackbody energy density
+              will be computed through the Stefan-Boltzman law.
 
     evolve_nelec : bool (optional)
         Whether to evolve electron spectrum until steady state. See Zabalza et
@@ -110,10 +102,6 @@ class ElectronOZM(object):
 
     Other parameters
     ----------------
-
-    bb : bool (optional)
-        Should IC seed spectra be computed as a blackbody? If false,
-        monochromatic seed spectra are used. Default: False
 
     nbb : int (optional)
         Number of spectral points to be computed for seed spectra blackbody.
@@ -132,27 +120,27 @@ class ElectronOZM(object):
     glocut : float (optional)
         Low energy cutoff of injection spectrum in units of mec2. Electron can
         evolve down to ``gmin``, but will not be injected below ``glocut``.
-        Default: 20 (1e7 eV)
+        Default: 20 (10 MeV)
 
     Attributes
     ----------
-    specsy : array [1/s/eV]
+    specsy : :class:`~astropy.units.quantity.Quantity` array instance [1/s/eV]
         Differential synchrotron spectrum:
         emitted synchrotron photons per unit
         energy per second at energies given by ``Eph``.
 
-    sedsy : array [erg/s]
-        Synchrotron SED
+    sedsy : :class:`~astropy.units.quantity.Quantity` array instance [erg/s]
+        Synchrotron Spectral Energy Distribution.
 
-    specic : array [1/s/eV]
+    specic : :class:`~astropy.units.quantity.Quantity` array instance [1/s/eV]
         Differential IC spectrum: emitted IC photons
         per unit energy per second
         at energies given by ``Eph``.
 
-    sedic : array [erg/s]
+    sedic : :class:`~astropy.units.quantity.Quantity` array instance [erg/s]
         IC SED
 
-    We : float [erg]
+    We : :class:`~astropy.units.quantity.Quantity` float instance [erg]
         Total energy in electrons.
     """
 
@@ -175,37 +163,34 @@ class ElectronOZM(object):
                  nolog=False, debug=False, **kwargs):
 
         if nolog:
-            self.logger=_BogusLogger()
-        else:
-            self.logger=logging.getLogger('ElectronOZM')
-            if debug:
-                self.logger.setLevel(logging.DEBUG)
+            log.setLevel(100)
+        elif debug:
+            log.setLevel(10)
+
         del debug
 
         computation_defaults={
             # Seed spectrum properties
-            'bb': False,
             'nbb': 10,
-            'tad': 1e30,
+            'tad': 1e30*u.s,
             # electron spectrum matrix (lorentz factors)
             'gmin': 1e4,
             'gmax': 3e10,
             'ngamd': 300,  # electron spectrum points per decade
             # Injection spectrum
-            'glocut': (1e7*u.eV/mec2).cgs,  # sharp low energy cutoff at gamma*mec2 = 10MeV
+            'glocut': (10*u.MeV/mec2).decompose(),  # sharp low energy cutoff at gamma*mec2 = 10MeV
         }
 
         self.__dict__.update(**computation_defaults)
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
-        # convert values to quantities and quantities to the default units
-        for var,unit in [('outspecene',u.eV),('norm_energy',u.eV),('cutoff',u.eV),
-                ('B',u.G),('remit',u.cm),('tad',u.s)]:
-            if isinstance(getattr(self,var),u.Quantity):
-                setattr(self,var, getattr(self,var).to(unit))
-            else:
-                setattr(self,var, getattr(self,var)*unit)
+        validate_array('outspecene',self.outspecene,domain='positive',ndim=1,physical_type='energy')
+        validate_scalar('norm_energy',self.norm_energy,domain='positive',physical_type='energy')
+        validate_scalar('cutoff',self.cutoff,domain='positive',physical_type='energy')
+        validate_scalar('B',self.B,domain='positive',physical_type='magnetic flux density')
+        validate_scalar('remit',self.remit,domain='positive',physical_type='length')
+        validate_scalar('tad',self.tad,domain='positive',physical_type='time')
 
         self._process_input_seed()
 
@@ -214,46 +199,53 @@ class ElectronOZM(object):
         take input list of seedspecs and fix them into usable format
         """
 
-        Tcmb = 2.72548  # 0.00057 K
-        Tfir = 70
-        ufir = 0.2*u.eV.to('erg')
-        Tnir = 5000
-        unir = 0.2*u.eV.to('erg')
+        Tcmb = 2.72548*u.K  # 0.00057 K
+        Tfir = 70*u.K
+        ufir = 0.2*u.eV/u.cm**3
+        Tnir = 5000*u.K
+        unir = 0.2*u.eV/u.cm**3
 
         # Allow for seedspec definitions of the type 'CMB-NIR-FIR' or 'CMB'
         if type(self.seedspec) != list:
             self.seedspec = self.seedspec.split('-')
 
-        self.seeduf = np.zeros(len(self.seedspec))
-        self.seedT = np.zeros(len(self.seedspec))
+        self.seeduf = {}
+        self.seedT = {}
         for idx, inseed in enumerate(self.seedspec):
             if type(inseed) == str:
                 if inseed == 'CMB':
-                    self.seedT[idx] = Tcmb
-                    self.seeduf[idx] = 1.0
+                    self.seedT[inseed] = Tcmb
+                    self.seeduf[inseed] = 1.0
                 elif inseed == 'FIR':
-                    self.seedT[idx] = Tfir
-                    self.seeduf[idx] = ufir/(ar*Tfir**4)
+                    self.seedT[inseed] = Tfir
+                    self.seeduf[inseed] = (ufir/(ar*Tfir**4)).decompose()
                 elif inseed == 'NIR':
-                    self.seedT[idx] = Tnir
-                    self.seeduf[idx] = unir/(ar*Tnir**4)
+                    self.seedT[inseed] = Tnir
+                    self.seeduf[inseed] = (unir/(ar*Tnir**4)).decompose()
                 else:
-                    self.logger.warn('Will not use seed {0} because it is not '
+                    log.warn('Will not use seed {0} because it is not '
                                      'CMB, FIR or NIR'.format(inseed))
+                    raise TypeError
             elif type(inseed) == list and len(inseed) == 3:
                 name, T, uu = inseed
+                validate_scalar('{0}-T'.format(name),T,domain='positive',
+                        physical_type='temperature')
                 self.seedspec[idx] = name
-                self.seedT[idx] = T
+                self.seedT[name] = T
                 if uu == 0:
-                    self.seeduf[idx] = 1.0
+                    self.seeduf[name] = 1.0
                 else:
-                    self.seeduf[idx] = uu/(ar*T**4)
+                    validate_scalar('{0}-u'.format(name),uu,domain='positive',
+                            physical_type='pressure') # pressure has same physical type as energy density
+                    self.seeduf[name] = (uu/(ar*T**4)).decompose()
+            else:
+                log.warn('Unable to process seed photon field: {0}'.format(inseed))
+                raise TypeError
 
     def generate_gam(self):
         """
         Generate gamma values
         """
-
         ngam = int(np.log10(self.gmax/self.gmin))*self.ngamd
         self.gam = np.logspace(np.log10(self.gmin), np.log10(self.gmax), ngam)
 
@@ -284,7 +276,7 @@ class ElectronOZM(object):
         """
 # Calculem Qinj i generem el self.gam correcte!
         if not hasattr(self, 'gam'):
-            self.logger.info('Generating gam...')
+            log.info('Generating gam...')
             self.generate_gam()
 
 ## Synchrotron losses
@@ -301,9 +293,9 @@ class ElectronOZM(object):
 
 ## IC losses
         gdotic = np.zeros_like(self.gam) * u.Unit('1/s')
-        for idx, seedspec in enumerate(self.seedspec):
-            gdot = self.seeduf[idx] * \
-                self._gdot_iso_ic_on_planck(self.gam, self.seedT[idx]) * u.Unit('1/s')
+        for seedspec in self.seedspec:
+            gdot = (self.seeduf[seedspec] *
+                self._gdot_iso_ic_on_planck(self.gam, self.seedT[seedspec].to('K').value)) * u.Unit('1/s')
             setattr(self, 'tic_'+seedspec, self.gam/np.abs(gdot))
             gdotic += gdot
 
@@ -367,14 +359,14 @@ class ElectronOZM(object):
 
         if self.evolve_nelec:
             self.calc_gdot()
-            self.logger.info('calc_nelec: L_inj/4πd² = {0:.2e} erg/s/cm²'.format(
+            log.info('calc_nelec: L_inj/4πd² = {0:.2e} erg/s/cm²'.format(
                 np.trapz(qinj*self.gam*mec2, self.gam)))
             self.nelec = self._calc_steady_state_nelec(qinj)
         else:
             self.nelec = qinj
 
         self.We = np.trapz(self.nelec*(self.gam*mec2), self.gam)
-        self.logger.info('calc_nelec: W_e/4πd²   = {0:.2e} / cm²'.format(self.We))
+        log.info('calc_nelec: W_e/4πd²   = {0:.2e} / cm²'.format(self.We))
 
     def calc_sy(self):
         """
@@ -384,7 +376,7 @@ class ElectronOZM(object):
         from scipy.special import cbrt
 
         if not hasattr(self, 'gam'):
-            self.logger.info('Calling calc_nelec to generate gam, nelec')
+            log.info('Calling calc_nelec to generate gam, nelec')
             self.calc_nelec()
 
         def Gtilde(x):
@@ -398,7 +390,7 @@ class ElectronOZM(object):
             gt3 = 1+1.353*cbrt(x)**2.+0.217*cbrt(x)**4.
             return gt1*(gt2/gt3)*np.exp(-x)
 
-        self.logger.debug('calc_sy: Starting synchrotron computation with AKB2010...')
+        log.debug('calc_sy: Starting synchrotron computation with AKB2010...')
 
         # 100 gamma points per energy decade is enough for accurate SYN
         newngam = 100*np.log10(self.gmax/self.gmin)
@@ -423,10 +415,10 @@ class ElectronOZM(object):
         self.sedsy = (spec*self.outspecene**2.).to('erg/s')
 
         totsylum = np.trapz(self.specsy*self.outspecene, self.outspecene).to('erg/s')
-        self.logger.info('calc_sy: L_sy/4πd²  = {0:.2e} / cm²'.format(totsylum))
+        log.info('calc_sy: L_sy/4πd²  = {0:.2e} / cm²'.format(totsylum))
 
-    def _calc_specic(self, seed=None):
-        self.logger.debug('_calc_specic: Computing IC on {0} seed photons...'.format(seed))
+    def _calc_specic(self, seed):
+        log.debug('_calc_specic: Computing IC on {0} seed photons...'.format(seed))
 
         def iso_ic_on_planck(electron_energy,
                              soft_photon_temperature, gamma_energy):
@@ -458,32 +450,33 @@ class ElectronOZM(object):
             return np.where(condition, cross_section,
                             np.zeros_like(cross_section))
 
-        idx = self.seedspec.index(seed)
-        uf = self.seeduf[idx]
-        T = self.seedT[idx]
+        uf = self.seeduf[seed]
+        T = self.seedT[seed]
 
         Eph = (self.outspecene/mec2).cgs.value
-        gamint = iso_ic_on_planck(self.gam, T, Eph)
-        lum = uf*Eph*np.trapz(self.nelec*gamint, self.gam) * u.Unit('1/s')
+        gamint = iso_ic_on_planck(self.gam, T.to('K').value, Eph)
+        lum = uf * Eph * np.trapz(self.nelec*gamint, self.gam) * u.Unit('1/s')
 
         return lum/self.outspecene  # return differential spectrum in 1/s/eV
 
     def calc_ic(self):
         """
-        Compute IC spectrum
+        Compute IC spectrum using IC cross-section for isotropic interaction
+        with a blackbody photon spectrum following Khangulyan, Aharonian, and
+        Kelner 2013 (arXiv:1310.7971).
         """
-        self.logger.debug('calc_ic: Starting IC computation...')
+        log.debug('calc_ic: Starting IC computation...')
 
         if not hasattr(self, 'gam'):
-            self.logger.info('Calling calc_nelec to generate gam, nelec')
+            log.info('Calling calc_nelec to generate gam, nelec')
             self.calc_nelec()
 
         self.specic = np.zeros(len(self.outspecene)) * u.Unit('1/(s eV)')
         self.sedic  = np.zeros(len(self.outspecene)) * u.Unit('erg/s')
 
-        for idx, seedspec in enumerate(self.seedspec):
+        for seedspec in self.seedspec:
             # Call actual computation, detached to allow changes in subclasses
-            specic = self._calc_specic(seed=seedspec).to('1/(s eV)')
+            specic = self._calc_specic(seedspec).to('1/(s eV)')
             sedic = (specic*self.outspecene**2).to('erg/s')
             setattr(self, 'specic_'+seedspec, specic)
             setattr(self, 'sedic_'+seedspec, sedic)
@@ -491,12 +484,12 @@ class ElectronOZM(object):
             self.sedic += sedic
 
         toticlum = np.trapz(self.specic*self.outspecene, self.outspecene).to('erg/s')
-        self.logger.info('calc_ic: L_ic/4πd²  = {0:.2e} / cm²'.format(toticlum))
+        log.info('calc_ic: L_ic/4πd²  = {0:.2e} / cm²'.format(toticlum))
         tev = np.where(self.outspecene>100*u.GeV)
         if len(tev[0])>0:
             tottevlum = np.trapz(self.specic[tev]*self.outspecene[tev],
                     self.outspecene[tev]).to('erg/s')
-            self.logger.info('calc_ic: L_vhe/4πd² = {0:.2e} / cm²'.format(tottevlum))
+            log.info('calc_ic: L_vhe/4πd² = {0:.2e} / cm²'.format(tottevlum))
 
     def calc_outspec(self):
         """
@@ -590,36 +583,68 @@ class ProtonOZM(object):
                  nolog=False, debug=False, **kwargs):
 
         if nolog:
-            self.logger = _BogusLogger()
-        else:
-            self.logger = logging.getLogger('ProtonOZM')
-            if debug:
-                self.logger.setLevel(logging.DEBUG)
+            log.setLevel(100)
+        if debug:
+            log.setLevel(10)
 
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
 
+        validate_array('outspecene',self.outspecene,domain='positive',ndim=1,physical_type='energy')
+        validate_scalar('norm_energy',self.norm_energy,domain='positive',physical_type='energy')
+        if cutoff is not None:
+            validate_scalar('cutoff',self.cutoff,domain='positive',physical_type='energy')
+        if hasattr(self,'_E_break'):
+            validate_scalar('E_break',self.E_break,domain='positive',physical_type='energy')
+
         self._update_values()
 
     def _update_values(self):
-        # convert values to quantities, and quantities to default unit
-        for var,unit in [('outspecene',u.eV),('norm_energy',u.eV),('cutoff',u.eV),
-                ('E_break',u.eV)]:
-            # cutoff or E_break might not be set
-            if hasattr(self,var) and getattr(self,var) is not None:
-                if isinstance(getattr(self,var),u.Quantity):
-                    setattr(self,var, getattr(self,var).to(unit))
-                else:
-                    setattr(self,var, getattr(self,var)*unit)
+        """
+        Convert ``norm_energy``, ``cutoff``, and ``E_break`` to TeV and save values
+        as ``_norm_energy``, ``_cutoff``, and ``_E_break`` for use in
+        integrands.
+        """
 
         for var in ['norm_energy','cutoff','E_break']:
             if hasattr(self,var) and getattr(self,var) is not None:
                 setattr(self,'_'+var,getattr(self,var).to('TeV').value)
 
-    def Jp(self, Ep):
+    def Jp(self,Ep):
         """
         Particle distribution function [1/TeV]
+
+        Parameters
+        ----------
+        Ep : :class:`~astropy.units.quantity.Quantity` array instance
+            Proton energies [TeV]
+
+        Returns
+        -------
+        Jp : :class:`~astropy.units.quantity.Quantity` array instance
+            Particle distribution function in particles per TeV [1/TeV]
         """
+
+        return self._Jp(Ep.to('TeV').value)*u.Unit('1/TeV')
+
+
+    def _Jp(self, Ep):
+        """
+        Particle distribution function [1/TeV]
+
+        Note: Quantities are not used in this function
+
+        Parameters
+        ----------
+        Ep : float or array
+            Eprot [TeV]
+
+        Returns
+        -------
+        Jp : type(Ep)
+            Particle distribution function in particles per TeV
+        """
+
         if hasattr(self,'index1') and hasattr(self,'index2') and hasattr(self,'_E_break'):
             Jp = self.norm*np.where(Ep<=self._E_break,
                     (Ep/self._norm_energy)**-self.index1,
@@ -634,14 +659,18 @@ class ProtonOZM(object):
                                 np.exp(-(Ep/self._cutoff)**self.beta))
         return Jp
 
-    def Fgamma(self, x, Ep):
+    def _Fgamma(self, x, Ep):
         """
         KAB06 Eq.58
 
+        Note: Quantities are not used in this function
+
         Parameters
         ----------
-        x : Egamma/Eprot
-        Ep : Eprot [TeV]
+        x : float
+            Egamma/Eprot
+        Ep : float
+            Eprot [TeV]
         """
         L = np.log(Ep)
         B = 1.30+0.14*L+0.011*L**2  # Eq59
@@ -654,9 +683,22 @@ class ProtonOZM(object):
 
         return F1*F2
 
-    def sigma_inel(self, Ep):
+    def _sigma_inel(self, Ep):
         """
         Inelastic cross-section for p-p interaction. KAB06 Eq. 73, 79
+
+        Note: Quantities are not used in this function
+
+        Parameters
+        ----------
+        Ep : float
+            Eprot [TeV]
+
+        Returns
+        -------
+        sigma_inel : float
+            Inelastic cross-section for p-p interaction [1/cm2].
+
         """
         L = np.log(Ep)
         sigma = 34.3 + 1.88*L + 0.25*L**2
@@ -670,8 +712,8 @@ class ProtonOZM(object):
         Integrand of Eq. 72
         """
         try:
-            return self.sigma_inel(Egamma/x)*self.Jp(Egamma/x) \
-                *self.Fgamma(x, Egamma/x)/x
+            return self._sigma_inel(Egamma/x)*self._Jp(Egamma/x) \
+                *self._Fgamma(x, Egamma/x)/x
         except ZeroDivisionError:
             return np.nan
 
@@ -687,12 +729,12 @@ class ProtonOZM(object):
         #result=c*fixed_quad(self._photon_integrand, 0., 1., args = [Egamma, ], n = 40)[0]
         from scipy.integrate import quad
         Egamma = Egamma.to('TeV').value
-        result = c.cgs.value*quad(self._photon_integrand, 0., 1., args=Egamma,
+        specpp = c.cgs.value*quad(self._photon_integrand, 0., 1., args=Egamma,
                         epsrel=1e-3, epsabs=0)[0]
 
-        return result * u.Unit('1/(s TeV)')
+        return specpp * u.Unit('1/(s TeV)')
 
-    # variables for integrand
+    # variables for delta integrand
     _c=c.cgs.value
     _Kpi=0.17
     _mp = (m_p*c**2).to('TeV').value
@@ -700,7 +742,7 @@ class ProtonOZM(object):
 
     def _delta_integrand(self,Epi):
         Ep0 = self._mp+Epi/self._Kpi
-        qpi = self._c*(self.nhat/self._Kpi)*self.sigma_inel(Ep0)*self.Jp(Ep0)
+        qpi = self._c*(self.nhat/self._Kpi)*self._sigma_inel(Ep0)*self._Jp(Ep0)
         return qpi/np.sqrt(Epi**2+self._m_pi**2)
 
     def _calc_specpp_loE(self, Egamma):
@@ -725,8 +767,8 @@ class ProtonOZM(object):
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
-        self.Wp = (quad(lambda x: x*self.Jp(x), Eth, np.Inf)[0]*u.TeV).to('erg')/u.cm**5
-        self.logger.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e}'.format(self.Wp))
+        self.Wp = (quad(lambda x: x*self._Jp(x), Eth, np.Inf)[0]*u.TeV).to('erg')/u.cm**5
+        log.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e}'.format(self.Wp))
 
         if not hasattr(self, 'Etrans'):
             # Energy at which we change from delta functional to accurate calculation
@@ -754,7 +796,7 @@ class ProtonOZM(object):
         self.specpp = self.specpp.to('1/(s eV)')
 
         totpplum = np.trapz(self.specpp*self.outspecene, self.outspecene).to('erg/s')
-        self.logger.info('L_pp*nH/4πd²  = {0:.2e}'.format(totpplum))
+        log.info('L_pp*nH/4πd²  = {0:.2e} / cm2'.format(totpplum))
 
     def calc_outspec(self):
         """
