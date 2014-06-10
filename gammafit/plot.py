@@ -1,5 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import numpy as np
+import astropy.units as u
+from astropy.logger import log
 
 __all__ = ["plot_chain","plot_fit","plot_CI"]
 
@@ -44,7 +46,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
             #convert chain to flatchain
             dist=traces.flatten()
     else:
-        print('we need the chain to plot the traces, not a flatchain!')
+        log.warn('we need the full chain to plot the traces, not a flatchain!')
         return None
 
     nwalkers=traces.shape[0]
@@ -140,12 +142,8 @@ def _plot_chain_func(chain,p,label,last_step=False):
                 quant99=quantiles[0.99],
                 meanstd=(mean-std,mean+std),clen=clen,mode=mode,)
 
-    print('\n {0:-^50}\n'.format(label) + chain_props)
+    log.info('\n {0:-^50}\n'.format(label) + chain_props)
     f.text(0.05,0.45,chain_props,ha='left',va='top')
-
-    #f.tight_layout()
-
-    #f.show()
 
     return f
 
@@ -206,7 +204,7 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 
     return modelx,CI
 
-def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs):
+def plot_CI(ax, sampler, modelidx=0,sed=True,confs=[3,1,0.5],**kwargs):
     """Plot confidence interval.
 
     Parameters
@@ -215,14 +213,14 @@ def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs)
         Axes to plot on.
     sampler : `emcee.EnsembleSampler`
         Sampler
-    modelidx : int
-        Model index
-    converttosed : bool
-        Convert from differential spectrum to SED.
-    confs : list (optional)
-        List of confidence levels (in sigma) to use for generating the confidence intervals.
-    last_step : bool (optional)
-        Whether to only use the positions in the final step of the run (default) or the whole chain.
+    modelidx : int, optional
+        Model index. Default is 0
+    sed : bool, optional
+        Whether to plot SED or differential spectrum.
+    confs : list, optional
+        List of confidence levels (in sigma) to use for generating the confidence intervals. Default is `[3,1,0.5]`
+    last_step : bool, optional
+        Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
     """
 
     #envconf=1000000
@@ -230,22 +228,20 @@ def plot_CI(ax, sampler, modelidx=0,converttosed=False,confs=[3,1,0.5],**kwargs)
 
     modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
 
-    if converttosed:
-# try to find whether modelx is eV or TeV
-        toerg=1.6021765
-        if np.max(modelx)>1e8:
-            toerg/=1e12
-        sedf=modelx**2*toerg # TeV to erg
+    if sed:
+        sedf=(modelx**2).to('eV erg')
+        f_unit = 'erg/s'
     else:
-        sedf=np.ones_like(modelx)
+        sedf=np.ones_like(data['ene'])
+        f_unit = '1/(s TeV)'
 
     for (ymin,ymax),conf in zip(CI,confs):
         if conf==envconf:
             for yy in (ymin,ymax):
-                ax.plot(modelx,yy*sedf,lw=1.,color='0.7',ls=':',zorder=-10)
+                ax.plot(modelx.to('eV'),(yy*sedf).to(f_unit),lw=1.,color='0.7',ls=':',zorder=-10)
         else:
             color=np.log(conf)/np.log(20)+0.4
-            ax.fill_between(modelx,ymax*sedf,ymin*sedf,lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
+            ax.fill_between(modelx.to('eV'),(ymax*sedf).to(f_unit),(ymin*sedf).to(f_unit),lw=0.,color='{0}'.format(color),alpha=0.6,zorder=-10)
     #ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
 
 
@@ -263,7 +259,7 @@ def find_ML(sampler,modelidx):
     return ML,MLp,MLvar,model_ML
 
 def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
-        converttosed=False,figure=None,residualCI=True,plotdata=False,**kwargs):
+        sed=False,figure=None,residualCI=True,plotdata=None,**kwargs):
     """
     Plot data with fit confidence regions.
 
@@ -273,20 +269,21 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
     ----------
     sampler : `emcee.EnsembleSampler`
         Sampler with a stored chain.
-    modelidx : int
+    modelidx : int, optional
         Model index to plot.
-    xlabel : str
+    xlabel : str, optional
         Label for the ``x`` axis of the plot.
-    ylabel : str
+    ylabel : str, optional
         Label for the ``y`` axis of the plot.
-    converttosed : bool
-        Convert from differential spectrum to SED.
-    confs : list (optional)
-        List of confidence levels (in sigma) to use for generating the confidence intervals.
-    figure : `matplotlib.figure`
+    sed : bool, optional
+        Whether to plot SED or differential spectrum.
+    confs : list, optional
+        List of confidence levels (in sigma) to use for generating the
+        confidence intervals. Default is ``[3,1,0.5]``
+    figure : `matplotlib.figure`, optional
         `matplotlib` figure to plot on. If omitted a new one will be generated.
-    residualCI : bool
-        Whether to plot the confidence interval bands in the residual plot.
+    residualCI : bool, optional
+        Whether to plot the confidence interval bands in the residuals subplot.
 
     """
     import matplotlib.pyplot as plt
@@ -298,14 +295,14 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
     for p,v,label in zip(MLp,MLvar,sampler.labels):
         infostr+='{2:>10}: {0:>8.3g} +/- {1:<8.3g}\n'.format(p,v,label)
 
-    # TODO: logger
-    print(infostr)
-    #infostr=''
+    log.info(infostr)
 
     data=sampler.data
 
-    if modelidx==0:
+    if modelidx==0 and plotdata is None:
         plotdata=True
+    elif plotdata is None:
+        plotdata=False
 
     if figure==None:
         f=plt.figure()
@@ -323,11 +320,14 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
     datacol='r'
 
     if confs is not None:
-        plot_CI(ax1,sampler,modelidx,converttosed=converttosed,confs=confs,**kwargs)
+        plot_CI(ax1,sampler,modelidx,sed=sed,confs=confs,**kwargs)
     else:
         residualCI=False
 
     def plot_ulims(ax,x,y,xerr):
+        """
+        Plot upper limits as arrows with cap at value of upper limit.
+        """
         ax.errorbar(x,y,xerr=xerr,ls='',
                 color=datacol,elinewidth=2,capsize=0)
         ax.errorbar(x,0.75*y,yerr=0.25*y,ls='',lolims=True,
@@ -336,21 +336,21 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
     if plotdata:
         ul=data['ul']
         notul=-ul
-        if converttosed:
-            toerg=1.6021765
-            if np.max(modelx)>1e8:
-                toerg/=1e12
-            sedf=data['ene']**2*toerg
+        e_unit='eV'
+        if sed:
+            sedf=(data['ene']**2).to('eV erg')
+            f_unit = 'erg/s'
         else:
             sedf=np.ones_like(data['ene'])
+            f_unit = '1/(s TeV)'
 
-        ax1.errorbar(data['ene'][notul],data['flux'][notul]*sedf[notul],
-                yerr=data['dflux'][notul].T*sedf[notul], xerr=data['dene'][notul].T,
+        ax1.errorbar(data['ene'][notul].to(e_unit),(data['flux'][notul]*sedf[notul]).to(f_unit),
+                yerr=(data['dflux'][notul].T*sedf[notul]).to(f_unit), xerr=(data['dene'][notul].T).to(e_unit),
                 zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
                 mec='w',mew=0,ms=6,color=datacol)
 
         if np.any(ul):
-            plot_ulims(ax1,data['ene'][ul],data['flux'][ul]*sedf[ul],data['dene'][ul].T)
+            plot_ulims(ax1,data['ene'][ul].to(e_unit),(data['flux'][ul]*sedf[ul]).to(f_unit),(data['dene'][ul].T).to(e_unit))
 
         if len(model_ML)!=len(data['ene']):
             from scipy.interpolate import interp1d
@@ -408,13 +408,23 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
 
     ax1.text(0.05,0.05,infostr,ha='left',va='bottom',transform=ax1.transAxes,family='monospace')
 
-    if ylabel!=None:
-        ax1.set_ylabel(ylabel)
-    if xlabel!=None:
-        if plotdata:
-            ax2.set_xlabel(xlabel)
+    if ylabel is None:
+        if sed:
+            ax1.set_ylabel(r'$E^2\mathrm{d}N/\mathrm{d}E$ [{0}]'.format(u.Unit(f_unit)))
         else:
-            ax1.set_xlabel(xlabel)
+            ax1.set_ylabel(r'$\mathrm{d}N/\mathrm{d}E$ [{0}]'.format(u.Unit(f_unit)))
+    else:
+        ax1.set_ylabel(ylabel)
+
+    if plotdata:
+        xlaxis = ax2
+    else:
+        xlaxis = ax1
+
+    if xlabel is None:
+        axlaxis.set_xlabel('Energy [eV]')
+    else:
+        axlaxis.set_xlabel(xlabel)
 
     f.subplots_adjust(hspace=0)
 
