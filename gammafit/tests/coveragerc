@@ -1,5 +1,10 @@
 [run]
 source = {packagename}
+omit =
+   *tests*
+   *setup_package*
+   *version*
+   gammafit/_astropy_init.py
 
 [report]
 exclude_lines =
@@ -12,6 +17,11 @@ exclude_lines =
    # Don't complain if tests don't hit assertions
    raise AssertionError
    raise NotImplementedError
+   raise TypeError
+   raise ValueError
+
+   # Don't complain if tests don't hit warnings
+   log.warn\(.*\)
 
    # Don't complain about script hooks
    def main\(.*\):
