@@ -8,11 +8,13 @@ from astropy import units as u
 
 spec=np.loadtxt('CrabNebula_HESS_2006.dat')
 
-ene=spec[:,0]
-flux=spec[:,3]
+flux_unit = u.Unit('1/(cm2 s TeV)')
+
+ene=spec[:,0]*u.TeV
+flux=spec[:,3]*flux_unit
 perr=spec[:,4]
 merr=spec[:,5]
-dflux=np.array(list(zip(merr,perr)))
+dflux=np.array((merr,perr))*flux_unit
 
 data=gammafit.build_data_dict(ene,None,flux,dflux)
 
@@ -28,14 +30,14 @@ def ppgamma(pars,data):
     enemid=np.sqrt(data['ene'][0]*data['ene'][-1])
     # peak gamma energy production is ~0.1*Ep, so enemid corresponds to Ep=10*enemid
     # If a cutoff is present, this should be reduced
-    norm_ene = 5.*enemid*u.TeV
+    norm_ene = 5.*enemid
 
     norm   = pars[0]
     index  = pars[1]
     cutoff = pars[2]*u.TeV
 
     ozm=gammafit.ProtonOZM(
-            data['ene']*u.TeV, norm,
+            data['ene'], norm,
             cutoff      = cutoff,
             index       = index,
             norm_energy = norm_ene,
@@ -44,18 +46,18 @@ def ppgamma(pars,data):
 
     ozm.calc_outspec()
 
-    model=ozm.specpp.to('1/(s TeV)') # 1/s/cm2/TeV
+    model=ozm.specpp.to('1/(s TeV)')/u.cm**2
 
     # compute proton distribution for blob
     Epmin=data['ene'][0]*1e-2
     Epmax=data['ene'][-1]*1e3
 
-    protonene=np.logspace(np.log10(Epmin),np.log10(Epmax),50)
-    protondist=ozm.Jp(protonene)*protonene**2*u.TeV.to('erg')
+    protonene=np.logspace(np.log10(Epmin.value),np.log10(Epmax.value),50)*data['ene'].unit
+    protondist=(ozm.Jp(protonene)*protonene**2).to('erg')
 
     del(ozm)
 
-    return model.value, np.array((data['ene'],model)), \
+    return model, np.array((data['ene'],model)), \
             np.array((protonene,protondist))
 
 ## Prior definition
@@ -75,11 +77,11 @@ def lnprior(pars):
 ## Run sampler
 
 sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ppgamma,
-        prior=lnprior, nwalkers=500, nburn=200, nrun=100, threads=8)
+        prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
 
 ## Diagnostic plots
 
-gammafit.generate_diagnostic_plots('CrabNebula_proton',sampler,converttosed=[True,False])
+gammafit.generate_diagnostic_plots('CrabNebula_proton',sampler,sed=[True,None])
 
 ## Save sampler
 

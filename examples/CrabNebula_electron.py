@@ -8,11 +8,13 @@ from astropy.constants import m_e,c
 
 spec=np.loadtxt('CrabNebula_HESS_2006.dat')
 
-ene=spec[:,0]
-flux=spec[:,3]
+flux_unit = u.Unit('1/(cm2 s TeV)')
+
+ene=spec[:,0]*u.TeV
+flux=spec[:,3]*flux_unit
 perr=spec[:,4]
 merr=spec[:,5]
-dflux=np.array(list(zip(merr,perr)))
+dflux=np.array((merr,perr))*flux_unit
 
 data=gammafit.build_data_dict(ene,None,flux,dflux)
 
@@ -29,7 +31,7 @@ def ElectronIC(pars,data):
     index  = pars[1]
     cutoff = pars[2]*u.TeV
 
-    outspecene=data['ene']*u.TeV
+    outspecene = data['ene']
 
     ozm=gammafit.ElectronOZM(
             outspecene, norm,
@@ -45,16 +47,16 @@ def ElectronIC(pars,data):
     ozm.calc_ic()
 
     # convert to same units as observed differential spectrum
-    model=ozm.specic.to('1/(s TeV)')
+    model=ozm.specic.to('1/(s TeV)')/u.cm**2
 
     mec2=m_e*c**2
 
-    nelec=ozm.nelec[:-1]*mec2.cgs.value*ozm.gam[:-1]*np.diff(ozm.gam)
-    elec_energy=ozm.gam[:-1]*mec2.to('TeV').value
+    nelec=ozm.nelec[:-1]*mec2.cgs.value*ozm.gam[:-1]*np.diff(ozm.gam)*u.Unit('erg')
+    elec_energy=ozm.gam[:-1]*mec2.to('TeV')
 
     del ozm
 
-    return model.value, np.array((data['ene'],model)), np.array((elec_energy,nelec))
+    return model, np.array((data['ene'],model)), np.array((elec_energy,nelec))
 
 ## Prior definition
 
@@ -74,11 +76,11 @@ def lnprior(pars):
 ## Run sampler
 
 sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ElectronIC,
-        prior=lnprior, nwalkers=500, nburn=200, nrun=100, threads=8)
+        prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
 
 ## Diagnostic plots
 
-gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler,converttosed=[True,False])
+gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler,sed=[True,None])
 
 ## Save sampler
 
