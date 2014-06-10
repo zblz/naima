@@ -75,11 +75,11 @@ def test_function_sampler():
 
         N     = pars[0]
         gamma = pars[1]
-        ecut  = pars[2]
+        ecut  = pars[2]*u.TeV
         #beta  = pars[3]
         beta  = 1.
 
-        return N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta)
+        return N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta) * u.Unit('1/(cm2 s TeV)')
 
 ## Prior definition
 
@@ -91,7 +91,7 @@ def test_function_sampler():
 
         logprob = uniform_prior(pars[0],0.,np.inf) \
                 + uniform_prior(pars[1],-1,5) \
-                + uniform_prior(pars[2],0.,np.inf) 
+                + uniform_prior(pars[2],0.,np.inf)
 
         return logprob
 
@@ -107,6 +107,9 @@ def test_function_sampler():
 
 ## Diagnostic plots
 
-    generate_diagnostic_plots('velax_function',sampler)
+    generate_diagnostic_plots('test_function_1',sampler)
+    generate_diagnostic_plots('test_function_2',sampler,sed=True)
+    generate_diagnostic_plots('test_function_3',sampler,sed=[True,])
+    generate_diagnostic_plots('test_function_4',sampler,sed=False)
 
 

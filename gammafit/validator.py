@@ -4,9 +4,6 @@
 import numpy as np
 from astropy import units as u
 
-u.def_physical_type(u.erg / u.cm ** 2 / u.s, 'flux')
-
-
 def validate_physical_type(name, value, physical_type):
     if physical_type is not None:
         if not isinstance(value, u.Quantity):

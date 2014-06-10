@@ -34,7 +34,8 @@ def lnprobmodel(model,data):
 # use different errors for model above or below data
         sign=difference>0
         loerr,hierr=1*-sign,1*sign
-        logprob =  - difference**2/(2.*(loerr*data['dflux'][notul][:,0]+hierr*data['dflux'][notul][:,1])**2)
+        logprob =  - difference**2/(2.*(loerr*data['dflux'][0][notul]+
+            hierr*data['dflux'][1][notul])**2)
     else:
         logprob =  - difference**2/(2.*data['dflux'][notul]**2)
 
@@ -66,9 +67,9 @@ def lnprob(pars,data,modelfunc,priorfunc):
             blob  = modelout[1:]
         else:
             model = modelout
-            blob  = (np.array((data['ene'],modelout)),)
+            blob  = ((data['ene'],modelout),)
 
-        lnprob_model  = lnprobmodel(model,data)
+        lnprob_model = lnprobmodel(model,data)
     else:
         lnprob_model = 0.0
         blob=None
