@@ -7,7 +7,6 @@ import astropy.units as u
 import matplotlib
 matplotlib.use('Agg')
 
-import gammafit
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_fit, plot_data
@@ -22,6 +21,7 @@ specfile=StringIO(
 # Energy: TeV
 # Flux: cm^{-2}.s^{-1}.TeV^{-1}
 
+0.5   1.5e-11   0   0
 0.7185 1.055e-11  7.266e-12 1.383e-11
 0.8684 1.304e-11  1.091e-11 1.517e-11
 1.051 9.211e-12  7.81e-12 1.061e-11
@@ -46,6 +46,7 @@ specfile=StringIO(
 36.97 5.653e-15  3.484e-15 8.57e-15
 43.08 3.479e-15  1.838e-15 5.889e-15
 52.37 1.002e-15  1.693e-16 2.617e-15
+100.0 1.5e-15  0 0
 """)
 spec=np.loadtxt(specfile)
 specfile.close()
@@ -55,8 +56,9 @@ flux=spec[:,1]*u.Unit('1/(cm2 s TeV)')
 merr=spec[:,1]-spec[:,2]
 perr=spec[:,3]-spec[:,1]
 dflux=np.array((merr,perr))*u.Unit('1/(cm2 s TeV)')
+ul=spec[:,2]==0
 
-data=build_data_dict(ene,None,flux,dflux,)
+data=build_data_dict(ene,None,flux,dflux,ul=ul,cl=0.9)
 
 ## Model definition
 
@@ -96,7 +98,11 @@ def cutoffexp(pars,data):
 
     outlist = [(x,model) for model in models]
 
-    return [flux, (x,flux),] + outlist
+    # save a model with different energies than the data
+    ene = np.logspace(np.log10(x[0].value)-1,np.log10(x[-1].value)+1,100) * x.unit
+    model = N*(ene/x0)**-gamma*np.exp(-(ene/ecut)**beta) * u.Unit('1/(cm2 s TeV)')
+
+    return [flux, (x,flux), (ene, model),] + outlist
 
 
 ## Prior definition
@@ -134,11 +140,12 @@ def test_chain_plots():
 
 def test_fit_plots():
 
-    for idx in [0,1]:
+    # plot models with correct format
+    for idx in [0,1,2]:
         for sed in [True,False]:
             for last_step in [True,False]:
                 f = plot_fit(sampler,modelidx=idx,sed=sed,
-                        last_step=last_step,plotdata=not(idx))
+                        last_step=last_step,plotdata=True)
                 del f
 
 def test_plot_data():
@@ -156,11 +163,12 @@ def test_fit_data_units():
     plot_fit(sampler,modelidx=0,sed=None)
 
 def test_diagnostic_plots():
-## Diagnostic plots
+    # Diagnostic plots
+    # try to plot all models, including those with wrong format/units
 
     generate_diagnostic_plots('test_function_1',sampler)
     generate_diagnostic_plots('test_function_2',sampler,sed=True)
-    generate_diagnostic_plots('test_function_3',sampler,sed=[True,False])
+    generate_diagnostic_plots('test_function_3',sampler,sed=[True,True,False,])
     generate_diagnostic_plots('test_function_4',sampler,sed=False)
     generate_diagnostic_plots('test_function_5',sampler,sed=True,pdf=True)
 

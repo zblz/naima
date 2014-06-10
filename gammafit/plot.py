@@ -345,6 +345,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
     import matplotlib.pyplot as plt
 
     modelx=sampler.blobs[-1][0][modelidx][0]
+    modely=sampler.blobs[-1][0][modelidx][0]
     ML,MLp,MLvar,model_ML = find_ML(sampler,modelidx)
     infostr='Maximum log probability: {0:.3g}\n'.format(ML)
     infostr+='Maximum Likelihood values:\n'
@@ -359,6 +360,16 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
         plotdata=True
     elif plotdata is None:
         plotdata=False
+
+    if plotdata:
+        # Check that physical types of data and model match
+        modely=sampler.blobs[-1][0][modelidx][1]
+        model_pt = modely.unit.physical_type
+        data_pt = data['flux'].unit.physical_type
+        if data_pt != model_pt:
+            log.warn('Model physical type ({0}) and spectral data physical'
+                    ' type ({1}) do not match! Not plotting data.'.format(model_pt,data_pt))
+            plotdata=False
 
     if figure==None:
         f=plt.figure()
@@ -391,14 +402,6 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
                 color=datacol,elinewidth=2,capsize=5,zorder=10)
 
     if plotdata:
-        # Check that physical types of data and model match
-        modely=sampler.blobs[-1][0][modelidx][1]
-        model_pt = modely.unit.physical_type
-        data_pt = data['flux'].unit.physical_type
-        if data_pt != model_pt:
-            raise u.UnitsError('Model physical type ({0}) and spectral data physical'
-                    ' type ({1}) do not match!'.format(model_pt,data_pt))
-
         f_unit, sedf = _sed_conversion(data['ene'],data['flux'],sed)
 
         ul=data['ul']
