@@ -9,10 +9,10 @@ __all__ = ["generate_energy_edges","build_data_dict","generate_diagnostic_plots"
 
 def generate_energy_edges(ene):
     """Generate energy bin edges from given energy array.
-    
+
     Generate an array of energy edges from given energy array to be used as
     abcissa error bar limits when no energy uncertainty or energy band is
-    provided. 
+    provided.
 
     Parameters
     ----------
