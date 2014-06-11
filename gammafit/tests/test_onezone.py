@@ -5,10 +5,10 @@ from numpy.testing import assert_approx_equal
 from astropy.tests.helper import pytest
 
 try:
-    import emcee
-    HAS_EMCEE = True
+    import scipy
+    HAS_SCIPY = True
 except ImportError:
-    HAS_EMCEE = False
+    HAS_SCIPY = False
 
 
 electronozmpars={
@@ -21,7 +21,7 @@ electronozmpars={
         'gmax':1e10,
         }
 
-
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_electronozm():
     """
     test sync and IC calculation
@@ -39,6 +39,7 @@ def test_electronozm():
     assert( lic.unit == u.erg/u.s )
     assert_approx_equal(lic.value, 2.832788802e-4)
 
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_seed_input():
     """
     test initialization of different input formats for seed photon fields
@@ -57,6 +58,7 @@ def test_seed_input():
     ozm = ElectronOZM(np.logspace(0,15,1000)*u.eV, 1,
             seedspec = ['CMB',['test2',5000*u.K,15*u.eV/u.cm**3],],)
 
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_electronozm_evolve():
     """
     test electron evolution
@@ -75,6 +77,7 @@ def test_electronozm_evolve():
     assert_approx_equal(lic.value, 8288470921.689767)
 
 
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_protonozm():
     """
     test ProtonOZM
@@ -107,6 +110,7 @@ def test_protonozm():
     assert_approx_equal(lpp.value,1.1852004994595184e-15, significant=5)
 
 
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_log():
     from ..onezone import ProtonOZM, ElectronOZM
 
