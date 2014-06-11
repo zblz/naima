@@ -2,8 +2,11 @@
 from StringIO import StringIO
 import numpy as np
 from astropy.tests.helper import pytest
+import astropy.units as u
+
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, get_sampler, uniform_prior, normal_prior
+
 # Use batch backend to avoid $DISPLAY errors
 import matplotlib
 matplotlib.use("Agg")
@@ -21,6 +24,8 @@ specfile=StringIO(
 # Aharonian et al. 2006, A&A 457, 899
 # ADS bibcode: 2006A&A...457..899A
 
+# Upper limits at 0.25 and 50 TeV are fake!
+
 # Column 1: Mean energy (TeV)
 # Column 2: Excess events
 # Column 3: Significance
@@ -28,6 +33,7 @@ specfile=StringIO(
 # Column 5: Upper 1-sigma flux error
 # Column 6: Lower 1-sigma flux error
 
+0.25   975   42.9  2.50e-10  0.00      0.00
 0.519  975   42.9  1.81e-10  0.06e-10  0.06e-10
 0.729  1580  56.0  7.27e-11  0.20e-11  0.19e-11
 1.06   1414  55.3  3.12e-11  0.09e-11  0.09e-11
@@ -40,6 +46,7 @@ specfile=StringIO(
 14.8   36    8.1   1.75e-14  0.33e-14  0.30e-14
 20.9   23    7.5   7.26e-15  1.70e-15  1.50e-15
 30.5   4     2.9   9.58e-16  5.60e-16  4.25e-16
+50.0   4     2.9   3.00e-15  0.00      0.00
 """)
 spec=np.loadtxt(specfile)
 specfile.close()
@@ -49,8 +56,9 @@ flux=spec[:,3]*u.Unit('1/(cm2 s TeV)')
 merr=spec[:,4]
 perr=spec[:,5]
 dflux=np.array((merr,perr))*u.Unit('1/(cm2 s TeV)')
+ul = merr==0.0
 
-data=build_data_dict(ene,None,flux,dflux,)
+data=build_data_dict(ene,None,flux,dflux,ul=ul,cl=0.9)
 
 
 @pytest.mark.skipif('not HAS_EMCEE')
