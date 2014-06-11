@@ -24,9 +24,7 @@ from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_fit, plot_data
 
 ## Read data
-from six.StringIO import StringIO
-
-specfile=StringIO(
+specfile=six.StringIO(
 """
 #
 #

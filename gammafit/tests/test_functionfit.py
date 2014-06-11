@@ -4,8 +4,6 @@ from astropy.tests.helper import pytest
 from astropy.extern import six
 import astropy.units as u
 
-from six.StringIO import StringIO
-
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, get_sampler, uniform_prior, normal_prior
 
@@ -16,7 +14,7 @@ except ImportError:
     HAS_EMCEE = False
 
 ## Read data
-specfile=StringIO(
+specfile=six.StringIO(
 """
 # Crab Nebula spectrum measured by HESS taken from table 5 of
 # Aharonian et al. 2006, A&A 457, 899

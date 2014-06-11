@@ -8,9 +8,9 @@ from .extern.validator import validate_scalar,validate_array
 __all__ = ['ElectronOZM', 'ProtonOZM']
 
 from astropy.extern import six
-
 import logging
-log = logging.getLogger(__name__)
+# Get a new logger to avoid changing the level of the astropy logger
+log = logging.getLogger('gammafit.onezone')
 
 ## Constants and units
 from astropy import units as u
@@ -166,8 +166,10 @@ class ElectronOZM(object):
 
         if nolog:
             log.setLevel(logging.FATAL)
-        elif debug:
+        elif debug and not nolog:
             log.setLevel(logging.DEBUG)
+        else:
+            log.setLevel(logging.INFO)
 
         del debug
 
@@ -586,8 +588,10 @@ class ProtonOZM(object):
 
         if nolog:
             log.setLevel(logging.FATAL)
-        if debug:
+        elif debug and not nolog:
             log.setLevel(logging.DEBUG)
+        else:
+            log.setLevel(logging.INFO)
 
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
