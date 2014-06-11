@@ -1,8 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from StringIO import StringIO
 import numpy as np
 from astropy.tests.helper import pytest
+from astropy.extern import six
 import astropy.units as u
+
+from six.StringIO import StringIO
 
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, get_sampler, uniform_prior, normal_prior
