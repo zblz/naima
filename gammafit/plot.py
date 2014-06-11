@@ -5,9 +5,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 from astropy.extern import six
-
-import logging
-log = logging.getLogger(__name__)
+from astropy import log
 
 __all__ = ["plot_chain","plot_fit","plot_data"]
 

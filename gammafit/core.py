@@ -3,9 +3,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-
-import logging
-log = logging.getLogger(__name__)
+from astropy import log
 
 __all__=["normal_prior","uniform_prior","get_sampler","run_sampler"]
 

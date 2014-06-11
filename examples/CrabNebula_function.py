@@ -64,7 +64,7 @@ if __name__=='__main__':
 ## Run sampler
 
     sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-            prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
+            prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
 
 ## Save sampler
     from astropy.extern import six
@@ -73,7 +73,7 @@ if __name__=='__main__':
     cPickle.dump(sampler,open('CrabNebula_function_sampler.pickle','wb'))
 
 ## Diagnostic plots
-# Only convert first model to SED
-    gammafit.generate_diagnostic_plots('CrabNebula_function',sampler,seds=[True,False])
+    gammafit.generate_diagnostic_plots('CrabNebula_function',sampler,
+            sed=True,last_step=False)
 
 

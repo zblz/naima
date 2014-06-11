@@ -20,7 +20,7 @@ data=gammafit.build_data_dict(ene,None,flux,dflux)
 
 ## Set initial parameters
 
-p0=np.array((3e18,3.2,45.0,))
+p0=np.array((2.5e-6,3.3,48.0,))
 labels=['norm','index','cutoff']
 
 ## Model definition
@@ -56,7 +56,7 @@ def ElectronIC(pars,data):
 
     del ozm
 
-    return model, np.array((data['ene'],model)), np.array((elec_energy,nelec))
+    return model, (data['ene'],model), (elec_energy,nelec)
 
 ## Prior definition
 
@@ -78,7 +78,7 @@ if __name__=='__main__':
 ## Run sampler
 
     sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ElectronIC,
-            prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
+            prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
 
 ## Save sampler
     from astropy.extern import six

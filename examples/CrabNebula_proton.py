@@ -57,8 +57,7 @@ def ppgamma(pars,data):
 
     del(ozm)
 
-    return model, np.array((data['ene'],model)), \
-            np.array((protonene,protondist))
+    return model, (data['ene'],model), (protonene,protondist)
 
 ## Prior definition
 
@@ -79,7 +78,7 @@ if __name__=='__main__':
 ## Run sampler
 
     sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ppgamma,
-            prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
+            prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
 
 ## Save sampler
 
