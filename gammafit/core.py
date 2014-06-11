@@ -2,13 +2,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import numpy as np
 
-from astropy import constants as const
-
-mec2TeV=(const.m_e*const.c**2).to('eV').value/1e12
-mec2=(const.m_e*const.c**2).to('erg').value
-
 __all__=["normal_prior","uniform_prior","get_sampler","run_sampler"]
-
 
 ## Likelihood functions
 
@@ -40,7 +34,8 @@ def lnprobmodel(model,data):
 # use different errors for model above or below data
         sign=difference>0
         loerr,hierr=1*-sign,1*sign
-        logprob =  - difference**2/(2.*(loerr*data['dflux'][notul][:,0]+hierr*data['dflux'][notul][:,1])**2)
+        logprob =  - difference**2/(2.*(loerr*data['dflux'][0][notul]+
+            hierr*data['dflux'][1][notul])**2)
     else:
         logprob =  - difference**2/(2.*data['dflux'][notul]**2)
 
@@ -55,7 +50,10 @@ def lnprobmodel(model,data):
 
 def lnprob(pars,data,modelfunc,priorfunc):
 
-    lnprob_priors = priorfunc(pars)
+    if priorfunc is None:
+        lnprob_priors = 0.0
+    else:
+        lnprob_priors = priorfunc(pars)
 
 # If prior is -np.inf, avoid calling the function as invalid calls may be made,
 # and the result will be discarded anyway
@@ -69,20 +67,14 @@ def lnprob(pars,data,modelfunc,priorfunc):
             blob  = modelout[1:]
         else:
             model = modelout
-            blob  = (np.array((data['ene'],modelout)),)
+            blob  = ((data['ene'],modelout),)
 
-        lnprob_model  = lnprobmodel(model,data)
+        lnprob_model = lnprobmodel(model,data)
     else:
         lnprob_model = 0.0
         blob=None
 
     total_lnprob  = lnprob_model + lnprob_priors
-
-    # Print parameters and total_lnprob
-    #outstr = '{:8.2g} '*len(pars) + '{:8.3g} '*3
-    #outargs = list(pars) + [lnprob_model,lnprob_priors,total_lnprob]
-# TODO: convert following print to logger
-    #print outstr.format(*outargs)
 
     return total_lnprob,blob
 
@@ -104,73 +96,51 @@ def _run_mcmc(sampler,pos,nrun):
             print("  Last ensemble lnprob  :  avg: {0:.3f}, max: {1:.3f}".format(np.average(out[1]),np.max(out[1])))
     return sampler,out[0]
 
-## Placeholder model: Powerlaw with exponential
-
-def _cutoffexp(pars,data):
-    """
-    Powerlaw with exponential cutoff.
-
-    Parameters:
-        - 0: PL normalization
-        - 1: PL index
-        - 2: cutoff energy
-    """
-
-    ene=data['ene']
-    ene0=np.exp(np.average(np.log(ene)))
-
-    N     = pars[0]
-    gamma = pars[1]
-    ecut  = pars[2]
-
-    model = N*(ene/ene0)**-gamma*np.exp(-(ene/ecut))
-
-    return model
-
-# Placeholder prior and initial parameters
-_prior=lambda x: 0.0
-_p00=np.array((1e-11,2,10))
-
-def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
-                model=_cutoffexp, prior=_prior, labels=None, threads=8):
+def get_sampler(data=None, p0=None, model=None, prior=None,
+        nwalkers=500, nburn=100,
+        guess=True, labels=None, threads=4):
     """Generate a new MCMC sampler.
 
     Parameters
     ----------
-    nwalkers : int
-        The number of Goodman & Weare “walkers”.
-    nburn : int
-        Number of burn-in steps. After ``nburn`` steps, the sampler is reset and
-        chain history discarded. It is necessary to settle the sampler into the
-        maximum of the parameter space density.
-    p0 : array
-        Initial position vector. The distribution for the ``nwalkers`` walkers
-        will be computed as a multidimensional gaussian of width 10% around the
-        initial position vector ``p0``.
     data : dict
         Dictionary containing the observed spectrum.
+    p0 : array
+        Initial position vector. The distribution for the ``nwalkers`` walkers
+        will be computed as a multidimensional gaussian of width 5% around the
+        initial position vector ``p0``.
     model : function
         A function that takes a vector in the parameter space and the data
         dictionary, and returns the expected fluxes at the energies in the
-        spectrum.
-    prior : function
+        spectrum. Additional return objects will be saved as blobs in the
+        sampler chain, see `the emcee documentation for the
+        format
+        <http://dan.iel.fm/emcee/current/user/advanced/#arbitrary-metadata-blobs>`_.
+    prior : function, optional
         A function that takes a vector in the parameter space and returns the
         log-likelihood of the Bayesian prior. Parameter limits can be specified
         through a uniform prior, returning 0. if the vector is within the
         parameter bounds and ``-np.inf`` otherwise.
-    labels : iterable of strings
-        Labels for the parameters included in the position vector `p0`.
-    threads : int
-        Number of threads to use for sampling.
-    guess : bool (optional)
-        Whether to attempt to guess the normalization (first) parameter of the model.
+    nwalkers : int, optional
+        The number of Goodman & Weare “walkers”. Default is 500.
+    nburn : int, optional
+        Number of burn-in steps. After ``nburn`` steps, the sampler is reset and
+        chain history discarded. It is necessary to settle the sampler into the
+        maximum of the parameter space density. Default is 100.
+    labels : iterable of strings, optional
+        Labels for the parameters included in the position vector `p0`. If not
+        provided ``['par1','par2', ... ,'parN']`` will be used.
+    threads : int, optional
+        Number of threads to use for sampling. Default is 4.
+    guess : bool, optional
+        Whether to attempt to guess the normalization (first) parameter of the model. Default is True.
 
     Returns
     -------
-    sampler : `emcee.EnsembleSampler`
-        Sampler
-    pos : `numpy.array`
-        Position array
+    sampler : :class:`~emcee.EnsembleSampler` instance
+        Ensemble sampler with walker positions after `nburn` burn-in steps.
+    pos : :class:`~numpy.array`
+        Final position vector array.
 
     See also
     --------
@@ -179,7 +149,11 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
     import emcee
 
     if data==None:
-        print('Need to provide data!')
+        log.warn('Data dictionary is missing!')
+        raise TypeError
+
+    if model==None:
+        log.warn('Model function is missing!')
         raise TypeError
 
     # Add parameter labels if not provided or too short
@@ -206,8 +180,8 @@ def get_sampler(nwalkers=500, nburn=30, guess=True, p0=_p00, data=None,
     sampler.data = data
     sampler.labels = labels
 
-    # Initialize walkers in a ball of relative size 2% in all dimensions
-    p0var=np.array([ 0.02*pp for pp in p0])
+    # Initialize walkers in a ball of relative size 5% in all dimensions
+    p0var=np.array([0.05*pp for pp in p0])
     p0=emcee.utils.sample_ball(p0,p0var,nwalkers)
 
     if nburn>0:
@@ -227,18 +201,19 @@ def run_sampler(nrun=100,sampler=None,pos=None,**kwargs):
 
     Parameters
     ----------
-    nrun : int
+    nrun : int, optional
         Number of steps to run
-    sampler : `emcee.EnsembleSampler`
-        Sampler
-    pos : array
+    sampler : :class:`~emcee.EnsembleSampler` instance, optional
+        Sampler.
+    pos : :class:`~numpy.ndarray`, optional
         A list of initial position vectors for the walkers. It should have
         dimensions of ``(nwalkers,dim)``, where ``dim`` is the number of free
-        parameters.
+        parameters. `emcee.utils.sample_ball` can be used to generate a
+        multidimensional gaussian distribution around a single initial position.
 
     Returns
     -------
-    sampler : `emcee.EnsembleSampler`
+    sampler : :class:`~emcee.EnsembleSampler` instance
         Sampler containing the paths of the walkers during the ``nrun`` steps.
     pos : array
         List of final position vectors after the run.

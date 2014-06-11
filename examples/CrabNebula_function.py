@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 import numpy as np
 import gammafit
+import astropy.units as u
 
 ## Read data
 
 spec=np.loadtxt('CrabNebula_HESS_2006.dat')
 
-ene=spec[:,0]
-flux=spec[:,3]
+flux_unit = u.Unit('1/(cm2 s TeV)')
+
+ene=spec[:,0]*u.TeV
+flux=spec[:,3]*flux_unit
 perr=spec[:,4]
 merr=spec[:,5]
-dflux=np.array(list(zip(merr,perr)))
+dflux=np.array((merr,perr))*flux_unit
 
 data=gammafit.build_data_dict(ene,None,flux,dflux)
 
@@ -39,9 +42,9 @@ def cutoffexp(pars,data):
 
     N     = pars[0]
     gamma = pars[1]
-    ecut  = pars[2]
+    ecut  = pars[2]*u.TeV
 
-    return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut))
+    return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut)) * flux_unit
 
 ## Prior definition
 
@@ -53,23 +56,23 @@ def lnprior(pars):
 
 	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
             + gammafit.uniform_prior(pars[1],-1,5) \
-			+ gammafit.uniform_prior(pars[2],0.,np.inf) \
-			#+ gammafit.uniform_prior(pars[3],0.5,1.5)
+            + gammafit.uniform_prior(pars[2],0.,np.inf)
 
 	return logprob
 
+if __name__=='__main__':
 ## Run sampler
 
-sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-        prior=lnprior, nwalkers=1000, nburn=200, nrun=100, threads=8)
+    sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
+            prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
+
+## Save sampler
+    import cPickle as pickle
+    sampler.pool=None
+    pickle.dump(sampler,open('CrabNebula_function_sampler.pickle','wb'))
 
 ## Diagnostic plots
 # Only convert first model to SED
-gammafit.generate_diagnostic_plots('CrabNebula_function',sampler,converttosed=[True,False])
+    gammafit.generate_diagnostic_plots('CrabNebula_function',sampler,seds=[True,False])
 
-## Save sampler
-
-#import cPickle as pickle
-#sampler.pool=None
-#pickle.dump(sampler,open('CrabNebula_function_sampler.pickle','wb'))
 

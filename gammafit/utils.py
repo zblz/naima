@@ -1,5 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import numpy as np
+from astropy.logger import log
+import astropy.units as u
 
 from .plot import plot_fit, plot_chain
 
@@ -9,19 +11,19 @@ __all__ = ["generate_energy_edges","build_data_dict","generate_diagnostic_plots"
 
 def generate_energy_edges(ene):
     """Generate energy bin edges from given energy array.
-    
+
     Generate an array of energy edges from given energy array to be used as
     abcissa error bar limits when no energy uncertainty or energy band is
-    provided. 
+    provided.
 
     Parameters
     ----------
-    ene : array
-        Array of energies
+    ene : `astropy.units.Quantity` array instance
+        1-D array of energies with associated phsyical units.
 
     Returns
     -------
-    edge_array : array with shape (len(ene),2)
+    edge_array : `astropy.units.Quantity` array instance of shape ``(2,len(ene))``
         Array of energy edge pairs corresponding to each given energy of the
         input array.
     """
@@ -31,7 +33,7 @@ def generate_energy_edges(ene):
     ehi[:-1]=midene-ene[:-1]
     elo[0]=ehi[0]
     ehi[-1]=elo[-1]
-    return np.array(list(zip(elo,ehi)))
+    return np.array((elo,ehi))*ene.unit
 
 def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     """
@@ -43,16 +45,16 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     ene : array (Nene)
         Spectrum energies
 
-    dene : array (Nene,2) or None
-        Difference from energy points to lower (column 0) and upper (column 1)
+    dene : array (2,Nene) or None
+        Difference from energy points to lower (row 0) and upper (row 1)
         energy edges. Currently only used on plots. If ``None`` is given, they
-        will be generated with function ``generate_energy_edges``.
+        will be generated with function `generate_energy_edges`.
 
     flux : array (Nene)
         Spectrum flux values.
 
-    dflux : array (Nene,2) or (Nene)
-        Spectrum flux uncertainties. If shape is (Nene, 2), columns 0 and 1
+    dflux : array (2,Nene) or (Nene)
+        Spectrum flux uncertainties. If shape is (2,Nene), rows 0 and 1
         correspond to lower and upper uncertainties, respectively.
 
     ul : array of bool (optional)
@@ -81,7 +83,7 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
 
     return data
 
-def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,converttosed=None,**kwargs):
+def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,sed=None,**kwargs):
     """
     Generate diagnostic plots.
 
@@ -113,9 +115,9 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
     if pdf:
         from matplotlib import pyplot as plt
         plt.rc('pdf',fonttype = 42)
-        print('Generating diagnostic plots in file {}_plots.pdf'.format(outname))
+        print('Generating diagnostic plots in file {0}_plots.pdf'.format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
-        outpdf=PdfPages('{}_plots.pdf'.format(outname))
+        outpdf=PdfPages('{0}_plots.pdf'.format(outname))
 
     ## Chains
 
@@ -133,7 +135,8 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
         from .plot import find_ML
 
         ML,MLp,MLvar,model_ML = find_ML(sampler,0)
-        f = corner(sampler.flatchain,labels=sampler.labels,truths=MLp,quantiles=[0.16,0.5,0.84],verbose=False,**kwargs)
+        f = corner(sampler.flatchain,labels=sampler.labels,
+                truths=MLp,quantiles=[0.16,0.5,0.84],verbose=False,**kwargs)
         if pdf:
             f.savefig(outpdf,format='pdf')
         else:
@@ -143,35 +146,36 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,convertto
 
     ## Fit
 
-    if modelidxs==None:
+    if modelidxs is None:
         nmodels=len(sampler.blobs[-1][0])
         modelidxs=list(range(nmodels))
 
-    if converttosed==None:
-        converttosed=[False for idx in modelidxs]
+    if sed is None:
+        sed=[None for idx in modelidxs]
+    elif isinstance(sed, bool):
+        sed=[sed for idx in modelidxs]
 
-    for modelidx,tosed in zip(modelidxs,converttosed):
-        modelx=sampler.blobs[-1][0][modelidx][0]
-        xunit='eV' if np.max(modelx)>1e8 else 'TeV'
-        if modelidx==0:
-            if tosed:
-                labels=('Energy [{0}]'.format(xunit),r'$E^2$d$N$/d$E$ [erg/cm$^2$/s]')
-            else:
-                labels=('Energy [{0}]'.format(xunit),r'd$N$/d$E$ [1/cm$^2$/s/{0}]'.format(xunit))
-        elif modelidx==1:
-            labels=('Particle Energy [TeV]',r'Particle energy distribution [erg$\times 4\pi d^2$]')
-        else:
-            labels=( None, None)
+    for modelidx,plot_sed in zip(modelidxs,sed):
         try:
-            f = plot_fit(sampler, xlabel=labels[0], ylabel=labels[1],
-                    modelidx=modelidx, converttosed=tosed,**kwargs)
-            if pdf:
-                f.savefig(outpdf,format='pdf')
-            else:
-                f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
-        except Exception as e:
-            # Maybe one of the returned models does not conform to the needed format
-            print(e)
+            modelx=sampler.blobs[-1][0][modelidx][0]
+            modely=sampler.blobs[-1][0][modelidx][1]
+            assert(len(modelx)==len(modely))
+        except ( TypeError, AssertionError ):
+            log.warn('Not plotting model {0} because of wrong blob format'.format(modelidx))
+            continue
+
+        try:
+            e_unit = modelx.unit
+            f_unit = modely.unit
+        except AttributeError:
+            log.warn('Not plotting model {0} because of lack of units'.format(modelidx))
+            continue
+
+        f = plot_fit(sampler, modelidx=modelidx, sed=plot_sed, **kwargs)
+        if pdf:
+            f.savefig(outpdf,format='pdf')
+        else:
+            f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
 
     if pdf:
         outpdf.close()

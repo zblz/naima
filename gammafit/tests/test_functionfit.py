@@ -2,8 +2,11 @@
 from StringIO import StringIO
 import numpy as np
 from astropy.tests.helper import pytest
+import astropy.units as u
+
 from ..utils import build_data_dict, generate_diagnostic_plots
-from ..core import run_sampler, uniform_prior
+from ..core import run_sampler, get_sampler, uniform_prior, normal_prior
+
 # Use batch backend to avoid $DISPLAY errors
 import matplotlib
 matplotlib.use("Agg")
@@ -21,6 +24,8 @@ specfile=StringIO(
 # Aharonian et al. 2006, A&A 457, 899
 # ADS bibcode: 2006A&A...457..899A
 
+# Upper limits at 0.25 and 50 TeV are fake!
+
 # Column 1: Mean energy (TeV)
 # Column 2: Excess events
 # Column 3: Significance
@@ -28,6 +33,7 @@ specfile=StringIO(
 # Column 5: Upper 1-sigma flux error
 # Column 6: Lower 1-sigma flux error
 
+0.25   975   42.9  2.50e-10  0.00      0.00
 0.519  975   42.9  1.81e-10  0.06e-10  0.06e-10
 0.729  1580  56.0  7.27e-11  0.20e-11  0.19e-11
 1.06   1414  55.3  3.12e-11  0.09e-11  0.09e-11
@@ -40,17 +46,19 @@ specfile=StringIO(
 14.8   36    8.1   1.75e-14  0.33e-14  0.30e-14
 20.9   23    7.5   7.26e-15  1.70e-15  1.50e-15
 30.5   4     2.9   9.58e-16  5.60e-16  4.25e-16
+50.0   4     2.9   3.00e-15  0.00      0.00
 """)
 spec=np.loadtxt(specfile)
 specfile.close()
 
-ene=spec[:,0]
-flux=spec[:,3]
+ene=spec[:,0]*u.TeV
+flux=spec[:,3]*u.Unit('1/(cm2 s TeV)')
 merr=spec[:,4]
 perr=spec[:,5]
-dflux=np.array(list(zip(merr,perr)))
+dflux=np.array((merr,perr))*u.Unit('1/(cm2 s TeV)')
+ul = merr==0.0
 
-data=build_data_dict(ene,None,flux,dflux,)
+data=build_data_dict(ene,None,flux,dflux,ul=ul,cl=0.9)
 
 
 @pytest.mark.skipif('not HAS_EMCEE')
@@ -75,11 +83,11 @@ def test_function_sampler():
 
         N     = pars[0]
         gamma = pars[1]
-        ecut  = pars[2]
+        ecut  = pars[2]*u.TeV
         #beta  = pars[3]
         beta  = 1.
 
-        return N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta)
+        return N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta) * u.Unit('1/(cm2 s TeV)')
 
 ## Prior definition
 
@@ -90,8 +98,8 @@ def test_function_sampler():
         """
 
         logprob = uniform_prior(pars[0],0.,np.inf) \
-                + uniform_prior(pars[1],-1,5) \
-                + uniform_prior(pars[2],0.,np.inf) 
+                + normal_prior(pars[1],1.4,0.5) \
+                + uniform_prior(pars[2],0.,np.inf)
 
         return logprob
 
@@ -100,13 +108,22 @@ def test_function_sampler():
     p0=np.array((1e-9,1.4,14.0,))
     labels=['norm','index','cutoff','beta']
 
-## Run sampler
+## Initialize in different ways to test argument validation
+
+    sampler,pos = get_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
+            prior=lnprior, nwalkers=10, nburn=0, threads=1)
+
+    # labels
+    sampler,pos = run_sampler(data=data, p0=p0, labels=None, model=cutoffexp,
+            prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
+    sampler,pos = run_sampler(data=data, p0=p0, labels=labels[:2], model=cutoffexp,
+            prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
+
+    # no prior
+    sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
+            prior=None, nwalkers=10, nrun=2, nburn=0, threads=1)
 
     sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
             prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
-
-## Diagnostic plots
-
-    generate_diagnostic_plots('velax_function',sampler)
 
 
