@@ -595,7 +595,7 @@ class ProtonOZM(object):
         validate_scalar('norm_energy',self.norm_energy,domain='positive',physical_type='energy')
         if cutoff is not None:
             validate_scalar('cutoff',self.cutoff,domain='positive',physical_type='energy')
-        if hasattr(self,'_E_break'):
+        if hasattr(self,'E_break'):
             validate_scalar('E_break',self.E_break,domain='positive',physical_type='energy')
 
         self._update_values()
@@ -609,6 +609,7 @@ class ProtonOZM(object):
 
         for var in ['norm_energy','cutoff','E_break']:
             if hasattr(self,var) and getattr(self,var) is not None:
+                validate_scalar(var,getattr(self,var),domain='positive',physical_type='energy')
                 setattr(self,'_'+var,getattr(self,var).to('TeV').value)
 
     def Jp(self,Ep):
@@ -774,8 +775,8 @@ class ProtonOZM(object):
         if not hasattr(self, 'Etrans'):
             # Energy at which we change from delta functional to accurate calculation
             self.Etrans = 0.1*u.TeV
-        elif not isinstance(self.Etrans,u.Quantity):
-            self.Etrans *= u.TeV
+        else:
+            validate_scalar('Etrans',self.Etrans,domain='positive',physical_type='energy')
 
         self.nhat = 1.  # initial value, works for index~2.1
         if np.any(self.outspecene<self.Etrans) and np.any(self.outspecene >= self.Etrans):

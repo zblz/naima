@@ -22,7 +22,6 @@ electronozmpars={
         }
 
 
-@pytest.mark.skipif('not HAS_EMCEE')
 def test_electronozm():
     """
     test sync and IC calculation
@@ -76,7 +75,6 @@ def test_electronozm_evolve():
     assert_approx_equal(lic.value, 8288470921.689767)
 
 
-@pytest.mark.skipif('not HAS_EMCEE')
 def test_protonozm():
     """
     test ProtonOZM
@@ -100,4 +98,27 @@ def test_protonozm():
     ozm.calc_outspec()
     lpp=np.trapz(ozm.specpp*ozm.outspecene,ozm.outspecene).to('erg/s')
     assert_approx_equal(lpp.value,3.754818148524127e-13, significant=5)
+
+    # different Etrans
+    ozm = ProtonOZM(np.logspace(9,15,100)*u.eV, 1, index=2.0, cutoff=1e13*u.eV, beta=1.0,
+            Etrans = 1*u.TeV)
+    ozm.calc_outspec()
+    lpp=np.trapz(ozm.specpp*ozm.outspecene,ozm.outspecene).to('erg/s')
+    assert_approx_equal(lpp.value,1.1852004994595184e-15, significant=5)
+
+
+def test_log():
+    from ..onezone import ProtonOZM, ElectronOZM
+
+    ozm = ElectronOZM(np.logspace(11,13,10)*u.eV, 1, nolog=True)
+    ozm.calc_outspec()
+
+    ozm = ElectronOZM(np.logspace(11,13,10)*u.eV, 1, debug=True)
+    ozm.calc_outspec()
+
+    ozm = ProtonOZM(np.logspace(11,13,10)*u.eV, 1, nolog=True)
+    ozm.calc_outspec()
+
+    ozm = ProtonOZM(np.logspace(11,13,10)*u.eV, 1, debug=True)
+    ozm.calc_outspec()
 
