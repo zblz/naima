@@ -12,6 +12,12 @@ try:
 except:
     HAS_MATPLOTLIB = False
 
+try:
+    import emcee
+    HAS_EMCEE = True
+except:
+    HAS_EMCEE = False
+
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_fit, plot_data
@@ -131,12 +137,15 @@ labels=['norm','index','cutoff','beta']
 
 ## Run sampler
 
-sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
+@pytest.fixture
+def sampler():
+    sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
         prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
+    return sampler
 
 
-@pytest.mark.skipif('not HAS_MATPLOTLIB')
-def test_chain_plots():
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_chain_plots(sampler):
 
     f = plot_chain(sampler,last_step=True)
     f = plot_chain(sampler,last_step=False)
@@ -144,8 +153,8 @@ def test_chain_plots():
 
     del f
 
-@pytest.mark.skipif('not HAS_MATPLOTLIB')
-def test_fit_plots():
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_fit_plots(sampler):
 
     # plot models with correct format
     for idx in [0,1,2]:
@@ -155,8 +164,8 @@ def test_fit_plots():
                         last_step=last_step,plotdata=True)
                 del f
 
-@pytest.mark.skipif('not HAS_MATPLOTLIB')
-def test_plot_data():
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_plot_data(sampler):
     # only plot data
     f = plot_data(sampler,)
     f = plot_data(sampler,sed=True)
@@ -166,11 +175,13 @@ def test_plot_data():
     f = plot_data(sampler,confs=[3,1,0.5])
     del f
 
-def test_fit_data_units():
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_fit_data_units(sampler):
 
     plot_fit(sampler,modelidx=0,sed=None)
 
-def test_diagnostic_plots():
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_diagnostic_plots(sampler):
     # Diagnostic plots
     # try to plot all models, including those with wrong format/units
 
