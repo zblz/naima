@@ -3,9 +3,14 @@
 import numpy as np
 
 import astropy.units as u
+from astropy.tests.helper import pytest
 
-import matplotlib
-matplotlib.use('Agg')
+try:
+    import matplotlib
+    matplotlib.use('Agg')
+    HAS_MATPLOTLIB = True
+except:
+    HAS_MATPLOTLIB = False
 
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, uniform_prior
@@ -130,6 +135,7 @@ sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
         prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
 
 
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
 def test_chain_plots():
 
     f = plot_chain(sampler,last_step=True)
@@ -138,6 +144,7 @@ def test_chain_plots():
 
     del f
 
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
 def test_fit_plots():
 
     # plot models with correct format
@@ -148,6 +155,7 @@ def test_fit_plots():
                         last_step=last_step,plotdata=True)
                 del f
 
+@pytest.mark.skipif('not HAS_MATPLOTLIB')
 def test_plot_data():
     # only plot data
     f = plot_data(sampler,)

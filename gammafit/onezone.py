@@ -4,7 +4,8 @@
 from __future__ import division
 import numpy as np
 np.seterr(all='ignore')
-from .validator import *
+
+from .extern.validator import validate_scalar,validate_array
 
 __all__ = ['ElectronOZM', 'ProtonOZM']
 
