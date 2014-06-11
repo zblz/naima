@@ -1,7 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import numpy as np
-from astropy.logger import log
 import astropy.units as u
+from astropy.extern import six
+
+import logging
+log = logging.getLogger(__name__)
 
 from .plot import plot_fit, plot_chain
 
@@ -121,7 +127,7 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,sed=None,
 
     ## Chains
 
-    for par,label in zip(range(sampler.chain.shape[-1]),sampler.labels):
+    for par,label in zip(six.moves.range(sampler.chain.shape[-1]),sampler.labels):
         f = plot_chain(sampler,par,**kwargs)
         if pdf:
             f.savefig(outpdf,format='pdf')

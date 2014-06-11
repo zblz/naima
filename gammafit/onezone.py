@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
-from __future__ import division
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import numpy as np
-np.seterr(all='ignore')
-
 from .extern.validator import validate_scalar,validate_array
 
 __all__ = ['ElectronOZM', 'ProtonOZM']
 
-from astropy.logger import log
+from astropy.extern import six
+
+import logging
+log = logging.getLogger(__name__)
 
 ## Constants and units
 from astropy import units as u
@@ -164,9 +165,9 @@ class ElectronOZM(object):
                  nolog=False, debug=False, **kwargs):
 
         if nolog:
-            log.setLevel(100)
+            log.setLevel(logging.FATAL)
         elif debug:
-            log.setLevel(10)
+            log.setLevel(logging.DEBUG)
 
         del debug
 
@@ -213,7 +214,7 @@ class ElectronOZM(object):
         self.seeduf = {}
         self.seedT = {}
         for idx, inseed in enumerate(self.seedspec):
-            if type(inseed) == str:
+            if isinstance(inseed, six.string_types) :
                 if inseed == 'CMB':
                     self.seedT[inseed] = Tcmb
                     self.seeduf[inseed] = 1.0
@@ -584,9 +585,9 @@ class ProtonOZM(object):
                  nolog=False, debug=False, **kwargs):
 
         if nolog:
-            log.setLevel(100)
+            log.setLevel(logging.FATAL)
         if debug:
-            log.setLevel(10)
+            log.setLevel(logging.DEBUG)
 
         self.__dict__.update(**locals())
         self.__dict__.update(**kwargs)
