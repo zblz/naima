@@ -56,6 +56,9 @@ ul = merr==0.0
 
 data=build_data_dict(ene,None,flux,dflux,ul=ul,cl=0.9)
 
+# build data dict with symmetric errors
+dflux2 = np.mean(dflux,axis=0)
+data2=build_data_dict(ene,None,flux,dflux2,ul=ul,cl=0.9)
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_function_sampler():
@@ -109,6 +112,13 @@ def test_function_sampler():
     sampler,pos = get_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
             prior=lnprior, nwalkers=10, nburn=0, threads=1)
 
+    sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
+            prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
+
+    # symmetric data errors
+    sampler,pos = run_sampler(data=data2, p0=p0, labels=labels, model=cutoffexp,
+            prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
+
     # labels
     sampler,pos = run_sampler(data=data, p0=p0, labels=None, model=cutoffexp,
             prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
@@ -119,7 +129,15 @@ def test_function_sampler():
     sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
             prior=None, nwalkers=10, nrun=2, nburn=0, threads=1)
 
-    sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-            prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
+    # test exception raised when no model or data are provided
+    try:
+        sampler,pos = get_sampler(data=data, p0=p0, labels=labels,
+                prior=lnprior, nwalkers=10, nburn=0, threads=1)
+    except TypeError:
+        pass
 
-
+    try:
+        sampler,pos = get_sampler(p0=p0, labels=labels, model=cutoffexp,
+                prior=lnprior, nwalkers=10, nburn=0, threads=1)
+    except TypeError:
+        pass
