@@ -7,10 +7,6 @@ import astropy.units as u
 from ..utils import build_data_dict, generate_diagnostic_plots
 from ..core import run_sampler, get_sampler, uniform_prior, normal_prior
 
-# Use batch backend to avoid $DISPLAY errors
-import matplotlib
-matplotlib.use("Agg")
-
 try:
     import emcee
     HAS_EMCEE = True
