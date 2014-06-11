@@ -15,6 +15,7 @@ env:
         - ASTROPY_VERSION=stable
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
+        - OPTIONAL_DEPS=true
     #matrix:
         #- SETUP_CMD='egg_info'
 
@@ -43,16 +44,22 @@ matrix:
           env: SETUP_CMD='test'
         - python: 2.7
           env: SETUP_CMD='test'
-        - python: 3.2
-          env: SETUP_CMD='test'
+        #- python: 3.2
+          #env: SETUP_CMD='test'
         - python: 3.3
           env: SETUP_CMD='test'
         - python: 3.4
           env: SETUP_CMD='test'
 
+        # Try without optional dependencies
+        - python: 2.7
+          env: SETUP_CMD='test' OPTIONAL_DEPS=false
+        - python: 3.4
+          env: SETUP_CMD='test' OPTIONAL_DEPS=false
+
         # Try older numpy versions
-        - python: 3.2
-          env: NUMPY_VERSION=1.6 SETUP_CMD='test'
+        #- python: 3.2
+          #env: NUMPY_VERSION=1.6 SETUP_CMD='test'
         - python: 2.7
           env: NUMPY_VERSION=1.7 SETUP_CMD='test'
         - python: 2.7
@@ -93,8 +100,8 @@ install:
     # conda for packages available through conda, or pip for any other
     # packages. You should leave the `numpy=$NUMPY_VERSION` in the `conda` 
     # install since this ensures Numpy does not get automatically upgraded.
-    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy matplotlib ; fi
-    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL emcee triangle_plot; fi
+    - if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy matplotlib ; fi
+    - if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL emcee triangle_plot; fi
 
     # DOCUMENTATION DEPENDENCIES
     # build_sphinx needs sphinx and matplotlib (for plot_directive). Note that
