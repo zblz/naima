@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import numpy as np
+
+import logging
+log = logging.getLogger(__name__)
 
 __all__=["normal_prior","uniform_prior","get_sampler","run_sampler"]
 

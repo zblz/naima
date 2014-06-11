@@ -73,18 +73,21 @@ def lnprior(pars):
 
 	return logprob
 
+if __name__=='__main__':
+
 ## Run sampler
 
-sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ElectronIC,
-        prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
+    sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ElectronIC,
+            prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
+
+## Save sampler
+    from astropy.extern import six
+    from six.moves import cPickle
+    sampler.pool=None
+    cPickle.dump(sampler,open('CrabNebula_electron_sampler.pickle','wb'))
 
 ## Diagnostic plots
 
-gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler,sed=[True,None])
+    gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler,sed=[True,None])
 
-## Save sampler
-
-#import cPickle as pickle
-#sampler.pool=None
-#pickle.dump(sampler,open('CrabNebula_function_sampler.pickle','wb'))
 

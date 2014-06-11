@@ -1,7 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+
 import numpy as np
 import astropy.units as u
-from astropy.logger import log
+from astropy.extern import six
+
+import logging
+log = logging.getLogger(__name__)
 
 __all__ = ["plot_chain","plot_fit","plot_data"]
 
@@ -25,7 +31,7 @@ def plot_chain(sampler,p=None,**kwargs):
     """
     if p==None:
         npars=sampler.chain.shape[-1]
-        for pp,label in zip(range(npars),sampler.labels):
+        for pp,label in zip(six.moves.range(npars),sampler.labels):
             _plot_chain_func(sampler.chain,pp,label,**kwargs)
         fig = None
     else:
@@ -122,7 +128,7 @@ def _plot_chain_func(chain,p,label,last_step=False):
     else:
         clen='whole chain'
 
-    quantiles=dict(zip(quant,xquant))
+    quantiles=dict(six.moves.zip(quant,xquant))
 
     chain_props='Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers,nsteps) + \
             'Autocorrelation time: {0:.1f}'.format(acort) + '\n' +\

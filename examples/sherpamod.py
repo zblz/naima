@@ -3,7 +3,7 @@ Wrappers around ElectronOZM and ProtonOZM to be used as sherpa models
 """
 
 import numpy as np
-from .onezone import ElectronOZM, ProtonOZM
+from gammafit import ElectronOZM, ProtonOZM
 
 from sherpa.models.parameter import Parameter, tinyval
 from sherpa.models.model import ArithmeticModel, modelCacher1d

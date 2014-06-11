@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from StringIO import StringIO
 import numpy as np
 from astropy.tests.helper import pytest
+from astropy.extern import six
 import astropy.units as u
 
 from ..utils import build_data_dict, generate_diagnostic_plots
@@ -14,7 +14,7 @@ except ImportError:
     HAS_EMCEE = False
 
 ## Read data
-specfile=StringIO(
+specfile=six.StringIO(
 """
 # Crab Nebula spectrum measured by HESS taken from table 5 of
 # Aharonian et al. 2006, A&A 457, 899

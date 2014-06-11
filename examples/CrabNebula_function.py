@@ -67,9 +67,10 @@ if __name__=='__main__':
             prior=lnprior, nwalkers=500, nburn=100, nrun=50, threads=4)
 
 ## Save sampler
-    import cPickle as pickle
+    from astropy.extern import six
+    from six.moves import cPickle
     sampler.pool=None
-    pickle.dump(sampler,open('CrabNebula_function_sampler.pickle','wb'))
+    cPickle.dump(sampler,open('CrabNebula_function_sampler.pickle','wb'))
 
 ## Diagnostic plots
 # Only convert first model to SED

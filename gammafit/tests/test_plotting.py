@@ -4,6 +4,7 @@ import numpy as np
 
 import astropy.units as u
 from astropy.tests.helper import pytest
+from astropy.extern import six
 
 try:
     import matplotlib
@@ -23,9 +24,7 @@ from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_fit, plot_data
 
 ## Read data
-from StringIO import StringIO
-
-specfile=StringIO(
+specfile=six.StringIO(
 """
 #
 #
