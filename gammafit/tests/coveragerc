@@ -6,7 +6,7 @@ omit =
    *version*
    gammafit/_astropy_init.py
    gammafit/conftest.py
-   gammafit/validator.py
+   gammafit/extern/*
 
 [report]
 exclude_lines =
