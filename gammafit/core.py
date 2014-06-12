@@ -189,8 +189,8 @@ def get_sampler(data=None, p0=None, model=None, prior=None,
 
     ndim = len(p0)
 
-    sampler = emcee.EnsembleSampler(
-        nwalkers, ndim, lnprob, args=[data, model, prior], threads=threads)
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
+            args=[data, model, prior], threads=threads)
 
     # Add data and parameters properties to sampler
     sampler.data = data

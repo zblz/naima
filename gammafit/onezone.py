@@ -186,7 +186,8 @@ class ElectronOZM(object):
             'gmax': 3e10,
             'ngamd': 300,  # electron spectrum points per decade
             # Injection spectrum
-            'glocut': (10 * u.MeV / mec2).decompose(),  # sharp low energy cutoff at gamma*mec2 = 10MeV
+            # sharp low energy cutoff at gamma*mec2 = 10MeV
+            'glocut': (10 * u.MeV / mec2).decompose(),
         }
 
         self.__dict__.update(**computation_defaults)
@@ -197,14 +198,14 @@ class ElectronOZM(object):
                        domain='positive', ndim=1, physical_type='energy')
         validate_scalar('norm_energy', self.norm_energy,
                         domain='positive', physical_type='energy')
-        validate_scalar(
-            'cutoff', self.cutoff, domain='positive', physical_type='energy')
-        validate_scalar(
-            'B', self.B, domain='positive', physical_type='magnetic flux density')
-        validate_scalar(
-            'remit', self.remit, domain='positive', physical_type='length')
-        validate_scalar(
-            'tad', self.tad, domain='positive', physical_type='time')
+        validate_scalar('cutoff', self.cutoff,
+                        domain='positive', physical_type='energy')
+        validate_scalar('B', self.B, domain='positive',
+                        physical_type='magnetic flux density')
+        validate_scalar('remit', self.remit, domain='positive',
+                        physical_type='length')
+        validate_scalar( 'tad', self.tad, domain='positive',
+                        physical_type='time')
 
         self._process_input_seed()
 
@@ -312,8 +313,9 @@ class ElectronOZM(object):
 # IC losses
         gdotic = np.zeros_like(self.gam) * u.Unit('1/s')
         for seedspec in self.seedspec:
-            gdot = (self.seeduf[seedspec] *
-                    self._gdot_iso_ic_on_planck(self.gam, self.seedT[seedspec].to('K').value)) * u.Unit('1/s')
+            gdot = self._gdot_iso_ic_on_planck(self.gam,
+                    self.seedT[seedspec].to('K').value))
+            gdot *= self.seeduf[seedspec] * u.Unit('1/s')
             setattr(self, 'tic_' + seedspec, self.gam / np.abs(gdot))
             gdotic += gdot
 
@@ -333,8 +335,8 @@ class ElectronOZM(object):
         cutoff_gam = (self.cutoff / mec2).cgs.value
         norm_gam = (self.norm_energy / mec2).cgs.value
 
-        qinj = self.norm * (self.gam / norm_gam) ** -self.index *\
-            np.exp(-(self.gam / cutoff_gam) ** self.beta)
+        qinj = (self.norm * (self.gam / norm_gam) ** -self.index *
+                np.exp(-(self.gam / cutoff_gam) ** self.beta))
 
         qinj[np.where(self.gam < self.glocut)] = 0.
 
@@ -420,11 +422,15 @@ class ElectronOZM(object):
         # strip units, ensuring correct conversion
         # astropy units do not convert correctly for gyroradius calculation when using
         # cgs (SI is fine, see https://github.com/astropy/astropy/issues/1687)
-        CS1 = np.sqrt(3) * e.value ** 3 * self.B.to('G').value / (2 * np.pi * m_e.cgs.value * c.cgs.value ** 2
-                                                                  * hbar.cgs.value * self.outspecene.to('erg').value)
-        Ec = 3 * e.value * hbar.cgs.value * \
-            self.B.to('G').value * gam ** 2 / (
-                2 * (m_e * c).cgs.value)  # Critical energy, erg
+        CS1_0 = np.sqrt(3) * e.value ** 3 * self.B.to('G').value
+        CS1_1 = (2 * np.pi * m_e.cgs.value * c.cgs.value ** 2 *
+                 hbar.cgs.value * self.outspecene.to('erg').value))
+        CS1 = CS1_0/CS1_1
+
+        # Critical energy, erg
+        Ec = 3 * e.value * hbar.cgs.value * self.B.to('G').value * gam ** 2
+        Ec /= 2 * (m_e * c).cgs.value
+
         EgEc = self.outspecene.to('erg').value / np.vstack(Ec)
         dNdE = CS1 * Gtilde(EgEc)
         # return units
@@ -467,12 +473,11 @@ class ElectronOZM(object):
             tmp = 1.644934 * x
             F = (1.644934 + tmp) / (1. + tmp) * np.exp(-x)
             cross_section = F * (z ** 2 / (2 * (1 - z)) * g(x, a3) + g(x, a4))
-            tmp = 2.6433905738281024e+16 * \
-                (soft_photon_temperature / electron_energy) ** 2
+            tmp = (soft_photon_temperature / electron_energy) ** 2
+            tmp *= 2.6433905738281024e+16 *
             cross_section = tmp * cross_section
-            condition = (
-                (gamma_energy < electron_energy) * (electron_energy > 1))
-            return np.where(condition, cross_section,
+            cc = ((gamma_energy < electron_energy) * (electron_energy > 1))
+            return np.where(cc, cross_section,
                             np.zeros_like(cross_section))
 
         uf = self.seeduf[seed]
@@ -480,8 +485,8 @@ class ElectronOZM(object):
 
         Eph = (self.outspecene / mec2).cgs.value
         gamint = iso_ic_on_planck(self.gam, T.to('K').value, Eph)
-        lum = uf * Eph * \
-            np.trapz(self.nelec * gamint, self.gam) * u.Unit('1/s')
+        lum = uf * Eph * np.trapz(self.nelec * gamint, self.gam)
+        lum *= u.Unit('1/s')
 
         return lum / self.outspecene  # return differential spectrum in 1/s/eV
 
@@ -509,8 +514,8 @@ class ElectronOZM(object):
             self.specic += specic
             self.sedic += sedic
 
-        toticlum = np.trapz(
-            self.specic * self.outspecene, self.outspecene).to('erg/s')
+        toticlum = np.trapz(self.specic * self.outspecene,
+                            self.outspecene).to('erg/s')
         log.info('calc_ic: L_ic/4πd²  = {0:.2e} / cm²'.format(toticlum))
         tev = np.where(self.outspecene > 100 * u.GeV)
         if len(tev[0]) > 0:
@@ -625,11 +630,11 @@ class ProtonOZM(object):
         validate_scalar('norm_energy', self.norm_energy,
                         domain='positive', physical_type='energy')
         if cutoff is not None:
-            validate_scalar(
-                'cutoff', self.cutoff, domain='positive', physical_type='energy')
+            validate_scalar('cutoff', self.cutoff,
+                    domain='positive', physical_type='energy')
         if hasattr(self, 'E_break'):
-            validate_scalar(
-                'E_break', self.E_break, domain='positive', physical_type='energy')
+            validate_scalar('E_break', self.E_break,
+                    domain='positive', physical_type='energy')
 
         self._update_values()
 
@@ -642,8 +647,8 @@ class ProtonOZM(object):
 
         for var in ['norm_energy', 'cutoff', 'E_break']:
             if hasattr(self, var) and getattr(self, var) is not None:
-                validate_scalar(
-                    var, getattr(self, var), domain='positive', physical_type='energy')
+                validate_scalar(var, getattr(self, var),
+                        domain='positive', physical_type='energy')
                 setattr(self, '_' + var, getattr(self, var).to('TeV').value)
 
     def Jp(self, Ep):
@@ -681,11 +686,12 @@ class ProtonOZM(object):
         """
 
         if hasattr(self, 'index1') and hasattr(self, 'index2') and hasattr(self, '_E_break'):
-            Jp = self.norm * np.where(Ep <= self._E_break,
-                                     (Ep / self._norm_energy) ** -self.index1,
-                                     ((self._E_break / self._norm_energy) ** (self.index2 - self.index1)
-                                      * (Ep / self._norm_energy) ** -self.index2)
-                                      )
+            Jp = np.where(Ep <= self._E_break,
+                         (Ep / self._norm_energy) ** -self.index1,
+                         ((self._E_break / self._norm_energy) ** (self.index2 - self.index1)
+                          * (Ep / self._norm_energy) ** -self.index2)
+                          )
+            Jp *= self.norm
         else:
             if self.cutoff is None:
                 Jp = self.norm * (Ep / self._norm_energy) ** -self.index
@@ -806,8 +812,8 @@ class ProtonOZM(object):
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
-        self.Wp = (quad(lambda x: x * self._Jp(x), Eth, np.Inf)[0] * u.TeV).to(
-            'erg') / u.cm ** 5
+        Wp = quad(lambda x: x * self._Jp(x), Eth, np.Inf)[0] * u.TeV
+        self.Wp = Wp.to('erg') / u.cm**5
         log.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e}'.format(self.Wp))
 
         if not hasattr(self, 'Etrans'):
@@ -815,8 +821,8 @@ class ProtonOZM(object):
             # calculation
             self.Etrans = 0.1 * u.TeV
         else:
-            validate_scalar(
-                'Etrans', self.Etrans, domain='positive', physical_type='energy')
+            validate_scalar('Etrans', self.Etrans,
+                    domain='positive', physical_type='energy')
 
         self.nhat = 1.  # initial value, works for index~2.1
         if np.any(self.outspecene < self.Etrans) and np.any(self.outspecene >= self.Etrans):
@@ -837,8 +843,8 @@ class ProtonOZM(object):
         self.sedpp = (self.specpp * self.outspecene ** 2).to('erg/s')  # erg/s
         self.specpp = self.specpp.to('1/(s eV)')
 
-        totpplum = np.trapz(
-            self.specpp * self.outspecene, self.outspecene).to('erg/s')
+        totpplum = np.trapz(self.specpp * self.outspecene,
+                self.outspecene).to('erg/s')
         log.info('L_pp*nH/4πd²  = {0:.2e} / cm2'.format(totpplum))
 
     def calc_outspec(self):

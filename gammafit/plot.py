@@ -278,8 +278,8 @@ def _sed_conversion(energy, model_unit, sed):
         else:
             raise u.UnitsError(
                 'Model physical type ({0}) is not supported'.format(model_pt),
-                    'Supported physical types are: power, flux, differential'
-                    ' power, differential flux')
+                'Supported physical types are: power, flux, differential'
+                ' power, differential flux')
 
         if 'flux' in model_pt:
             f_unit /= u.cm ** 2
@@ -302,8 +302,8 @@ def _sed_conversion(energy, model_unit, sed):
         else:
             raise u.UnitsError(
                 'Model physical type ({0}) is not supported'.format(model_pt),
-                    'Supported physical types are: power, flux, differential'
-                    ' power, differential flux')
+                'Supported physical types are: power, flux, differential'
+                ' power, differential flux')
 
         if 'flux' in model_pt:
             f_unit /= u.cm ** 2
@@ -509,8 +509,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
             ax2.axhline(0, c='k', lw=2, ls='--')
 
             from matplotlib.ticker import MaxNLocator
-            ax2.yaxis.set_major_locator(
-                MaxNLocator(integer='True', prune='upper'))
+            ax2.yaxis.set_major_locator(MaxNLocator(integer='True', prune='upper'))
 
             ax2.set_ylabel(r'$\Delta\sigma$')
 
@@ -535,9 +534,9 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
             ax2.set_xscale('log')
             for tl in ax1.get_xticklabels():
                 tl.set_visible(False)
-        ax1.set_xlim(
-            10**np.floor(np.log10(np.min(data['ene']-data['dene'][0]).value)),
-                10 ** np.ceil(np.log10(np.max(data['ene']+data['dene'][1]).value)))
+        xmin = 10 ** np.floor(np.log10(np.min(data['ene'] - data['dene'][0]).value))
+        xmax = 10 ** np.ceil(np.log10(np.max(data['ene'] + data['dene'][1]).value))
+        ax1.set_xlim(xmin, xmax)
     else:
         if sed:
             ndecades = 5
