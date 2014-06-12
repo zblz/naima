@@ -313,9 +313,8 @@ class ElectronOZM(object):
 # IC losses
         gdotic = np.zeros_like(self.gam) * u.Unit('1/s')
         for seedspec in self.seedspec:
-            gdot = self._gdot_iso_ic_on_planck(self.gam,
-                    self.seedT[seedspec].to('K').value))
-            gdot *= self.seeduf[seedspec] * u.Unit('1/s')
+            gdot = (self.seeduf[seedspec] * self._gdot_iso_ic_on_planck(self.gam,
+                   self.seedT[seedspec].to('K').value)) * u.Unit('1/s')
             setattr(self, 'tic_' + seedspec, self.gam / np.abs(gdot))
             gdotic += gdot
 
@@ -424,7 +423,7 @@ class ElectronOZM(object):
         # cgs (SI is fine, see https://github.com/astropy/astropy/issues/1687)
         CS1_0 = np.sqrt(3) * e.value ** 3 * self.B.to('G').value
         CS1_1 = (2 * np.pi * m_e.cgs.value * c.cgs.value ** 2 *
-                 hbar.cgs.value * self.outspecene.to('erg').value))
+                 hbar.cgs.value * self.outspecene.to('erg').value)
         CS1 = CS1_0/CS1_1
 
         # Critical energy, erg
@@ -474,7 +473,7 @@ class ElectronOZM(object):
             F = (1.644934 + tmp) / (1. + tmp) * np.exp(-x)
             cross_section = F * (z ** 2 / (2 * (1 - z)) * g(x, a3) + g(x, a4))
             tmp = (soft_photon_temperature / electron_energy) ** 2
-            tmp *= 2.6433905738281024e+16 *
+            tmp *= 2.6433905738281024e+16
             cross_section = tmp * cross_section
             cc = ((gamma_energy < electron_energy) * (electron_energy > 1))
             return np.where(cc, cross_section,
