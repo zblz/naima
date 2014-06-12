@@ -161,8 +161,15 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,sed=None,
 
     for modelidx,plot_sed in zip(modelidxs,sed):
         try:
-            modelx=sampler.blobs[-1][0][modelidx][0]
-            modely=sampler.blobs[-1][0][modelidx][1]
+            blob0=sampler.blobs[-1][0][modelidx]
+            if isinstance(blob0,u.Quantity):
+                modelx = sampler.data['ene']
+                modely = blob0
+            elif len(blob0) == 2:
+                modelx=blob0[0]
+                modely=blob0[1]
+            else:
+                raise TypeError
             assert(len(modelx)==len(modely))
         except ( TypeError, AssertionError ):
             log.warn('Not plotting model {0} because of wrong blob format'.format(modelidx))

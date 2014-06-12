@@ -169,41 +169,82 @@ def gelman_rubin_statistic(chains):
 
     return np.sqrt(var/W)
 
+def _process_blob(sampler,modelidx,last_step=True):
+    """
+    Process binary blob in sampler. If blob in position modelidx is:
 
+    - a Quantity: use blob as mode, data['ene'] as modelx
+    - a tuple: use first item as modelx, second as model
+    """
+
+    blob0=sampler.blobs[-1][0][modelidx]
+    if isinstance(blob0,u.Quantity):
+        # Energy array for blob is not provided, use data['ene']
+        modelx = sampler.data['ene']
+        has_ene = False
+
+        if last_step:
+            model=u.Quantity([m[modelidx] for m in sampler.blobs[-1]])
+        else:
+            nsteps=len(sampler.blobs)
+            model=[]
+            for step in sampler.blobs:
+                for walkerblob in step:
+                    model.append(walkerblob[modelidx])
+            model=u.Quantity(model)
+
+    elif len(blob0) == 2 and isinstance(blob0[0],u.Quantity) and isinstance(blob0[0],u.Quantity):
+        # Energy array for model is item 0 in blob, model flux is item 1
+        modelx = blob0[0]
+        has_ene=True
+
+        model_unit = blob0[1].unit
+        if last_step:
+            model=u.Quantity([m[modelidx][1] for m in sampler.blobs[-1]])
+        else:
+            nsteps=len(sampler.blobs)
+            model=[]
+            for step in sampler.blobs:
+                for walkerblob in step:
+                    model.append(walkerblob[modelidx][1])
+            model=u.Quantity(model)
+    else:
+        raise TypeError('Model {0} has wrong blob format'.format(modelidx))
+
+    return modelx, model
+
+def _get_model_pt(sampler,modelidx):
+    blob0=sampler.blobs[-1][0][modelidx]
+    if isinstance(blob0,u.Quantity):
+        pt = blob0.unit.physical_type
+    elif len(blob0) == 2:
+        pt = blob0[0][1].unit.physical_type
+    else:
+        raise TypeError('Model {0} has wrong blob format'.format(modelidx))
+
+    return pt
 
 def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
     """Calculate confidence interval.
     """
     from scipy import stats
 
-    model_unit = sampler.blobs[-1][0][modelidx][1].unit
-    if last_step:
-        model=np.array([m[modelidx][1].value for m in sampler.blobs[-1]])
-    else:
-        nsteps=len(sampler.blobs)
-        model=[]
-        for step in sampler.blobs:
-            for walkerblob in step:
-                model.append(walkerblob[modelidx][1].value)
-        model=np.array(model)
-
-    modelx=sampler.blobs[-1][0][modelidx][0]
+    modelx, model = _process_blob(sampler,modelidx,last_step=last_step)
 
     nwalkers=len(model)-1
     CI=[]
     for conf in confs:
         fmin=stats.norm.cdf(-conf)
         fmax=stats.norm.cdf(conf)
-        #print conf,fmin,fmax
         ymin,ymax=[],[]
         for fr,y in ((fmin,ymin),(fmax,ymax)):
             nf=int((fr*nwalkers))
-            # TODO: logger
-            #print conf,fr,nf
             for i,x in enumerate(modelx):
                 ysort=np.sort(model[:,i])
                 y.append(ysort[nf])
-        CI.append((np.array(ymin)*model_unit,np.array(ymax)*model_unit))
+
+        # create an array from lists ymin and ymax preserving units
+        CI.append((u.Quantity(ymin),u.Quantity(ymax)))
 
     return modelx,CI
 
@@ -211,23 +252,24 @@ def calc_CI(sampler,modelidx=0,confs=[3,1],last_step=True):
 u.def_physical_type(u.erg / u.cm ** 2 / u.s, 'flux')
 u.def_physical_type(u.Unit('1/(s cm2 erg)'), 'differential flux')
 u.def_physical_type(u.Unit('1/(s erg)'), 'differential power')
+u.def_physical_type(u.Unit('1/TeV'), 'differential energy')
 
-def _sed_conversion(energy,flux,sed):
+def _sed_conversion(energy,model_unit,sed):
     """
     Manage conversion between differential spectrum and SED
     """
 
-    model_pt = flux.unit.physical_type
+    model_pt = model_unit.physical_type
 
     ones = np.ones(energy.shape)
 
     if sed:
         # SED
         f_unit = u.Unit('erg/s')
-        if model_pt == 'power' or model_pt == 'flux':
+        if model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
             sedf = ones
         elif 'differential' in model_pt:
-            sedf = (energy**2).to('eV erg')
+            sedf = (energy**2)
         else:
             raise u.UnitsError('Model physical type ({0}) is not supported'.format(model_pt),
                     'Supported physical types are: power, flux, differential'
@@ -235,18 +277,22 @@ def _sed_conversion(energy,flux,sed):
 
         if 'flux' in model_pt:
             f_unit /= u.cm**2
+        elif 'energy' in model_pt:
+            # particle energy distributions
+            f_unit = u.erg
+
     elif sed is None:
-        # Use original units units
-        f_unit = flux.unit
+        # Use original units
+        f_unit = model_unit
         sedf = ones
     else:
         # Differential spectrum
         f_unit = u.Unit('1/(s TeV)')
-        if model_pt == 'power' or model_pt == 'flux':
-            # From SED to differential
-            sedf = 1/(energy**2).to('eV erg')
-        elif 'differential' in model_pt:
+        if 'differential' in model_pt:
             sedf = ones
+        elif model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
+            # From SED to differential
+            sedf = 1/(energy**2)
         else:
             raise u.UnitsError('Model physical type ({0}) is not supported'.format(model_pt),
                     'Supported physical types are: power, flux, differential'
@@ -254,6 +300,12 @@ def _sed_conversion(energy,flux,sed):
 
         if 'flux' in model_pt:
             f_unit /= u.cm**2
+        elif 'energy' in model_pt:
+            # particle energy distributions
+            f_unit = u.Unit('1/TeV')
+
+    log.debug('Converted from {0} ({1}) into {2} ({3}) for sed={4}'.format(model_unit,model_pt,
+        f_unit,f_unit.physical_type,sed))
 
     return f_unit,sedf
 
@@ -281,9 +333,8 @@ def plot_CI(ax, sampler, modelidx=0,sed=True,confs=[3,1,0.5],e_unit=u.eV,**kwarg
     """
 
     modelx,CI = calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
-    modely = sampler.blobs[-1][0][modelidx][1]
-
-    f_unit, sedf = _sed_conversion(modelx,modely,sed)
+    # pick first confidence interval curve for units
+    f_unit, sedf = _sed_conversion(modelx,CI[0][0].unit,sed)
 
     for (ymin,ymax),conf in zip(CI,confs):
         color=np.log(conf)/np.log(20)+0.4
@@ -303,14 +354,21 @@ def find_ML(sampler,modelidx):
     """
     index=np.unravel_index(np.argmax(sampler.lnprobability),sampler.lnprobability.shape)
     MLp=sampler.chain[index]
-    model_ML=sampler.blobs[index[1]][index[0]][modelidx][1]
+    blob=sampler.blobs[index[1]][index[0]][modelidx]
+    if isinstance(blob,u.Quantity):
+        modelx = sampler.data['ene'].copy()
+        model_ML = blob.copy()
+    elif len(blob) == 2:
+        modelx = blob[0].copy()
+        model_ML = blob[1].copy()
     MLvar=[np.std(dist) for dist in sampler.flatchain.T]
     ML=sampler.lnprobability[index]
 
-    return ML,MLp,MLvar,model_ML
+    return ML,MLp,MLvar,(modelx, model_ML)
 
 def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
-        sed=False,figure=None,residualCI=True,plotdata=None,**kwargs):
+        sed=False,figure=None,residualCI=True,plotdata=None,
+        e_unit=None,**kwargs):
     """
     Plot data with fit confidence regions.
 
@@ -335,12 +393,16 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
         `matplotlib` figure to plot on. If omitted a new one will be generated.
     residualCI : bool, optional
         Whether to plot the confidence interval bands in the residuals subplot.
+    plotdata : bool, optional
+        Wheter to plot data on top of model confidence intervals. Default is
+        True if the physical types of the data and the model match.
+    e_unit : :class:`~astropy.unit.Unit`
+        Units for the energy axis of the plot. The default is to use the units
+        of the energy array of the observed data.
 
     """
     import matplotlib.pyplot as plt
 
-    modelx=sampler.blobs[-1][0][modelidx][0]
-    modely=sampler.blobs[-1][0][modelidx][0]
     ML,MLp,MLvar,model_ML = find_ML(sampler,modelidx)
     infostr='Maximum log probability: {0:.3g}\n'.format(ML)
     infostr+='Maximum Likelihood values:\n'
@@ -351,15 +413,17 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
 
     data=sampler.data
 
+    plotresiduals = False
     if modelidx==0 and plotdata is None:
         plotdata=True
+        if confs is not None:
+            plotresiduals = True
     elif plotdata is None:
         plotdata=False
 
     if plotdata:
         # Check that physical types of data and model match
-        modely=sampler.blobs[-1][0][modelidx][1]
-        model_pt = modely.unit.physical_type
+        model_pt = _get_model_pt(sampler, modelidx)
         data_pt = data['flux'].unit.physical_type
         if data_pt != model_pt:
             log.warn('Model physical type ({0}) and spectral data physical'
@@ -371,7 +435,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
     else:
         f=figure
 
-    if plotdata:
+    if plotdata and plotresiduals:
         ax1=plt.subplot2grid((4,1),(0,0),rowspan=3)
         ax2=plt.subplot2grid((4,1),(3,0),sharex=ax1)
         for subp in [ax1,ax2]:
@@ -380,7 +444,8 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
         ax1=f.add_subplot(111)
 
     datacol='r'
-    e_unit=data['ene'].unit
+    if e_unit is None:
+        e_unit=data['ene'].unit
 
     if confs is not None:
         plot_CI(ax1,sampler,modelidx,sed=sed,confs=confs,e_unit=e_unit,**kwargs)
@@ -397,7 +462,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
                 color=datacol,elinewidth=2,capsize=5,zorder=10)
 
     if plotdata:
-        f_unit, sedf = _sed_conversion(data['ene'],data['flux'],sed)
+        f_unit, sedf = _sed_conversion(data['ene'],data['flux'].unit,sed)
 
         ul=data['ul']
         notul=-ul
@@ -414,68 +479,69 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
                     (data['flux'][ul]*sedf[ul]).to(f_unit).value,
                     (data['dene'][:,ul]).to(e_unit).value)
 
-        if len(model_ML)!=len(data['ene']):
-            from scipy.interpolate import interp1d
-            modelfunc=interp1d(modelx.to(e_unit).value,model_ML.value)
-            difference=data['flux'][notul].value-modelfunc(data['ene'][notul])
-            difference *= data['flux'].unit
-        else:
-            difference=data['flux'][notul]-model_ML[notul]
+        if plotresiduals:
+            if len(model_ML)!=len(data['ene']):
+                from scipy.interpolate import interp1d
+                modelfunc=interp1d(model_ML[0].to(e_unit).value,model_ML[1].value)
+                difference=data['flux'][notul].value-modelfunc(data['ene'][notul])
+                difference *= data['flux'].unit
+            else:
+                difference=data['flux'][notul]-model_ML[1][notul]
 
-        dflux=np.mean(data['dflux'][:,notul],axis=0)
-        ax2.errorbar(data['ene'][notul].to(e_unit).value,
-                (difference/dflux).decompose().value,
-                yerr=(dflux/dflux).decompose().value,
-                xerr=data['dene'][:,notul].to(e_unit).value,
-                zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
-                mec='w',mew=0,ms=6,color=datacol)
-        ax2.axhline(0,c='k',lw=2,ls='--')
+            dflux=np.mean(data['dflux'][:,notul],axis=0)
+            ax2.errorbar(data['ene'][notul].to(e_unit).value,
+                    (difference/dflux).decompose().value,
+                    yerr=(dflux/dflux).decompose().value,
+                    xerr=data['dene'][:,notul].to(e_unit).value,
+                    zorder=100,marker='o',ls='', elinewidth=2,capsize=0,
+                    mec='w',mew=0,ms=6,color=datacol)
+            ax2.axhline(0,c='k',lw=2,ls='--')
 
-        from matplotlib.ticker import MaxNLocator
-        ax2.yaxis.set_major_locator(MaxNLocator(integer='True',prune='upper'))
+            from matplotlib.ticker import MaxNLocator
+            ax2.yaxis.set_major_locator(MaxNLocator(integer='True',prune='upper'))
 
-        ax2.set_ylabel(r'$\Delta\sigma$')
+            ax2.set_ylabel(r'$\Delta\sigma$')
 
-        if len(model_ML)==len(data['ene']) and residualCI:
-            modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
+            if len(model_ML)==len(data['ene']) and residualCI:
+                modelx,CI=calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
 
-            for (ymin,ymax),conf in zip(CI,confs):
-                if conf<100:
-                    color=np.log(conf)/np.log(20)+0.4
-                    ax2.fill_between(modelx[notul].to(e_unit).value,
-                            ((ymax[notul]-model_ML[notul])/dflux).decompose().value,
-                            ((ymin[notul]-model_ML[notul])/dflux).decompose().value,
-                            lw=0., color='{0}'.format(color), alpha=0.6,zorder=-10)
-            #ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
-
-
-
+                for (ymin,ymax),conf in zip(CI,confs):
+                    if conf<100:
+                        color=np.log(conf)/np.log(20)+0.4
+                        ax2.fill_between(modelx[notul].to(e_unit).value,
+                                ((ymax[notul]-model_ML[1][notul])/dflux).decompose().value,
+                                ((ymin[notul]-model_ML[1][notul])/dflux).decompose().value,
+                                lw=0., color='{0}'.format(color), alpha=0.6,zorder=-10)
+                #ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
 
     ax1.set_xscale('log')
     ax1.set_yscale('log')
     if plotdata:
-        ax2.set_xscale('log')
-        for tl in ax1.get_xticklabels():
-            tl.set_visible(False)
+        if plotresiduals:
+            ax2.set_xscale('log')
+            for tl in ax1.get_xticklabels():
+                tl.set_visible(False)
         ax1.set_xlim(10**np.floor(np.log10(np.min(data['ene']-data['dene'][0]).value)),
                 10**np.ceil(np.log10(np.max(data['ene']+data['dene'][1]).value)))
     else:
-        ndecades=5
+        if sed:
+            ndecades=5
+        else:
+            ndecades=15
         # restrict y axis to ndecades to avoid autoscaling deep exponentials
         xmin,xmax,ymin,ymax=ax1.axis()
         ymin=max(ymin,ymax/10**ndecades)
         ax1.set_ylim(bottom=ymin)
         # scale x axis to largest model_ML x point within ndecades decades of
         # maximum
-        modelx = sampler.blobs[-1][0][modelidx][0]
-        modely = sampler.blobs[-1][0][modelidx][1]
-        f_unit, sedf = _sed_conversion(modelx,modely,sed)
-        hi=np.where((model_ML*sedf).to(f_unit).value>ymin)
-        xmax=np.max(modelx[hi])
+        f_unit, sedf = _sed_conversion(model_ML[0],model_ML[1].unit,sed)
+        hi=np.where((model_ML[1]*sedf).to(f_unit).value>ymin)
+        xmax=np.max(model_ML[0][hi])
         ax1.set_xlim(right=10**np.ceil(np.log10(xmax.to(e_unit).value)))
 
-
-    ax1.text(0.05,0.05,infostr,ha='left',va='bottom',transform=ax1.transAxes,family='monospace')
+    if confs is not None:
+        ax1.text(0.05,0.05,infostr,ha='left',va='bottom',
+                transform=ax1.transAxes,family='monospace')
 
     if ylabel is None:
         if sed:
@@ -485,7 +551,7 @@ def plot_fit(sampler,modelidx=0,xlabel=None,ylabel=None,confs=[3,1,0.5],
     else:
         ax1.set_ylabel(ylabel)
 
-    if plotdata:
+    if plotdata and plotresiduals:
         xlaxis = ax2
     else:
         xlaxis = ax1

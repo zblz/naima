@@ -19,9 +19,10 @@ try:
 except:
     HAS_EMCEE = False
 
-from ..utils import build_data_dict, generate_diagnostic_plots
-from ..core import run_sampler, uniform_prior
-from ..plot import plot_chain, plot_fit, plot_data
+import gammafit
+from gammafit.utils import build_data_dict, generate_diagnostic_plots
+from gammafit.core import run_sampler, uniform_prior
+from gammafit.plot import plot_chain, plot_fit, plot_data
 
 ## Read data
 specfile=six.StringIO(
@@ -83,7 +84,7 @@ def cutoffexp(pars,data):
         - 3: cutoff exponent (beta)
     """
 
-    x=data['ene']
+    x=data['ene'].copy()
     # take logarithmic mean of first and last data points as normalization energy
     x0=np.sqrt(x[0]*x[-1])
 
@@ -95,25 +96,25 @@ def cutoffexp(pars,data):
 
     flux = N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta) * u.Unit('1/(cm2 s TeV)')
 
-    models = []
-    # save a broken powerlaw in luminosity units
-    models.append( N*np.where(x<=x0,
-            (x/x0)**-(gamma-1),
-            (x/x0)**-gamma) * (x**2).to('erg TeV').value * u.Unit('erg/s') )
-
-    # save a model with no units to check that it is dealt with gracefully
-    models.append( 1e-10*np.ones(len(x)) )
-    # save a model with wrong length to check that it is dealt with gracefully
-    models.append( 1e-10*np.ones(len(x)*2) * u.Unit('erg/s') )
-
-    outlist = [(x,model) for model in models]
-
     # save a model with different energies than the data
     ene = np.logspace(np.log10(x[0].value)-1,np.log10(x[-1].value)+1,100) * x.unit
     model = N*(ene/x0)**-gamma*np.exp(-(ene/ecut)**beta) * u.Unit('1/(cm2 s TeV)')
 
-    return [flux, (x,flux), (ene, model),] + outlist
+    # save a broken powerlaw in luminosity units
+    _model1 = N*np.where(x<=x0,
+                (x/x0)**-(gamma-0.5),
+                (x/x0)**-(gamma+0.5)) * u.Unit('1/(cm2 s TeV)')
 
+    model1 = (_model1 * (x**2) * 4*np.pi*(2*u.kpc)**2).to('erg/s')
+
+    # save a model with no units to check that it is dealt with gracefully
+    model2 = 1e-10*np.ones(len(x))
+    # save a model with wrong length to check that it is dealt with gracefully
+    model3 = 1e-10*np.ones(len(x)*2) * u.Unit('erg/s')
+
+    # save flux model as tuple with energies and without
+
+    return flux, flux, (x,flux), (ene, model), model1, model2, model3, (x, model3)
 
 ## Prior definition
 

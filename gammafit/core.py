@@ -70,7 +70,7 @@ def lnprob(pars,data,modelfunc,priorfunc):
             blob  = modelout[1:]
         else:
             model = modelout
-            blob  = ((data['ene'],modelout),)
+            blob  = (modelout, )
 
         lnprob_model = lnprobmodel(model,data)
     else:
