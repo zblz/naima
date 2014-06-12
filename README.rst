@@ -25,11 +25,14 @@ enter directory ``gammafit``, and run
 
     python setup.py install --user
 
-.. image:: https://travis-ci.org/zblz/gammafit.svg?branch=master
-    :target: https://travis-ci.org/zblz/gammafit
 
-.. image:: https://coveralls.io/repos/zblz/gammafit/badge.png 
-    :target: https://coveralls.io/r/zblz/gammafit
+Code status: |travis| |coveralls|
+
+.. |travis| image:: http://img.shields.io/travis/zblz/gammafit.svg?style=flat
+   :target: https://travis-ci.org/zblz/gammafit
+
+.. |coveralls| image:: http://img.shields.io/coveralls/zblz/gammafit.svg?style=flat 
+   :target: https://coveralls.io/r/zblz/gammafit
 
 
 Usage
