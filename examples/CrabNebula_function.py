@@ -19,8 +19,8 @@ data=gammafit.build_data_dict(ene,None,flux,dflux)
 
 ## Set initial parameters
 
-p0=np.array((1.5e-12,2.4,15.0,))
-labels=['norm','index','cutoff']
+p0=np.array((1.5e-12,2.4,np.log(15.0),))
+labels=['norm','index','log(cutoff)']
 
 ## Model definition
 
@@ -31,8 +31,7 @@ def cutoffexp(pars,data):
     Parameters:
         - 0: PL normalization
         - 1: PL index
-        - 2: cutoff energy
-        - 3: cutoff exponent (beta)
+        - 2: log(cutoff energy)
     """
 
     ene=data['ene']
@@ -42,7 +41,7 @@ def cutoffexp(pars,data):
 
     N     = pars[0]
     gamma = pars[1]
-    ecut  = pars[2]*u.TeV
+    ecut  = np.exp(pars[2])*u.TeV
 
     return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut)) * flux_unit
 
@@ -55,8 +54,7 @@ def lnprior(pars):
 	"""
 
 	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
-            + gammafit.uniform_prior(pars[1],-1,5) \
-            + gammafit.uniform_prior(pars[2],0.,np.inf)
+            + gammafit.uniform_prior(pars[1],-1,5)
 
 	return logprob
 

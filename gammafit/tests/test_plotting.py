@@ -81,7 +81,7 @@ def cutoffexp(pars, data):
     Parameters:
         - 0: PL normalization
         - 1: PL index
-        - 2: cutoff energy
+        - 2: log10(cutoff energy)
         - 3: cutoff exponent (beta)
     """
 
@@ -92,7 +92,7 @@ def cutoffexp(pars, data):
 
     N = pars[0]
     gamma = pars[1]
-    ecut = pars[2] * u.TeV
+    ecut = (10**pars[2]) * u.TeV
     # beta  = pars[3]
     beta = 1.
 
@@ -100,16 +100,16 @@ def cutoffexp(pars, data):
         -(x / ecut) ** beta) * u.Unit('1/(cm2 s TeV)')
 
     # save a model with different energies than the data
-    ene = np.logspace(
-        np.log10(x[0].value) - 1, np.log10(x[-1].value) + 1, 100) * x.unit
-    model = N * (ene / x0) ** -gamma * np.exp(
-        -(ene / ecut) ** beta) * u.Unit('1/(cm2 s TeV)')
+    ene = np.logspace(np.log10(x[0].value) - 1,
+                      np.log10(x[-1].value) + 1, 100) * x.unit
+    model = (N * (ene / x0) ** -gamma *
+             np.exp(-(ene / ecut) ** beta)) * u.Unit('1/(cm2 s TeV)')
 
     # save a particle energy distribution
-    ene_part = np.logspace(
-        np.log10(x[0].value) - 1, np.log10(x[-1].value) + 1, 100) * x.unit
-    model_part = N * (ene / x0) ** -gamma * np.exp(
-        -(ene / ecut) ** beta) * u.Unit('1/(TeV)')
+    ene_part = np.logspace(np.log10(x[0].value) - 1,
+                           np.log10(x[-1].value) + 1, 100) * x.unit
+    model_part = (N * (ene / x0) ** -gamma *
+                  np.exp(-(ene / ecut) ** beta)) * u.Unit('1/(TeV)')
 
     # save a broken powerlaw in luminosity units
     _model1 = N * np.where(x <= x0,
@@ -137,14 +137,13 @@ def lnprior(pars):
     """
 
     logprob = uniform_prior(pars[0], 0., np.inf) \
-        + uniform_prior(pars[1], -1, 5) \
-        + uniform_prior(pars[2], 0., np.inf)
+        + uniform_prior(pars[1], -1, 5)
 
     return logprob
 
 # Set initial parameters
 
-p0 = np.array((1e-9, 1.4, 14.0,))
+p0 = np.array((1e-9, 1.4, np.log10(14.0),))
 labels = ['norm', 'index', 'cutoff', 'beta']
 
 # Run sampler

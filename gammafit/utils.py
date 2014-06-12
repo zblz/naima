@@ -135,7 +135,10 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
         if pdf:
             f.savefig(outpdf, format='pdf')
         else:
+            if 'log(' in label or 'log10(' in label:
+                label = label.split('(')[-1].split(')')[0]
             f.savefig('{0}_chain_{1}.png'.format(outname, label))
+        del f
 
     # Corner plot
 
@@ -151,6 +154,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
             f.savefig(outpdf, format='pdf')
         else:
             f.savefig('{0}_corner.png'.format(outname))
+        del f
     except ImportError:
         print('triangle_plot not installed, corner plot not available')
 
@@ -195,6 +199,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
             f.savefig(outpdf, format='pdf')
         else:
             f.savefig('{0}_fit_model{1}.png'.format(outname, modelidx))
+        del f
 
     if pdf:
         outpdf.close()

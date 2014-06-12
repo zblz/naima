@@ -37,6 +37,15 @@ def plot_chain(sampler, p=None, **kwargs):
 
     return fig
 
+def _latex_float(f,format=".3g"):
+    """ http://stackoverflow.com/a/13490601
+    """
+    float_str = "{{0:{0}}}".format(format).format(f)
+    if "e" in float_str:
+        base, exponent = float_str.split("e")
+        return r"{0}\times 10^{{{1}}}".format(base, int(exponent))
+    else:
+        return float_str
 
 def _plot_chain_func(chain, p, label, last_step=False):
     import matplotlib.pyplot as plt
@@ -144,13 +153,35 @@ def _plot_chain_func(chain, p, label, last_step=False):
             'Autocorrelation time: {0:.1f}'.format(acort) + '\n' +\
             'Gelman-Rubin statistic: {0:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
             'Distribution properties for the {clen}:\n \
-    - median: {median:.3g} \n \
-    - std: {std:.3g} \n' .format(mean=mean, median=quantiles[0.5], std=std, clen=clen) +\
+    - median: {median} \n \
+    - std: {std} \n' .format(median=_latex_float(quantiles[0.5]), std=_latex_float(std), clen=clen) +\
 '     - Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n \n\
-          {label} = ${{{median:.3g}}}^{{+{uncs[1]:.3g}}}_{{-{uncs[0]:.3g}}}$'.format(
-                  label=label, median=quantiles[0.5], uncs=(quantiles[0.5] - quantiles[0.16],
-                      quantiles[0.84] - quantiles[0.5]), clen=clen, mode=mode,)
+          {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
+                  label=label, median=_latex_float(quantiles[0.5]),
+                  uncs=(_latex_float(quantiles[0.5] - quantiles[0.16]),
+                        _latex_float(quantiles[0.84] - quantiles[0.5])), clen=clen, mode=mode,)
+
+    if 'log10(' in label or 'log(' in label:
+        nlabel = label.split('(')[-1].split(')')[0]
+        ltype = label.split('(')[0]
+        if ltype == 'log10':
+            new_dist = 10**dist
+        elif ltype == 'log':
+            new_dist = np.exp(dist)
+
+        ns = len(new_dist)
+        quant = [0.16, 0.5, 0.84]
+        sdist = np.sort(new_dist)
+        xquant = [sdist[int(q*ns)] for q in quant]
+        quantiles = dict(six.moves.zip(quant, xquant))
+
+        chain_props +='\n\
+          {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
+                    label=nlabel, median=_latex_float(quantiles[0.5]),
+                    uncs=(_latex_float(quantiles[0.5] - quantiles[0.16]),
+                          _latex_float(quantiles[0.84] - quantiles[0.5])))
+
 
     log.info('\n {0:-^50}\n'.format(label) + chain_props)
     f.text(0.05, 0.45, chain_props, ha='left', va='top')
@@ -381,7 +412,7 @@ def find_ML(sampler, modelidx):
 
     return ML, MLp, MLvar, (modelx, model_ML)
 
-def _to_latex(unit):
+def _latex_unit(unit):
     """ Hack to get a single line latex representation of a unit
     """
     l=unit.to_string('cds').split('.')
@@ -586,10 +617,10 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     if ylabel is None:
         if sed:
             ax1.set_ylabel(r'$E^2\mathsf{{d}}N/\mathsf{{d}}E$'
-                ' [{0}]'.format(_to_latex(u.Unit(f_unit))))
+                ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
         else:
             ax1.set_ylabel(r'$\mathsf{{d}}N/\mathsf{{d}}E$'
-                    ' [{0}]'.format(_to_latex(u.Unit(f_unit))))
+                    ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
     else:
         ax1.set_ylabel(ylabel)
 
@@ -599,7 +630,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         xlaxis = ax1
 
     if xlabel is None:
-        xlaxis.set_xlabel('Energy [{0}]'.format(_to_latex(e_unit)))
+        xlaxis.set_xlabel('Energy [{0}]'.format(_latex_unit(e_unit)))
     else:
         xlaxis.set_xlabel(xlabel)
 
