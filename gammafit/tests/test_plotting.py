@@ -144,7 +144,7 @@ def lnprior(pars):
 # Set initial parameters
 
 p0 = np.array((1e-9, 1.4, np.log10(14.0),))
-labels = ['norm', 'index', 'cutoff', 'beta']
+labels = ['norm', 'index', 'log10(cutoff)',]
 
 # Run sampler
 
