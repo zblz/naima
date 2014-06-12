@@ -145,7 +145,8 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
 
         ML, MLp, MLvar, model_ML = find_ML(sampler, 0)
         f = corner(sampler.flatchain, labels=sampler.labels,
-                   truths=MLp, quantiles=[0.16, 0.5, 0.84], verbose=False, **kwargs)
+                   truths=MLp, quantiles=[0.16, 0.5, 0.84],
+                   verbose=False, **kwargs)
         if pdf:
             f.savefig(outpdf, format='pdf')
         else:

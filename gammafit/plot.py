@@ -40,6 +40,9 @@ def plot_chain(sampler, p=None, **kwargs):
 
 def _plot_chain_func(chain, p, label, last_step=False):
     import matplotlib.pyplot as plt
+    # Plot everything in serif to match math exponents
+    plt.rc('font',family='serif')
+
     from scipy import stats
     if len(chain.shape) > 2:
         traces = chain[:,:, p]
@@ -65,6 +68,8 @@ def _plot_chain_func(chain, p, label, last_step=False):
     ax1 = f.add_subplot(221)
     ax2 = f.add_subplot(122)
 
+    f.subplots_adjust(left=0.1,bottom=0.15,right=0.95,top=0.9)
+
 # plot five percent of the traces darker
 
     colors = np.where(np.arange(nwalkers)/float(nwalkers) > 0.95, '#550000', '0.5')
@@ -73,7 +78,9 @@ def _plot_chain_func(chain, p, label, last_step=False):
     for t, c in zip(traces, colors):  # range(nwalkers):
         ax1.plot(t, c=c, lw=1, alpha=0.9, zorder=0)
     ax1.set_xlabel('step number')
+    #[l.set_rotation(45) for l in ax1.get_yticklabels()]
     ax1.set_ylabel(label)
+    ax1.yaxis.set_label_coords(-0.15, 0.5)
     ax1.set_title('Walker traces')
     if logplot:
         ax1.set_yscale('log')
@@ -98,7 +105,10 @@ def _plot_chain_func(chain, p, label, last_step=False):
     ax2.axvspan(xquant[quant.index(0.16)], xquant[
                 quant.index(0.84)], color='0.5', alpha=0.25, label='68% CI')
     # ax2.legend()
+    [l.set_rotation(45) for l in ax2.get_xticklabels()]
+    #[l.set_rotation(45) for l in ax2.get_yticklabels()]
     ax2.set_xlabel(xlabel)
+    ax2.xaxis.set_label_coords(0.5, -0.1)
     ax2.set_title('posterior distribution')
     ax2.set_ylim(top=n.max() * 1.05)
 
@@ -134,19 +144,13 @@ def _plot_chain_func(chain, p, label, last_step=False):
             'Autocorrelation time: {0:.1f}'.format(acort) + '\n' +\
             'Gelman-Rubin statistic: {0:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
             'Distribution properties for the {clen}:\n \
-    - mode: {mode:.3g} \n \
-    - mean: {mean:.3g} \n \
     - median: {median:.3g} \n \
-    - std: {std:.3g} \n \
-    - 68% CI: ({quant16:.3g},{quant84:.3g})\n \
-    - 99% CI: ({quant01:.3g},{quant99:.3g})\n \
-    - mean +/- std CI: ({meanstd[0]:.3g},{meanstd[1]:.3g})\n'.format(
-                mean=mean, median=median, std=std,
-                quant01=quantiles[0.01],
-                quant16=quantiles[0.16],
-                quant84=quantiles[0.84],
-                quant99=quantiles[0.99],
-                meanstd=(mean - std, mean+std), clen=clen, mode=mode,)
+    - std: {std:.3g} \n' .format(mean=mean, median=quantiles[0.5], std=std, clen=clen) +\
+'     - Median with uncertainties based on \n \
+      the 16th and 84th percentiles ($\sim$1$\sigma$):\n \n\
+          {label} = ${{{median:.3g}}}^{{+{uncs[1]:.3g}}}_{{-{uncs[0]:.3g}}}$'.format(
+                  label=label, median=quantiles[0.5], uncs=(quantiles[0.5] - quantiles[0.16],
+                      quantiles[0.84] - quantiles[0.5]), clen=clen, mode=mode,)
 
     log.info('\n {0:-^50}\n'.format(label) + chain_props)
     f.text(0.05, 0.45, chain_props, ha='left', va='top')
@@ -377,6 +381,24 @@ def find_ML(sampler, modelidx):
 
     return ML, MLp, MLvar, (modelx, model_ML)
 
+def _to_latex(unit):
+    """ Hack to get a single line latex representation of a unit
+    """
+    l=unit.to_string('cds').split('.')
+    out=u''
+    for uni in l:
+        try:
+            int(uni[-1])
+            if uni[-2] == '-':
+                out +=u' {0}$^{{{1}}}$'.format(uni[:-2],uni[-2:])
+            else:
+                out +=u' {0}$^{1}$'.format(uni[:-1],uni[-1:])
+        except ValueError:
+            out +=' '+uni
+
+    return out[1:]
+
+
 def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         sed=False, figure=None,residualCI=True,plotdata=None,
         e_unit=None, **kwargs):
@@ -413,6 +435,9 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
 
     """
     import matplotlib.pyplot as plt
+
+    # Plot everything in serif to match math exponents
+    plt.rc('font',family='serif')
 
     ML, MLp, MLvar, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
@@ -560,11 +585,11 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
 
     if ylabel is None:
         if sed:
-            ax1.set_ylabel(
-                r'$E^2\mathrm{{d}}N/\mathrm{{d}}E$ [{{{0}}}]'.format(u.Unit(f_unit)))
+            ax1.set_ylabel(r'$E^2\mathsf{{d}}N/\mathsf{{d}}E$'
+                ' [{0}]'.format(_to_latex(u.Unit(f_unit))))
         else:
-            ax1.set_ylabel(
-                r'$\mathrm{{d}}N/\mathrm{{d}}E$ [{{{0}}}]'.format(u.Unit(f_unit)))
+            ax1.set_ylabel(r'$\mathsf{{d}}N/\mathsf{{d}}E$'
+                    ' [{0}]'.format(_to_latex(u.Unit(f_unit))))
     else:
         ax1.set_ylabel(ylabel)
 
@@ -574,7 +599,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         xlaxis = ax1
 
     if xlabel is None:
-        xlaxis.set_xlabel('Energy [{0}]'.format(e_unit))
+        xlaxis.set_xlabel('Energy [{0}]'.format(_to_latex(e_unit)))
     else:
         xlaxis.set_xlabel(xlabel)
 
