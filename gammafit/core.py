@@ -68,7 +68,8 @@ def lnprob(pars, data, modelfunc, priorfunc):
         modelout = modelfunc(pars, data)
 
         # Save blobs or save model if no blobs given
-        if (type(modelout) == tuple or type(modelout) == list) and (type(modelout) != np.ndarray):
+        if ((type(modelout) == tuple or type(modelout) == list)
+                and (type(modelout) != np.ndarray)):
             # print len(modelout)
             model = modelout[0]
             blob = modelout[1:]
@@ -92,19 +93,22 @@ def _run_mcmc(sampler, pos, nrun):
     for i, out in enumerate(sampler.sample(pos, iterations=nrun)):
         progress = (100. * float(i) / float(nrun))
         if progress % 5 < (5. / float(nrun)):
-            print(
-                "\nProgress of the run: {0:.0f} percent ({1} of {2} steps)".format(int(progress), i, nrun))
+            print("\nProgress of the run: {0:.0f} percent"
+                  " ({1} of {2} steps)".format(int(progress), i, nrun))
             npars = out[0].shape[-1]
             paravg, parstd = [], []
             for npar in range(npars):
                 paravg.append(np.average(out[0][:, npar]))
                 parstd.append(np.std(out[0][:, npar]))
             print("                            " +
-                  (" ".join(["{%i:-^10}" % i for i in range(npars)])).format(*sampler.labels))
+                  (" ".join(["{%i:-^10}" % i for i in range(npars)])
+                   ).format(*sampler.labels))
             print("  Last ensemble average : " +
-                  (" ".join(["{%i:^10.3g}" % i for i in range(npars)])).format(*paravg))
+                  (" ".join(["{%i:^10.3g}" % i for i in range(npars)])
+                   ).format(*paravg))
             print("  Last ensemble std     : " +
-                  (" ".join(["{%i:^10.3g}" % i for i in range(npars)])).format(*parstd))
+                  (" ".join(["{%i:^10.3g}" % i for i in range(npars)])
+                   ).format(*parstd))
             print("  Last ensemble lnprob  :  avg: {0:.3f}, max: {1:.3f}".format(
                 np.average(out[1]), np.max(out[1])))
     return sampler, out[0]
@@ -147,7 +151,8 @@ def get_sampler(data=None, p0=None, model=None, prior=None,
     threads : int, optional
         Number of threads to use for sampling. Default is 4.
     guess : bool, optional
-        Whether to attempt to guess the normalization (first) parameter of the model. Default is True.
+        Whether to attempt to guess the normalization (first) parameter of the
+        model. Default is True.
 
     Returns
     -------
@@ -162,16 +167,16 @@ def get_sampler(data=None, p0=None, model=None, prior=None,
     """
     import emcee
 
-    if data == None:
+    if data is None:
         log.warn('Data dictionary is missing!')
         raise TypeError
 
-    if model == None:
+    if model is None:
         log.warn('Model function is missing!')
         raise TypeError
 
     # Add parameter labels if not provided or too short
-    if labels == None:
+    if labels is None:
         # First is normalization
         labels = ['norm', ] + ['par{0}'.format(i) for i in range(1, len(p0))]
     elif len(labels) < len(p0):
@@ -180,7 +185,8 @@ def get_sampler(data=None, p0=None, model=None, prior=None,
     if guess:
         # guess normalization parameter from p0
         modelout = model(p0, data)
-        if (type(modelout) == tuple or type(modelout) == list) and (type(modelout) != np.ndarray):
+        if ((type(modelout) == tuple or type(modelout) == list)
+                and (type(modelout) != np.ndarray)):
             spec = modelout[0]
         else:
             spec = modelout
@@ -190,7 +196,7 @@ def get_sampler(data=None, p0=None, model=None, prior=None,
     ndim = len(p0)
 
     sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
-            args=[data, model, prior], threads=threads)
+                                    args=[data, model, prior], threads=threads)
 
     # Add data and parameters properties to sampler
     sampler.data = data
@@ -236,7 +242,7 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
         List of final position vectors after the run.
     """
 
-    if sampler == None or pos == None:
+    if sampler is None or pos is None:
         sampler, pos = get_sampler(**kwargs)
 
     print('\nWalker burn in finished, running {0} steps...'.format(nrun))

@@ -514,7 +514,8 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
             ax2.set_ylabel(r'$\Delta\sigma$')
 
             if len(model_ML) == len(data['ene']) and residualCI:
-                modelx, CI = calc_CI(sampler,modelidx=modelidx,confs=confs,**kwargs)
+                modelx, CI = calc_CI(sampler, modelidx=modelidx,
+                                     confs=confs, **kwargs)
 
                 for (ymin, ymax), conf in zip(CI, confs):
                     if conf < 100:
