@@ -13,9 +13,9 @@ try:
 except ImportError:
     HAS_EMCEE = False
 
-## Read data
-specfile=six.StringIO(
-"""
+# Read data
+specfile = six.StringIO(
+    """
 # Crab Nebula spectrum measured by HESS taken from table 5 of
 # Aharonian et al. 2006, A&A 457, 899
 # ADS bibcode: 2006A&A...457..899A
@@ -44,28 +44,29 @@ specfile=six.StringIO(
 30.5   4     2.9   9.58e-16  5.60e-16  4.25e-16
 50.0   4     2.9   3.00e-15  0.00      0.00
 """)
-spec=np.loadtxt(specfile)
+spec = np.loadtxt(specfile)
 specfile.close()
 
-ene=spec[:,0]*u.TeV
-flux=spec[:,3]*u.Unit('1/(cm2 s TeV)')
-merr=spec[:,4]
-perr=spec[:,5]
-dflux=np.array((merr,perr))*u.Unit('1/(cm2 s TeV)')
-ul = merr==0.0
+ene = spec[:, 0] * u.TeV
+flux = spec[:, 3] * u.Unit('1/(cm2 s TeV)')
+merr = spec[:, 4]
+perr = spec[:, 5]
+dflux = np.array((merr, perr)) * u.Unit('1/(cm2 s TeV)')
+ul = merr == 0.0
 
-data=build_data_dict(ene,None,flux,dflux,ul=ul,cl=0.9)
+data = build_data_dict(ene, None, flux, dflux, ul=ul, cl=0.9)
 
 # build data dict with symmetric errors
-dflux2 = np.mean(dflux,axis=0)
-data2=build_data_dict(ene,None,flux,dflux2,ul=ul,cl=0.9)
+dflux2 = np.mean(dflux, axis=0)
+data2 = build_data_dict(ene, None, flux, dflux2, ul=ul, cl=0.9)
+
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_function_sampler():
 
-## Model definition
+# Model definition
 
-    def cutoffexp(pars,data):
+    def cutoffexp(pars, data):
         """
         Powerlaw with exponential cutoff
 
@@ -76,19 +77,20 @@ def test_function_sampler():
             - 3: cutoff exponent (beta)
         """
 
-        x=data['ene']
-        # take logarithmic mean of first and last data points as normalization energy
-        x0=np.sqrt(x[0]*x[-1])
+        x = data['ene']
+        # take logarithmic mean of first and last data points as normalization
+        # energy
+        x0 = np.sqrt(x[0] * x[-1])
 
-        N     = pars[0]
+        N = pars[0]
         gamma = pars[1]
-        ecut  = pars[2]*u.TeV
-        #beta  = pars[3]
-        beta  = 1.
+        ecut = pars[2] * u.TeV
+        # beta  = pars[3]
+        beta = 1.
 
-        return N*(x/x0)**-gamma*np.exp(-(x/ecut)**beta) * u.Unit('1/(cm2 s TeV)')
+        return N * (x / x0) ** -gamma * np.exp(-(x / ecut) ** beta) * u.Unit('1/(cm2 s TeV)')
 
-## Prior definition
+# Prior definition
 
     def lnprior(pars):
         """
@@ -96,48 +98,53 @@ def test_function_sampler():
         Parameter limits should be done here through uniform prior ditributions
         """
 
-        logprob = uniform_prior(pars[0],0.,np.inf) \
-                + normal_prior(pars[1],1.4,0.5) \
-                + uniform_prior(pars[2],0.,np.inf)
+        logprob = uniform_prior(pars[0], 0., np.inf) \
+            + normal_prior(pars[1], 1.4, 0.5) \
+            + uniform_prior(pars[2], 0., np.inf)
 
         return logprob
 
-## Set initial parameters
+# Set initial parameters
 
-    p0=np.array((1e-9,1.4,14.0,))
-    labels=['norm','index','cutoff','beta']
+    p0 = np.array((1e-9, 1.4, 14.0,))
+    labels = ['norm', 'index', 'cutoff', 'beta']
 
-## Initialize in different ways to test argument validation
+# Initialize in different ways to test argument validation
 
-    sampler,pos = get_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-            prior=lnprior, nwalkers=10, nburn=0, threads=1)
+    sampler, pos = get_sampler(
+        data=data, p0=p0, labels=labels, model=cutoffexp,
+        prior=lnprior, nwalkers=10, nburn=0, threads=1)
 
-    sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-            prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
+    sampler, pos = run_sampler(
+        data=data, p0=p0, labels=labels, model=cutoffexp,
+        prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
 
     # symmetric data errors
-    sampler,pos = run_sampler(data=data2, p0=p0, labels=labels, model=cutoffexp,
-            prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
+    sampler, pos = run_sampler(
+        data=data2, p0=p0, labels=labels, model=cutoffexp,
+        prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
 
     # labels
-    sampler,pos = run_sampler(data=data, p0=p0, labels=None, model=cutoffexp,
-            prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
-    sampler,pos = run_sampler(data=data, p0=p0, labels=labels[:2], model=cutoffexp,
-            prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
+    sampler, pos = run_sampler(data=data, p0=p0, labels=None, model=cutoffexp,
+                               prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
+    sampler, pos = run_sampler(
+        data=data, p0=p0, labels=labels[:2], model=cutoffexp,
+        prior=lnprior, nwalkers=10, nrun=2, nburn=0, threads=1)
 
     # no prior
-    sampler,pos = run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-            prior=None, nwalkers=10, nrun=2, nburn=0, threads=1)
+    sampler, pos = run_sampler(
+        data=data, p0=p0, labels=labels, model=cutoffexp,
+        prior=None, nwalkers=10, nrun=2, nburn=0, threads=1)
 
     # test exception raised when no model or data are provided
     try:
-        sampler,pos = get_sampler(data=data, p0=p0, labels=labels,
-                prior=lnprior, nwalkers=10, nburn=0, threads=1)
+        sampler, pos = get_sampler(data=data, p0=p0, labels=labels,
+                                   prior=lnprior, nwalkers=10, nburn=0, threads=1)
     except TypeError:
         pass
 
     try:
-        sampler,pos = get_sampler(p0=p0, labels=labels, model=cutoffexp,
-                prior=lnprior, nwalkers=10, nburn=0, threads=1)
+        sampler, pos = get_sampler(p0=p0, labels=labels, model=cutoffexp,
+                                   prior=lnprior, nwalkers=10, nburn=0, threads=1)
     except TypeError:
         pass

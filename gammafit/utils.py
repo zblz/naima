@@ -9,9 +9,11 @@ from astropy import log
 
 from .plot import plot_fit, plot_chain
 
-__all__ = ["generate_energy_edges","build_data_dict","generate_diagnostic_plots"]
+__all__ = ["generate_energy_edges",
+           "build_data_dict", "generate_diagnostic_plots"]
 
-## Convenience tools
+# Convenience tools
+
 
 def generate_energy_edges(ene):
     """Generate energy bin edges from given energy array.
@@ -31,15 +33,16 @@ def generate_energy_edges(ene):
         Array of energy edge pairs corresponding to each given energy of the
         input array.
     """
-    midene=np.sqrt((ene[1:]*ene[:-1]))
-    elo,ehi=np.zeros_like(ene),np.zeros_like(ene)
-    elo[1:]=ene[1:]-midene
-    ehi[:-1]=midene-ene[:-1]
-    elo[0]=ehi[0]
-    ehi[-1]=elo[-1]
-    return np.array((elo,ehi))*ene.unit
+    midene = np.sqrt((ene[1:] * ene[:-1]))
+    elo, ehi = np.zeros_like(ene), np.zeros_like(ene)
+    elo[1:] = ene[1:] - midene
+    ehi[:-1] = midene - ene[:-1]
+    elo[0] = ehi[0]
+    ehi[-1] = elo[-1]
+    return np.array((elo, ehi)) * ene.unit
 
-def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
+
+def build_data_dict(ene, dene, flux, dflux, ul=None, cl=0.99):
     """
     Read data into data dict.
 
@@ -73,21 +76,22 @@ def build_data_dict(ene,dene,flux,dflux,ul=None,cl=0.99):
     data : dict
         Data stored in a `dict`.
     """
-    if ul==None:
-        ul=np.array((False,)*len(ene))
+    if ul == None:
+        ul = np.array((False,) * len(ene))
 
-    if dene==None:
-        dene=generate_energy_edges(ene)
+    if dene == None:
+        dene = generate_energy_edges(ene)
 
     # data is a dict with the fields:
     # ene dene flux dflux ul cl
-    data={}
+    data = {}
     for val in ['ene', 'dene', 'flux', 'dflux', 'ul', 'cl']:
-        data[val]=eval(val)
+        data[val] = eval(val)
 
     return data
 
-def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,sed=None,**kwargs):
+
+def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None, **kwargs):
     """
     Generate diagnostic plots.
 
@@ -118,75 +122,78 @@ def generate_diagnostic_plots(outname,sampler,modelidxs=None,pdf=False,sed=None,
 
     if pdf:
         from matplotlib import pyplot as plt
-        plt.rc('pdf',fonttype = 42)
-        print('Generating diagnostic plots in file {0}_plots.pdf'.format(outname))
+        plt.rc('pdf', fonttype=42)
+        print(
+            'Generating diagnostic plots in file {0}_plots.pdf'.format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
-        outpdf=PdfPages('{0}_plots.pdf'.format(outname))
+        outpdf = PdfPages('{0}_plots.pdf'.format(outname))
 
-    ## Chains
+    # Chains
 
-    for par,label in zip(six.moves.range(sampler.chain.shape[-1]),sampler.labels):
-        f = plot_chain(sampler,par,**kwargs)
+    for par, label in zip(six.moves.range(sampler.chain.shape[-1]), sampler.labels):
+        f = plot_chain(sampler, par, **kwargs)
         if pdf:
-            f.savefig(outpdf,format='pdf')
+            f.savefig(outpdf, format='pdf')
         else:
-            f.savefig('{0}_chain_{1}.png'.format(outname,label))
+            f.savefig('{0}_chain_{1}.png'.format(outname, label))
 
-    ## Corner plot
+    # Corner plot
 
     try:
         from triangle import corner
         from .plot import find_ML
 
-        ML,MLp,MLvar,model_ML = find_ML(sampler,0)
-        f = corner(sampler.flatchain,labels=sampler.labels,
-                truths=MLp,quantiles=[0.16,0.5,0.84],verbose=False,**kwargs)
+        ML, MLp, MLvar, model_ML = find_ML(sampler, 0)
+        f = corner(sampler.flatchain, labels=sampler.labels,
+                   truths=MLp, quantiles=[0.16, 0.5, 0.84], verbose=False, **kwargs)
         if pdf:
-            f.savefig(outpdf,format='pdf')
+            f.savefig(outpdf, format='pdf')
         else:
             f.savefig('{0}_corner.png'.format(outname))
     except ImportError:
         print('triangle_plot not installed, corner plot not available')
 
-    ## Fit
+    # Fit
 
     if modelidxs is None:
-        nmodels=len(sampler.blobs[-1][0])
-        modelidxs=list(range(nmodels))
+        nmodels = len(sampler.blobs[-1][0])
+        modelidxs = list(range(nmodels))
 
     if sed is None:
-        sed=[None for idx in modelidxs]
+        sed = [None for idx in modelidxs]
     elif isinstance(sed, bool):
-        sed=[sed for idx in modelidxs]
+        sed = [sed for idx in modelidxs]
 
-    for modelidx,plot_sed in zip(modelidxs,sed):
+    for modelidx, plot_sed in zip(modelidxs, sed):
         try:
-            blob0=sampler.blobs[-1][0][modelidx]
-            if isinstance(blob0,u.Quantity):
+            blob0 = sampler.blobs[-1][0][modelidx]
+            if isinstance(blob0, u.Quantity):
                 modelx = sampler.data['ene']
                 modely = blob0
             elif len(blob0) == 2:
-                modelx=blob0[0]
-                modely=blob0[1]
+                modelx = blob0[0]
+                modely = blob0[1]
             else:
                 raise TypeError
-            assert(len(modelx)==len(modely))
-        except ( TypeError, AssertionError ):
-            log.warn('Not plotting model {0} because of wrong blob format'.format(modelidx))
+            assert(len(modelx) == len(modely))
+        except (TypeError, AssertionError):
+            log.warn(
+                'Not plotting model {0} because of wrong blob format'.format(modelidx))
             continue
 
         try:
             e_unit = modelx.unit
             f_unit = modely.unit
         except AttributeError:
-            log.warn('Not plotting model {0} because of lack of units'.format(modelidx))
+            log.warn(
+                'Not plotting model {0} because of lack of units'.format(modelidx))
             continue
 
         f = plot_fit(sampler, modelidx=modelidx, sed=plot_sed, **kwargs)
         if pdf:
-            f.savefig(outpdf,format='pdf')
+            f.savefig(outpdf, format='pdf')
         else:
-            f.savefig('{0}_fit_model{1}.png'.format(outname,modelidx))
+            f.savefig('{0}_fit_model{1}.png'.format(outname, modelidx))
 
     if pdf:
         outpdf.close()
