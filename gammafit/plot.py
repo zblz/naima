@@ -534,9 +534,15 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         ul = data['ul']
         notul = -ul
 
+        # Hack to show y errors compatible with 0 in loglog plot
+        yerr = data['dflux'][:, notul]
+        y = data['flux'][notul].to(yerr.unit)
+        bad_err = np.where((y-yerr[0])<=0.)
+        yerr[0][bad_err] = y[bad_err]*(1.-1e-7)
+
         ax1.errorbar(data['ene'][notul].to(e_unit).value,
                 (data['flux'][notul] * sedf[notul]).to(f_unit).value,
-                yerr=(data['dflux'][:, notul] * sedf[notul]).to(f_unit).value,
+                yerr=(yerr * sedf[notul]).to(f_unit).value,
                 xerr=(data['dene'][:, notul]).to(e_unit).value,
                 zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
                 mec='w', mew=0, ms=6, color=datacol)
@@ -594,6 +600,13 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         xmin = 10 ** np.floor(np.log10(np.min(data['ene'] - data['dene'][0]).value))
         xmax = 10 ** np.ceil(np.log10(np.max(data['ene'] + data['dene'][1]).value))
         ax1.set_xlim(xmin, xmax)
+        # avoid autoscaling to errorbars to 0
+        if np.any(data['dflux'][:,notul][0] >= data['flux'][notul]):
+            elo  = ((data['flux'][notul] * sedf[notul]).to(f_unit).value -
+                    (data['dflux'][0][notul] * sedf[notul]).to(f_unit).value)
+            gooderr = np.where(data['dflux'][0][notul] < data['flux'][notul])
+            ymin = 10 ** np.floor(np.log10(np.min(elo[gooderr])))
+            ax1.set_ylim(bottom=ymin)
     else:
         if sed:
             ndecades = 5
