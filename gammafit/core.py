@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from astropy import log
+from .utils import sed_conversion
 
 __all__ = ["normal_prior", "uniform_prior", "get_sampler", "run_sampler"]
 
@@ -190,8 +191,12 @@ def get_sampler(data=None, p0=None, model=None, prior=None,
             spec = modelout[0]
         else:
             spec = modelout
-        p0[labels.index('norm')] *= np.trapz(
-            data['flux'], data['ene']) / np.trapz(spec, data['ene'])
+
+        nunit, sedf = sed_conversion(data['ene'],spec.unit,False)
+        p0[labels.index('norm')] *= (
+                np.trapz(data['ene']*data['flux']*sedf, data['ene']) /
+                np.trapz(data['ene']*spec*sedf, data['ene'])
+                )
 
     ndim = len(p0)
 

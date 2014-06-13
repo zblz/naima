@@ -7,6 +7,8 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 
+from .utils import sed_conversion
+
 __all__ = ["plot_chain", "plot_fit", "plot_data"]
 
 
@@ -43,7 +45,7 @@ def _latex_float(f,format=".3g"):
     float_str = "{{0:{0}}}".format(format).format(f)
     if "e" in float_str:
         base, exponent = float_str.split("e")
-        return r"${0}\times 10^{{{1}}}$".format(base, int(exponent))
+        return r"{0}\times 10^{{{1}}}".format(base, int(exponent))
     else:
         return float_str
 
@@ -153,8 +155,8 @@ def _plot_chain_func(chain, p, label, last_step=False):
             'Autocorrelation time: {0:.1f}'.format(acort) + '\n' +\
             'Gelman-Rubin statistic: {0:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
             'Distribution properties for the {clen}:\n \
-    - median: {median} \n \
-    - std: {std} \n' .format(median=_latex_float(quantiles[0.5]), std=_latex_float(std), clen=clen) +\
+    - median: ${median}$ \n \
+    - std: ${std}$ \n' .format(median=_latex_float(quantiles[0.5]), std=_latex_float(std), clen=clen) +\
 '     - Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n \n\
           {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
@@ -294,65 +296,6 @@ u.def_physical_type(u.Unit('1/(s erg)'), 'differential power')
 u.def_physical_type(u.Unit('1/TeV'), 'differential energy')
 
 
-def _sed_conversion(energy, model_unit, sed):
-    """
-    Manage conversion between differential spectrum and SED
-    """
-
-    model_pt = model_unit.physical_type
-
-    ones = np.ones(energy.shape)
-
-    if sed:
-        # SED
-        f_unit = u.Unit('erg/s')
-        if model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
-            sedf = ones
-        elif 'differential' in model_pt:
-            sedf = (energy ** 2)
-        else:
-            raise u.UnitsError(
-                'Model physical type ({0}) is not supported'.format(model_pt),
-                'Supported physical types are: power, flux, differential'
-                ' power, differential flux')
-
-        if 'flux' in model_pt:
-            f_unit /= u.cm ** 2
-        elif 'energy' in model_pt:
-            # particle energy distributions
-            f_unit = u.erg
-
-    elif sed is None:
-        # Use original units
-        f_unit = model_unit
-        sedf = ones
-    else:
-        # Differential spectrum
-        f_unit = u.Unit('1/(s TeV)')
-        if 'differential' in model_pt:
-            sedf = ones
-        elif model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
-            # From SED to differential
-            sedf = 1 / (energy**2)
-        else:
-            raise u.UnitsError(
-                'Model physical type ({0}) is not supported'.format(model_pt),
-                'Supported physical types are: power, flux, differential'
-                ' power, differential flux')
-
-        if 'flux' in model_pt:
-            f_unit /= u.cm ** 2
-        elif 'energy' in model_pt:
-            # particle energy distributions
-            f_unit = u.Unit('1/TeV')
-
-    log.debug(
-        'Converted from {0} ({1}) into {2} ({3}) for sed={4}'.format(model_unit, model_pt,
-        f_unit, f_unit.physical_type, sed))
-
-    return f_unit, sedf
-
-
 def plot_CI(ax, sampler, modelidx=0, sed=True,confs=[3, 1, 0.5],e_unit=u.eV,**kwargs):
     """Plot confidence interval.
 
@@ -377,7 +320,7 @@ def plot_CI(ax, sampler, modelidx=0, sed=True,confs=[3, 1, 0.5],e_unit=u.eV,**kw
 
     modelx, CI = calc_CI(sampler, modelidx=modelidx,confs=confs,**kwargs)
     # pick first confidence interval curve for units
-    f_unit, sedf = _sed_conversion(modelx, CI[0][0].unit, sed)
+    f_unit, sedf = sed_conversion(modelx, CI[0][0].unit, sed)
 
     for (ymin, ymax), conf in zip(CI, confs):
         color = np.log(conf)/np.log(20)+0.4
@@ -529,7 +472,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
                 color=datacol, elinewidth=2, capsize=5, zorder=10)
 
     if plotdata:
-        f_unit, sedf = _sed_conversion(data['ene'], data['flux'].unit, sed)
+        f_unit, sedf = sed_conversion(data['ene'], data['flux'].unit, sed)
 
         ul = data['ul']
         notul = -ul
@@ -618,7 +561,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         ax1.set_ylim(bottom=ymin)
         # scale x axis to largest model_ML x point within ndecades decades of
         # maximum
-        f_unit, sedf = _sed_conversion(model_ML[0], model_ML[1].unit, sed)
+        f_unit, sedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
         hi = np.where((model_ML[1]*sedf).to(f_unit).value > ymin)
         xmax = np.max(model_ML[0][hi])
         ax1.set_xlim(right=10 ** np.ceil(np.log10(xmax.to(e_unit).value)))

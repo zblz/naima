@@ -7,12 +7,69 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 
-from .plot import plot_fit, plot_chain
-
-__all__ = ["generate_energy_edges",
+__all__ = ["generate_energy_edges", "sed_conversion",
            "build_data_dict", "generate_diagnostic_plots"]
 
 # Convenience tools
+
+def sed_conversion(energy, model_unit, sed):
+    """
+    Manage conversion between differential spectrum and SED
+    """
+
+    model_pt = model_unit.physical_type
+
+    ones = np.ones(energy.shape)
+
+    if sed:
+        # SED
+        f_unit = u.Unit('erg/s')
+        if model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
+            sedf = ones
+        elif 'differential' in model_pt:
+            sedf = (energy ** 2)
+        else:
+            raise u.UnitsError(
+                'Model physical type ({0}) is not supported'.format(model_pt),
+                'Supported physical types are: power, flux, differential'
+                ' power, differential flux')
+
+        if 'flux' in model_pt:
+            f_unit /= u.cm ** 2
+        elif 'energy' in model_pt:
+            # particle energy distributions
+            f_unit = u.erg
+
+    elif sed is None:
+        # Use original units
+        f_unit = model_unit
+        sedf = ones
+    else:
+        # Differential spectrum
+        f_unit = u.Unit('1/(s TeV)')
+        if 'differential' in model_pt:
+            sedf = ones
+        elif model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
+            # From SED to differential
+            sedf = 1 / (energy**2)
+        else:
+            raise u.UnitsError(
+                'Model physical type ({0}) is not supported'.format(model_pt),
+                'Supported physical types are: power, flux, differential'
+                ' power, differential flux')
+
+        if 'flux' in model_pt:
+            f_unit /= u.cm ** 2
+        elif 'energy' in model_pt:
+            # particle energy distributions
+            f_unit = u.Unit('1/TeV')
+
+    log.debug(
+        'Converted from {0} ({1}) into {2} ({3}) for sed={4}'.format(model_unit, model_pt,
+        f_unit, f_unit.physical_type, sed))
+
+    return f_unit, sedf
+
 
 
 def generate_energy_edges(ene):
@@ -119,6 +176,8 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
     pdf : bool (optional)
         Whether to save plots to multipage pdf.
     """
+
+    from .plot import plot_fit, plot_chain
 
     if pdf:
         from matplotlib import pyplot as plt

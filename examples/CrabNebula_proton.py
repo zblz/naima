@@ -20,8 +20,8 @@ data=gammafit.build_data_dict(ene,None,flux,dflux)
 
 ## Set initial parameters
 
-p0=np.array((5e-25,2.34,80.,))
-labels=['norm','index','cutoff']
+p0=np.array((5e-25,2.34,1.9,))
+labels=['norm','index','log10(cutoff)']
 
 ## Model definition
 
@@ -34,7 +34,7 @@ def ppgamma(pars,data):
 
     norm   = pars[0]
     index  = pars[1]
-    cutoff = pars[2]*u.TeV
+    cutoff = (10**pars[2])*u.TeV
 
     ozm=gammafit.ProtonOZM(
             data['ene'], norm,
@@ -68,8 +68,7 @@ def lnprior(pars):
 	"""
 
 	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
-            + gammafit.uniform_prior(pars[1],-1,5) \
-	    + gammafit.uniform_prior(pars[2],0.,np.inf)
+            + gammafit.uniform_prior(pars[1],-1,5)
 
 	return logprob
 
@@ -78,7 +77,7 @@ if __name__=='__main__':
 ## Run sampler
 
     sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ppgamma,
-            prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
+            prior=lnprior, nwalkers=32, nburn=100, nrun=10, threads=4)
 
 ## Save sampler
 
@@ -89,5 +88,5 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    gammafit.generate_diagnostic_plots('CrabNebula_proton',sampler,sed=[True,None])
+    gammafit.generate_diagnostic_plots('CrabNebula_proton',sampler,sed=True)
 
