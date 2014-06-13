@@ -55,6 +55,21 @@ def validate_data_table(data_table):
     else:
         data['dene'] = generate_energy_edges(data['ene'])
 
+    # Upper limit flags
+    if 'ul' in data_table.keys():
+        # Check if it is a integer or boolean flag
+        ul_col = data_table['ul']
+        if ul_col.dtype == int or ul_col.dtype == bool:
+            data['ul'] = np.array(ul_col)
+        elif ul_col.dtype == six.string_types:
+            strbool = True
+            for ul in ul_col:
+                if ul is not 'True' or ul is not 'False':
+                    strbool = False
+            if strbool:
+                data['ul'] = np.array((eval(ul) for ul in ul_col),dtype=np.bool)
+            else:
+                raise TypeError ('UL column is in wrong format')
 
     if 'cl' in data_table.meta['keywords'].keys():
         data['cl'] = validate_scalar('cl',data_table.meta['keywords']['cl'])
