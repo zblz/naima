@@ -43,7 +43,7 @@ def _latex_float(f,format=".3g"):
     float_str = "{{0:{0}}}".format(format).format(f)
     if "e" in float_str:
         base, exponent = float_str.split("e")
-        return r"{0}\times 10^{{{1}}}".format(base, int(exponent))
+        return r"${0}\times 10^{{{1}}}$".format(base, int(exponent))
     else:
         return float_str
 

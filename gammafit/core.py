@@ -98,18 +98,18 @@ def _run_mcmc(sampler, pos, nrun):
             npars = out[0].shape[-1]
             paravg, parstd = [], []
             for npar in range(npars):
-                paravg.append(np.average(out[0][:, npar]))
+                paravg.append(np.median(out[0][:, npar]))
                 parstd.append(np.std(out[0][:, npar]))
-            print("                            " +
+            print("                           " +
                   (" ".join(["{%i:-^15}" % i for i in range(npars)])
                    ).format(*sampler.labels))
-            print("  Last ensemble average : " +
+            print("  Last ensemble median : " +
                   (" ".join(["{%i:^15.3g}" % i for i in range(npars)])
                    ).format(*paravg))
-            print("  Last ensemble std     : " +
+            print("  Last ensemble std    : " +
                   (" ".join(["{%i:^15.3g}" % i for i in range(npars)])
                    ).format(*parstd))
-            print("  Last ensemble lnprob  :  avg: {0:.3f}, max: {1:.3f}".format(
+            print("  Last ensemble lnprob :  avg: {0:.3f}, max: {1:.3f}".format(
                 np.average(out[1]), np.max(out[1])))
     return sampler, out[0]
 
