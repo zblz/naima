@@ -2,20 +2,11 @@
 import numpy as np
 import gammafit
 import astropy.units as u
+from astropy.io import ascii
 
 ## Read data
 
-spec=np.loadtxt('CrabNebula_HESS_2006.dat')
-
-flux_unit = u.Unit('1/(cm2 s TeV)')
-
-ene=spec[:,0]*u.TeV
-flux=spec[:,3]*flux_unit
-perr=spec[:,4]
-merr=spec[:,5]
-dflux=np.array((merr,perr))*flux_unit
-
-data=gammafit.build_data_dict(ene,None,flux,dflux)
+data=ascii.read('CrabNebula_HESS_2006.dat')
 
 ## Set initial parameters
 
@@ -43,7 +34,7 @@ def cutoffexp(pars,data):
     gamma = pars[1]
     ecut  = np.exp(pars[2])*u.TeV
 
-    return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut)) * flux_unit
+    return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut)) * data['flux'].unit
 
 ## Prior definition
 

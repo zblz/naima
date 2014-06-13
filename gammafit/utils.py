@@ -7,8 +7,63 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 
-__all__ = ["generate_energy_edges", "sed_conversion",
+from .plot import plot_fit, plot_chain
+from .extern.validator import validate_array
+
+__all__ = ["generate_energy_edges",
            "build_data_dict", "generate_diagnostic_plots"]
+
+# Input validation tools
+
+def validate_column(data_table,key,pt,domain='positive'):
+    try:
+        column = data_table[key]
+        array = validate_array(key, u.Quantity(column), physical_type=pt, domain=domain)
+    except KeyError as e:
+        raise TypeError('Data table does not contain required column "{0}"'.format(key))
+
+def validate_data_table(data_table):
+
+    data = {}
+
+    flux_types = ['flux','differential flux','power','differential power']
+
+    # Energy and flux arrays
+    data['ene'] = validate_column(data_table,'ene','energy')
+    data['flux'] = validate_column(data_table,'flux',flux_types)
+
+    # Flux uncertainties
+    if 'flux_error' in data_table.keys():
+        dflux = validate_column(data_table,'flux_error',flux_types)
+        data['dflux'] = u.Quantity((dflux,dflux))
+    elif 'flux_error_lo' in data_table.keys() and 'flux_error_hi' in data_table.keys():
+        data['dflux'] = u.Quantity((
+            validate_column(data_table,'flux_error_lo',flux_types),
+            validate_column(data_table,'flux_error_hi',flux_types)))
+    else:
+        raise TypeError('Data table does not contain required column'
+                        ' "flux_error" or columns "flux_error_lo" and "flux_error_hi"')
+
+    # Energy bin edges
+    if 'ene_width' in data_table.keys():
+        ene_width = validate_column(data_table,'ene_width', 'energy')
+        data['dene'] = u.Quantity((ene_width/2.,ene_width/2.))
+    elif 'ene_lo' in data_table.keys() and 'ene_hi' in data_table.keys():
+        ene_lo = validate_column(data_table,'ene_lo', 'energy')
+        ene_hi = validate_column(data_table,'ene_hi', 'energy')
+        data['dene'] = u.Quantity((data['ene']-ene_lo,ene_hi-data['ene']))
+    else:
+        data['dene'] = generate_energy_edges(data['ene'])
+
+
+    if 'cl' in data_table.meta['keywords'].keys():
+        data['cl'] = validate_scalar('cl',data_table.meta['keywords']['cl'])
+    else:
+        data['cl'] = 0.9
+
+    return data
+
+
 
 # Convenience tools
 

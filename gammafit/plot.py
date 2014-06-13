@@ -7,8 +7,6 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 
-from .utils import sed_conversion
-
 __all__ = ["plot_chain", "plot_fit", "plot_data"]
 
 
@@ -155,8 +153,8 @@ def _plot_chain_func(chain, p, label, last_step=False):
             'Autocorrelation time: {0:.1f}'.format(acort) + '\n' +\
             'Gelman-Rubin statistic: {0:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
             'Distribution properties for the {clen}:\n \
-    - median: ${median}$ \n \
-    - std: ${std}$ \n' .format(median=_latex_float(quantiles[0.5]), std=_latex_float(std), clen=clen) +\
+    - median: {median} \n \
+    - std: {std} \n' .format(median=_latex_float(quantiles[0.5]), std=_latex_float(std), clen=clen) +\
 '     - Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n \n\
           {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
@@ -289,11 +287,71 @@ def calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True):
 
     return modelx, CI
 
+<<<<<<< HEAD
 # Define phsyical types
 u.def_physical_type(u.erg / u.cm ** 2 / u.s, 'flux')
 u.def_physical_type(u.Unit('1/(s cm2 erg)'), 'differential flux')
 u.def_physical_type(u.Unit('1/(s erg)'), 'differential power')
 u.def_physical_type(u.Unit('1/TeV'), 'differential energy')
+=======
+def _sed_conversion(energy, model_unit, sed):
+    """
+    Manage conversion between differential spectrum and SED
+    """
+
+    model_pt = model_unit.physical_type
+
+    ones = np.ones(energy.shape)
+
+    if sed:
+        # SED
+        f_unit = u.Unit('erg/s')
+        if model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
+            sedf = ones
+        elif 'differential' in model_pt:
+            sedf = (energy ** 2)
+        else:
+            raise u.UnitsError(
+                'Model physical type ({0}) is not supported'.format(model_pt),
+                'Supported physical types are: power, flux, differential'
+                ' power, differential flux')
+
+        if 'flux' in model_pt:
+            f_unit /= u.cm ** 2
+        elif 'energy' in model_pt:
+            # particle energy distributions
+            f_unit = u.erg
+
+    elif sed is None:
+        # Use original units
+        f_unit = model_unit
+        sedf = ones
+    else:
+        # Differential spectrum
+        f_unit = u.Unit('1/(s TeV)')
+        if 'differential' in model_pt:
+            sedf = ones
+        elif model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
+            # From SED to differential
+            sedf = 1 / (energy**2)
+        else:
+            raise u.UnitsError(
+                'Model physical type ({0}) is not supported'.format(model_pt),
+                'Supported physical types are: power, flux, differential'
+                ' power, differential flux')
+
+        if 'flux' in model_pt:
+            f_unit /= u.cm ** 2
+        elif 'energy' in model_pt:
+            # particle energy distributions
+            f_unit = u.Unit('1/TeV')
+
+    log.debug(
+        'Converted from {0} ({1}) into {2} ({3}) for sed={4}'.format(model_unit, model_pt,
+        f_unit, f_unit.physical_type, sed))
+
+    return f_unit, sedf
+>>>>>>> d8629e8... validate inout table
 
 
 def plot_CI(ax, sampler, modelidx=0, sed=True,confs=[3, 1, 0.5],e_unit=u.eV,**kwargs):

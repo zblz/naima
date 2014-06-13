@@ -4,11 +4,17 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from astropy import log
-from .utils import sed_conversion
+import astropy.units as u
+
+from .utils import validate_data_table
 
 __all__ = ["normal_prior", "uniform_prior", "get_sampler", "run_sampler"]
 
-# Likelihood functions
+# Define phsyical types used in plot and utils.validate_data_table
+u.def_physical_type(u.erg / u.cm ** 2 / u.s, 'flux')
+u.def_physical_type(u.Unit('1/(s cm2 erg)'), 'differential flux')
+u.def_physical_type(u.Unit('1/(s erg)'), 'differential power')
+u.def_physical_type(u.Unit('1/TeV'), 'differential energy')
 
 # Prior functions
 
@@ -115,15 +121,45 @@ def _run_mcmc(sampler, pos, nrun):
     return sampler, out[0]
 
 
-def get_sampler(data=None, p0=None, model=None, prior=None,
+def get_sampler(data_table=None, p0=None, model=None, prior=None,
                 nwalkers=500, nburn=100,
                 guess=True, labels=None, threads=4):
     """Generate a new MCMC sampler.
 
     Parameters
     ----------
-    data : dict
-        Dictionary containing the observed spectrum.
+    data_table : :class:`~astropy.table.Table` instance
+        Table containing the observed spectrum. The table needs at least these
+        columns, with the appropriate associated units (with the physical type
+        indicated in brackets below) as either a :class:`~astropy.units.Unit`
+        instance or parseable string:
+
+        - ``energy``: Observed photon energy [``energy``]
+        - ``flux``: Observed fluxes [``flux`` or ``differential flux``]
+        - ``flux_error``: 68% CL gaussian uncertainty of the flux [``flux`` or
+          ``differential flux``]. It can also be provided as ``flux_error_lo``
+          and ``flux_error_hi`` (see below).
+
+        Optional columns:
+
+        - ``ene_width``: Width of the energy bin [``energy``], or
+        - ``ene_lo`` and ``ene_hi``: Energy edges of the corresponding energy
+          bin [``energy``]
+        - ``flux_error_lo`` and ``flux_error_hi``: 68% CL gaussian lower and
+          upper uncertainties of the flux.
+        - ``ul``: Flag to indicate that a flux measurement is an upper limit.
+
+        The ``keywords`` metadata field of the table can be used to provide the
+        confidence level of the upper limits with the keyword ``cl``, which
+        defaults to 90%. The :class:`astropy.io.ascii` reader can recover all
+        the needed information from ASCII tables in the
+        :class:`~astropy.io.ascii.Ipac` and :class:`~astropy.io.ascii.Daophot`
+        formats, and everything except the ``cl`` keyword from tables in the
+        :class:`~astropy.io.ascii.Sextractor`.  For the latter format, the cl
+        keyword can be added after reading the table with::
+
+            data.meta['keywords']['cl']=0.99
+
     p0 : array
         Initial position vector. The distribution for the ``nwalkers`` walkers
         will be computed as a multidimensional gaussian of width 5% around the
@@ -168,13 +204,15 @@ def get_sampler(data=None, p0=None, model=None, prior=None,
     """
     import emcee
 
-    if data is None:
-        log.warn('Data dictionary is missing!')
-        raise TypeError
+    if data_table is None:
+        raise TypeError ('Data table is missing!')
+    elif not isinstance(data_table,astropy.table.Table):
+        raise TypeError ('Data is not provided as an astropy.table.Table object!')
+    else:
+        data = validate_data_table(data_table)
 
     if model is None:
-        log.warn('Model function is missing!')
-        raise TypeError
+        raise TypeError ('Model function is missing!')
 
     # Add parameter labels if not provided or too short
     if labels is None:
@@ -204,6 +242,7 @@ def get_sampler(data=None, p0=None, model=None, prior=None,
                                     args=[data, model, prior], threads=threads)
 
     # Add data and parameters properties to sampler
+    sampler.data_table = data_table
     sampler.data = data
     sampler.labels = labels
 
