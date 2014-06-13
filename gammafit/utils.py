@@ -131,14 +131,17 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
     # Chains
 
     for par, label in zip(six.moves.range(sampler.chain.shape[-1]), sampler.labels):
-        f = plot_chain(sampler, par, **kwargs)
-        if pdf:
-            f.savefig(outpdf, format='pdf')
-        else:
-            if 'log(' in label or 'log10(' in label:
-                label = label.split('(')[-1].split(')')[0]
-            f.savefig('{0}_chain_{1}.png'.format(outname, label))
-        del f
+        try:
+            f = plot_chain(sampler, par, **kwargs)
+            if pdf:
+                f.savefig(outpdf, format='pdf')
+            else:
+                if 'log(' in label or 'log10(' in label:
+                    label = label.split('(')[-1].split(')')[0]
+                f.savefig('{0}_chain_{1}.png'.format(outname, label))
+            del f
+        except Exception as e:
+            log.warn('plot_chain failed for paramter {0}: {1}'.format(par,e))
 
     # Corner plot
 

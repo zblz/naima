@@ -69,7 +69,7 @@ def _plot_chain_func(chain, p, label, last_step=False):
     nsteps = traces.shape[1]
 
     logplot = False
-    if np.abs(dist.max()/dist.min()) > 10.:
+    if np.abs(dist.max()/dist.min()) > 10. and np.all(dist>0.):
         logplot = True
 
     f = plt.figure()
