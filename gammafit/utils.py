@@ -8,7 +8,7 @@ from astropy.extern import six
 from astropy import log
 
 from .plot import plot_fit, plot_chain
-from .extern.validator import validate_array
+from .extern.validator import validate_array, validate_scalar
 
 __all__ = ["generate_energy_edges",
            "build_data_dict", "generate_diagnostic_plots"]
@@ -21,6 +21,8 @@ def validate_column(data_table,key,pt,domain='positive'):
         array = validate_array(key, u.Quantity(column), physical_type=pt, domain=domain)
     except KeyError as e:
         raise TypeError('Data table does not contain required column "{0}"'.format(key))
+
+    return array
 
 def validate_data_table(data_table):
 
@@ -60,7 +62,7 @@ def validate_data_table(data_table):
         # Check if it is a integer or boolean flag
         ul_col = data_table['ul']
         if ul_col.dtype == int or ul_col.dtype == bool:
-            data['ul'] = np.array(ul_col)
+            data['ul'] = np.array(ul_col, dtype=np.bool)
         elif ul_col.dtype == six.string_types:
             strbool = True
             for ul in ul_col:
@@ -72,9 +74,12 @@ def validate_data_table(data_table):
                 raise TypeError ('UL column is in wrong format')
 
     if 'cl' in data_table.meta['keywords'].keys():
-        data['cl'] = validate_scalar('cl',data_table.meta['keywords']['cl'])
+        data['cl'] = validate_scalar('cl',data_table.meta['keywords']['cl']['value'])
     else:
         data['cl'] = 0.9
+        if 'ul' in data_table.keys():
+            log.warn('"cl" keyword not provided in input data table, upper limits'
+                    'will be assumed to be at 90% confidence level')
 
     return data
 

@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from astropy import log
+import astropy
 import astropy.units as u
 
 from .utils import validate_data_table

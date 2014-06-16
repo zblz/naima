@@ -10,8 +10,8 @@ data=ascii.read('CrabNebula_HESS_2006.dat')
 
 ## Set initial parameters
 
-p0=np.array((1.5e-12,2.4,np.log(15.0),))
-labels=['norm','index','log(cutoff)']
+p0=np.array((1.5e-12,2.4,np.log10(15.0),))
+labels=['norm','index','log10(cutoff)']
 
 ## Model definition
 
@@ -32,7 +32,7 @@ def cutoffexp(pars,data):
 
     N     = pars[0]
     gamma = pars[1]
-    ecut  = np.exp(pars[2])*u.TeV
+    ecut  = (10**pars[2])*u.TeV
 
     return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut)) * data['flux'].unit
 

@@ -21,7 +21,7 @@ def validate_scalar(name, value, domain=None, physical_type=None):
     validate_physical_type(name, value, physical_type)
 
     if not physical_type:
-        if np.isscalar(value) or not np.isreal(value):
+        if not np.isscalar(value) or not np.isreal(value):
             raise TypeError("{0} should be a scalar floating point value".format(name))
 
     if domain == 'positive':
