@@ -15,8 +15,8 @@ User documentation
 .. toctree::
    :maxdepth: 1
  
-   installation.rst
    introduction.rst
+   installation.rst
    fitting.rst
    radiative.rst
    tutorial.rst
