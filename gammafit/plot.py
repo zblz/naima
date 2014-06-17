@@ -289,13 +289,6 @@ def calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True):
 
     return modelx, CI
 
-# Define phsyical types
-u.def_physical_type(u.erg / u.cm ** 2 / u.s, 'flux')
-u.def_physical_type(u.Unit('1/(s cm2 erg)'), 'differential flux')
-u.def_physical_type(u.Unit('1/(s erg)'), 'differential power')
-u.def_physical_type(u.Unit('1/TeV'), 'differential energy')
-
-
 def plot_CI(ax, sampler, modelidx=0, sed=True,confs=[3, 1, 0.5],e_unit=u.eV,**kwargs):
     """Plot confidence interval.
 

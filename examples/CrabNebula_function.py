@@ -2,25 +2,16 @@
 import numpy as np
 import gammafit
 import astropy.units as u
+from astropy.io import ascii
 
 ## Read data
 
-spec=np.loadtxt('CrabNebula_HESS_2006.dat')
-
-flux_unit = u.Unit('1/(cm2 s TeV)')
-
-ene=spec[:,0]*u.TeV
-flux=spec[:,3]*flux_unit
-perr=spec[:,4]
-merr=spec[:,5]
-dflux=np.array((merr,perr))*flux_unit
-
-data=gammafit.build_data_dict(ene,None,flux,dflux)
+data=ascii.read('CrabNebula_HESS_2006.dat')
 
 ## Set initial parameters
 
-p0=np.array((1.5e-12,2.4,np.log(15.0),))
-labels=['norm','index','log(cutoff)']
+p0=np.array((1.5e-12,2.4,np.log10(15.0),))
+labels=['norm','index','log10(cutoff)']
 
 ## Model definition
 
@@ -31,7 +22,7 @@ def cutoffexp(pars,data):
     Parameters:
         - 0: PL normalization
         - 1: PL index
-        - 2: log(cutoff energy)
+        - 2: log10(cutoff energy)
     """
 
     ene=data['ene']
@@ -41,9 +32,9 @@ def cutoffexp(pars,data):
 
     N     = pars[0]
     gamma = pars[1]
-    ecut  = np.exp(pars[2])*u.TeV
+    ecut  = (10**pars[2])*u.TeV
 
-    return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut)) * flux_unit
+    return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut)) * data['flux'].unit
 
 ## Prior definition
 
@@ -61,8 +52,9 @@ def lnprior(pars):
 if __name__=='__main__':
 ## Run sampler
 
-    sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-            prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
+    sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels,
+            model=cutoffexp, prior=lnprior, nwalkers=128, nburn=50, nrun=10,
+            threads=4)
 
 ## Save sampler
     from astropy.extern import six

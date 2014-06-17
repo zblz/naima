@@ -3,24 +3,15 @@ import numpy as np
 import gammafit
 
 from astropy import units as u
+from astropy.io import ascii
 
 ## Read data
 
-spec=np.loadtxt('CrabNebula_HESS_2006.dat')
-
-flux_unit = u.Unit('1/(cm2 s TeV)')
-
-ene=spec[:,0]*u.TeV
-flux=spec[:,3]*flux_unit
-perr=spec[:,4]
-merr=spec[:,5]
-dflux=np.array((merr,perr))*flux_unit
-
-data=gammafit.build_data_dict(ene,None,flux,dflux)
+data=ascii.read('CrabNebula_HESS_2006.dat')
 
 ## Set initial parameters
 
-p0=np.array((5e-25,2.34,1.9,))
+p0=np.array((5e-25,2.34,np.log10(80.),))
 labels=['norm','index','log10(cutoff)']
 
 ## Model definition
@@ -76,8 +67,9 @@ if __name__=='__main__':
 
 ## Run sampler
 
-    sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ppgamma,
-            prior=lnprior, nwalkers=32, nburn=100, nrun=10, threads=4)
+    sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels,
+            model=ppgamma, prior=lnprior, nwalkers=50, nburn=50, nrun=10,
+            threads=4)
 
 ## Save sampler
 
