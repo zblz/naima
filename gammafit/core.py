@@ -7,7 +7,7 @@ from astropy import log
 import astropy
 import astropy.units as u
 
-from .utils import validate_data_table
+from .utils import validate_data_table, sed_conversion
 
 __all__ = ["normal_prior", "uniform_prior", "get_sampler", "run_sampler"]
 
