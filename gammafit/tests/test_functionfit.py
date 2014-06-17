@@ -109,16 +109,14 @@ def test_init_prior():
         prior=None, nwalkers=10, nrun=2, nburn=0, threads=1)
 
 @pytest.mark.skipif('not HAS_EMCEE')
-def test_init_exceptions():
+def test_init_exception_model():
     # test exception raised when no model or data_table are provided
-    try:
+    with pytest.raises(TypeError):
         sampler, pos = get_sampler(data_table=data_table, p0=p0, labels=labels,
                                    prior=lnprior, nwalkers=10, nburn=0, threads=1)
-    except TypeError:
-        pass
 
-    try:
+@pytest.mark.skipif('not HAS_EMCEE')
+def test_init_exception_data():
+    with pytest.raises(TypeError):
         sampler, pos = get_sampler(p0=p0, labels=labels, model=cutoffexp,
                                    prior=lnprior, nwalkers=10, nburn=0, threads=1)
-    except TypeError:
-        pass
