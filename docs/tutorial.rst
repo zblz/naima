@@ -1,4 +1,4 @@
-Tutorial
+Examples
 ========
 
 Fitting a function
