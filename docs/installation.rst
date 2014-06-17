@@ -1,9 +1,8 @@
-============
 Installation
 ============
 
 Requirements
-============
+------------
 
 `gammafit` requires Python 2.6, 2.7, 3.2, 3.3, or 3.4, and the following
 packages to be installed:
@@ -27,7 +26,7 @@ Distribution <http://continuum.io/downloads>`_) or can be installed through
 ``pip``.
 
 Installation
-============
+------------
 
 To install from the latest development source (recommended until a version
 stable is released), install ``gammafit`` from the `github repository
