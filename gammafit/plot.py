@@ -259,7 +259,7 @@ def _get_model_pt(sampler, modelidx):
     if isinstance(blob0, u.Quantity):
         pt = blob0.unit.physical_type
     elif len(blob0) == 2:
-        pt = blob0[0][1].unit.physical_type
+        pt = blob0[1].unit.physical_type
     else:
         raise TypeError('Model {0} has wrong blob format'.format(modelidx))
 
