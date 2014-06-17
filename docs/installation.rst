@@ -4,14 +4,14 @@ Installation
 Requirements
 ------------
 
-`gammafit` requires Python 2.6, 2.7, 3.2, 3.3, or 3.4, and the following
+gammafit requires Python 2.6, 2.7, 3.2, 3.3, or 3.4, and the following
 packages to be installed:
 
 * `Numpy <http://www.numpy.org>`_
 
 * `Scipy <http://www.scipy.org>`_
 
-* `Astropy <http://www.astropy.org>`_ 0.4 or later
+* `Astropy 0.4 or later <http://www.astropy.org>`_
 
 * `Matplotlib <http://www.matplotlib.org>`_
 
