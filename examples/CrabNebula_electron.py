@@ -3,25 +3,16 @@ import numpy as np
 import gammafit
 import astropy.units as u
 from astropy.constants import m_e,c
+from astropy.io import ascii
 
 ## Read data
 
-spec=np.loadtxt('CrabNebula_HESS_2006.dat')
-
-flux_unit = u.Unit('1/(cm2 s TeV)')
-
-ene=spec[:,0]*u.TeV
-flux=spec[:,3]*flux_unit
-perr=spec[:,4]
-merr=spec[:,5]
-dflux=np.array((merr,perr))*flux_unit
-
-data=gammafit.build_data_dict(ene,None,flux,dflux)
+data=ascii.read('CrabNebula_HESS_2006.dat')
 
 ## Set initial parameters
 
-p0=np.array((2.5e-6,3.3,48.0,))
-labels=['norm','index','cutoff']
+p0=np.array((2.5e-6,3.3,np.log10(48.0),))
+labels=['norm','index','log10(cutoff)']
 
 ## Model definition
 
@@ -29,7 +20,7 @@ def ElectronIC(pars,data):
 
     norm   = pars[0]
     index  = pars[1]
-    cutoff = pars[2]*u.TeV
+    cutoff = (10**pars[2])*u.TeV
 
     outspecene = data['ene']
 
@@ -56,7 +47,7 @@ def ElectronIC(pars,data):
 
     del ozm
 
-    return model, (data['ene'],model), (elec_energy,nelec)
+    return model, model, (elec_energy,nelec)
 
 ## Prior definition
 
@@ -67,9 +58,9 @@ def lnprior(pars):
 	"""
 
 	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
-            + gammafit.uniform_prior(pars[1],-1,5) \
-			+ gammafit.uniform_prior(pars[2],0.,np.inf) \
-			#+ gammafit.uniform_prior(pars[3],0.5,1.5)
+            + gammafit.uniform_prior(pars[1],-1,5)
+            #+ gammafit.uniform_prior(pars[2],0.,np.inf) \
+            #+ gammafit.uniform_prior(pars[3],0.5,1.5)
 
 	return logprob
 
@@ -77,7 +68,7 @@ if __name__=='__main__':
 
 ## Run sampler
 
-    sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=ElectronIC,
+    sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels, model=ElectronIC,
             prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
 
 ## Save sampler
@@ -88,6 +79,6 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler,sed=[True,None])
+    gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler,sed=True)
 
 

@@ -1,7 +1,7 @@
 \ Crab Nebula spectrum measured by HESS taken from table 5 of
 \ Aharonian et al. 2006, A&A 457, 899
 \ ADS bibcode: 2006A&A...457..899A
-
+\
 \ Column 1: Mean energy (TeV)
 \ Column 2: Excess events
 \ Column 3: Significance
@@ -9,7 +9,9 @@
 \ Column 5: Upper 1-sigma flux error
 \ Column 6: Lower 1-sigma flux error
 \ Column 7: Upper limit flag
-| ene   | exc  | sig  | flux          | flux_ehi      | flux_elo      | ul    |
+\ 
+\cl = 0.9
+| ene   | exc  | sig  | flux          | flux_error_hi | flux_error_lo | ul    |
 | float | float| float| float         | float         | float         | int   |
 | TeV   |      |      | 1/(cm2 s TeV) | 1/(cm2 s TeV) | 1/(cm2 s TeV) |       |
   0.519   975    42.9   1.81e-10        0.06e-10        0.06e-10        0

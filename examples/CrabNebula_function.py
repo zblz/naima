@@ -22,7 +22,7 @@ def cutoffexp(pars,data):
     Parameters:
         - 0: PL normalization
         - 1: PL index
-        - 2: log(cutoff energy)
+        - 2: log10(cutoff energy)
     """
 
     ene=data['ene']
@@ -52,8 +52,9 @@ def lnprior(pars):
 if __name__=='__main__':
 ## Run sampler
 
-    sampler,pos = gammafit.run_sampler(data=data, p0=p0, labels=labels, model=cutoffexp,
-            prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
+    sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels,
+            model=cutoffexp, prior=lnprior, nwalkers=128, nburn=50, nrun=10,
+            threads=4)
 
 ## Save sampler
     from astropy.extern import six
