@@ -59,12 +59,12 @@ def validate_data_table(data_table):
     if 'ul' in data_table.keys():
         # Check if it is a integer or boolean flag
         ul_col = data_table['ul']
-        if ul_col.dtype == int or ul_col.dtype == bool:
+        if ul_col.dtype.type is np.int_ or ul_col.dtype.type is np.bool_:
             data['ul'] = np.array(ul_col, dtype=np.bool)
-        elif ul_col.dtype == six.string_types:
+        elif ul_col.dtype.type is np.string_:
             strbool = True
             for ul in ul_col:
-                if ul is not 'True' or ul is not 'False':
+                if ul != 'True' and ul != 'False':
                     strbool = False
             if strbool:
                 data['ul'] = np.array((eval(ul) for ul in ul_col),dtype=np.bool)

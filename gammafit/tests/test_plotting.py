@@ -65,8 +65,6 @@ def cutoffexp(pars, data):
              np.exp(-(ene / ecut) ** beta)) * u.Unit('1/(cm2 s TeV)')
 
     # save a particle energy distribution
-    ene_part = np.logspace(np.log10(x[0].value) - 1,
-                           np.log10(x[-1].value) + 1, 100) * x.unit
     model_part = (N * (ene / x0) ** -gamma *
                   np.exp(-(ene / ecut) ** beta)) * u.Unit('1/(TeV)')
 
@@ -84,7 +82,7 @@ def cutoffexp(pars, data):
 
     # save flux model as tuple with energies and without
 
-    return flux, flux, (x, flux), (ene, model), model1, model2, model3, (x, model3)
+    return flux, flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3)
 
 # Prior definition
 

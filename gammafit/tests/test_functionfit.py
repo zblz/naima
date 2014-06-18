@@ -120,3 +120,4 @@ def test_init_exception_data():
     with pytest.raises(TypeError):
         sampler, pos = get_sampler(p0=p0, labels=labels, model=cutoffexp,
                                    prior=lnprior, nwalkers=10, nburn=0, threads=1)
+
