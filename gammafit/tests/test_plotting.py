@@ -20,10 +20,9 @@ try:
 except:
     HAS_EMCEE = False
 
-import gammafit
-from gammafit.utils import build_data_dict, generate_diagnostic_plots
-from gammafit.core import run_sampler, uniform_prior
-from gammafit.plot import plot_chain, plot_fit, plot_data
+from ..utils import generate_diagnostic_plots
+from ..core import run_sampler, uniform_prior
+from ..plot import plot_chain, plot_fit, plot_data
 
 # Read data
 from astropy.io import ascii

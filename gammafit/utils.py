@@ -9,7 +9,7 @@ from astropy import log
 from .extern.validator import validate_array, validate_scalar
 
 __all__ = ["generate_energy_edges", "sed_conversion",
-           "build_data_dict", "generate_diagnostic_plots"]
+           "build_data_table", "generate_diagnostic_plots"]
 
 # Input validation tools
 
@@ -71,9 +71,13 @@ def validate_data_table(data_table):
             else:
                 raise TypeError ('UL column is in wrong format')
 
-    if 'cl' in data_table.meta['keywords'].keys():
-        data['cl'] = validate_scalar('cl',data_table.meta['keywords']['cl']['value'])
-    else:
+    HAS_CL = False
+    if 'keywords' in data_table.meta.keys():
+        if 'cl' in data_table.meta['keywords'].keys():
+            HAS_CL = True
+            data['cl'] = validate_scalar('cl',data_table.meta['keywords']['cl']['value'])
+
+    if not HAS_CL:
         data['cl'] = 0.9
         if 'ul' in data_table.keys():
             log.warn('"cl" keyword not provided in input data table, upper limits'
@@ -172,54 +176,82 @@ def generate_energy_edges(ene):
     return np.array((elo, ehi)) * ene.unit
 
 
-def build_data_dict(ene, dene, flux, dflux, ul=None, cl=0.99):
+def build_data_table(ene, flux, flux_error=None, flux_error_lo=None,
+        flux_error_hi=None, ene_width=None, ene_lo=None, ene_hi=None, ul=None,
+        cl=None):
     """
     Read data into data dict.
 
     Parameters
     ----------
 
-    ene : array (Nene)
-        Spectrum energies
+    ene : :class:`~astropy.units.Quantity` array instance
+        Observed photon energy array [physical type ``energy``]
 
-    dene : array (2,Nene) or None
-        Difference from energy points to lower (row 0) and upper (row 1)
-        energy edges. Currently only used on plots. If ``None`` is given, they
-        will be generated with function `generate_energy_edges`.
+    flux : :class:`~astropy.units.Quantity` array instance
+        Observed flux array [physical type ``flux`` or ``differential flux``]
 
-    flux : array (Nene)
-        Spectrum flux values.
+    flux_error, flux_error_hi, flux_error_lo : :class:`~astropy.units.Quantity` array instance
+        68% CL gaussian uncertainty of the flux [physical type ``flux`` or
+        ``differential flux``]. Either `flux_error` (symmetrical uncertainty) or
+        `flux_error_hi` and `flux_error_lo` (asymmetrical uncertainties) must be
+        provided.
 
-    dflux : array (2,Nene) or (Nene)
-        Spectrum flux uncertainties. If shape is (2,Nene), rows 0 and 1
-        correspond to lower and upper uncertainties, respectively.
+    ene_width, ene_lo, ene_hi : :class:`~astropy.units.Quantity` array instance, optional
+        Width of the energy bins [physical type ``energy``]. Either `ene_width`
+        (bin width) or `ene_lo` and `ene_hi` (Energies of the lower and upper
+        bin edges) can be provided. If none are provided,
+        `generate_energy_edges` will be used.
 
-    ul : array of bool (optional)
-        Boolean array indicating which of the flux values given in ``flux``
+    ul : boolean or int array, optional
+        Boolean array indicating which of the flux values given in `flux`
         correspond to upper limits.
 
-    cl : float (optional)
-        Confidence level of the flux upper limits given by ``ul``.
+    cl : float, optional
+        Confidence level of the flux upper limits given by `ul`.
 
     Returns
     -------
     data : dict
         Data stored in a `dict`.
     """
-    if ul == None:
-        ul = np.array((False,) * len(ene))
 
-    if dene == None:
-        dene = generate_energy_edges(ene)
+    from astropy.table import Table,Column
 
-    # data is a dict with the fields:
-    # ene dene flux dflux ul cl
-    data = {}
-    for val in ['ene', 'dene', 'flux', 'dflux', 'ul', 'cl']:
-        data[val] = eval(val)
+    table = Table()
 
-    return data
+    if cl is not None:
+        cl = validate_scalar('cl',cl)
+        table.meta['keywords']={'cl':{'value':cl}}
 
+    table.add_column(Column(name='ene', data=ene))
+
+    if ene_width is not None:
+        table.add_column(Column(name='ene_width', data=ene_width))
+    elif ene_lo is not None and ene_hi is not None:
+        table.add_column(Column(name='ene_lo', data=ene_lo))
+        table.add_column(Column(name='ene_hi', data=ene_hi))
+
+    table.add_column(Column(name='flux', data=flux))
+
+    if flux_error is not None:
+        table.add_column(Column(name='flux_error', data=flux_error))
+    elif flux_error_lo is not None and flux_error_hi is not None:
+        table.add_column(Column(name='flux_error_lo', data=flux_error_lo))
+        table.add_column(Column(name='flux_error_hi', data=flux_error_hi))
+    else:
+        raise TypeError('Flux error not provided!')
+
+    if ul is not None:
+        ul = np.array(ul, dtype=np.int)
+        table.add_column(Column(name='ul', data=ul))
+
+    table.meta['comments']=['Table generated with gammafit.build_data_table',]
+
+    # test table units, format, etc
+    data = validate_data_table(table)
+
+    return table
 
 def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None, **kwargs):
     """
