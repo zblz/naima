@@ -5,7 +5,7 @@ include ez_setup.py
 include ah_bootstrap.py
 
 recursive-include gammafit *.pyx *.c 
-recursive-include gammafit/examples *.py CrabNebula_HESS_2006.dat
+recursive-include examples *.py CrabNebula_HESS_2006.dat
 
 recursive-include docs *
 recursive-include licenses *
