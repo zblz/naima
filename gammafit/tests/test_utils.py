@@ -35,7 +35,7 @@ def test_validate_string_uls():
 
     # replace uls column with valid strings
     data_table2.remove_column('ul')
-    data_table2.add_column(Column(name='ul',dtype=str, data=['False',]*len(data_table)))
+    data_table2.add_column(Column(name='ul',dtype=str, data=['False',]*len(data_table2)))
     data_table2['ul'][1] = 'True'
 
     data = validate_data_table(data_table2)

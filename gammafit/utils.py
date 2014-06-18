@@ -61,7 +61,7 @@ def validate_data_table(data_table):
         ul_col = data_table['ul']
         if ul_col.dtype.type is np.int_ or ul_col.dtype.type is np.bool_:
             data['ul'] = np.array(ul_col, dtype=np.bool)
-        elif ul_col.dtype.type is np.string_:
+        elif ul_col.dtype.type is np.str_:
             strbool = True
             for ul in ul_col:
                 if ul != 'True' and ul != 'False':
@@ -69,7 +69,9 @@ def validate_data_table(data_table):
             if strbool:
                 data['ul'] = np.array((eval(ul) for ul in ul_col),dtype=np.bool)
             else:
-                raise TypeError ('UL column is in wrong format')
+                raise TypeError('UL column is in wrong format')
+        else:
+            raise TypeError('UL column is in wrong format')
 
     HAS_CL = False
     if 'keywords' in data_table.meta.keys():
