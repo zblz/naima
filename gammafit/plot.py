@@ -350,18 +350,20 @@ def find_ML(sampler, modelidx):
 
 def _latex_unit(unit):
     """ Hack to get a single line latex representation of a unit
+
+        Will be obsolete with format='latex_inline' in astropy 0.4.1
     """
     l=unit.to_string('cds').split('.')
-    out=u''
+    out = ''
     for uni in l:
         try:
             int(uni[-1])
             if uni[-2] == '-':
-                out +=u' {0}$^{{{1}}}$'.format(uni[:-2],uni[-2:])
+                out += ' {0}$^{{{1}}}$'.format(uni[:-2],uni[-2:])
             else:
-                out +=u' {0}$^{1}$'.format(uni[:-1],uni[-1:])
+                out += ' {0}$^{1}$'.format(uni[:-1],uni[-1:])
         except ValueError:
-            out +=' '+uni
+            out += ' ' + uni
 
     return out[1:]
 
