@@ -34,19 +34,14 @@ LICENSE = metadata.get('license', 'unknown')
 URL = metadata.get('url', 'http://astropy.org')
 
 # Get the long description from the package's docstring
-__import__(PACKAGENAME)
-package = sys.modules[PACKAGENAME]
-LONG_DESCRIPTION = package.__doc__
+#__import__(PACKAGENAME)
+#package = sys.modules[PACKAGENAME]
+#LONG_DESCRIPTION = package.__doc__
 
-CLASSIFIERS = [
- "Programming Language :: Python",
- "Development Status :: 4 - Beta",
- "Intended Audience :: Science/Research",
- "License :: OSI Approved :: BSD License",
- "Operating System :: OS Independent",
- "Topic :: Scientific/Engineering :: Astronomy",
- "Topic :: Scientific/Engineering :: Physics",
-]
+# Get the long description from the section between 'split here' comments in docs/index.rst
+f = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'index.rst'))
+long_description = f.read().strip()
+LONG_DESCRIPTION = long_description.split('.. comment: split here\n\n')[1].strip()
 
 # Store the package name in a built-in variable so it's easy
 # to get from other parts of the setup infrastructure
@@ -111,6 +106,19 @@ setup(name=PACKAGENAME,
       license=LICENSE,
       url=URL,
       long_description=LONG_DESCRIPTION,
+      classifiers = [ 'Programming Language :: Python :: 3',
+                      'Programming Language :: Python :: 2.6',
+                      'Programming Language :: Python :: 2.7',
+                      'Programming Language :: Python :: 3.2',
+                      'Programming Language :: Python :: 3.3',
+                      'Programming Language :: Python :: 3.4',
+                      'Development Status :: 4 - Beta',
+                      'Intended Audience :: Science/Research',
+                      'License :: OSI Approved :: BSD License',
+                      'Operating System :: OS Independent',
+                      'Topic :: Scientific/Engineering :: Astronomy',
+                      'Topic :: Scientific/Engineering :: Physics',
+                    ],
       cmdclass=cmdclassd,
       zip_safe=False,
       use_2to3=False,
