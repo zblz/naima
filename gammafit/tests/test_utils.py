@@ -60,11 +60,12 @@ def test_validate_cl():
     assert data['cl'] == 0.9
 
 def test_build_data_table():
-    ene = u.Quantity(data_table['ene'])
-    flux = u.Quantity(data_table['flux'])
-    flux_error_hi = u.Quantity(data_table['flux_error_hi'])
-    flux_error_lo = u.Quantity(data_table['flux_error_lo'])
-    ul = data_table['ul']
+    ene = np.logspace(-2,2,20) * u.TeV
+    flux = (ene/(1*u.TeV))**-2 * u.Unit('1/(cm2 s TeV)')
+    flux_error_hi = 0.2 * flux
+    flux_error_lo = 0.1 * flux
+    ul = np.zeros(len(ene))
+    ul[0] = 1
 
     dene = generate_energy_edges(ene)
 

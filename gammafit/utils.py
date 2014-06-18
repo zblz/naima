@@ -16,7 +16,8 @@ __all__ = ["generate_energy_edges", "sed_conversion",
 def validate_column(data_table,key,pt,domain='positive'):
     try:
         column = data_table[key]
-        array = validate_array(key, u.Quantity(column,unit=column.unit), physical_type=pt, domain=domain)
+        array = validate_array(key, u.Quantity(column,unit=column.unit),
+                physical_type=pt, domain=domain)
     except KeyError as e:
         raise TypeError('Data table does not contain required column "{0}"'.format(key))
 
@@ -170,7 +171,7 @@ def generate_energy_edges(ene):
         input array.
     """
     midene = np.sqrt((ene[1:] * ene[:-1]))
-    elo, ehi = np.zeros_like(ene), np.zeros_like(ene)
+    elo, ehi = np.zeros(len(ene)) * ene.unit, np.zeros(len(ene)) * ene.unit
     elo[1:] = ene[1:] - midene
     ehi[:-1] = midene - ene[:-1]
     elo[0] = ehi[0]
