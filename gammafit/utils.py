@@ -16,7 +16,7 @@ __all__ = ["generate_energy_edges", "sed_conversion",
 def validate_column(data_table,key,pt,domain='positive'):
     try:
         column = data_table[key]
-        array = validate_array(key, u.Quantity(column), physical_type=pt, domain=domain)
+        array = validate_array(key, u.Quantity(column,unit=column.unit), physical_type=pt, domain=domain)
     except KeyError as e:
         raise TypeError('Data table does not contain required column "{0}"'.format(key))
 
