@@ -73,10 +73,6 @@ def _plot_chain_func(sampler, p, last_step=False):
     nwalkers = traces.shape[0]
     nsteps = traces.shape[1]
 
-    logplot = False
-    if np.abs(dist.max()/dist.min()) > 10. and np.all(dist>0.):
-        logplot = True
-
     f = plt.figure()
 
     ax1 = f.add_subplot(221)
@@ -96,15 +92,10 @@ def _plot_chain_func(sampler, p, last_step=False):
     ax1.set_ylabel(label)
     ax1.yaxis.set_label_coords(-0.15, 0.5)
     ax1.set_title('Walker traces')
-    if logplot:
-        ax1.set_yscale('log')
 
     # nbins=25 if last_step else 100
     nbins = min(max(25, int(len(dist)/100.)), 100)
     xlabel = label
-    if logplot:
-        dist = np.log10(dist)
-        xlabel = 'log10('+xlabel+')'
     n, x, patch = ax2.hist(dist, nbins, histtype='stepfilled', color='#CC0000', lw=0, normed=1)
     kde = stats.kde.gaussian_kde(dist)
     ax2.plot(x, kde(x), c='k', label='KDE')
@@ -131,15 +122,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     mean, median, std = np.mean(dist), np.median(dist), np.std(dist)
     xmode = np.linspace(mean-np.sqrt(3)*std, mean+np.sqrt(3)*std, 100)
     mode = xmode[np.argmax(kde(xmode))]
-
-    if logplot:
-        mode = 10**mode
-        mean = 10**mean
-        std = np.std(10**dist)
-        xquant = [10**q for q in xquant]
-        median = 10**np.median(dist)
-    else:
-        median = np.median(dist)
+    median = np.median(dist)
 
     autocorr = sampler.get_autocorr_time(window=chain.shape[1]/4.)[p]
 
