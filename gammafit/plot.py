@@ -32,10 +32,10 @@ def plot_chain(sampler, p=None, **kwargs):
     if p == None:
         npars = sampler.chain.shape[-1]
         for pp, label in zip(six.moves.range(npars), sampler.labels):
-            _plot_chain_func(sampler.chain, pp, label, **kwargs)
+            _plot_chain_func(sampler, pp, **kwargs)
         fig = None
     else:
-        fig = _plot_chain_func(sampler.chain, p, sampler.labels[p], **kwargs)
+        fig = _plot_chain_func(sampler, p, **kwargs)
 
     return fig
 
@@ -49,7 +49,10 @@ def _latex_float(f,format=".3g"):
     else:
         return float_str
 
-def _plot_chain_func(chain, p, label, last_step=False):
+def _plot_chain_func(sampler, p, last_step=False):
+    chain = sampler.chain
+    label = sampler.labels[p]
+
     import matplotlib.pyplot as plt
     # Plot everything in serif to match math exponents
     plt.rc('font',family='serif')
@@ -138,11 +141,7 @@ def _plot_chain_func(chain, p, label, last_step=False):
     else:
         median = np.median(dist)
 
-    try:
-        import acor
-        acort = acor.acor(traces)[0]
-    except:
-        acort = np.nan
+    autocorr = sampler.get_autocorr_time(window=chain.shape[1]/4.)[p]
 
     if last_step:
         clen = 'last ensemble'
@@ -152,8 +151,8 @@ def _plot_chain_func(chain, p, label, last_step=False):
     quantiles = dict(six.moves.zip(quant, xquant))
 
     chain_props = 'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers, nsteps) + \
-            'Autocorrelation time: {0:.1f}'.format(acort) + '\n' +\
-            'Gelman-Rubin statistic: {0:.3f}'.format(gelman_rubin_statistic(traces)) + '\n' +\
+            'Autocorrelation time: {0:.1f}'.format(autocorr) + '\n' +\
+            'Mean acceptance fraction: {0:.3f}'.format(np.mean(sampler.acceptance_fraction)) + '\n' +\
             'Distribution properties for the {clen}:\n \
     - median: ${median}$ \n \
     - std: ${std}$ \n' .format(median=_latex_float(quantiles[0.5]), std=_latex_float(std), clen=clen) +\
