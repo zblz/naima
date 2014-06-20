@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+import numpy as np
+from .extern.validator import validate_scalar, validate_array
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'BrokenPowerLaw',
            'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola']
 
 from .radiative import Synchrotron, InverseCompton, PionDecay
-from .extern.validator import validate_scalar, validate_array
+from .extern.validator import validate_scalar, validate_array, validate_physical_type
 
 class PowerLaw(object):
     """
@@ -50,7 +54,7 @@ class PowerLaw(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        e = validate_array('e', e, domain='positive', physical_type='energy')
+        validate_physical_type('e', e, physical_type='energy')
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.alpha)
@@ -105,7 +109,7 @@ class ExponentialCutoffPowerLaw(object):
     def __call__(self,e):
         """One dimensional power law with an exponential cutoff model function"""
 
-        e = validate_array('e', e, domain='positive', physical_type='energy')
+        validate_physical_type('e', e, physical_type='energy')
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.alpha,
@@ -164,7 +168,7 @@ class BrokenPowerLaw(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        e = validate_array('e', e, domain='positive', physical_type='energy')
+        validate_physical_type('e', e, physical_type='energy')
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_break.to('eV').value, self.alpha_1, self.alpha_2)
@@ -215,7 +219,7 @@ class LogParabola(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        e = validate_array('e', e, domain='positive', physical_type='energy')
+        validate_physical_type('e', e, physical_type='energy')
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value,

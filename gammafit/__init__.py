@@ -18,4 +18,4 @@ from .core import *
 from .plot import *
 from .utils import *
 
-import models
+from . import models

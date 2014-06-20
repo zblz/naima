@@ -46,7 +46,7 @@ class Synchrotron(object):
 
     def _nelec(self):
         self.log10gmin = 4
-        self.log10gmax = 10.5
+        self.log10gmax = 10
         self.ngamd = 100
         self.gam = np.logspace(self.log10gmin,self.log10gmax,
                 self.ngamd*self.log10gmax/self.log10gmin)
