@@ -1,17 +1,31 @@
 Radiative Models
 ================
 
-.. currentmodule:: gammafit
+.. currentmodule:: gammafit.models
 
-ElectronOZM
------------
+Leptonic models
+---------------
 
-.. autoclass:: ElectronOZM
+.. autoclass:: Synchrotron
+    :members:
+.. autoclass:: InverseCompton
     :members:
 
-ProtonOZM
----------
+Hadronic model
+--------------
 
-.. autoclass:: ProtonOZM
+.. autoclass:: PionDecay
     :members:
 
+Particle Distributions
+----------------------
+
+
+.. autoclass:: PowerLaw
+    :members:
+.. autoclass:: ExponentialCutoffPowerLaw
+    :members:
+.. autoclass:: BrokenPowerLaw
+    :members:
+.. autoclass:: LogParabola
+    :members:

@@ -3,6 +3,7 @@ from astropy import units as u
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy.tests.helper import pytest
+from astropy.extern import six
 
 try:
     import scipy
@@ -10,124 +11,112 @@ try:
 except ImportError:
     HAS_SCIPY = False
 
+e_0 = 20*u.TeV
+e_cutoff = 10*u.TeV
+alpha = 2.0
+alpha_1 = 1.5
+alpha_2 = 2.5
 
-electronozmpars = {
-    'seedspec': 'CMB',
-    'index': 2.0,
-    'cutoff': 1e13 * u.eV,
-    'beta': 1.0,
-    'ngamd': 100,
-    'gmin': 1e4,
-    'gmax': 1e10,
-}
+energy = np.logspace(0, 15, 1000) * u.eV
 
+@pytest.fixture
+def particle_dists():
+    from ..models import ExponentialCutoffPowerLaw, PowerLaw, BrokenPowerLaw
+    ECPL = ExponentialCutoffPowerLaw(amplitude=1, e_0=20 * u.TeV, alpha=2.0, e_cutoff=10*u.TeV)
+    PL = PowerLaw(amplitude=1, e_0=20 * u.TeV, alpha=2.0)
+    BPL = BrokenPowerLaw(amplitude=1, e_break=1 * u.TeV, alpha_1=1.5, alpha_2=2.5)
+    return ECPL,PL,BPL
 
 @pytest.mark.skipif('not HAS_SCIPY')
-def test_electronozm():
+def test_synchrotron_lum(particle_dists):
     """
-    test sync and IC calculation
+    test sync calculation
     """
-    from ..onezone import ElectronOZM
+    from ..models import Synchrotron
 
-    ozm = ElectronOZM(np.logspace(0, 15, 1000) * u.eV, 1, **electronozmpars)
-    ozm.calc_outspec()
+    ECPL,PL,BPL = particle_dists
 
-    lsy = np.trapz(ozm.specsy * ozm.outspecene, ozm.outspecene).to('erg/s')
+    lums = [0.0002525815099101462,
+            0.16997228271344694,
+            1.1623884971024219e-05]
+
+    for pdist, lum in six.moves.zip(particle_dists, lums):
+        sy = Synchrotron(pdist)
+
+        lsy = np.trapz(sy(energy,sed=False) * energy, energy).to('erg/s')
+        assert(lsy.unit == u.erg / u.s)
+        assert_allclose(lsy.value, lum)
+
+    sy = Synchrotron(ECPL,B=1*u.G)
+
+    lsy = np.trapz(sy(energy,sed=False) * energy, energy).to('erg/s')
     assert(lsy.unit == u.erg / u.s)
-    assert_allclose(lsy.value, 2.527857584e-4)
+    assert_allclose(lsy.value, 31700300.30988492)
 
-    lic = np.trapz(ozm.specic * ozm.outspecene, ozm.outspecene).to('erg/s')
-    assert(lic.unit == u.erg / u.s)
-    assert_allclose(lic.value, 2.832788802e-4)
+@pytest.mark.skipif('not HAS_SCIPY')
+def test_inverse_compton_lum(particle_dists):
+    """
+    test sync calculation
+    """
+    from ..models import InverseCompton
+
+    ECPL,PL,BPL = particle_dists
+
+    lums = [0.00028327087904549787,
+            0.005459045188008858,
+            1.4938685711445786e-06]
+
+    for pdist, lum in six.moves.zip(particle_dists, lums):
+        ic = InverseCompton(pdist)
+
+        lic = np.trapz(ic(energy,sed=False) * energy, energy).to('erg/s')
+        assert(lic.unit == u.erg / u.s)
+        assert_allclose(lic.value, lum)
+
+    ic = InverseCompton(ECPL,seedspec=['CMB','FIR','NIR'])
+
+    lic = np.trapz(ic(energy,sed=False) * energy, energy).to('erg/s')
+    assert_allclose(lic.value, 0.00035996458437447014)
 
 
 @pytest.mark.skipif('not HAS_SCIPY')
-def test_seed_input():
+def test_ic_seed_input(particle_dists):
     """
     test initialization of different input formats for seed photon fields
     """
-    from ..onezone import ElectronOZM
+    from ..models import InverseCompton
 
-    ozm = ElectronOZM(np.logspace(0, 15, 1000) * u.eV, 1,
-                      seedspec='CMB')
+    ECPL,PL,BPL = particle_dists
 
-    ozm = ElectronOZM(np.logspace(0, 15, 1000) * u.eV, 1,
-                      seedspec=['CMB', 'FIR', 'NIR'],)
+    ic = InverseCompton(PL, seedspec='CMB')
 
-    ozm = ElectronOZM(np.logspace(0, 15, 1000) * u.eV, 1,
-                      seedspec=['CMB', ['test', 5000 * u.K, 0], ],)
+    ic = InverseCompton(PL, seedspec=['CMB', 'FIR', 'NIR'],)
 
-    ozm = ElectronOZM(np.logspace(0, 15, 1000) * u.eV, 1,
-                      seedspec=['CMB', ['test2', 5000 * u.K, 15 * u.eV / u.cm ** 3], ],)
+    ic = InverseCompton(PL, seedspec=['CMB', ['test', 5000 * u.K, 0], ],)
 
-
-@pytest.mark.skipif('not HAS_SCIPY')
-def test_electronozm_evolve():
-    """
-    test electron evolution
-    """
-    from ..onezone import ElectronOZM
-
-    ozm = ElectronOZM(np.logspace(0, 15, 1000) *
-                      u.eV, 1, evolve_nelec=True, **electronozmpars)
-    ozm.calc_outspec()
-
-    lsy = np.trapz(ozm.specsy * ozm.outspecene, ozm.outspecene).to('erg/s')
-    assert(lsy.unit == u.erg / u.s)
-    assert_allclose(lsy.value, 915035075.9510874)
-
-    lic = np.trapz(ozm.specic * ozm.outspecene, ozm.outspecene).to('erg/s')
-    assert(lic.unit == u.erg / u.s)
-    assert_allclose(lic.value, 8288470921.689767)
+    ic = InverseCompton(PL,
+            seedspec=['CMB', ['test2', 5000 * u.K, 15 * u.eV / u.cm ** 3], ],)
 
 
 @pytest.mark.skipif('not HAS_SCIPY')
-def test_protonozm():
+def test_pion_decay(particle_dists):
     """
     test ProtonOZM
     """
-    from ..onezone import ProtonOZM
+    from ..models import PionDecay
 
-    # Exponential cutoff powerlaw
-    ozm = ProtonOZM(np.logspace(9, 15, 100) * u.eV,
-                    1, index=2.0, cutoff=1e13 * u.eV, beta=1.0)
-    ozm.calc_outspec()
-    lpp = np.trapz(ozm.specpp * ozm.outspecene, ozm.outspecene).to('erg/s')
-    assert_allclose(lpp.value, 1.3959817466686348e-15, rtol=1e-5)
-    # Powerlaw
-    ozm.cutoff = None
-    ozm.calc_outspec()
-    lpp = np.trapz(ozm.specpp * ozm.outspecene, ozm.outspecene).to('erg/s')
-    assert_allclose(lpp.value, 5.770536614281706e-15, rtol=1e-5)
-    # Broken Powerlaw
-    ozm.index1 = 1.5
-    ozm.index2 = 1.5
-    ozm.E_break = 10 * u.TeV
-    ozm.calc_outspec()
-    lpp = np.trapz(ozm.specpp * ozm.outspecene, ozm.outspecene).to('erg/s')
-    assert_allclose(lpp.value, 3.754818148524127e-13, rtol=1e-5)
+    ECPL,PL,BPL = particle_dists
 
-    # different Etrans
-    ozm = ProtonOZM(
-        np.logspace(9, 15, 100) * u.eV, 1, index=2.0, cutoff=1e13 * u.eV, beta=1.0,
-        Etrans=1 * u.TeV)
-    ozm.calc_outspec()
-    lpp = np.trapz(ozm.specpp * ozm.outspecene, ozm.outspecene).to('erg/s')
-    assert_allclose(lpp.value, 1.1852004994595184e-15, rtol=1e-5)
+    lums = [5.81597553001e-13,
+            1.25944455136e-12,
+            8.56815829515e-16]
 
+    energy = np.logspace(9, 13, 20) * u.eV
 
-@pytest.mark.skipif('not HAS_SCIPY')
-def test_log():
-    from ..onezone import ProtonOZM, ElectronOZM
+    for pdist, lum in six.moves.zip(particle_dists, lums):
+        pp = PionDecay(pdist)
 
-    ozm = ElectronOZM(np.logspace(11, 13, 10) * u.eV, 1, nolog=True)
-    ozm.calc_outspec()
+        lpp = np.trapz(pp(energy,sed=False) * energy, energy).to('erg/s')
+        assert(lpp.unit == u.erg / u.s)
+        assert_allclose(lpp.value, lum)
 
-    ozm = ElectronOZM(np.logspace(11, 13, 10) * u.eV, 1, debug=True)
-    ozm.calc_outspec()
-
-    ozm = ProtonOZM(np.logspace(11, 13, 10) * u.eV, 1, nolog=True)
-    ozm.calc_outspec()
-
-    ozm = ProtonOZM(np.logspace(11, 13, 10) * u.eV, 1, debug=True)
-    ozm.calc_outspec()

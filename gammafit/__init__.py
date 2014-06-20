@@ -15,6 +15,7 @@ from ._astropy_init import *
 # ----------------------------------------------------------------------------
 
 from .core import *
-from .onezone import *
 from .plot import *
 from .utils import *
+
+from . import models
