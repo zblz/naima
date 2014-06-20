@@ -51,7 +51,7 @@ class Synchrotron(object):
         self.gam = np.logspace(self.log10gmin,self.log10gmax,
                 self.ngamd*self.log10gmax/self.log10gmin)
 
-        self.nelec = self.pdist(self.gam * mec2.to('TeV').value)
+        self.nelec = self.pdist(self.gam * mec2.to('TeV'))
 
     def __call__(self,outspecene,sed=True):
         """Compute synchrotron spectrum for energies in ``outspecene``
@@ -196,7 +196,7 @@ class InverseCompton(object):
         self.gam = np.logspace(self.log10gmin,self.log10gmax,
                 self.ngamd*self.log10gmax/self.log10gmin)
 
-        self.nelec = self.pdist(self.gam * mec2.to('TeV').value)
+        self.nelec = self.pdist(self.gam * mec2)
 
     def _calc_specic(self, seed, outspecene):
         log.debug(
@@ -353,7 +353,7 @@ class PionDecay(object):
         Integrand of Eq. 72
         """
         try:
-            return self._sigma_inel(Egamma / x) * self.pdist(Egamma / x) \
+            return self._sigma_inel(Egamma / x) * self.pdist((Egamma / x)*u.TeV) \
                 * self._Fgamma(x, Egamma / x) / x
         except ZeroDivisionError:
             return np.nan
@@ -386,7 +386,7 @@ class PionDecay(object):
     def _delta_integrand(self, Epi):
         Ep0 = self._mp + Epi / self._Kpi
         qpi = self._c * \
-            (self.nhat / self._Kpi) * self._sigma_inel(Ep0) * self.pdist(Ep0)
+            (self.nhat / self._Kpi) * self._sigma_inel(Ep0) * self.pdist(Ep0*u.TeV)
         return qpi / np.sqrt(Epi ** 2 + self._m_pi ** 2)
 
     def _calc_specpp_loE(self, Egamma):
@@ -410,7 +410,7 @@ class PionDecay(object):
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
-        Wp = quad(lambda x: x * self.pdist(x), Eth, np.Inf)[0] * u.TeV
+        Wp = quad(lambda x: x * self.pdist(x*u.TeV), Eth, np.Inf)[0] * u.TeV
         self.Wp = Wp.to('erg') / u.cm**5
         log.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e}'.format(self.Wp))
 
