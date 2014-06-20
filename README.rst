@@ -10,8 +10,8 @@ Documentation is at `gammafit.readthedocs.org
 <http://gammafit.readthedocs.org>`_.
 
 
-.. image:: http://img.shields.io/travis/zblz/gammafit.svg?branch=master
+.. image:: http://travis-ci.org/zblz/gammafit.svg
    :target: https://travis-ci.org/zblz/gammafit
 
-.. image:: http://img.shields.io/coveralls/zblz/gammafit.svg?branch=master
+.. image:: http://coveralls.io/repos/zblz/gammafit/badge.png
    :target: https://coveralls.io/r/zblz/gammafit
