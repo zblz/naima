@@ -85,8 +85,8 @@ def validate_data_table(data_table):
     if not HAS_CL:
         data['cl'] = 0.9
         if 'ul' in data_table.keys():
-            log.warn('"cl" keyword not provided in input data table, upper limits'
-                    'will be assumed to be at 90% confidence level')
+            log.warning('"cl" keyword not provided in input data table, upper limits'
+                        'will be assumed to be at 90% confidence level')
 
     return data
 
@@ -310,7 +310,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
                 f.savefig('{0}_chain_{1}.png'.format(outname, label))
             del f
         except Exception as e:
-            log.warn('plot_chain failed for paramter {0}: {1}'.format(par,e))
+            log.warning('plot_chain failed for paramter {0}: {1}'.format(par,e))
 
     # Corner plot
 
@@ -354,7 +354,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
                 raise TypeError
             assert(len(modelx) == len(modely))
         except (TypeError, AssertionError):
-            log.warn(
+            log.warning(
                 'Not plotting model {0} because of wrong blob format'.format(modelidx))
             continue
 
@@ -362,7 +362,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
             e_unit = modelx.unit
             f_unit = modely.unit
         except AttributeError:
-            log.warn(
+            log.warning(
                 'Not plotting model {0} because of lack of units'.format(modelidx))
             continue
 
