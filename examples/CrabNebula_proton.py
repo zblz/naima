@@ -16,39 +16,35 @@ labels=['norm','index','log10(cutoff)']
 
 ## Model definition
 
+ene = u.Quantity(data['ene'])
+# peak gamma energy production is ~0.1*Ep, so enemid corresponds to Ep=10*enemid
+# If a cutoff is present, this should be reduced to reduce parameter correlation
+e_0 = 5.*np.sqrt(ene[0]*ene[-1])
+
+from gammafit.models import PionDecay, ExponentialCutoffPowerLaw
+
+ECPL = ExponentialCutoffPowerLaw(1,e_0,2,60.*u.TeV)
+PP = PionDecay(ECPL)
+
+Epmin=ene[0]*1e-2
+Epmax=ene[-1]*1e3
+proton_ene = np.logspace(np.log10(Epmin.value),np.log10(Epmax.value),50)*ene.unit
+
+
 def ppgamma(pars,data):
 
-    enemid=np.sqrt(data['ene'][0]*data['ene'][-1])
-    # peak gamma energy production is ~0.1*Ep, so enemid corresponds to Ep=10*enemid
-    # If a cutoff is present, this should be reduced
-    norm_ene = 5.*enemid
+    PP.pdist.amplitude = pars[0]
+    PP.pdist.alpha = pars[1]
+    PP.pdist.e_cutoff = (10**pars[2])*u.TeV
 
-    norm   = pars[0]
-    index  = pars[1]
-    cutoff = (10**pars[2])*u.TeV
+    # convert to same units as observed differential spectrum
+    model = PP(data)
+    model = model.to('1/(s TeV)')/u.cm**2
 
-    ozm=gammafit.ProtonOZM(
-            data['ene'], norm,
-            cutoff      = cutoff,
-            index       = index,
-            norm_energy = norm_ene,
-            nolog       = True,
-            )
+    # Save a realization of the particle distribution to the metadata blob
+    proton_dist= PP.pdist(proton_ene) * u.Unit('1/TeV')
 
-    ozm.calc_outspec()
-
-    model=ozm.specpp.to('1/(s TeV)')/u.cm**2
-
-    # compute proton distribution for blob
-    Epmin=data['ene'][0]*1e-2
-    Epmax=data['ene'][-1]*1e3
-
-    protonene=np.logspace(np.log10(Epmin.value),np.log10(Epmax.value),50)*data['ene'].unit
-    protondist=(ozm.Jp(protonene)*protonene**2).to('erg')
-
-    del(ozm)
-
-    return model, (data['ene'],model), (protonene,protondist)
+    return model, model, (proton_ene,proton_dist)
 
 ## Prior definition
 
@@ -59,7 +55,7 @@ def lnprior(pars):
 	"""
 
 	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
-            + gammafit.uniform_prior(pars[1],-1,5)
+                + gammafit.uniform_prior(pars[1],-1,5)
 
 	return logprob
 

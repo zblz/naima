@@ -3,7 +3,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-from .extern.validator import validate_scalar, validate_array
+from .extern.validator import validate_scalar, validate_array, validate_physical_type
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
 
@@ -68,7 +68,7 @@ class Synchrotron(object):
 
         self.nelec = self.pdist(self.gam * mec2.to('TeV'))
 
-    def __call__(self,outspecene,sed=True):
+    def __call__(self,outspecene,sed=False):
         """Compute synchrotron spectrum for energies in ``outspecene``
 
         Compute synchrotron for random magnetic field according to approximation of
@@ -86,8 +86,7 @@ class Synchrotron(object):
 
         from scipy.special import cbrt
 
-        if not hasattr(self, 'nelec'):
-            self._nelec()
+        self._nelec()
 
         def Gtilde(x):
             """
@@ -263,7 +262,7 @@ class InverseCompton(object):
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
 
-    def __call__(self,outspecene,sed=True):
+    def __call__(self,outspecene,sed=False):
         """Compute IC spectrum for energies in ``outspecene``
 
         Compute IC spectrum using IC cross-section for isotropic interaction
@@ -277,11 +276,9 @@ class InverseCompton(object):
         sed : bool
             Whether to return SED (default) or differential spectrum
         """
-        outspecene = validate_array('outspecene',outspecene,domain='positive',
-                                    physical_type='energy')
+        outspecene = _validate_ene(outspecene)
 
-        if not hasattr(self, 'gam') or not hasattr(self,'nelec'):
-            self._nelec()
+        self._nelec()
 
         self.specic = np.zeros(len(outspecene)) * u.Unit('1/(s eV)')
 
@@ -421,7 +418,7 @@ class PionDecay(object):
 
         return result * u.Unit('1/(s TeV)')
 
-    def __call__(self,outspecene,sed=True):
+    def __call__(self,outspecene,sed=False):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
         """
