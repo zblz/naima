@@ -11,7 +11,7 @@ from .radiative import Synchrotron, InverseCompton, PionDecay
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'BrokenPowerLaw',
            'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola']
 
-def validate_ene(ene):
+def _validate_ene(ene):
     from astropy.table import Table
 
     if isinstance(ene, dict) or isinstance(ene, Table):
@@ -69,7 +69,7 @@ class PowerLaw(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        e = validate_ene(e)
+        e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.alpha)
@@ -124,7 +124,7 @@ class ExponentialCutoffPowerLaw(object):
     def __call__(self,e):
         """One dimensional power law with an exponential cutoff model function"""
 
-        e = validate_ene(e)
+        e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.alpha,
@@ -183,7 +183,7 @@ class BrokenPowerLaw(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        e = validate_ene(e)
+        e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_break.to('eV').value, self.alpha_1, self.alpha_2)
@@ -234,7 +234,7 @@ class LogParabola(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        e = validate_ene(e)
+        e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value,

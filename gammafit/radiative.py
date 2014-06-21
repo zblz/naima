@@ -25,6 +25,21 @@ ar = (4 * sigma_sb / c).to('erg/(cm3 K4)')
 
 heaviside = lambda x: (np.sign(x) + 1) / 2.
 
+def _validate_ene(ene):
+    from astropy.table import Table
+
+    if isinstance(ene, dict) or isinstance(ene, Table):
+        try:
+            ene = validate_array('ene',u.Quantity(ene['ene']),physical_type='energy')
+        except KeyError:
+            raise TypeError('Table or dict does not have \'ene\' column')
+    else:
+        if not isinstance(ene,u.Quantity):
+            ene = u.Quantity(ene)
+        validate_physical_type('ene',ene,physical_type='energy')
+
+    return ene
+
 class Synchrotron(object):
     """Synchrotron emission from an electron population
 
@@ -66,6 +81,9 @@ class Synchrotron(object):
         sed : bool
             Whether to return SED (default) or differential spectrum
         """
+
+        outspecene = _validate_ene(outspecene)
+
         from scipy.special import cbrt
 
         if not hasattr(self, 'nelec'):
@@ -201,6 +219,7 @@ class InverseCompton(object):
     def _calc_specic(self, seed, outspecene):
         log.debug(
             '_calc_specic: Computing IC on {0} seed photons...'.format(seed))
+        outspecene = _validate_ene(outspecene)
 
         def iso_ic_on_planck(electron_energy,
                              soft_photon_temperature, gamma_energy):
@@ -406,6 +425,7 @@ class PionDecay(object):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
         """
+        outspecene = _validate_ene(outspecene)
         from scipy.integrate import quad
 
         # Before starting, show total proton energy above threshold
