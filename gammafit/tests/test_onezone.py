@@ -11,9 +11,10 @@ try:
 except ImportError:
     HAS_SCIPY = False
 
-e_0 = 20*u.TeV
-e_cutoff = 10*u.TeV
+e_0 = 20 * u.TeV
+e_cutoff = 10 * u.TeV
 alpha = 2.0
+e_break = 1 * u.TeV
 alpha_1 = 1.5
 alpha_2 = 2.5
 
@@ -22,9 +23,9 @@ energy = np.logspace(0, 15, 1000) * u.eV
 @pytest.fixture
 def particle_dists():
     from ..models import ExponentialCutoffPowerLaw, PowerLaw, BrokenPowerLaw
-    ECPL = ExponentialCutoffPowerLaw(amplitude=1, e_0=20 * u.TeV, alpha=2.0, e_cutoff=10*u.TeV)
-    PL = PowerLaw(amplitude=1, e_0=20 * u.TeV, alpha=2.0)
-    BPL = BrokenPowerLaw(amplitude=1, e_break=1 * u.TeV, alpha_1=1.5, alpha_2=2.5)
+    ECPL = ExponentialCutoffPowerLaw(amplitude=1, e_0=e_0, alpha=alpha, e_cutoff=e_cutoff)
+    PL = PowerLaw(amplitude=1, e_0=e_0, alpha=alpha)
+    BPL = BrokenPowerLaw(amplitude=1, e_break=e_break, alpha_1=alpha_1, alpha_2=alpha_2)
     return ECPL,PL,BPL
 
 @pytest.mark.skipif('not HAS_SCIPY')
@@ -43,13 +44,13 @@ def test_synchrotron_lum(particle_dists):
     for pdist, lum in six.moves.zip(particle_dists, lums):
         sy = Synchrotron(pdist)
 
-        lsy = np.trapz(sy(energy,sed=False) * energy, energy).to('erg/s')
+        lsy = np.trapz(sy.flux(energy) * energy, energy).to('erg/s')
         assert(lsy.unit == u.erg / u.s)
         assert_allclose(lsy.value, lum)
 
     sy = Synchrotron(ECPL,B=1*u.G)
 
-    lsy = np.trapz(sy(energy,sed=False) * energy, energy).to('erg/s')
+    lsy = np.trapz(sy.flux(energy) * energy, energy).to('erg/s')
     assert(lsy.unit == u.erg / u.s)
     assert_allclose(lsy.value, 31700300.30988492)
 
@@ -69,13 +70,13 @@ def test_inverse_compton_lum(particle_dists):
     for pdist, lum in six.moves.zip(particle_dists, lums):
         ic = InverseCompton(pdist)
 
-        lic = np.trapz(ic(energy,sed=False) * energy, energy).to('erg/s')
+        lic = np.trapz(ic.flux(energy) * energy, energy).to('erg/s')
         assert(lic.unit == u.erg / u.s)
         assert_allclose(lic.value, lum)
 
     ic = InverseCompton(ECPL,seedspec=['CMB','FIR','NIR'])
 
-    lic = np.trapz(ic(energy,sed=False) * energy, energy).to('erg/s')
+    lic = np.trapz(ic.flux(energy) * energy, energy).to('erg/s')
     assert_allclose(lic.value, 0.00035996458437447014)
 
 
@@ -116,7 +117,7 @@ def test_pion_decay(particle_dists):
     for pdist, lum in six.moves.zip(particle_dists, lums):
         pp = PionDecay(pdist)
 
-        lpp = np.trapz(pp(energy,sed=False) * energy, energy).to('erg/s')
+        lpp = np.trapz(pp.flux(energy) * energy, energy).to('erg/s')
         assert(lpp.unit == u.erg / u.s)
         assert_allclose(lpp.value, lum)
 

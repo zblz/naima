@@ -38,7 +38,7 @@ def ppgamma(pars,data):
     PP.pdist.e_cutoff = (10**pars[2])*u.TeV
 
     # convert to same units as observed differential spectrum
-    model = PP(data)
+    model = PP.flux(data)
     model = model.to('1/(s TeV)')/u.cm**2
 
     # Save a realization of the particle distribution to the metadata blob

@@ -68,8 +68,8 @@ class Synchrotron(object):
 
         self.nelec = self.pdist(self.gam * mec2.to('TeV'))
 
-    def __call__(self,outspecene,sed=False):
-        """Compute synchrotron spectrum for energies in ``outspecene``
+    def flux(self,outspecene):
+        """Compute differential synchrotron spectrum for energies in ``outspecene``
 
         Compute synchrotron for random magnetic field according to approximation of
         Aharonian, Kelner, and Prosekin 2010.
@@ -78,8 +78,6 @@ class Synchrotron(object):
         ----------
         outspecene : :class:`~astropy.units.Quantity` instance
             Photon energy array.
-        sed : bool
-            Whether to return SED (default) or differential spectrum
         """
 
         outspecene = _validate_ene(outspecene)
@@ -118,10 +116,24 @@ class Synchrotron(object):
         # return units
         spec = np.trapz(np.vstack(self.nelec) * dNdE, self.gam, axis=0) / u.s / u.erg
 
-        if sed:
-            return (spec * outspecene ** 2.).to('erg/s')
-        else:
-            return spec.to('1/(s eV)')
+        return spec.to('1/(s eV)')
+
+    def sed(self,outspecene):
+        """Compute differential synchrotron spectrum for energies in ``outspecene``
+
+        Compute synchrotron for random magnetic field according to approximation of
+        Aharonian, Kelner, and Prosekin 2010.
+
+        Parameters
+        ----------
+        outspecene : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+        """
+
+        outspecene = _validate_ene(outspecene)
+        spec = self.flux(outspecene)
+
+        return (spec * outspecene ** 2.).to('erg/s')
 
 class InverseCompton(object):
     """Synchrotron emission from an electron population
@@ -262,8 +274,8 @@ class InverseCompton(object):
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
 
-    def __call__(self,outspecene,sed=False):
-        """Compute IC spectrum for energies in ``outspecene``
+    def flux(self,outspecene):
+        """Compute differential IC spectrum for energies in ``outspecene``.
 
         Compute IC spectrum using IC cross-section for isotropic interaction
         with a blackbody photon spectrum following Khangulyan, Aharonian, and
@@ -273,8 +285,6 @@ class InverseCompton(object):
         ----------
         outspecene : :class:`~astropy.units.Quantity` instance
             Photon energy array.
-        sed : bool
-            Whether to return SED (default) or differential spectrum
         """
         outspecene = _validate_ene(outspecene)
 
@@ -287,12 +297,27 @@ class InverseCompton(object):
             specic = self._calc_specic(seedspec,outspecene).to('1/(s eV)')
             self.specic += specic
 
-        if sed:
-            photon_spectrum = (self.specic * outspecene ** 2).to('erg/s')
-        else:
-            photon_spectrum = self.specic.to('1/(s eV)')
+        return self.specic.to('1/(s eV)')
 
-        return photon_spectrum
+
+    def sed(self,outspecene):
+        """Compute IC spectral energy distribution for energies in ``outspecene``.
+
+        Compute IC spectrum using IC cross-section for isotropic interaction
+        with a blackbody photon spectrum following Khangulyan, Aharonian, and
+        Kelner 2013 (arXiv:1310.7971).
+
+        Parameters
+        ----------
+        outspecene : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+        """
+        outspecene = _validate_ene(outspecene)
+
+        specic = self.flux(outspecene)
+
+        return (specic * outspecene ** 2).to('erg/s')
+
 
 class PionDecay(object):
     r"""Pion decay gamma-ray emission from a proton population.
@@ -418,10 +443,16 @@ class PionDecay(object):
 
         return result * u.Unit('1/(s TeV)')
 
-    def __call__(self,outspecene,sed=False):
+    def flux(self,outspecene):
         """
-        Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
+        Compute differential spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
+
+        Parameters
+        ----------
+        outspecene : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
         """
+
         outspecene = _validate_ene(outspecene)
         from scipy.integrate import quad
 
@@ -455,7 +486,19 @@ class PionDecay(object):
             else:
                 self.specpp[i] = self._calc_specpp_loE(Egamma)
 
-        if sed:
-            return (self.specpp * outspecene ** 2).to('erg/s')
-        else:
-            return self.specpp.to('1/(s eV)')
+        return self.specpp.to('1/(s eV)')
+
+    def sed(self,outspecene):
+        """
+        Compute spectral energy distribution from pp interactions using Eq. 71 and Eq.58 of KAB06.
+
+        Parameters
+        ----------
+        outspecene : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+        """
+        outspecene = _validate_ene(outspecene)
+
+        specpp = self.flux(outspecene)
+
+        return (specpp * outspecene ** 2).to('erg/s')

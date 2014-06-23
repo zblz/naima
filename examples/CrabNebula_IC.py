@@ -28,7 +28,7 @@ def ElectronIC(pars,data):
     IC.pdist.e_cutoff = (10**pars[2])*u.TeV
 
     # convert to same units as observed differential spectrum
-    model = IC(data).to('1/(s TeV)')/u.cm**2
+    model = IC.flux(data).to('1/(s TeV)')/u.cm**2
 
     mec2 = u.Unit(m_e*c**2)
 
