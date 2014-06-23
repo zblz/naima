@@ -8,7 +8,7 @@ from astropy.io import ascii
 
 data=ascii.read('CrabNebula_HESS_2006.dat')
 
-ene = u.Quantity(data['ene'])
+ene = u.Quantity(data['energy'])
 ene0 = np.sqrt(ene[0]*ene[-1])
 
 ## Set initial parameters
@@ -56,7 +56,7 @@ if __name__=='__main__':
 ## Run sampler
 
     sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels,
-            model=cutoffexp, prior=lnprior, nwalkers=128, nburn=50, nrun=10,
+            model=cutoffexp, prior=lnprior, nwalkers=512, nburn=50, nrun=10,
             threads=4)
 
 ## Save sampler

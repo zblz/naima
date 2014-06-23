@@ -37,7 +37,7 @@ def cutoffexp(pars, data):
         - 3: cutoff exponent (beta)
     """
 
-    x = data['ene']
+    x = data['energy']
     # take logarithmic mean of first and last data points as normalization
     # energy
     x0 = np.sqrt(x[0] * x[-1])

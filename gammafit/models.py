@@ -16,13 +16,13 @@ def _validate_ene(ene):
 
     if isinstance(ene, dict) or isinstance(ene, Table):
         try:
-            ene = validate_array('ene',u.Quantity(ene['ene']),physical_type='energy')
+            ene = validate_array('energy',u.Quantity(ene['energy']),physical_type='energy')
         except KeyError:
             raise TypeError('Table or dict does not have \'ene\' column')
     else:
         if not isinstance(ene,u.Quantity):
             ene = u.Quantity(ene)
-        validate_physical_type('ene',ene,physical_type='energy')
+        validate_physical_type('energy',ene,physical_type='energy')
 
     return ene
 

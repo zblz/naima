@@ -19,13 +19,13 @@ data_table_sym = ascii.read(fname_sym)
 
 def test_validate_data_types():
     data_table2 = data_table.copy()
-    data_table2['ene'].unit=''
+    data_table2['energy'].unit=''
     with pytest.raises(TypeError):
         data = validate_data_table(data_table2)
 
 def test_validate_missing_column():
     data_table2 = data_table.copy()
-    data_table2.remove_column('ene')
+    data_table2.remove_column('energy')
     with pytest.raises(TypeError):
         data = validate_data_table(data_table2)
 

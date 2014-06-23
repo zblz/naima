@@ -30,13 +30,13 @@ def _validate_ene(ene):
 
     if isinstance(ene, dict) or isinstance(ene, Table):
         try:
-            ene = validate_array('ene',u.Quantity(ene['ene']),physical_type='energy')
+            ene = validate_array('energy',u.Quantity(ene['energy']),physical_type='energy')
         except KeyError:
-            raise TypeError('Table or dict does not have \'ene\' column')
+            raise TypeError('Table or dict does not have \'energy\' column')
     else:
         if not isinstance(ene,u.Quantity):
             ene = u.Quantity(ene)
-        validate_physical_type('ene',ene,physical_type='energy')
+        validate_physical_type('energy',ene,physical_type='energy')
 
     return ene
 
@@ -45,7 +45,7 @@ class Synchrotron(object):
 
     Parameters
     ----------
-    pdist : :class:`~astropy.modeling.FittableModel1D` subclass instance
+    particle_distribution : function
         Particle distribution function, taking the electron energy in units of
         TeV and returning the particle energy density in units of number of
         electrons per TeV.
@@ -54,8 +54,8 @@ class Synchrotron(object):
         Isotropic magnetic field strength. Default: equipartition
         with CMB (3.24e-6 G)
     """
-    def __init__(self, pdist, B=3.24e-6*u.G, **kwargs):
-        self.pdist = pdist
+    def __init__(self, particle_distribution, B=3.24e-6*u.G, **kwargs):
+        self.particle_distribution = particle_distribution
         self.B = validate_scalar('B',B,physical_type='magnetic flux density')
         self.__dict__.update(**kwargs)
 
@@ -66,21 +66,21 @@ class Synchrotron(object):
         self.gam = np.logspace(self.log10gmin,self.log10gmax,
                 self.ngamd*self.log10gmax/self.log10gmin)
 
-        self.nelec = self.pdist(self.gam * mec2.to('TeV'))
+        self.nelec = self.particle_distribution(self.gam * mec2.to('TeV'))
 
-    def flux(self,outspecene):
-        """Compute differential synchrotron spectrum for energies in ``outspecene``
+    def flux(self,photon_energy):
+        """Compute differential synchrotron spectrum for energies in ``photon_energy``
 
         Compute synchrotron for random magnetic field according to approximation of
         Aharonian, Kelner, and Prosekin 2010.
 
         Parameters
         ----------
-        outspecene : :class:`~astropy.units.Quantity` instance
+        photon_energy : :class:`~astropy.units.Quantity` instance
             Photon energy array.
         """
 
-        outspecene = _validate_ene(outspecene)
+        outspecene = _validate_ene(photon_energy)
 
         from scipy.special import cbrt
 
@@ -118,19 +118,19 @@ class Synchrotron(object):
 
         return spec.to('1/(s eV)')
 
-    def sed(self,outspecene):
-        """Compute differential synchrotron spectrum for energies in ``outspecene``
+    def sed(self,photon_energy):
+        """Compute differential synchrotron spectrum for energies in ``photon_energy``
 
         Compute synchrotron for random magnetic field according to approximation of
         Aharonian, Kelner, and Prosekin 2010.
 
         Parameters
         ----------
-        outspecene : :class:`~astropy.units.Quantity` instance
+        photon_energy : :class:`~astropy.units.Quantity` instance
             Photon energy array.
         """
 
-        outspecene = _validate_ene(outspecene)
+        outspecene = _validate_ene(photon_energy)
         spec = self.flux(outspecene)
 
         return (spec * outspecene ** 2.).to('erg/s')
@@ -140,19 +140,21 @@ class InverseCompton(object):
 
     Parameters
     ----------
-    pdist : :class:`~astropy.modeling.FittableModel1D` subclass instance
+    particle_distribution : :class:`~astropy.modeling.FittableModel1D` subclass instance
         Particle distribution function, taking the electron energy in units of
         TeV and returning the particle energy density in units of number of
         electrons per TeV.
 
-    seedspec : string or iterable of strings (optional)
-        A list of gray-body seed spectra to use for IC calculation.
+    seed_photon_fields : string or iterable of strings (optional)
+        A list of gray-body seed photon fields to use for IC calculation.
         Each of the items of the iterable can be:
 
-        - A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
+        * A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
           radiation fields with temperatures of 2.72 K, 70 K, and 5000 K, and
           energy densities of 0.261, 0.5, and 1 eV/cm³ will be used
-        - A list of length three composed of:
+
+        * A list of length three composed of:
+
             1. A name for the seed photon field
             2. Its temperature as a :class:`~astropy.units.Quantity` float
                instance.
@@ -162,15 +164,15 @@ class InverseCompton(object):
                will be computed through the Stefan-Boltzman law.
     """
 
-    def __init__(self, pdist, seedspec=['CMB',], **kwargs):
-        self.pdist = pdist
-        self.seedspec = seedspec
+    def __init__(self, particle_distribution, seed_photon_fields=['CMB',], **kwargs):
+        self.particle_distribution = particle_distribution
+        self.seed_photon_fields = seed_photon_fields
         self._process_input_seed()
         self.__dict__.update(**kwargs)
 
     def _process_input_seed(self):
         """
-        take input list of seedspecs and fix them into usable format
+        take input list of seed_photon_fields and fix them into usable format
         """
 
         Tcmb = 2.72548 * u.K  # 0.00057 K
@@ -179,13 +181,13 @@ class InverseCompton(object):
         Tnir = 5000 * u.K
         unir = 0.2 * u.eV / u.cm ** 3
 
-        # Allow for seedspec definitions of the type 'CMB-NIR-FIR' or 'CMB'
-        if type(self.seedspec) != list:
-            self.seedspec = self.seedspec.split('-')
+        # Allow for seed_photon_fields definitions of the type 'CMB-NIR-FIR' or 'CMB'
+        if type(self.seed_photon_fields) != list:
+            self.seed_photon_fields = self.seed_photon_fields.split('-')
 
         self.seeduf = {}
         self.seedT = {}
-        for idx, inseed in enumerate(self.seedspec):
+        for idx, inseed in enumerate(self.seed_photon_fields):
             if isinstance(inseed, six.string_types):
                 if inseed == 'CMB':
                     self.seedT[inseed] = Tcmb
@@ -204,7 +206,7 @@ class InverseCompton(object):
                 name, T, uu = inseed
                 validate_scalar('{0}-T'.format(name), T, domain='positive',
                                 physical_type='temperature')
-                self.seedspec[idx] = name
+                self.seed_photon_fields[idx] = name
                 self.seedT[name] = T
                 if uu == 0:
                     self.seeduf[name] = 1.0
@@ -225,12 +227,11 @@ class InverseCompton(object):
         self.gam = np.logspace(self.log10gmin,self.log10gmax,
                 self.ngamd*self.log10gmax/self.log10gmin)
 
-        self.nelec = self.pdist(self.gam * mec2)
+        self.nelec = self.particle_distribution(self.gam * mec2)
 
     def _calc_specic(self, seed, outspecene):
         log.debug(
             '_calc_specic: Computing IC on {0} seed photons...'.format(seed))
-        outspecene = _validate_ene(outspecene)
 
         def iso_ic_on_planck(electron_energy,
                              soft_photon_temperature, gamma_energy):
@@ -274,8 +275,8 @@ class InverseCompton(object):
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
 
-    def flux(self,outspecene):
-        """Compute differential IC spectrum for energies in ``outspecene``.
+    def flux(self,photon_energy):
+        """Compute differential IC spectrum for energies in ``photon_energy``.
 
         Compute IC spectrum using IC cross-section for isotropic interaction
         with a blackbody photon spectrum following Khangulyan, Aharonian, and
@@ -283,25 +284,24 @@ class InverseCompton(object):
 
         Parameters
         ----------
-        outspecene : :class:`~astropy.units.Quantity` instance
+        photon_energy : :class:`~astropy.units.Quantity` instance
             Photon energy array.
         """
-        outspecene = _validate_ene(outspecene)
+        outspecene = _validate_ene(photon_energy)
 
         self._nelec()
 
         self.specic = np.zeros(len(outspecene)) * u.Unit('1/(s eV)')
 
-        for seedspec in self.seedspec:
+        for seed in self.seed_photon_fields:
             # Call actual computation, detached to allow changes in subclasses
-            specic = self._calc_specic(seedspec,outspecene).to('1/(s eV)')
-            self.specic += specic
+            self.specic += self._calc_specic(seed,outspecene).to('1/(s eV)')
 
         return self.specic.to('1/(s eV)')
 
 
-    def sed(self,outspecene):
-        """Compute IC spectral energy distribution for energies in ``outspecene``.
+    def sed(self,photon_energy):
+        """Compute IC spectral energy distribution for energies in ``photon_energy``.
 
         Compute IC spectrum using IC cross-section for isotropic interaction
         with a blackbody photon spectrum following Khangulyan, Aharonian, and
@@ -309,10 +309,10 @@ class InverseCompton(object):
 
         Parameters
         ----------
-        outspecene : :class:`~astropy.units.Quantity` instance
+        photon_energy : :class:`~astropy.units.Quantity` instance
             Photon energy array.
         """
-        outspecene = _validate_ene(outspecene)
+        outspecene = _validate_ene(photon_energy)
 
         specic = self.flux(outspecene)
 
@@ -327,7 +327,7 @@ class PionDecay(object):
 
     Parameters
     ----------
-    pdist : :class:`~astropy.modeling.FittableModel1D` subclass instance
+    particle_distribution : :class:`~astropy.modeling.FittableModel1D` subclass instance
         Particle distribution function, taking proton energies in units of TeV.
 
     References
@@ -336,8 +336,8 @@ class PionDecay(object):
 
     """
 
-    def __init__(self, pdist, **kwargs):
-        self.pdist = pdist
+    def __init__(self, particle_distribution, **kwargs):
+        self.particle_distribution = particle_distribution
         self.__dict__.update(**kwargs)
 
     def _Fgamma(self, x, Ep):
@@ -394,7 +394,7 @@ class PionDecay(object):
         Integrand of Eq. 72
         """
         try:
-            return self._sigma_inel(Egamma / x) * self.pdist((Egamma / x)*u.TeV) \
+            return self._sigma_inel(Egamma / x) * self.particle_distribution((Egamma / x)*u.TeV) \
                 * self._Fgamma(x, Egamma / x) / x
         except ZeroDivisionError:
             return np.nan
@@ -427,7 +427,7 @@ class PionDecay(object):
     def _delta_integrand(self, Epi):
         Ep0 = self._mp + Epi / self._Kpi
         qpi = self._c * \
-            (self.nhat / self._Kpi) * self._sigma_inel(Ep0) * self.pdist(Ep0*u.TeV)
+            (self.nhat / self._Kpi) * self._sigma_inel(Ep0) * self.particle_distribution(Ep0*u.TeV)
         return qpi / np.sqrt(Epi ** 2 + self._m_pi ** 2)
 
     def _calc_specpp_loE(self, Egamma):
@@ -443,22 +443,22 @@ class PionDecay(object):
 
         return result * u.Unit('1/(s TeV)')
 
-    def flux(self,outspecene):
+    def flux(self,photon_energy):
         """
         Compute differential spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
 
         Parameters
         ----------
-        outspecene : :class:`~astropy.units.Quantity` instance
+        photon_energy : :class:`~astropy.units.Quantity` instance
             Photon energy array.
         """
 
-        outspecene = _validate_ene(outspecene)
+        outspecene = _validate_ene(photon_energy)
         from scipy.integrate import quad
 
         # Before starting, show total proton energy above threshold
         Eth = 1.22e-3
-        Wp = quad(lambda x: x * self.pdist(x*u.TeV), Eth, np.Inf)[0] * u.TeV
+        Wp = quad(lambda x: x * self.particle_distribution(x*u.TeV), Eth, np.Inf)[0] * u.TeV
         self.Wp = Wp.to('erg') / u.cm**5
         log.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e}'.format(self.Wp))
 
@@ -488,16 +488,16 @@ class PionDecay(object):
 
         return self.specpp.to('1/(s eV)')
 
-    def sed(self,outspecene):
+    def sed(self,photon_energy):
         """
         Compute spectral energy distribution from pp interactions using Eq. 71 and Eq.58 of KAB06.
 
         Parameters
         ----------
-        outspecene : :class:`~astropy.units.Quantity` instance
+        photon_energy : :class:`~astropy.units.Quantity` instance
             Photon energy array.
         """
-        outspecene = _validate_ene(outspecene)
+        outspecene = _validate_ene(photon_energy)
 
         specpp = self.flux(outspecene)
 

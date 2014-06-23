@@ -143,9 +143,9 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
         Optional columns:
 
-        - ``ene_width``: Width of the energy bin [``energy``], or
-        - ``ene_lo`` and ``ene_hi``: Energy edges of the corresponding energy
-          bin [``energy``]
+        - ``energy_width``: Width of the energy bin [``energy``], or
+        - ``energy_lo`` and ``energy_hi``: Energy edges of the corresponding
+          energy bin [``energy``]
         - ``flux_error_lo`` and ``flux_error_hi``: 68% CL gaussian lower and
           upper uncertainties of the flux.
         - ``ul``: Flag to indicate that a flux measurement is an upper limit.
@@ -231,10 +231,10 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
         else:
             spec = modelout
 
-        nunit, sedf = sed_conversion(data['ene'],spec.unit,False)
+        nunit, sedf = sed_conversion(data['energy'],spec.unit,False)
         p0[labels.index('norm')] *= (
-                np.trapz(data['ene']*data['flux']*sedf, data['ene']) /
-                np.trapz(data['ene']*spec*sedf, data['ene'])
+                np.trapz(data['energy']*data['flux']*sedf, data['energy']) /
+                np.trapz(data['energy']*spec*sedf, data['energy'])
                 )
 
     ndim = len(p0)

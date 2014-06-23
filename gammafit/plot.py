@@ -195,14 +195,14 @@ def _process_blob(sampler, modelidx,last_step=True):
     """
     Process binary blob in sampler. If blob in position modelidx is:
 
-    - a Quantity: use blob as mode, data['ene'] as modelx
+    - a Quantity: use blob as mode, data['energy'] as modelx
     - a tuple: use first item as modelx, second as model
     """
 
     blob0 = sampler.blobs[-1][0][modelidx]
     if isinstance(blob0, u.Quantity):
-        # Energy array for blob is not provided, use data['ene']
-        modelx = sampler.data['ene']
+        # Energy array for blob is not provided, use data['energy']
+        modelx = sampler.data['energy']
         has_ene = False
 
         if last_step:
@@ -317,7 +317,7 @@ def find_ML(sampler, modelidx):
     MLp = sampler.chain[index]
     blob = sampler.blobs[index[1]][index[0]][modelidx]
     if isinstance(blob, u.Quantity):
-        modelx = sampler.data['ene'].copy()
+        modelx = sampler.data['energy'].copy()
         model_ML = blob.copy()
     elif len(blob) == 2:
         modelx = blob[0].copy()
@@ -432,7 +432,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
 
     datacol = 'r'
     if e_unit is None:
-        e_unit = data['ene'].unit
+        e_unit = data['energy'].unit
 
     if confs is not None:
         plot_CI(ax1, sampler,modelidx,sed=sed,confs=confs,e_unit=e_unit,**kwargs)
@@ -449,7 +449,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
                 color=datacol, elinewidth=2, capsize=5, zorder=10)
 
     if plotdata:
-        f_unit, sedf = sed_conversion(data['ene'], data['flux'].unit, sed)
+        f_unit, sedf = sed_conversion(data['energy'], data['flux'].unit, sed)
 
         ul = data['ul']
         notul = -ul
@@ -460,7 +460,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         bad_err = np.where((y-yerr[0])<=0.)
         yerr[0][bad_err] = y[bad_err]*(1.-1e-7)
 
-        ax1.errorbar(data['ene'][notul].to(e_unit).value,
+        ax1.errorbar(data['energy'][notul].to(e_unit).value,
                 (data['flux'][notul] * sedf[notul]).to(f_unit).value,
                 yerr=(yerr * sedf[notul]).to(f_unit).value,
                 xerr=(data['dene'][:, notul]).to(e_unit).value,
@@ -468,21 +468,21 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
                 mec='w', mew=0, ms=6, color=datacol)
 
         if np.any(ul):
-            plot_ulims(ax1, data['ene'][ul].to(e_unit).value,
+            plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
                     (data['flux'][ul] * sedf[ul]).to(f_unit).value,
                     (data['dene'][:, ul]).to(e_unit).value)
 
         if plotresiduals:
-            if len(model_ML) != len(data['ene']):
+            if len(model_ML) != len(data['energy']):
                 from scipy.interpolate import interp1d
                 modelfunc = interp1d(model_ML[0].to(e_unit).value, model_ML[1].value)
-                difference = data['flux'][notul].value-modelfunc(data['ene'][notul])
+                difference = data['flux'][notul].value-modelfunc(data['energy'][notul])
                 difference *= data['flux'].unit
             else:
                 difference = data['flux'][notul]-model_ML[1][notul]
 
             dflux = np.mean(data['dflux'][:, notul], axis=0)
-            ax2.errorbar(data['ene'][notul].to(e_unit).value,
+            ax2.errorbar(data['energy'][notul].to(e_unit).value,
                     (difference / dflux).decompose().value,
                     yerr=(dflux / dflux).decompose().value,
                     xerr=data['dene'][:, notul].to(e_unit).value,
@@ -495,7 +495,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
 
             ax2.set_ylabel(r'$\Delta\sigma$')
 
-            if len(model_ML) == len(data['ene']) and residualCI:
+            if len(model_ML) == len(data['energy']) and residualCI:
                 modelx, CI = calc_CI(sampler, modelidx=modelidx,
                                      confs=confs, **kwargs)
 
@@ -517,8 +517,8 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
             ax2.set_xscale('log')
             for tl in ax1.get_xticklabels():
                 tl.set_visible(False)
-        xmin = 10 ** np.floor(np.log10(np.min(data['ene'] - data['dene'][0]).value))
-        xmax = 10 ** np.ceil(np.log10(np.max(data['ene'] + data['dene'][1]).value))
+        xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['dene'][0]).value))
+        xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['dene'][1]).value))
         ax1.set_xlim(xmin, xmax)
         # avoid autoscaling to errorbars to 0
         if np.any(data['dflux'][:,notul][0] >= data['flux'][notul]):

@@ -19,13 +19,13 @@ labels=['norm','index','log10(cutoff)']
 from gammafit.models import InverseCompton, ExponentialCutoffPowerLaw
 
 ECPL = ExponentialCutoffPowerLaw(1,10.*u.TeV,2,10.*u.TeV)
-IC = InverseCompton(ECPL,seedspec=['CMB'])
+IC = InverseCompton(ECPL,seed_photon_fields=['CMB'])
 
 def ElectronIC(pars,data):
 
-    IC.pdist.amplitude = pars[0]
-    IC.pdist.alpha = pars[1]
-    IC.pdist.e_cutoff = (10**pars[2])*u.TeV
+    IC.particle_distribution.amplitude = pars[0]
+    IC.particle_distribution.alpha = pars[1]
+    IC.particle_distribution.e_cutoff = (10**pars[2])*u.TeV
 
     # convert to same units as observed differential spectrum
     model = IC.flux(data).to('1/(s TeV)')/u.cm**2
@@ -66,10 +66,10 @@ if __name__=='__main__':
     from astropy.extern import six
     from six.moves import cPickle
     sampler.pool=None
-    cPickle.dump(sampler,open('CrabNebula_electron_sampler.pickle','wb'))
+    cPickle.dump(sampler,open('CrabNebula_IC_sampler.pickle','wb'))
 
 ## Diagnostic plots
 
-    gammafit.generate_diagnostic_plots('CrabNebula_electron',sampler,sed=True)
+    gammafit.generate_diagnostic_plots('CrabNebula_IC',sampler,sed=True)
 
 

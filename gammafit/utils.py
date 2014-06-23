@@ -30,7 +30,7 @@ def validate_data_table(data_table):
     flux_types = ['flux','differential flux','power','differential power']
 
     # Energy and flux arrays
-    data['ene'] = validate_column(data_table,'ene','energy')
+    data['energy'] = validate_column(data_table,'energy','energy')
     data['flux'] = validate_column(data_table,'flux',flux_types)
 
     # Flux uncertainties
@@ -52,9 +52,9 @@ def validate_data_table(data_table):
     elif 'ene_lo' in data_table.keys() and 'ene_hi' in data_table.keys():
         ene_lo = validate_column(data_table,'ene_lo', 'energy')
         ene_hi = validate_column(data_table,'ene_hi', 'energy')
-        data['dene'] = u.Quantity((data['ene']-ene_lo,ene_hi-data['ene']))
+        data['dene'] = u.Quantity((data['energy']-ene_lo,ene_hi-data['energy']))
     else:
-        data['dene'] = generate_energy_edges(data['ene'])
+        data['dene'] = generate_energy_edges(data['energy'])
 
     # Upper limit flags
     if 'ul' in data_table.keys():
@@ -227,7 +227,7 @@ def build_data_table(ene, flux, flux_error=None, flux_error_lo=None,
         cl = validate_scalar('cl',cl)
         table.meta['keywords']={'cl':{'value':cl}}
 
-    table.add_column(Column(name='ene', data=ene))
+    table.add_column(Column(name='energy', data=ene))
 
     if ene_width is not None:
         table.add_column(Column(name='ene_width', data=ene_width))
@@ -343,7 +343,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
         try:
             blob0 = sampler.blobs[-1][0][modelidx]
             if isinstance(blob0, u.Quantity):
-                modelx = sampler.data['ene']
+                modelx = sampler.data['energy']
                 modely = blob0
             elif len(blob0) == 2:
                 modelx = blob0[0]
