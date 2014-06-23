@@ -1,5 +1,5 @@
-Radiative Models
-================
+Models
+======
 
 .. currentmodule:: gammafit.models
 
