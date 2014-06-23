@@ -6,6 +6,6 @@ Detailed description of functions and arguments (API)
 .. toctree::
     :maxdepth: 2
 
-    mcmc.rst
-    radiative.rst
-    convenience.rst
+    api-mcmc.rst
+    api-radiative.rst
+    api-convenience.rst

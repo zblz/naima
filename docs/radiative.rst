@@ -1,31 +1,23 @@
-Models
-======
+.. _radiative:
 
-.. currentmodule:: gammafit.models
-
-Leptonic models
----------------
-
-.. autoclass:: Synchrotron
-    :members:
-.. autoclass:: InverseCompton
-    :members:
-
-Hadronic model
---------------
-
-.. autoclass:: PionDecay
-    :members:
-
-Particle Distributions
-----------------------
+Radiative Models
+================
 
 
-.. autoclass:: PowerLaw
-    :members:
-.. autoclass:: ExponentialCutoffPowerLaw
-    :members:
-.. autoclass:: BrokenPowerLaw
-    :members:
-.. autoclass:: LogParabola
-    :members:
+Inverse Compton radiative model
+-------------------------------
+.. _IC:
+
+TODO: explain InverseCompton
+
+Synchrotron radiative model
+---------------------------
+.. _SY:
+
+TODO: explain Synchrotron
+
+Pion Decay radiative model
+--------------------------
+.. _PP:
+
+TODO: explain PionDecay
