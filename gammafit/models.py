@@ -3,13 +3,28 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-from .extern.validator import validate_scalar, validate_array
+import astropy.units as u
+from .extern.validator import validate_scalar, validate_array, validate_physical_type
+
+from .radiative import Synchrotron, InverseCompton, PionDecay
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'BrokenPowerLaw',
            'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola']
 
-from .radiative import Synchrotron, InverseCompton, PionDecay
-from .extern.validator import validate_scalar, validate_array, validate_physical_type
+def _validate_ene(ene):
+    from astropy.table import Table
+
+    if isinstance(ene, dict) or isinstance(ene, Table):
+        try:
+            ene = validate_array('ene',u.Quantity(ene['ene']),physical_type='energy')
+        except KeyError:
+            raise TypeError('Table or dict does not have \'ene\' column')
+    else:
+        if not isinstance(ene,u.Quantity):
+            ene = u.Quantity(ene)
+        validate_physical_type('ene',ene,physical_type='energy')
+
+    return ene
 
 class PowerLaw(object):
     """
@@ -33,7 +48,7 @@ class PowerLaw(object):
     Model formula (with :math:`A` for ``amplitude``, :math:`\\alpha` for
     ``alpha``):
 
-        .. math:: f(x) = A (x / x_0) ^ {-\\alpha}
+        .. math:: f(E) = A (E / E_0) ^ {-\\alpha}
 
     """
 
@@ -54,7 +69,7 @@ class PowerLaw(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        validate_physical_type('e', e, physical_type='energy')
+        e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.alpha)
@@ -86,7 +101,7 @@ class ExponentialCutoffPowerLaw(object):
     Model formula (with :math:`A` for ``amplitude``, :math:`\\alpha` for
     ``alpha``, and :math:`\\beta` for ``beta``):
 
-        .. math:: f(x) = A (x / x_0) ^ {-\\alpha} \\exp (- (x / x_{cutoff}) ^ \\beta)
+        .. math:: f(E) = A (E / E_0) ^ {-\\alpha} \\exp (- (E / E_{cutoff}) ^ \\beta)
 
     """
 
@@ -109,7 +124,7 @@ class ExponentialCutoffPowerLaw(object):
     def __call__(self,e):
         """One dimensional power law with an exponential cutoff model function"""
 
-        validate_physical_type('e', e, physical_type='energy')
+        e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.alpha,
@@ -141,10 +156,10 @@ class BrokenPowerLaw(object):
 
         .. math::
 
-            f(x) = \\left \\{
+            f(E) = \\left \\{
                      \\begin{array}{ll}
-                       A (E / e_{break}) ^ {-\\alpha_1} & : E < e_{break} \\\\
-                       A (E / e_{break}) ^ {-\\alpha_2} & :  E > e_{break} \\\\
+                       A (E / E_{break}) ^ {-\\alpha_1} & : E < E_{break} \\\\
+                       A (E / E_{break}) ^ {-\\alpha_2} & :  E > E_{break} \\\\
                      \\end{array}
                    \\right.
     """
@@ -168,7 +183,7 @@ class BrokenPowerLaw(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        validate_physical_type('e', e, physical_type='energy')
+        e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_break.to('eV').value, self.alpha_1, self.alpha_2)
@@ -196,7 +211,7 @@ class LogParabola(object):
     -----
     Model formula (with :math:`A` for ``amplitude`` and :math:`\\alpha` for ``alpha`` and :math:`\\beta` for ``beta``):
 
-        .. math:: f(e) = A \\left(\\frac{e}{e_{0}}\\right)^{- \\alpha - \\beta \\log{\\left (\\frac{e}{e_{0}} \\right )}}
+        .. math:: f(e) = A \\left(\\frac{E}{E_{0}}\\right)^{- \\alpha - \\beta \\log{\\left (\\frac{E}{E_{0}} \\right )}}
 
     """
 
@@ -219,7 +234,7 @@ class LogParabola(object):
     def __call__(self,e):
         """One dimensional power law model function"""
 
-        validate_physical_type('e', e, physical_type='energy')
+        e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value,

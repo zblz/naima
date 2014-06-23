@@ -3,7 +3,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-from .extern.validator import validate_scalar, validate_array
+from .extern.validator import validate_scalar, validate_array, validate_physical_type
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
 
@@ -24,6 +24,21 @@ mec2 = (m_e * c ** 2).cgs
 ar = (4 * sigma_sb / c).to('erg/(cm3 K4)')
 
 heaviside = lambda x: (np.sign(x) + 1) / 2.
+
+def _validate_ene(ene):
+    from astropy.table import Table
+
+    if isinstance(ene, dict) or isinstance(ene, Table):
+        try:
+            ene = validate_array('ene',u.Quantity(ene['ene']),physical_type='energy')
+        except KeyError:
+            raise TypeError('Table or dict does not have \'ene\' column')
+    else:
+        if not isinstance(ene,u.Quantity):
+            ene = u.Quantity(ene)
+        validate_physical_type('ene',ene,physical_type='energy')
+
+    return ene
 
 class Synchrotron(object):
     """Synchrotron emission from an electron population
@@ -53,7 +68,7 @@ class Synchrotron(object):
 
         self.nelec = self.pdist(self.gam * mec2.to('TeV'))
 
-    def __call__(self,outspecene,sed=True):
+    def __call__(self,outspecene,sed=False):
         """Compute synchrotron spectrum for energies in ``outspecene``
 
         Compute synchrotron for random magnetic field according to approximation of
@@ -66,10 +81,12 @@ class Synchrotron(object):
         sed : bool
             Whether to return SED (default) or differential spectrum
         """
+
+        outspecene = _validate_ene(outspecene)
+
         from scipy.special import cbrt
 
-        if not hasattr(self, 'nelec'):
-            self._nelec()
+        self._nelec()
 
         def Gtilde(x):
             """
@@ -201,6 +218,7 @@ class InverseCompton(object):
     def _calc_specic(self, seed, outspecene):
         log.debug(
             '_calc_specic: Computing IC on {0} seed photons...'.format(seed))
+        outspecene = _validate_ene(outspecene)
 
         def iso_ic_on_planck(electron_energy,
                              soft_photon_temperature, gamma_energy):
@@ -244,7 +262,7 @@ class InverseCompton(object):
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
 
-    def __call__(self,outspecene,sed=True):
+    def __call__(self,outspecene,sed=False):
         """Compute IC spectrum for energies in ``outspecene``
 
         Compute IC spectrum using IC cross-section for isotropic interaction
@@ -258,11 +276,9 @@ class InverseCompton(object):
         sed : bool
             Whether to return SED (default) or differential spectrum
         """
-        outspecene = validate_array('outspecene',outspecene,domain='positive',
-                                    physical_type='energy')
+        outspecene = _validate_ene(outspecene)
 
-        if not hasattr(self, 'gam') or not hasattr(self,'nelec'):
-            self._nelec()
+        self._nelec()
 
         self.specic = np.zeros(len(outspecene)) * u.Unit('1/(s eV)')
 
@@ -402,10 +418,11 @@ class PionDecay(object):
 
         return result * u.Unit('1/(s TeV)')
 
-    def __call__(self,outspecene,sed=True):
+    def __call__(self,outspecene,sed=False):
         """
         Compute photon spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
         """
+        outspecene = _validate_ene(outspecene)
         from scipy.integrate import quad
 
         # Before starting, show total proton energy above threshold

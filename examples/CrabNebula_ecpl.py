@@ -8,12 +8,20 @@ from astropy.io import ascii
 
 data=ascii.read('CrabNebula_HESS_2006.dat')
 
+ene = u.Quantity(data['ene'])
+ene0 = np.sqrt(ene[0]*ene[-1])
+
 ## Set initial parameters
 
 p0=np.array((1.5e-12,2.4,np.log10(15.0),))
 labels=['norm','index','log10(cutoff)']
 
 ## Model definition
+
+from gammafit.models import ExponentialCutoffPowerLaw
+
+# initialise an instance of ECPL
+ECPL = ExponentialCutoffPowerLaw(1, ene0, 2, ene0)
 
 def cutoffexp(pars,data):
     """
@@ -25,16 +33,11 @@ def cutoffexp(pars,data):
         - 2: log10(cutoff energy)
     """
 
-    ene=data['ene']
-    # take logarithmic mean of first and last data points as normalization
-    # energy (reasonable approximation of decorrelation energy for gamma~2)
-    ene0=np.sqrt(ene[0]*ene[-1])
+    ECPL.amplitude = pars[0]
+    ECPL.alpha = pars[1]
+    ECPL.e_cutoff = (10**pars[2])*u.TeV
 
-    N     = pars[0]
-    gamma = pars[1]
-    ecut  = (10**pars[2])*u.TeV
-
-    return N*(ene/ene0)**-gamma*np.exp(-(ene/ecut)) * data['flux'].unit
+    return ECPL(data) * data['flux'].unit
 
 ## Prior definition
 
@@ -60,10 +63,10 @@ if __name__=='__main__':
     from astropy.extern import six
     from six.moves import cPickle
     sampler.pool=None
-    cPickle.dump(sampler,open('CrabNebula_function_sampler.pickle','wb'))
+    cPickle.dump(sampler,open('CrabNebula_ecpl_sampler.pickle','wb'))
 
 ## Diagnostic plots
-    gammafit.generate_diagnostic_plots('CrabNebula_function',sampler,
+    gammafit.generate_diagnostic_plots('CrabNebula_ecpl',sampler,
             sed=True,last_step=False)
 
 

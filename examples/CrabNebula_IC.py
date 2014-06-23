@@ -16,36 +16,27 @@ labels=['norm','index','log10(cutoff)']
 
 ## Model definition
 
+from gammafit.models import InverseCompton, ExponentialCutoffPowerLaw
+
+ECPL = ExponentialCutoffPowerLaw(1,10.*u.TeV,2,10.*u.TeV)
+IC = InverseCompton(ECPL,seedspec=['CMB'])
+
 def ElectronIC(pars,data):
 
-    norm   = pars[0]
-    index  = pars[1]
-    cutoff = (10**pars[2])*u.TeV
-
-    outspecene = data['ene']
-
-    ozm=gammafit.ElectronOZM(
-            outspecene, norm,
-            index=index,
-            cutoff=cutoff,
-            seedspec=['CMB',],
-            norm_energy=10.*u.TeV,
-            nolog=True,
-            evolve_nelec=False,
-            )
-
-    ozm.calc_nelec()
-    ozm.calc_ic()
+    IC.pdist.amplitude = pars[0]
+    IC.pdist.alpha = pars[1]
+    IC.pdist.e_cutoff = (10**pars[2])*u.TeV
 
     # convert to same units as observed differential spectrum
-    model=ozm.specic.to('1/(s TeV)')/u.cm**2
+    model = IC(data).to('1/(s TeV)')/u.cm**2
 
-    mec2=m_e*c**2
+    mec2 = u.Unit(m_e*c**2)
 
-    nelec=ozm.nelec[:-1]*mec2.cgs.value*ozm.gam[:-1]*np.diff(ozm.gam)*u.Unit('erg')
-    elec_energy=ozm.gam[:-1]*mec2.to('TeV')
-
-    del ozm
+    # The electron particle distribution (nelec) is saved in units or particles
+    # per unit lorentz factor (E/mc2).  We define a mec2 unit and give nelec and
+    # elec_energy the corresponding units.
+    nelec = IC.nelec * (1/mec2)
+    elec_energy = IC.gam * mec2
 
     return model, model, (elec_energy,nelec)
 
