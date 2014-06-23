@@ -5,4 +5,4 @@ Fitting a model to a spectrum
 Loading the data
 ----------------
 
-see `dataformat`.
+see :ref:`dataformat`.

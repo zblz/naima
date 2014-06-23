@@ -362,7 +362,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     """
     Plot data with fit confidence regions.
 
-    Additional ``kwargs`` are passed to `plotCI`.
+    Additional ``kwargs`` are passed to `plot_CI`.
 
     Parameters
     ----------
@@ -379,14 +379,14 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     confs : list, optional
         List of confidence levels (in sigma) to use for generating the
         confidence intervals. Default is ``[3,1,0.5]``
-    figure : `matplotlib.figure`, optional
+    figure : `matplotlib.figure.Figure`, optional
         `matplotlib` figure to plot on. If omitted a new one will be generated.
     residualCI : bool, optional
         Whether to plot the confidence interval bands in the residuals subplot.
     plotdata : bool, optional
         Wheter to plot data on top of model confidence intervals. Default is
         True if the physical types of the data and the model match.
-    e_unit : :class:`~astropy.unit.Unit`
+    e_unit : `~astropy.units.Unit`
         Units for the energy axis of the plot. The default is to use the units
         of the energy array of the observed data.
 
@@ -596,7 +596,7 @@ def plot_data(sampler, xlabel=None,ylabel=None,
         Label for the ``y`` axis of the plot.
     sed : bool, optional
         Whether to plot SED or differential spectrum.
-    figure : `matplotlib.figure`, optional
+    figure : `matplotlib.figure.Figure`, optional
         `matplotlib` figure to plot on. If omitted a new one will be generated.
 
     """

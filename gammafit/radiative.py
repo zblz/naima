@@ -10,7 +10,7 @@ __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
 from astropy.extern import six
 import logging
 # Get a new logger to avoid changing the level of the astropy logger
-log = logging.getLogger('gammafit.onezone')
+log = logging.getLogger('gammafit.radiative')
 
 # Constants and units
 from astropy import units as u
@@ -40,7 +40,7 @@ def _validate_ene(ene):
     return ene
 
 class Synchrotron(object):
-    """Synchrotron emission from an electron population
+    """Synchrotron emission from an electron population.
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ class Synchrotron(object):
         TeV and returning the particle energy density in units of number of
         electrons per TeV.
 
-    B : :class:`~astropy.units.quantity.Quantity` float instance, optional
+    B : :class:`~astropy.units.Quantity` float instance, optional
         Isotropic magnetic field strength. Default: equipartition
         with CMB (3.24e-6 G)
     """
@@ -135,7 +135,7 @@ class Synchrotron(object):
         return (spec * outspecene ** 2.).to('erg/s')
 
 class InverseCompton(object):
-    """Synchrotron emission from an electron population
+    """Synchrotron emission from an electron population.
 
     Parameters
     ----------

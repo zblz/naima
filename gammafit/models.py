@@ -204,7 +204,7 @@ class LogParabola(object):
 
     See Also
     --------
-    PowerLaw, BrokenPowerLaw, EeponentialCutoffPowerLaw
+    PowerLaw, BrokenPowerLaw, ExponentialCutoffPowerLaw
 
     Notes
     -----
