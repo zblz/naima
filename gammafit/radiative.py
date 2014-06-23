@@ -8,6 +8,7 @@ from .extern.validator import validate_scalar, validate_array, validate_physical
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
 
 from astropy.extern import six
+import warnings
 import logging
 # Get a new logger to avoid changing the level of the astropy logger
 log = logging.getLogger('gammafit.radiative')
@@ -268,7 +269,10 @@ class InverseCompton(object):
         T = self.seedT[seed]
 
         Eph = (outspecene / mec2).cgs.value
-        gamint = iso_ic_on_planck(self.gam, T.to('K').value, Eph)
+        # Catch numpy RuntimeWarnings of overflowing exp (which are then discarded anyway)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            gamint = iso_ic_on_planck(self.gam, T.to('K').value, Eph)
         lum = uf * Eph * np.trapz(self.nelec * gamint, self.gam)
         lum *= u.Unit('1/s')
 
@@ -469,21 +473,23 @@ class PionDecay(object):
             validate_scalar('Etrans', self.Etrans,
                     domain='positive', physical_type='energy')
 
-        self.nhat = 1.  # initial value, works for index~2.1
-        if np.any(outspecene < self.Etrans) and np.any(outspecene >= self.Etrans):
-            # compute value of nhat so that delta functional matches accurate
-            # calculation at 0.1TeV
-            full = self._calc_specpp_hiE(self.Etrans)
-            delta = self._calc_specpp_loE(self.Etrans)
-            self.nhat *= (full / delta).decompose().value
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.nhat = 1.  # initial value, works for index~2.1
+            if np.any(outspecene < self.Etrans) and np.any(outspecene >= self.Etrans):
+                # compute value of nhat so that delta functional matches accurate
+                # calculation at 0.1TeV
+                full = self._calc_specpp_hiE(self.Etrans)
+                delta = self._calc_specpp_loE(self.Etrans)
+                self.nhat *= (full / delta).decompose().value
 
-        self.specpp = np.zeros(len(outspecene)) * u.Unit('1/(s TeV)')
+            self.specpp = np.zeros(len(outspecene)) * u.Unit('1/(s TeV)')
 
-        for i, Egamma in enumerate(outspecene):
-            if Egamma >= self.Etrans:
-                self.specpp[i] = self._calc_specpp_hiE(Egamma)
-            else:
-                self.specpp[i] = self._calc_specpp_loE(Egamma)
+            for i, Egamma in enumerate(outspecene):
+                if Egamma >= self.Etrans:
+                    self.specpp[i] = self._calc_specpp_hiE(Egamma)
+                else:
+                    self.specpp[i] = self._calc_specpp_loE(Egamma)
 
         return self.specpp.to('1/(s eV)')
 
