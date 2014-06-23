@@ -73,6 +73,8 @@ def validate_data_table(data_table):
                 raise TypeError('UL column is in wrong format')
         else:
             raise TypeError('UL column is in wrong format')
+    else:
+        data['ul'] = np.array([False,]*len(data['energy']))
 
     HAS_CL = False
     if 'keywords' in data_table.meta.keys():
