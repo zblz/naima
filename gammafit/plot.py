@@ -67,7 +67,7 @@ def _plot_chain_func(sampler, p, last_step=False):
             # convert chain to flatchain
             dist = traces.flatten()
     else:
-        log.warn('we need the full chain to plot the traces, not a flatchain!')
+        log.warning('we need the full chain to plot the traces, not a flatchain!')
         return None
 
     nwalkers = traces.shape[0]
@@ -124,7 +124,13 @@ def _plot_chain_func(sampler, p, last_step=False):
     mode = xmode[np.argmax(kde(xmode))]
     median = np.median(dist)
 
-    autocorr = sampler.get_autocorr_time(window=chain.shape[1]/4.)[p]
+    try:
+        # EnsembleSample.get_autocorr_time was only added in the
+        # recently released emcee 2.1.0 (2014-05-22), so make it optional
+        autocorr = sampler.get_autocorr_time(window=chain.shape[1]/4.)[p]
+        autocorr_message = '{0:.1f}'.format(autocorr)
+    except AttributeError:
+        autocorr_message = 'Not available. Update to emcee 2.1 or later.'
 
     if last_step:
         clen = 'last ensemble'
@@ -134,8 +140,8 @@ def _plot_chain_func(sampler, p, last_step=False):
     quantiles = dict(six.moves.zip(quant, xquant))
 
     chain_props = 'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers, nsteps) + \
-            'Autocorrelation time: {0:.1f}'.format(autocorr) + '\n' +\
-            'Mean acceptance fraction: {0:.3f}'.format(np.mean(sampler.acceptance_fraction)) + '\n' +\
+            'Autocorrelation time: {0}\n'.format(autocorr_message) +\
+            'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
             'Distribution properties for the {clen}:\n \
     - median: ${median}$ \n \
     - std: ${std}$ \n' .format(median=_latex_float(quantiles[0.5]), std=_latex_float(std), clen=clen) +\
@@ -356,7 +362,7 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     """
     Plot data with fit confidence regions.
 
-    Additional ``kwargs`` are passed to `plotCI`.
+    Additional ``kwargs`` are passed to `plot_CI`.
 
     Parameters
     ----------
@@ -373,14 +379,14 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     confs : list, optional
         List of confidence levels (in sigma) to use for generating the
         confidence intervals. Default is ``[3,1,0.5]``
-    figure : `matplotlib.figure`, optional
+    figure : `matplotlib.figure.Figure`, optional
         `matplotlib` figure to plot on. If omitted a new one will be generated.
     residualCI : bool, optional
         Whether to plot the confidence interval bands in the residuals subplot.
     plotdata : bool, optional
         Wheter to plot data on top of model confidence intervals. Default is
         True if the physical types of the data and the model match.
-    e_unit : :class:`~astropy.unit.Unit`
+    e_unit : `~astropy.units.Unit`
         Units for the energy axis of the plot. The default is to use the units
         of the energy array of the observed data.
 
@@ -590,7 +596,7 @@ def plot_data(sampler, xlabel=None,ylabel=None,
         Label for the ``y`` axis of the plot.
     sed : bool, optional
         Whether to plot SED or differential spectrum.
-    figure : `matplotlib.figure`, optional
+    figure : `matplotlib.figure.Figure`, optional
         `matplotlib` figure to plot on. If omitted a new one will be generated.
 
     """

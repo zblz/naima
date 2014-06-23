@@ -129,10 +129,10 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
     Parameters
     ----------
-    data_table : :class:`~astropy.table.Table` instance
+    data_table : `~astropy.table.Table`
         Table containing the observed spectrum. The table needs at least these
         columns, with the appropriate associated units (with the physical type
-        indicated in brackets below) as either a :class:`~astropy.units.Unit`
+        indicated in brackets below) as either a `~astropy.units.Unit`
         instance or parseable string:
 
         - ``energy``: Observed photon energy [``energy``]
@@ -152,7 +152,7 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
         The ``keywords`` metadata field of the table can be used to provide the
         confidence level of the upper limits with the keyword ``cl``, which
-        defaults to 90%. The :class:`astropy.io.ascii` reader can recover all
+        defaults to 90%. The `astropy.io.ascii` reader can recover all
         the needed information from ASCII tables in the
         :class:`~astropy.io.ascii.Ipac` and :class:`~astropy.io.ascii.Daophot`
         formats, and everything except the ``cl`` keyword from tables in the
@@ -184,7 +184,7 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
         chain history discarded. It is necessary to settle the sampler into the
         maximum of the parameter space density. Default is 100.
     labels : iterable of strings, optional
-        Labels for the parameters included in the position vector `p0`. If not
+        Labels for the parameters included in the position vector ``p0``. If not
         provided ``['par1','par2', ... ,'parN']`` will be used.
     threads : int, optional
         Number of threads to use for sampling. Default is 4.
@@ -195,8 +195,8 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     Returns
     -------
     sampler : :class:`~emcee.EnsembleSampler` instance
-        Ensemble sampler with walker positions after `nburn` burn-in steps.
-    pos : :class:`~numpy.array`
+        Ensemble sampler with walker positions after ``nburn`` burn-in steps.
+    pos : :class:`~numpy.ndarray`
         Final position vector array.
 
     See also

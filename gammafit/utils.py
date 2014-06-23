@@ -85,8 +85,8 @@ def validate_data_table(data_table):
     if not HAS_CL:
         data['cl'] = 0.9
         if 'ul' in data_table.keys():
-            log.warn('"cl" keyword not provided in input data table, upper limits'
-                    'will be assumed to be at 90% confidence level')
+            log.warning('"cl" keyword not provided in input data table, upper limits'
+                        'will be assumed to be at 90% confidence level')
 
     return data
 
@@ -198,22 +198,22 @@ def build_data_table(ene, flux, flux_error=None, flux_error_lo=None,
 
     flux_error, flux_error_hi, flux_error_lo : :class:`~astropy.units.Quantity` array instance
         68% CL gaussian uncertainty of the flux [physical type ``flux`` or
-        ``differential flux``]. Either `flux_error` (symmetrical uncertainty) or
-        `flux_error_hi` and `flux_error_lo` (asymmetrical uncertainties) must be
+        ``differential flux``]. Either ``flux_error`` (symmetrical uncertainty) or
+        ``flux_error_hi`` and ``flux_error_lo`` (asymmetrical uncertainties) must be
         provided.
 
     ene_width, ene_lo, ene_hi : :class:`~astropy.units.Quantity` array instance, optional
-        Width of the energy bins [physical type ``energy``]. Either `ene_width`
-        (bin width) or `ene_lo` and `ene_hi` (Energies of the lower and upper
+        Width of the energy bins [physical type ``energy``]. Either ``ene_width``
+        (bin width) or ``ene_lo`` and ``ene_hi`` (Energies of the lower and upper
         bin edges) can be provided. If none are provided,
-        `generate_energy_edges` will be used.
+        ``generate_energy_edges`` will be used.
 
     ul : boolean or int array, optional
-        Boolean array indicating which of the flux values given in `flux`
+        Boolean array indicating which of the flux values given in ``flux``
         correspond to upper limits.
 
     cl : float, optional
-        Confidence level of the flux upper limits given by `ul`.
+        Confidence level of the flux upper limits given by ``ul``.
 
     Returns
     -------
@@ -310,7 +310,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
                 f.savefig('{0}_chain_{1}.png'.format(outname, label))
             del f
         except Exception as e:
-            log.warn('plot_chain failed for paramter {0}: {1}'.format(par,e))
+            log.warning('plot_chain failed for paramter {0}: {1}'.format(par,e))
 
     # Corner plot
 
@@ -354,7 +354,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
                 raise TypeError
             assert(len(modelx) == len(modely))
         except (TypeError, AssertionError):
-            log.warn(
+            log.warning(
                 'Not plotting model {0} because of wrong blob format'.format(modelidx))
             continue
 
@@ -362,7 +362,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
             e_unit = modelx.unit
             f_unit = modely.unit
         except AttributeError:
-            log.warn(
+            log.warning(
                 'Not plotting model {0} because of lack of units'.format(modelidx))
             continue
 

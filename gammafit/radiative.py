@@ -10,12 +10,11 @@ __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
 from astropy.extern import six
 import logging
 # Get a new logger to avoid changing the level of the astropy logger
-log = logging.getLogger('gammafit.onezone')
+log = logging.getLogger('gammafit.radiative')
 
 # Constants and units
 from astropy import units as u
 # import constant values from astropy.constants
-import astropy.constants as const
 from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p
 e = e.gauss
 
@@ -41,7 +40,7 @@ def _validate_ene(ene):
     return ene
 
 class Synchrotron(object):
-    """Synchrotron emission from an electron population
+    """Synchrotron emission from an electron population.
 
     Parameters
     ----------
@@ -50,7 +49,7 @@ class Synchrotron(object):
         TeV and returning the particle energy density in units of number of
         electrons per TeV.
 
-    B : :class:`~astropy.units.quantity.Quantity` float instance, optional
+    B : :class:`~astropy.units.Quantity` float instance, optional
         Isotropic magnetic field strength. Default: equipartition
         with CMB (3.24e-6 G)
     """
@@ -136,11 +135,11 @@ class Synchrotron(object):
         return (spec * outspecene ** 2.).to('erg/s')
 
 class InverseCompton(object):
-    """Synchrotron emission from an electron population
+    """Synchrotron emission from an electron population.
 
     Parameters
     ----------
-    particle_distribution : :class:`~astropy.modeling.FittableModel1D` subclass instance
+    particle_distribution : function
         Particle distribution function, taking the electron energy in units of
         TeV and returning the particle energy density in units of number of
         electrons per TeV.
@@ -199,8 +198,8 @@ class InverseCompton(object):
                     self.seedT[inseed] = Tnir
                     self.seeduf[inseed] = (unir / (ar * Tnir ** 4)).decompose()
                 else:
-                    log.warn('Will not use seed {0} because it is not '
-                             'CMB, FIR or NIR'.format(inseed))
+                    log.warning('Will not use seed {0} because it is not '
+                                'CMB, FIR or NIR'.format(inseed))
                     raise TypeError
             elif type(inseed) == list and len(inseed) == 3:
                 name, T, uu = inseed
@@ -216,7 +215,7 @@ class InverseCompton(object):
                         physical_type='pressure')  # pressure has same physical type as energy density
                     self.seeduf[name] = (uu / (ar * T ** 4)).decompose()
             else:
-                log.warn(
+                log.warning(
                     'Unable to process seed photon field: {0}'.format(inseed))
                 raise TypeError
 
@@ -327,7 +326,7 @@ class PionDecay(object):
 
     Parameters
     ----------
-    particle_distribution : :class:`~astropy.modeling.FittableModel1D` subclass instance
+    particle_distribution : function
         Particle distribution function, taking proton energies in units of TeV.
 
     References
