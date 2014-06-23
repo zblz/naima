@@ -32,5 +32,5 @@ Appendices
    :maxdepth: 1
  
    dataformat.rst
-   api/api.rst
+   api.rst
 

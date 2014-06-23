@@ -1,15 +1,31 @@
-.. _radiative:
-
 Radiative Models
 ================
 
+.. currentmodule:: gammafit.models
 
-One-zone electron radiative model
----------------------------------
-.. _electron:
+Leptonic models
+---------------
+
+.. autoclass:: Synchrotron
+    :members:
+.. autoclass:: InverseCompton
+    :members:
+
+Hadronic model
+--------------
+
+.. autoclass:: PionDecay
+    :members:
+
+Particle Distributions
+----------------------
 
 
-
-One-zone proton radiative model
--------------------------------
-.. _proton:
+.. autoclass:: PowerLaw
+    :members:
+.. autoclass:: ExponentialCutoffPowerLaw
+    :members:
+.. autoclass:: BrokenPowerLaw
+    :members:
+.. autoclass:: LogParabola
+    :members:
