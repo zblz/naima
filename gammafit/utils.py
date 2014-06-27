@@ -152,6 +152,66 @@ def sed_conversion(energy, model_unit, sed):
 
     return f_unit, sedf
 
+def trapz_loglog(y, x, axis=-1):
+    """
+    Integrate along the given axis using the composite trapezoidal rule in
+    loglog space.
+
+    Integrate `y` (`x`) along given axis in loglog space.
+
+    Parameters
+    ----------
+    y : array_like
+        Input array to integrate.
+    x : array_like, optional
+        Independent variable to integrate over.
+    axis : int, optional
+        Specify the axis.
+
+    Returns
+    -------
+    trapz : float
+        Definite integral as approximated by trapezoidal rule in loglog space.
+    """
+    try:
+        y_unit = y.unit
+        y = y.value
+    except AttributeError:
+        y_unit = 1.
+    try:
+        x_unit = x.unit
+        x = x.value
+    except AttributeError:
+        x_unit = 1.
+
+    y = np.asanyarray(y)
+    x = np.asanyarray(x)
+
+    slice1 = [slice(None)]*y.ndim
+    slice2 = [slice(None)]*y.ndim
+    slice1[axis] = slice(None, -1)
+    slice2[axis] = slice(1, None)
+
+    if x.ndim == 1:
+        shape = [1] * y.ndim
+        shape[axis] = x.shape[0]
+        x = x.reshape(shape)
+
+    # Compute the power law indices in each integration bin
+    b = np.log10(y[slice2] / y[slice1]) / np.log10(x[slice2] / x[slice1])
+
+    # if local powerlaw index is -1, use \int 1/x = log(x); otherwise use normal
+    # powerlaw integration
+    trapzs = np.where(np.abs(b+1.) > 1e-10,
+                      (y[slice1] * (x[slice2] * (x[slice2]/x[slice1]) ** b - x[slice1]))/(b+1),
+                      x[slice1] * y[slice1] * np.log(x[slice2]/x[slice1]))
+
+    tozero = (y[slice1] == 0.) + (y[slice2] == 0.) + (x[slice1] == x[slice2])
+    trapzs[tozero] = 0.
+
+    ret = np.add.reduce(trapzs,axis) * x_unit * y_unit
+
+    return ret
 
 
 def generate_energy_edges(ene):

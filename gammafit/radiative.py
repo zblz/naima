@@ -5,6 +5,8 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 from .extern.validator import validate_scalar, validate_array, validate_physical_type
 
+from .utils import trapz_loglog
+
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
 
 from astropy.extern import six
@@ -115,7 +117,7 @@ class Synchrotron(object):
         EgEc = outspecene.to('erg').value / np.vstack(Ec)
         dNdE = CS1 * Gtilde(EgEc)
         # return units
-        spec = np.trapz(np.vstack(self.nelec) * dNdE, self.gam, axis=0) / u.s / u.erg
+        spec = trapz_loglog(np.vstack(self.nelec) * dNdE, self.gam, axis=0) / u.s / u.erg
 
         return spec.to('1/(s eV)')
 
@@ -274,7 +276,7 @@ class InverseCompton(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             gamint = iso_ic_on_planck(self.gam, T.to('K').value, Eph)
-        lum = uf * Eph * np.trapz(self.nelec * gamint, self.gam)
+        lum = uf * Eph * trapz_loglog(self.nelec * gamint, self.gam)
         lum *= u.Unit('1/s')
 
         return lum / outspecene  # return differential spectrum in 1/s/eV

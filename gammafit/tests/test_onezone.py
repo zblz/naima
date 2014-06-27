@@ -5,6 +5,8 @@ from numpy.testing import assert_allclose
 from astropy.tests.helper import pytest
 from astropy.extern import six
 
+from ..utils import trapz_loglog
+
 try:
     import scipy
     HAS_SCIPY = True
@@ -37,22 +39,23 @@ def test_synchrotron_lum(particle_dists):
 
     ECPL,PL,BPL = particle_dists
 
-    lums = [0.0002525815099101462,
-            0.16997228271344694,
-            1.1623884971024219e-05]
+    lums = [0.000251958779927,
+            0.169718700532,
+            1.16045322298e-05
+           ]
 
     for pdist, lum in six.moves.zip(particle_dists, lums):
         sy = Synchrotron(pdist)
 
-        lsy = np.trapz(sy.flux(energy) * energy, energy).to('erg/s')
+        lsy = trapz_loglog(sy.flux(energy) * energy, energy).to('erg/s')
         assert(lsy.unit == u.erg / u.s)
         assert_allclose(lsy.value, lum)
 
     sy = Synchrotron(ECPL,B=1*u.G)
 
-    lsy = np.trapz(sy.flux(energy) * energy, energy).to('erg/s')
+    lsy = trapz_loglog(sy.flux(energy) * energy, energy).to('erg/s')
     assert(lsy.unit == u.erg / u.s)
-    assert_allclose(lsy.value, 31700300.30988492)
+    assert_allclose(lsy.value, 31629469.710301004)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_inverse_compton_lum(particle_dists):
@@ -63,21 +66,22 @@ def test_inverse_compton_lum(particle_dists):
 
     ECPL,PL,BPL = particle_dists
 
-    lums = [0.00028327087904549787,
-            0.005459045188008858,
-            1.4938685711445786e-06]
+    lums = [0.000283116903484,
+            0.00545489789968,
+            1.49293663874e-06,
+            ]
 
     for pdist, lum in six.moves.zip(particle_dists, lums):
         ic = InverseCompton(pdist)
 
-        lic = np.trapz(ic.flux(energy) * energy, energy).to('erg/s')
+        lic = trapz_loglog(ic.flux(energy) * energy, energy).to('erg/s')
         assert(lic.unit == u.erg / u.s)
         assert_allclose(lic.value, lum)
 
     ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'])
 
-    lic = np.trapz(ic.flux(energy) * energy, energy).to('erg/s')
-    assert_allclose(lic.value, 0.00035996458437447014)
+    lic = trapz_loglog(ic.flux(energy) * energy, energy).to('erg/s')
+    assert_allclose(lic.value, 0.000359750950957)
 
 
 @pytest.mark.skipif('not HAS_SCIPY')
@@ -109,16 +113,16 @@ def test_pion_decay(particle_dists):
 
     ECPL,PL,BPL = particle_dists
 
-    lums = [5.81597553001e-13,
-            1.25944455136e-12,
-            8.56815829515e-16]
+    lums = [5.54225481494e-13,
+            1.21723084093e-12,
+            8.22791925348e-16]
 
     energy = np.logspace(9, 13, 20) * u.eV
 
     for pdist, lum in six.moves.zip(particle_dists, lums):
         pp = PionDecay(pdist)
 
-        lpp = np.trapz(pp.flux(energy) * energy, energy).to('erg/s')
+        lpp = trapz_loglog(pp.flux(energy) * energy, energy).to('erg/s')
         assert(lpp.unit == u.erg / u.s)
         assert_allclose(lpp.value, lum)
 
