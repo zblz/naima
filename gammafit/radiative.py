@@ -12,6 +12,7 @@ import warnings
 import logging
 # Get a new logger to avoid changing the level of the astropy logger
 log = logging.getLogger('gammafit.radiative')
+log.setLevel(logging.INFO)
 
 # Constants and units
 from astropy import units as u
