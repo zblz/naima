@@ -15,8 +15,8 @@ the model, and the data table.
 `gammafit` includes several models in the `gammafit.models` module that make it
 easier to fit common functional forms for spectra (`models.PowerLaw`,
 `models.ExponentialCutoffPowerLaw`, `models.BrokenPowerLaw`, and
-`models.LogParabola`), as well as several radiative models (see `Radiative
-models`_ for a detailed explanation of these). Once initialized with the
+`models.LogParabola`), as well as several radiative models (see :ref:`radiative`
+for a detailed explanation of these). Once initialized with the
 relevant parameters, all model instances can be called with an energy array to
 obtain the flux of the model at the values of the energy array. If they are
 called with a data table as argument, the energy values from the ``energy``
@@ -48,7 +48,8 @@ and the spectral index to be between 0.5 and 3.5::
 
     def prior(pars):
         lnprior = uniform_prior(pars[0], 0., np.inf) \
-                + uniform_prior(pars[1], 0, np.inf)
+                + uniform_prior(pars[1], 0.5, 3.5) \
+                + uniform_prior(pars[2], 0, np.inf)
 
 
 
