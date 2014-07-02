@@ -313,6 +313,41 @@ def plot_CI(ax, sampler, modelidx=0, sed=True,confs=[3, 1, 0.5],e_unit=u.eV,**kw
 
     # ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
 
+def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV, last_step=False):
+    """Plot a number of samples from the sampler chain.
+
+    Parameters
+    ----------
+    ax : `matplotlib.Axes`
+        Axes to plot on.
+    sampler : `emcee.EnsembleSampler`
+        Sampler
+    modelidx : int, optional
+        Model index. Default is 0
+    sed : bool, optional
+        Whether to plot SED or differential spectrum. If `None`, the units of
+        the observed spectrum will be used.
+    n_samples : int, optional
+        Number of samples to plot. Default is 100.
+    e_unit : :class:`~astropy.units.Unit` or str parseable to unit
+        Unit in which to plot energy axis.
+    last_step : bool, optional
+        Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
+    """
+
+    modelx, model = _process_blob(sampler, modelidx, last_step=last_step)
+    # pick first confidence interval curve for units
+    f_unit, sedf = sed_conversion(modelx, model[0].unit, sed)
+
+    for my in model[np.random.randint(len(model), size=n_samples)]:
+        ax.plot(modelx.to(e_unit).value, (my * sedf).to(f_unit).value,
+                color='k', alpha=0.1, lw=1)
+
+    ML, MLp, MLvar, ML_model = find_ML(sampler, modelidx)
+
+    ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
+            color='r', lw=1.5, alpha=0.8)
+
 
 def find_ML(sampler, modelidx):
     """
@@ -357,7 +392,7 @@ def _latex_unit(unit):
 
 
 def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
-        sed=False, figure=None,residualCI=True,plotdata=None,
+        n_samples=None, sed=False, figure=None, residualCI=True, plotdata=None,
         e_unit=None, **kwargs):
     """
     Plot data with fit confidence regions.
@@ -379,6 +414,10 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     confs : list, optional
         List of confidence levels (in sigma) to use for generating the
         confidence intervals. Default is ``[3,1,0.5]``
+    n_samples : int, optional
+        If not ``None``, number of sample models to plot. ``n_samples=100`` is a
+        good starting point to see the behaviour of the model. Default is
+        ``None``: plot confidence bands instead of samples.
     figure : `matplotlib.figure.Figure`, optional
         `matplotlib` figure to plot on. If omitted a new one will be generated.
     residualCI : bool, optional
@@ -440,8 +479,10 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     if e_unit is None:
         e_unit = data['energy'].unit
 
-    if confs is not None:
+    if confs is not None and n_samples is None:
         plot_CI(ax1, sampler,modelidx,sed=sed,confs=confs,e_unit=e_unit,**kwargs)
+    elif n_samples is not None:
+        plot_samples(ax1, sampler, modelidx, sed=sed, n_samples=n_samples, e_unit=e_unit)
     else:
         residualCI = False
 

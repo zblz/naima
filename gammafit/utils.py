@@ -426,7 +426,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
                 'Not plotting model {0} because of lack of units'.format(modelidx))
             continue
 
-        f = plot_fit(sampler, modelidx=modelidx, sed=plot_sed, **kwargs)
+        f = plot_fit(sampler, modelidx=modelidx, sed=plot_sed, n_samples=100, **kwargs)
         if pdf:
             f.savefig(outpdf, format='pdf')
         else:

@@ -8,7 +8,7 @@ from astropy.io import ascii
 
 data=ascii.read('CrabNebula_HESS_2006.dat')
 
-ene = u.Quantity(data['ene'])
+ene = u.Quantity(data['energy'])
 ene0 = np.sqrt(ene[0]*ene[-1])
 
 ## Set initial parameters

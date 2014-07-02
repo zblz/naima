@@ -276,7 +276,7 @@ class InverseCompton(object):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             gamint = iso_ic_on_planck(self.gam, T.to('K').value, Eph)
-        lum = uf * Eph * trapz_loglog(self.nelec * gamint, self.gam)
+            lum = uf * Eph * trapz_loglog(self.nelec * gamint, self.gam)
         lum *= u.Unit('1/s')
 
         return lum / outspecene  # return differential spectrum in 1/s/eV

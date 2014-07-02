@@ -126,3 +126,19 @@ def test_pion_decay(particle_dists):
         assert(lpp.unit == u.erg / u.s)
         assert_allclose(lpp.value, lum)
 
+def test_inputs():
+    """ test input validation with LogParabola
+    """
+
+    from ..models import LogParabola
+
+
+    LP = LogParabola(1., e_0, 1.7, 0.2)
+
+    LP(np.logspace(1,10,10)*u.TeV)
+    LP(10*u.TeV)
+
+    with pytest.raises(TypeError):
+        data = {'flux':[1,2,4]}
+        LP(data)
+
