@@ -329,7 +329,7 @@ class PionDecay(object):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
-    proton distribution with stationary target protons.
+    proton distribution with stationary target protons of density :math:`n_H = 1 cm^-3`.
 
     Parameters
     ----------
@@ -449,6 +449,16 @@ class PionDecay(object):
 
         return result * u.Unit('1/(s TeV)')
 
+    @property
+    def Wp(self):
+        """Total proton energy above 1.22 GeV threshold (erg).
+        """
+        from scipy.integrate import quad
+        Eth = 1.22e-3
+        Wp = quad(lambda x: x * self.particle_distribution(x*u.TeV), Eth, np.Inf)[0]
+
+        return (Wp * u.TeV).to('erg')
+
     def flux(self,photon_energy):
         """
         Compute differential spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
@@ -460,13 +470,6 @@ class PionDecay(object):
         """
 
         outspecene = _validate_ene(photon_energy)
-        from scipy.integrate import quad
-
-        # Before starting, show total proton energy above threshold
-        Eth = 1.22e-3
-        Wp = quad(lambda x: x * self.particle_distribution(x*u.TeV), Eth, np.Inf)[0] * u.TeV
-        self.Wp = Wp.to('erg') / u.cm**5
-        log.info('W_p(E>1.22 GeV)*[nH/4πd²] = {0:.2e}'.format(self.Wp))
 
         if not hasattr(self, 'Etrans'):
             # Energy at which we change from delta functional to accurate
