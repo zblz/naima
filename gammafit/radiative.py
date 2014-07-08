@@ -329,7 +329,7 @@ class PionDecay(object):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
-    proton distribution with stationary target protons of density :math:`n_H = 1 cm^-3`.
+    proton distribution with stationary target protons.
 
     Parameters
     ----------
