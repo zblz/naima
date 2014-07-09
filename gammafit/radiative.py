@@ -19,10 +19,11 @@ log.setLevel(logging.INFO)
 # Constants and units
 from astropy import units as u
 # import constant values from astropy.constants
-from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p
+from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p, M_sun
 e = e.gauss
 
 mec2 = (m_e * c ** 2).cgs
+mec2_unit = u.Unit(mec2)
 
 ar = (4 * sigma_sb / c).to('erg/(cm3 K4)')
 
@@ -49,9 +50,9 @@ class Synchrotron(object):
     Parameters
     ----------
     particle_distribution : function
-        Particle distribution function, taking the electron energy in units of
-        TeV and returning the particle energy density in units of number of
-        electrons per TeV.
+        Particle distribution function, taking the electron energy, and
+        returning the particle energy density in units of number of electrons
+        per unit energy.
 
     B : :class:`~astropy.units.Quantity` float instance, optional
         Isotropic magnetic field strength. Default: equipartition
@@ -59,17 +60,32 @@ class Synchrotron(object):
     """
     def __init__(self, particle_distribution, B=3.24e-6*u.G, **kwargs):
         self.particle_distribution = particle_distribution
+        # check that the particle distribution returns particles per unit energy
+        P = self.particle_distribution(1*u.TeV)
+        validate_scalar('particle distribution', P, physical_type='differential energy')
         self.B = validate_scalar('B',B,physical_type='magnetic flux density')
         self.__dict__.update(**kwargs)
 
-    def _nelec(self):
+    @property
+    def gam(self):
+        """ Lorentz factor array
+        """
         self.log10gmin = 4
         self.log10gmax = 10
         self.ngamd = 100
-        self.gam = np.logspace(self.log10gmin,self.log10gmax,
+        return np.logspace(self.log10gmin,self.log10gmax,
                 self.ngamd*self.log10gmax/self.log10gmin)
 
-        self.nelec = self.particle_distribution(self.gam * mec2.to('TeV'))
+    @property
+    def nelec(self):
+        """ Particles per unit lorentz factor
+        """
+        pd = self.particle_distribution(self.gam * mec2)
+        return pd.to(1/mec2_unit).value
+
+    @property
+    def We(self):
+        return trapz_loglog(self.gam * self.nelec, self.gam * mec2)
 
     def flux(self,photon_energy):
         """Compute differential synchrotron spectrum for energies in ``photon_energy``
@@ -86,8 +102,6 @@ class Synchrotron(object):
         outspecene = _validate_ene(photon_energy)
 
         from scipy.special import cbrt
-
-        self._nelec()
 
         def Gtilde(x):
             """
@@ -223,14 +237,25 @@ class InverseCompton(object):
                     'Unable to process seed photon field: {0}'.format(inseed))
                 raise TypeError
 
-    def _nelec(self):
+    @property
+    def gam(self):
         self.log10gmin = 4
         self.log10gmax = 10.5
         self.ngamd = 300
-        self.gam = np.logspace(self.log10gmin,self.log10gmax,
+        return np.logspace(self.log10gmin,self.log10gmax,
                 self.ngamd*self.log10gmax/self.log10gmin)
 
-        self.nelec = self.particle_distribution(self.gam * mec2)
+
+    @property
+    def nelec(self):
+        """ Particles per unit lorentz factor
+        """
+        pd = self.particle_distribution(self.gam * mec2)
+        return pd.to(1/mec2_unit).value
+
+    @property
+    def We(self):
+        return trapz_loglog(self.gam * self.nelec, self.gam * mec2)
 
     def _calc_specic(self, seed, outspecene):
         log.debug(
@@ -295,8 +320,6 @@ class InverseCompton(object):
         """
         outspecene = _validate_ene(photon_energy)
 
-        self._nelec()
-
         self.specic = np.zeros(len(outspecene)) * u.Unit('1/(s eV)')
 
         for seed in self.seed_photon_fields:
@@ -336,15 +359,23 @@ class PionDecay(object):
     particle_distribution : function
         Particle distribution function, taking proton energies in units of TeV.
 
+    nh : `~astropy.units.Quantity`
+        Number density of the target protons. Default is :math:`1 cm^{-3}`.
+
     References
     ----------
     Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018 [KAB06]
 
     """
 
-    def __init__(self, particle_distribution, **kwargs):
+    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, **kwargs):
         self.particle_distribution = particle_distribution
+        self.nh = validate_scalar('nh', nh, physical_type='number density')
+
         self.__dict__.update(**kwargs)
+
+    def _particle_distribution(self,E):
+        return self.particle_distribution(E*u.TeV).to('1/TeV').value
 
     def _Fgamma(self, x, Ep):
         """
@@ -400,7 +431,7 @@ class PionDecay(object):
         Integrand of Eq. 72
         """
         try:
-            return self._sigma_inel(Egamma / x) * self.particle_distribution((Egamma / x)*u.TeV) \
+            return self._sigma_inel(Egamma / x) * self._particle_distribution((Egamma / x)) \
                 * self._Fgamma(x, Egamma / x) / x
         except ZeroDivisionError:
             return np.nan
@@ -433,7 +464,7 @@ class PionDecay(object):
     def _delta_integrand(self, Epi):
         Ep0 = self._mp + Epi / self._Kpi
         qpi = self._c * \
-            (self.nhat / self._Kpi) * self._sigma_inel(Ep0) * self.particle_distribution(Ep0*u.TeV)
+            (self.nhat / self._Kpi) * self._sigma_inel(Ep0) * self._particle_distribution(Ep0)
         return qpi / np.sqrt(Epi ** 2 + self._m_pi ** 2)
 
     def _calc_specpp_loE(self, Egamma):
@@ -455,7 +486,10 @@ class PionDecay(object):
         """
         from scipy.integrate import quad
         Eth = 1.22e-3
-        Wp = quad(lambda x: x * self.particle_distribution(x*u.TeV), Eth, np.Inf)[0]
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            Wp = quad(lambda x: x * self._particle_distribution(x), Eth, np.Inf)[0]
 
         return (Wp * u.TeV).to('erg')
 
@@ -497,7 +531,9 @@ class PionDecay(object):
                 else:
                     self.specpp[i] = self._calc_specpp_loE(Egamma)
 
-        return self.specpp.to('1/(s eV)')
+        density_factor = (self.nh * u.cm**3).decompse().value
+
+        return density_factor * self.specpp.to('1/(s eV)')
 
     def sed(self,photon_energy):
         """
