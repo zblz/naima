@@ -11,7 +11,7 @@ data=ascii.read('CrabNebula_HESS_2006.dat')
 
 ## Set initial parameters
 
-p0=np.array((5e-25,2.34,np.log10(80.),))
+p0=np.array((474,2.34,np.log10(80.),))
 labels=['norm','index','log10(cutoff)']
 
 ## Model definition
@@ -23,7 +23,7 @@ e_0 = 5.*np.sqrt(ph_energy[0]*ph_energy[-1])
 
 from gammafit.models import PionDecay, ExponentialCutoffPowerLaw
 
-ECPL = ExponentialCutoffPowerLaw(1,e_0,2,60.*u.TeV)
+ECPL = ExponentialCutoffPowerLaw(1 / u.TeV, e_0, 2, 60. * u.TeV)
 PP = PionDecay(ECPL)
 
 Epmin = ph_energy[0]*1e-2
@@ -33,7 +33,7 @@ proton_energy = np.logspace(np.log10(Epmin.value),
 
 def ppgamma(pars,data):
 
-    PP.particle_distribution.amplitude = pars[0]
+    PP.particle_distribution.amplitude = pars[0] / u.TeV
     PP.particle_distribution.alpha = pars[1]
     PP.particle_distribution.e_cutoff = (10**pars[2])*u.TeV
 

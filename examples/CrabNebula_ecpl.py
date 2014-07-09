@@ -21,7 +21,8 @@ labels=['norm','index','log10(cutoff)']
 from gammafit.models import ExponentialCutoffPowerLaw
 
 # initialise an instance of ECPL
-ECPL = ExponentialCutoffPowerLaw(1, ene0, 2, ene0)
+flux_unit = u.Unit('1/(cm2 s TeV)')
+ECPL = ExponentialCutoffPowerLaw(1 * flux_unit, ene0, 2, ene0)
 
 def cutoffexp(pars,data):
     """
@@ -33,11 +34,11 @@ def cutoffexp(pars,data):
         - 2: log10(cutoff energy)
     """
 
-    ECPL.amplitude = pars[0]
+    ECPL.amplitude = pars[0] * flux_unit
     ECPL.alpha = pars[1]
     ECPL.e_cutoff = (10**pars[2])*u.TeV
 
-    return ECPL(data) * data['flux'].unit
+    return ECPL(data)
 
 ## Prior definition
 

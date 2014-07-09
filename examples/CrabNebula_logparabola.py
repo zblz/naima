@@ -21,15 +21,16 @@ labels=['norm','alpha','beta']
 from gammafit.models import LogParabola
 
 # initialise an instance of ECPL
-LP = LogParabola(1, ene0, 2, 0.5)
+flux_unit = data['flux'].unit
+LP = LogParabola(1e-12 * flux_unit, ene0, 2, 0.5)
 
 def logparabola(pars,data):
 
-    LP.amplitude = pars[0]
+    LP.amplitude = pars[0] * flux_unit
     LP.alpha = pars[1]
     LP.beta = pars[2]
 
-    return LP(data) * data['flux'].unit
+    return LP(data)
 
 ## Prior definition
 
@@ -48,7 +49,7 @@ if __name__=='__main__':
 ## Run sampler
 
     sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels,
-            model=logparabola, prior=lnprior, nwalkers=128, nburn=50, nrun=10,
+            model=logparabola, prior=lnprior, nwalkers=256, nburn=50, nrun=10,
             threads=4)
 
 ## Save sampler

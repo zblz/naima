@@ -531,7 +531,7 @@ class PionDecay(object):
                 else:
                     self.specpp[i] = self._calc_specpp_loE(Egamma)
 
-        density_factor = (self.nh * u.cm**3).decompse().value
+        density_factor = (self.nh / (1 * u.Unit('1/cm3'))).decompose().value
 
         return density_factor * self.specpp.to('1/(s eV)')
 

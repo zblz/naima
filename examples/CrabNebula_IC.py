@@ -11,19 +11,19 @@ data=ascii.read('CrabNebula_HESS_2006.dat')
 
 ## Set initial parameters
 
-p0=np.array((2.5e-6,3.3,np.log10(48.0),))
+p0=np.array((4.9,3.3,np.log10(48.0),))
 labels=['norm','index','log10(cutoff)']
 
 ## Model definition
 
 from gammafit.models import InverseCompton, ExponentialCutoffPowerLaw
 
-ECPL = ExponentialCutoffPowerLaw(1,10.*u.TeV,2,10.*u.TeV)
+ECPL = ExponentialCutoffPowerLaw(1 * u.Unit('1/TeV'),10.*u.TeV,2,10.*u.TeV)
 IC = InverseCompton(ECPL,seed_photon_fields=['CMB'])
 
 def ElectronIC(pars,data):
 
-    IC.particle_distribution.amplitude = pars[0]
+    IC.particle_distribution.amplitude = pars[0] / u.TeV
     IC.particle_distribution.alpha = pars[1]
     IC.particle_distribution.e_cutoff = (10**pars[2])*u.TeV
 
