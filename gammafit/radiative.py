@@ -118,9 +118,10 @@ class Synchrotron(BaseElectron):
     Parameters
     ----------
     particle_distribution : function
-        Particle distribution function, taking the electron energy, and
-        returning the particle energy density in units of number of electrons
-        per unit energy.
+        Particle distribution function, taking electron energies as a
+        `~astropy.units.Quantity` array or float, and returning the particle
+        energy density in units of number of electrons per unit energy as a
+        `~astropy.units.Quantity` array or float.
 
     B : :class:`~astropy.units.Quantity` float instance, optional
         Isotropic magnetic field strength. Default: equipartition
@@ -207,9 +208,10 @@ class InverseCompton(BaseElectron):
     Parameters
     ----------
     particle_distribution : function
-        Particle distribution function, taking the electron energy in units of
-        TeV and returning the particle energy density in units of number of
-        electrons per TeV.
+        Particle distribution function, taking electron energies as a
+        `~astropy.units.Quantity` array or float, and returning the particle
+        energy density in units of number of electrons per unit energy as a
+        `~astropy.units.Quantity` array or float.
 
     seed_photon_fields : string or iterable of strings (optional)
         A list of gray-body seed photon fields to use for IC calculation.
@@ -386,7 +388,10 @@ class PionDecay(BaseRadiative):
     Parameters
     ----------
     particle_distribution : function
-        Particle distribution function, taking proton energies in units of TeV.
+        Particle distribution function, taking proton energies as a
+        `~astropy.units.Quantity` array or float, and returning the particle
+        energy density in units of number of protons per unit energy as a
+        `~astropy.units.Quantity` array or float.
 
     nh : `~astropy.units.Quantity`
         Number density of the target protons. Default is :math:`1 cm^{-3}`.
