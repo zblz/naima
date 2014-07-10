@@ -26,6 +26,8 @@ from gammafit.models import PionDecay, ExponentialCutoffPowerLaw
 ECPL = ExponentialCutoffPowerLaw(1 / u.TeV, e_0, 2, 60. * u.TeV)
 PP = PionDecay(ECPL)
 
+distance = 2.0 * u.kpc
+
 Epmin = ph_energy[0]*1e-2
 Epmax = ph_energy[-1]*1e3
 proton_energy = np.logspace(np.log10(Epmin.value),
@@ -38,8 +40,7 @@ def ppgamma(pars,data):
     PP.particle_distribution.e_cutoff = (10**pars[2])*u.TeV
 
     # convert to same units as observed differential spectrum
-    model = PP.flux(data)
-    model = model.to('1/(s TeV)')/u.cm**2
+    model = PP.flux(data,distance).to('1/(s cm2 TeV)')
 
     # Save a realization of the particle distribution to the metadata blob
     proton_dist= PP.particle_distribution(proton_energy) * u.Unit('1/TeV')

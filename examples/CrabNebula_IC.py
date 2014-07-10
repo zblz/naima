@@ -21,6 +21,10 @@ from gammafit.models import InverseCompton, ExponentialCutoffPowerLaw
 ECPL = ExponentialCutoffPowerLaw(1 * u.Unit('1/TeV'),10.*u.TeV,2,10.*u.TeV)
 IC = InverseCompton(ECPL,seed_photon_fields=['CMB'])
 
+distance = 2.0 * u.kpc
+
+mec2 = u.Unit(m_e*c**2)
+
 def ElectronIC(pars,data):
 
     IC.particle_distribution.amplitude = pars[0] / u.TeV
@@ -28,17 +32,18 @@ def ElectronIC(pars,data):
     IC.particle_distribution.e_cutoff = (10**pars[2])*u.TeV
 
     # convert to same units as observed differential spectrum
-    model = IC.flux(data).to('1/(s TeV)')/u.cm**2
-
-    mec2 = u.Unit(m_e*c**2)
+    model = IC.flux(data,distance).to('1/(s cm2 TeV)')
 
     # The electron particle distribution (nelec) is saved in units or particles
     # per unit lorentz factor (E/mc2).  We define a mec2 unit and give nelec and
     # elec_energy the corresponding units.
-    nelec = IC.nelec * (1/mec2)
-    elec_energy = IC.gam * mec2
+    nelec = IC._nelec * (1/mec2)
+    elec_energy = IC._gam * mec2
 
-    return model, model, (elec_energy,nelec)
+    # The first array returned will be compared to the observed spectrum for
+    # fitting. All subsequent objects will be stores in the sampler metadata
+    # blobs.
+    return model, model, (elec_energy,nelec), IC.We
 
 ## Prior definition
 
@@ -49,9 +54,7 @@ def lnprior(pars):
 	"""
 
 	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
-            + gammafit.uniform_prior(pars[1],-1,5)
-            #+ gammafit.uniform_prior(pars[2],0.,np.inf) \
-            #+ gammafit.uniform_prior(pars[3],0.5,1.5)
+                + gammafit.uniform_prior(pars[1],-1,5)
 
 	return logprob
 
