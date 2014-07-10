@@ -51,16 +51,16 @@ class BaseRadiative(object):
     spectrum method which returns the intrinsic differential spectrum.
     """
 
-    def flux(self, photon_energy, distance):
+    def flux(self, photon_energy, distance=1*u.kpc):
         """Differential flux at a given distance from the source.
 
         Parameters
         ----------
-        photon_energy : :class:`~astropy.units.Quantity` instance
+        photon_energy : :class:`~astropy.units.Quantity` float or array
             Photon energy array.
 
-        distance : :class:`~astropy.units.Quantity` instance
-            Distance to the source.
+        distance : :class:`~astropy.units.Quantity` float, optional
+            Distance to the source. Default is 1 kpc.
         """
 
         spec = self.spectrum(photon_energy)
@@ -70,16 +70,16 @@ class BaseRadiative(object):
 
         return spec.to('1/(s cm2 eV)')
 
-    def sed(self, photon_energy, distance=None):
-        """Compute spectral energy distribution at a given distance from the source.
+    def sed(self, photon_energy, distance=1*u.kpc):
+        """Spectral energy distribution at a given distance from the source.
 
         Parameters
         ----------
-        photon_energy : :class:`~astropy.units.Quantity` instance
+        photon_energy : :class:`~astropy.units.Quantity` float or array
             Photon energy array.
 
-        distance : :class:`~astropy.units.Quantity` instance
-            Distance to the source.
+        distance : :class:`~astropy.units.Quantity` float, optional
+            Distance to the source. Default is 1 kpc.
         """
 
         sed = (self.flux(photon_energy,distance) * photon_energy ** 2.).to('erg/(cm2 s)')
