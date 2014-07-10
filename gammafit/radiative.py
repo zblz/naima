@@ -126,17 +126,15 @@ class Synchrotron(BaseElectron):
         Isotropic magnetic field strength. Default: equipartition
         with CMB (3.24e-6 G)
 
-    Additional parameters
-    ---------------------
+    Other parameters
+    ----------------
     log10gmin : float
         Base 10 logarithm of the minimum Lorentz factor for the electron
-        distribution. Default is 4 (:math:`E_\mathrm{e} \approx
-        5\,\mathrm{GeV}`).
+        distribution. Default is 4 (:math:`E_e ≈ 5` GeV).
 
     log10gmax : float
         Base 10 logarithm of the maximum Lorentz factor for the electron
-        distribution. Default is 9 (:math:`E_\mathrm{e} \approx
-        510\,\mathrm{TeV}`).
+        distribution. Default is 9 (:math:`E_e ≈ 510` TeV).
 
     ngamd : scalar
         Number of points per decade in energy for the electron energy and
@@ -231,17 +229,15 @@ class InverseCompton(BaseElectron):
                field energy density if set to 0, its blackbody energy density
                will be computed through the Stefan-Boltzman law.
 
-    Additional parameters
-    ---------------------
+    Other parameters
+    ----------------
     log10gmin : float
         Base 10 logarithm of the minimum Lorentz factor for the electron
-        distribution. Default is 4 (:math:`E_\mathrm{e} \approx
-        5\,\mathrm{GeV}`).
+        distribution. Default is 4 (:math:`E_e ≈ 5` GeV).
 
     log10gmax : float
         Base 10 logarithm of the maximum Lorentz factor for the electron
-        distribution. Default is 9 (:math:`E_\mathrm{e} \approx
-        510\,\mathrm{TeV}`).
+        distribution. Default is 9 (:math:`E_e ≈ 510` TeV).
 
     ngamd : scalar
         Number of points per decade in energy for the electron energy and
@@ -395,9 +391,8 @@ class PionDecay(BaseRadiative):
     nh : `~astropy.units.Quantity`
         Number density of the target protons. Default is :math:`1 cm^{-3}`.
 
-    Additional Parameters
-    ---------------------
-
+    Other parameters
+    ----------------
     Etrans : `~astropy.units.Quantity`
         For photon energies below ``Etrans``, the delta-functional approximation
         is used for the spectral calculation, and the full calculation is used
@@ -406,7 +401,7 @@ class PionDecay(BaseRadiative):
     References
     ----------
     Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
-    (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_.
+    (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_).
 
     """
 
@@ -538,7 +533,7 @@ class PionDecay(BaseRadiative):
         """
         Compute differential spectrum from pp interactions using Eq.71 and Eq.58 of
         Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
-        (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_.
+        (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_).
 
         Parameters
         ----------
