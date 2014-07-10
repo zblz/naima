@@ -343,7 +343,7 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV, 
         ax.plot(modelx.to(e_unit).value, (my * sedf).to(f_unit).value,
                 color='k', alpha=0.1, lw=1)
 
-    ML, MLp, MLvar, ML_model = find_ML(sampler, modelidx)
+    ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
 
     ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
             color='r', lw=1.5, alpha=0.8)
@@ -366,10 +366,13 @@ def find_ML(sampler, modelidx):
     else:
         raise TypeError('Model {0} has wrong blob format'.format(modelidx))
 
-    MLvar = [np.std(dist) for dist in sampler.flatchain.T]
+    MLerr = []
+    for dist in sampler.flatchain.T:
+        hilo = np.percentile(dist,[16.,84.])
+        MLerr.append((hilo[1]-hilo[0])/2.)
     ML = sampler.lnprobability[index]
 
-    return ML, MLp, MLvar, (modelx, model_ML)
+    return ML, MLp, MLerr, (modelx, model_ML)
 
 def _latex_unit(unit):
     """ Hack to get a single line latex representation of a unit
@@ -435,11 +438,13 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     # Plot everything in serif to match math exponents
     plt.rc('font',family='serif')
 
-    ML, MLp, MLvar, model_ML = find_ML(sampler, modelidx)
+    ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
     infostr += 'Maximum Likelihood values:\n'
-    for p, v, label in zip(MLp, MLvar, sampler.labels):
-        infostr += '{2:>10}: {0:>8.3g} +/- {1:<8.3g}\n'.format(p, v, label)
+    maxlen = np.max([len(label) for label in sampler.labels])
+    vartemplate = '{{2:>{0}}}: {{0:>8.3g}} +/- {{1:<8.3g}}\n'.format(maxlen)
+    for p, v, label in zip(MLp, MLerr, sampler.labels):
+        infostr += vartemplate.format(p, v, label)
 
     log.info(infostr)
 
