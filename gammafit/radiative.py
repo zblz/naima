@@ -85,6 +85,8 @@ class Synchrotron(object):
 
     @property
     def We(self):
+        """ Total energy in electrons
+        """
         return trapz_loglog(self._gam * self._nelec, self._gam * mec2)
 
     def flux(self,photon_energy):
@@ -239,6 +241,8 @@ class InverseCompton(object):
 
     @property
     def _gam(self):
+        """ Lorentz factor array
+        """
         self.log10gmin = 4
         self.log10gmax = 10.5
         self.ngamd = 300
@@ -255,6 +259,8 @@ class InverseCompton(object):
 
     @property
     def We(self):
+        """ Total energy in electrons
+        """
         return trapz_loglog(self._gam * self._nelec, self._gam * mec2)
 
     def _calc_specic(self, seed, outspecene):
@@ -482,7 +488,7 @@ class PionDecay(object):
 
     @property
     def Wp(self):
-        """Total proton energy above 1.22 GeV threshold (erg).
+        """Total energy in protons above 1.22 GeV threshold (erg).
         """
         from scipy.integrate import quad
         Eth = 1.22e-3
