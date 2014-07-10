@@ -8,14 +8,17 @@ Leptonic models
 
 .. autoclass:: Synchrotron
     :members:
+    :inherited-members:
 .. autoclass:: InverseCompton
     :members:
+    :inherited-members:
 
 Hadronic model
 --------------
 
 .. autoclass:: PionDecay
     :members:
+    :inherited-members:
 
 Particle Distributions
 ----------------------
