@@ -67,7 +67,7 @@ class Synchrotron(object):
         self.__dict__.update(**kwargs)
 
     @property
-    def gam(self):
+    def _gam(self):
         """ Lorentz factor array
         """
         self.log10gmin = 4
@@ -77,15 +77,15 @@ class Synchrotron(object):
                 self.ngamd*self.log10gmax/self.log10gmin)
 
     @property
-    def nelec(self):
+    def _nelec(self):
         """ Particles per unit lorentz factor
         """
-        pd = self.particle_distribution(self.gam * mec2)
+        pd = self.particle_distribution(self._gam * mec2)
         return pd.to(1/mec2_unit).value
 
     @property
     def We(self):
-        return trapz_loglog(self.gam * self.nelec, self.gam * mec2)
+        return trapz_loglog(self._gam * self._nelec, self._gam * mec2)
 
     def flux(self,photon_energy):
         """Compute differential synchrotron spectrum for energies in ``photon_energy``
@@ -125,13 +125,13 @@ class Synchrotron(object):
         CS1 = CS1_0/CS1_1
 
         # Critical energy, erg
-        Ec = 3 * e.value * hbar.cgs.value * self.B.to('G').value * self.gam ** 2
+        Ec = 3 * e.value * hbar.cgs.value * self.B.to('G').value * self._gam ** 2
         Ec /= 2 * (m_e * c).cgs.value
 
         EgEc = outspecene.to('erg').value / np.vstack(Ec)
         dNdE = CS1 * Gtilde(EgEc)
         # return units
-        spec = trapz_loglog(np.vstack(self.nelec) * dNdE, self.gam, axis=0) / u.s / u.erg
+        spec = trapz_loglog(np.vstack(self._nelec) * dNdE, self._gam, axis=0) / u.s / u.erg
 
         return spec.to('1/(s eV)')
 
@@ -238,7 +238,7 @@ class InverseCompton(object):
                 raise TypeError
 
     @property
-    def gam(self):
+    def _gam(self):
         self.log10gmin = 4
         self.log10gmax = 10.5
         self.ngamd = 300
@@ -247,15 +247,15 @@ class InverseCompton(object):
 
 
     @property
-    def nelec(self):
+    def _nelec(self):
         """ Particles per unit lorentz factor
         """
-        pd = self.particle_distribution(self.gam * mec2)
+        pd = self.particle_distribution(self._gam * mec2)
         return pd.to(1/mec2_unit).value
 
     @property
     def We(self):
-        return trapz_loglog(self.gam * self.nelec, self.gam * mec2)
+        return trapz_loglog(self._gam * self._nelec, self._gam * mec2)
 
     def _calc_specic(self, seed, outspecene):
         log.debug(
@@ -300,8 +300,8 @@ class InverseCompton(object):
         # Catch numpy RuntimeWarnings of overflowing exp (which are then discarded anyway)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            gamint = iso_ic_on_planck(self.gam, T.to('K').value, Eph)
-            lum = uf * Eph * trapz_loglog(self.nelec * gamint, self.gam)
+            gamint = iso_ic_on_planck(self._gam, T.to('K').value, Eph)
+            lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
         lum *= u.Unit('1/s')
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
