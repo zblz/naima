@@ -399,13 +399,14 @@ class PionDecay(BaseRadiative):
     ---------------------
 
     Etrans : `~astropy.units.Quantity`
-        For photon energies below ``Etrans``, the delta approximation is used
-        for the spectral calculation, and the full calculation is used at higher
-        energies. Default is 0.1 TeV.
+        For photon energies below ``Etrans``, the delta-functional approximation
+        is used for the spectral calculation, and the full calculation is used
+        at higher energies. Default is 0.1 TeV.
 
     References
     ----------
-    Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018 [KAB06]
+    Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
+    (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_.
 
     """
 
@@ -535,7 +536,9 @@ class PionDecay(BaseRadiative):
 
     def spectrum(self,photon_energy):
         """
-        Compute differential spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
+        Compute differential spectrum from pp interactions using Eq.71 and Eq.58 of
+        Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
+        (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_.
 
         Parameters
         ----------
