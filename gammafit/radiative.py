@@ -44,35 +44,57 @@ def _validate_ene(ene):
 
     return ene
 
-class Synchrotron(object):
-    """Synchrotron emission from an electron population.
+class BaseRadiative(object):
+    """Base class for radiative models
 
-    Parameters
-    ----------
-    particle_distribution : function
-        Particle distribution function, taking the electron energy, and
-        returning the particle energy density in units of number of electrons
-        per unit energy.
-
-    B : :class:`~astropy.units.Quantity` float instance, optional
-        Isotropic magnetic field strength. Default: equipartition
-        with CMB (3.24e-6 G)
+    This class implements the flux, sed methods and subclasses must implement the
+    spectrum method which returns the intrinsic differential spectrum.
     """
-    def __init__(self, particle_distribution, B=3.24e-6*u.G, **kwargs):
-        self.particle_distribution = particle_distribution
-        # check that the particle distribution returns particles per unit energy
-        P = self.particle_distribution(1*u.TeV)
-        validate_scalar('particle distribution', P, physical_type='differential energy')
-        self.B = validate_scalar('B',B,physical_type='magnetic flux density')
-        self.__dict__.update(**kwargs)
+
+    def flux(self, photon_energy, distance):
+        """Differential flux at a given distance from the source.
+
+        Parameters
+        ----------
+        photon_energy : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+
+        distance : :class:`~astropy.units.Quantity` instance
+            Distance to the source.
+        """
+
+        spec = self.spectrum(photon_energy)
+
+        distance = validate_scalar('distance', distance, physical_type='length')
+        spec /= 4 * np.pi * distance.to('cm') ** 2
+
+        return spec.to('1/(s cm2 eV)')
+
+    def sed(self, photon_energy, distance=None):
+        """Compute spectral energy distribution at a given distance from the source.
+
+        Parameters
+        ----------
+        photon_energy : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+
+        distance : :class:`~astropy.units.Quantity` instance
+            Distance to the source.
+        """
+
+        sed = (self.flux(photon_energy,distance) * photon_energy ** 2.).to('erg/(cm2 s)')
+
+        return sed
+
+
+class BaseElectron(BaseRadiative):
+    """Implements gam and nelec properties in addition to the BaseRadiative methods
+    """
 
     @property
     def _gam(self):
         """ Lorentz factor array
         """
-        self.log10gmin = 4
-        self.log10gmax = 10
-        self.ngamd = 100
         return np.logspace(self.log10gmin,self.log10gmax,
                 self.ngamd*self.log10gmax/self.log10gmin)
 
@@ -89,11 +111,54 @@ class Synchrotron(object):
         """
         return trapz_loglog(self._gam * self._nelec, self._gam * mec2)
 
-    def flux(self,photon_energy):
-        """Compute differential synchrotron spectrum for energies in ``photon_energy``
 
-        Compute synchrotron for random magnetic field according to approximation of
-        Aharonian, Kelner, and Prosekin 2010.
+class Synchrotron(BaseElectron):
+    """Synchrotron emission from an electron population.
+
+    Parameters
+    ----------
+    particle_distribution : function
+        Particle distribution function, taking the electron energy, and
+        returning the particle energy density in units of number of electrons
+        per unit energy.
+
+    B : :class:`~astropy.units.Quantity` float instance, optional
+        Isotropic magnetic field strength. Default: equipartition
+        with CMB (3.24e-6 G)
+
+    Additional parameters
+    ---------------------
+    log10gmin : float
+        Base 10 logarithm of the minimum Lorentz factor for the electron
+        distribution. Default is 4 (:math:`E_\mathrm{e} \approx
+        5\,\mathrm{GeV}`).
+
+    log10gmax : float
+        Base 10 logarithm of the maximum Lorentz factor for the electron
+        distribution. Default is 9 (:math:`E_\mathrm{e} \approx
+        510\,\mathrm{TeV}`).
+
+    ngamd : scalar
+        Number of points per decade in energy for the electron energy and
+        distribution arrays. Default is 100.
+    """
+    def __init__(self, particle_distribution, B=3.24e-6*u.G, **kwargs):
+        self.particle_distribution = particle_distribution
+        # check that the particle distribution returns particles per unit energy
+        P = self.particle_distribution(1*u.TeV)
+        validate_scalar('particle distribution', P, physical_type='differential energy')
+        self.B = validate_scalar('B',B,physical_type='magnetic flux density')
+        self.log10gmin = 4
+        self.log10gmax = 9
+        self.ngamd = 100
+        self.__dict__.update(**kwargs)
+
+    def spectrum(self, photon_energy):
+        """Compute intrinsic synchrotron differential spectrum for energies in ``photon_energy``
+
+        Compute synchrotron for random magnetic field according to approximation
+        of Aharonian, Kelner, and Prosekin 2010, PhysRev D 82, 3002
+        (`arXiv:1006.1045 <http://arxiv.org/abs/1006.1045>`_).
 
         Parameters
         ----------
@@ -134,27 +199,11 @@ class Synchrotron(object):
         dNdE = CS1 * Gtilde(EgEc)
         # return units
         spec = trapz_loglog(np.vstack(self._nelec) * dNdE, self._gam, axis=0) / u.s / u.erg
+        spec = spec.to('1/(s eV)')
 
-        return spec.to('1/(s eV)')
+        return spec
 
-    def sed(self,photon_energy):
-        """Compute differential synchrotron spectrum for energies in ``photon_energy``
-
-        Compute synchrotron for random magnetic field according to approximation of
-        Aharonian, Kelner, and Prosekin 2010.
-
-        Parameters
-        ----------
-        photon_energy : :class:`~astropy.units.Quantity` instance
-            Photon energy array.
-        """
-
-        outspecene = _validate_ene(photon_energy)
-        spec = self.flux(outspecene)
-
-        return (spec * outspecene ** 2.).to('erg/s')
-
-class InverseCompton(object):
+class InverseCompton(BaseElectron):
     """Synchrotron emission from an electron population.
 
     Parameters
@@ -181,12 +230,31 @@ class InverseCompton(object):
                :class:`~astropy.units.Quantity` float instance. If the photon
                field energy density if set to 0, its blackbody energy density
                will be computed through the Stefan-Boltzman law.
+
+    Additional parameters
+    ---------------------
+    log10gmin : float
+        Base 10 logarithm of the minimum Lorentz factor for the electron
+        distribution. Default is 4 (:math:`E_\mathrm{e} \approx
+        5\,\mathrm{GeV}`).
+
+    log10gmax : float
+        Base 10 logarithm of the maximum Lorentz factor for the electron
+        distribution. Default is 9 (:math:`E_\mathrm{e} \approx
+        510\,\mathrm{TeV}`).
+
+    ngamd : scalar
+        Number of points per decade in energy for the electron energy and
+        distribution arrays. Default is 300.
     """
 
     def __init__(self, particle_distribution, seed_photon_fields=['CMB',], **kwargs):
         self.particle_distribution = particle_distribution
         self.seed_photon_fields = seed_photon_fields
         self._process_input_seed()
+        self.log10gmin = 4
+        self.log10gmax = 9
+        self.ngamd = 300
         self.__dict__.update(**kwargs)
 
     def _process_input_seed(self):
@@ -239,30 +307,6 @@ class InverseCompton(object):
                     'Unable to process seed photon field: {0}'.format(inseed))
                 raise TypeError
 
-    @property
-    def _gam(self):
-        """ Lorentz factor array
-        """
-        self.log10gmin = 4
-        self.log10gmax = 10.5
-        self.ngamd = 300
-        return np.logspace(self.log10gmin,self.log10gmax,
-                self.ngamd*self.log10gmax/self.log10gmin)
-
-
-    @property
-    def _nelec(self):
-        """ Particles per unit lorentz factor
-        """
-        pd = self.particle_distribution(self._gam * mec2)
-        return pd.to(1/mec2_unit).value
-
-    @property
-    def We(self):
-        """ Total energy in electrons
-        """
-        return trapz_loglog(self._gam * self._nelec, self._gam * mec2)
-
     def _calc_specic(self, seed, outspecene):
         log.debug(
             '_calc_specic: Computing IC on {0} seed photons...'.format(seed))
@@ -270,9 +314,9 @@ class InverseCompton(object):
         def iso_ic_on_planck(electron_energy,
                              soft_photon_temperature, gamma_energy):
             """
-            IC cross-section for isotropic interaction with a blackbody
-            photon spectrum following Khangulyan, Aharonian, and Kelner 2013
-            (arXiv:1310.7971).
+            IC cross-section for isotropic interaction with a blackbody photon
+            spectrum following Khangulyan, Aharonian, and Kelner 2014, ApJ 783,
+            100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
 
             `electron_energy` and `gamma_energy` are in units of m_ec^2
             `soft_photon_temperature` is in units of K
@@ -312,12 +356,13 @@ class InverseCompton(object):
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
 
-    def flux(self,photon_energy):
+    def spectrum(self,photon_energy):
         """Compute differential IC spectrum for energies in ``photon_energy``.
 
         Compute IC spectrum using IC cross-section for isotropic interaction
         with a blackbody photon spectrum following Khangulyan, Aharonian, and
-        Kelner 2013 (arXiv:1310.7971).
+        Kelner 2014, ApJ 783, 100 (`arXiv:1310.7971
+        <http://www.arxiv.org/abs/1310.7971>`_).
 
         Parameters
         ----------
@@ -332,29 +377,11 @@ class InverseCompton(object):
             # Call actual computation, detached to allow changes in subclasses
             self.specic += self._calc_specic(seed,outspecene).to('1/(s eV)')
 
-        return self.specic.to('1/(s eV)')
+        self.specic = self.specic.to('1/(s eV)')
 
+        return self.specic
 
-    def sed(self,photon_energy):
-        """Compute IC spectral energy distribution for energies in ``photon_energy``.
-
-        Compute IC spectrum using IC cross-section for isotropic interaction
-        with a blackbody photon spectrum following Khangulyan, Aharonian, and
-        Kelner 2013 (arXiv:1310.7971).
-
-        Parameters
-        ----------
-        photon_energy : :class:`~astropy.units.Quantity` instance
-            Photon energy array.
-        """
-        outspecene = _validate_ene(photon_energy)
-
-        specic = self.flux(outspecene)
-
-        return (specic * outspecene ** 2).to('erg/s')
-
-
-class PionDecay(object):
+class PionDecay(BaseRadiative):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
@@ -368,6 +395,14 @@ class PionDecay(object):
     nh : `~astropy.units.Quantity`
         Number density of the target protons. Default is :math:`1 cm^{-3}`.
 
+    Additional Parameters
+    ---------------------
+
+    Etrans : `~astropy.units.Quantity`
+        For photon energies below ``Etrans``, the delta approximation is used
+        for the spectral calculation, and the full calculation is used at higher
+        energies. Default is 0.1 TeV.
+
     References
     ----------
     Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018 [KAB06]
@@ -377,7 +412,6 @@ class PionDecay(object):
     def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, **kwargs):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
-
         self.__dict__.update(**kwargs)
 
     def _particle_distribution(self,E):
@@ -499,7 +533,7 @@ class PionDecay(object):
 
         return (Wp * u.TeV).to('erg')
 
-    def flux(self,photon_energy):
+    def spectrum(self,photon_energy):
         """
         Compute differential spectrum from pp interactions using Eq. 71 and Eq.58 of KAB06.
 
@@ -541,17 +575,3 @@ class PionDecay(object):
 
         return density_factor * self.specpp.to('1/(s eV)')
 
-    def sed(self,photon_energy):
-        """
-        Compute spectral energy distribution from pp interactions using Eq. 71 and Eq.58 of KAB06.
-
-        Parameters
-        ----------
-        photon_energy : :class:`~astropy.units.Quantity` instance
-            Photon energy array.
-        """
-        outspecene = _validate_ene(photon_energy)
-
-        specpp = self.flux(outspecene)
-
-        return (specpp * outspecene ** 2).to('erg/s')
