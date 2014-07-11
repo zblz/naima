@@ -241,7 +241,7 @@ def generate_energy_edges(ene):
     return np.array((elo, ehi)) * ene.unit
 
 
-def build_data_table(ene, flux, flux_error=None, flux_error_lo=None,
+def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
         flux_error_hi=None, ene_width=None, ene_lo=None, ene_hi=None, ul=None,
         cl=None):
     """
@@ -250,7 +250,7 @@ def build_data_table(ene, flux, flux_error=None, flux_error_lo=None,
     Parameters
     ----------
 
-    ene : :class:`~astropy.units.Quantity` array instance
+    energy : :class:`~astropy.units.Quantity` array instance
         Observed photon energy array [physical type ``energy``]
 
     flux : :class:`~astropy.units.Quantity` array instance
@@ -289,7 +289,7 @@ def build_data_table(ene, flux, flux_error=None, flux_error_lo=None,
         cl = validate_scalar('cl',cl)
         table.meta['keywords']={'cl':{'value':cl}}
 
-    table.add_column(Column(name='energy', data=ene))
+    table.add_column(Column(name='energy', data=energy))
 
     if ene_width is not None:
         table.add_column(Column(name='ene_width', data=ene_width))

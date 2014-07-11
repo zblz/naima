@@ -28,9 +28,9 @@ Building the model function from one of the functional forms is easy::
     import astropy.units as u
 
     def model(pars, data):
-        amplitude = pars[0]
+        amplitude = pars[0] * (1 / (u.cm**2 * u.s * u.TeV))
         alpha = pars[1]
-        e_cutoff = pars[2]*u.TeV
+        e_cutoff = (10**pars[2]) * u.TeV
 
         PL = ExponentialCutoff(amplitude, 1*u.TeV, alpha, e_cutoff)
 
@@ -41,15 +41,16 @@ function that encodes any previous knowledge you have about the parameters, such
 as previous measurements or physically acceptable ranges. Two simple priors
 functions are included with gammafit: `normal_prior` and `uniform_prior`.
 `uniform_prior` can be used to set parameter limits. Following the example
-above, we might want to limit the amplitude and cutoff energy to be positive,
+above, we might want to limit the amplitude to be positive,
 and the spectral index to be between 0.5 and 3.5::
 
     from gammafit import uniform_prior
 
     def prior(pars):
         lnprior = uniform_prior(pars[0], 0., np.inf) \
-                + uniform_prior(pars[1], 0.5, 3.5) \
-                + uniform_prior(pars[2], 0, np.inf)
+                + uniform_prior(pars[1], 0.5, 3.5)
+
+
 
 
 

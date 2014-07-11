@@ -305,50 +305,50 @@ class InverseCompton(BaseElectron):
                     'Unable to process seed photon field: {0}'.format(inseed))
                 raise TypeError
 
+    @staticmethod
+    def _iso_ic_on_planck(electron_energy, soft_photon_temperature, gamma_energy):
+        """
+        IC cross-section for isotropic interaction with a blackbody photon
+        spectrum following Khangulyan, Aharonian, and Kelner 2014, ApJ 783,
+        100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
+
+        `electron_energy` and `gamma_energy` are in units of m_ec^2
+        `soft_photon_temperature` is in units of K
+        """
+        Ktomec2 = 1.6863699549e-10
+        soft_photon_temperature *= Ktomec2
+
+        def g(x, a):
+            tmp = 1 + a[2] * x ** a[3]
+            tmp2 = a[0] * x ** a[1] / tmp + 1.
+            return 1. / tmp2
+        gamma_energy = np.vstack(gamma_energy)
+        a3 = [0.192, 0.448, 0.546, 1.377]
+        a4 = [1.69, 0.549, 1.06, 1.406]
+        z = gamma_energy / electron_energy
+        x = z / (1 - z) / (4. * electron_energy * soft_photon_temperature)
+        tmp = 1.644934 * x
+        F = (1.644934 + tmp) / (1. + tmp) * np.exp(-x)
+        cross_section = F * (z ** 2 / (2 * (1 - z)) * g(x, a3) + g(x, a4))
+        tmp = (soft_photon_temperature / electron_energy) ** 2
+        tmp *= 2.6433905738281024e+16
+        cross_section = tmp * cross_section
+        cc = ((gamma_energy < electron_energy) * (electron_energy > 1))
+        return np.where(cc, cross_section,
+                        np.zeros_like(cross_section))
+
     def _calc_specic(self, seed, outspecene):
         log.debug(
             '_calc_specic: Computing IC on {0} seed photons...'.format(seed))
 
-        def iso_ic_on_planck(electron_energy,
-                             soft_photon_temperature, gamma_energy):
-            """
-            IC cross-section for isotropic interaction with a blackbody photon
-            spectrum following Khangulyan, Aharonian, and Kelner 2014, ApJ 783,
-            100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
-
-            `electron_energy` and `gamma_energy` are in units of m_ec^2
-            `soft_photon_temperature` is in units of K
-            """
-            Ktomec2 = 1.6863699549e-10
-            soft_photon_temperature *= Ktomec2
-
-            def g(x, a):
-                tmp = 1 + a[2] * x ** a[3]
-                tmp2 = a[0] * x ** a[1] / tmp + 1.
-                return 1. / tmp2
-            gamma_energy = np.vstack(gamma_energy)
-            a3 = [0.192, 0.448, 0.546, 1.377]
-            a4 = [1.69, 0.549, 1.06, 1.406]
-            z = gamma_energy / electron_energy
-            x = z / (1 - z) / (4. * electron_energy * soft_photon_temperature)
-            tmp = 1.644934 * x
-            F = (1.644934 + tmp) / (1. + tmp) * np.exp(-x)
-            cross_section = F * (z ** 2 / (2 * (1 - z)) * g(x, a3) + g(x, a4))
-            tmp = (soft_photon_temperature / electron_energy) ** 2
-            tmp *= 2.6433905738281024e+16
-            cross_section = tmp * cross_section
-            cc = ((gamma_energy < electron_energy) * (electron_energy > 1))
-            return np.where(cc, cross_section,
-                            np.zeros_like(cross_section))
-
         uf = self.seeduf[seed]
         T = self.seedT[seed]
 
-        Eph = (outspecene / mec2).cgs.value
+        Eph = (outspecene / mec2).decompose().value
         # Catch numpy RuntimeWarnings of overflowing exp (which are then discarded anyway)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            gamint = iso_ic_on_planck(self._gam, T.to('K').value, Eph)
+            gamint = self._iso_ic_on_planck(self._gam, T.to('K').value, Eph)
             lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
         lum *= u.Unit('1/s')
 
