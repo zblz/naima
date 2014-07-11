@@ -197,14 +197,17 @@ def trapz_loglog(y, x, axis=-1):
         shape[axis] = x.shape[0]
         x = x.reshape(shape)
 
-    # Compute the power law indices in each integration bin
-    b = np.log10(y[slice2] / y[slice1]) / np.log10(x[slice2] / x[slice1])
 
-    # if local powerlaw index is -1, use \int 1/x = log(x); otherwise use normal
-    # powerlaw integration
-    trapzs = np.where(np.abs(b+1.) > 1e-10,
-                      (y[slice1] * (x[slice2] * (x[slice2]/x[slice1]) ** b - x[slice1]))/(b+1),
-                      x[slice1] * y[slice1] * np.log(x[slice2]/x[slice1]))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        # Compute the power law indices in each integration bin
+        b = np.log10(y[slice2] / y[slice1]) / np.log10(x[slice2] / x[slice1])
+
+        # if local powerlaw index is -1, use \int 1/x = log(x); otherwise use normal
+        # powerlaw integration
+        trapzs = np.where(np.abs(b+1.) > 1e-10,
+                  (y[slice1] * (x[slice2] * (x[slice2]/x[slice1]) ** b - x[slice1]))/(b+1),
+                  x[slice1] * y[slice1] * np.log(x[slice2]/x[slice1]))
 
     tozero = (y[slice1] == 0.) + (y[slice2] == 0.) + (x[slice1] == x[slice2])
     trapzs[tozero] = 0.
