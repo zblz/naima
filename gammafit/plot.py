@@ -581,9 +581,9 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
             ax1.set_ylim(bottom=ymin)
     else:
         if sed:
-            ndecades = 5
+            ndecades = 10
         else:
-            ndecades = 15
+            ndecades = 20
         # restrict y axis to ndecades to avoid autoscaling deep exponentials
         xmin, xmax, ymin, ymax = ax1.axis()
         ymin = max(ymin, ymax/10**ndecades)
