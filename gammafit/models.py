@@ -8,7 +8,8 @@ from .extern.validator import validate_scalar, validate_array, validate_physical
 from .radiative import Synchrotron, InverseCompton, PionDecay
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'BrokenPowerLaw',
-           'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola']
+           'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola',
+           'ExponentialCutoffBrokenPowerLaw' ]
 
 def _validate_ene(ene):
     from astropy.table import Table
@@ -32,9 +33,9 @@ class PowerLaw(object):
     Parameters
     ----------
     amplitude : float
-        Model amplitude
-    e_0 : float
-        Reference point
+        Model amplitude.
+    e_0 : `~astropy.units.Quantity` float
+        Reference energy
     alpha : float
         Power law index
 
@@ -82,11 +83,11 @@ class ExponentialCutoffPowerLaw(object):
     ----------
     amplitude : float
         Model amplitude
-    x_0 : float
+    e_0 : `~astropy.units.Quantity` float
         Reference point
     alpha : float
         Power law index
-    x_cutoff : float
+    e_cutoff : `~astropy.units.Quantity` float
         Cutoff point
     beta : float
         Cutoff exponent
@@ -136,8 +137,8 @@ class BrokenPowerLaw(object):
     Parameters
     ----------
     amplitude : float
-        Model amplitude at the break point
-    e_break : float
+        Model amplitude at the break energy
+    e_break : `~astropy.units.Quantity` float
         Break energy
     alpha_1 : float
         Power law index for x < x_break
@@ -187,6 +188,73 @@ class BrokenPowerLaw(object):
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_break.to('eV').value, self.alpha_1, self.alpha_2)
 
+class ExponentialCutoffBrokenPowerLaw(object):
+    """
+    One dimensional power law model with a break.
+
+    Parameters
+    ----------
+    amplitude : float
+        Model amplitude at the break point
+    e_break : `~astropy.units.Quantity` float
+        Break energy
+    alpha_1 : float
+        Power law index for x < x_break
+    alpha_2 : float
+        Power law index for x > x_break
+    e_cutoff : `~astropy.units.Quantity` float
+        Exponential Cutoff energy
+    beta : float, optional
+        Exponential cutoff rapidity. Default is 1.
+
+    See Also
+    --------
+    PowerLaw, ExponentialCutoffPowerLaw, LogParabola
+
+    Notes
+    -----
+    Model formula (with :math:`A` for ``amplitude``, :math:`\\alpha_1` for
+    ``alpha_1``, :math:`\\alpha_2` for ``alpha_2``, and :math:`\\beta` for
+    ``beta``):
+
+        .. math::
+
+            f(E) = \\exp(-(E / E_{cutoff})^\\beta)\\left \\{
+                     \\begin{array}{ll}
+                       A (E / E_{break}) ^ {-\\alpha_1} & : E < E_{break} \\\\
+                       A (E / E_{break}) ^ {-\\alpha_2} & :  E > E_{break} \\\\
+                     \\end{array}
+                   \\right.
+    """
+
+    param_names = ['amplitude', 'e_break', 'alpha_1', 'alpha_2']
+
+    def __init__(self, amplitude, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0):
+        self.amplitude = amplitude
+        self.e_break = validate_scalar('e_break', e_break, domain='positive', physical_type='energy')
+        self.alpha_1 = alpha_1
+        self.alpha_2 = alpha_2
+        self.e_cutoff = validate_scalar('e_cutoff', e_cutoff, domain='positive', physical_type='energy')
+        self.beta = beta
+
+    @staticmethod
+    def eval(e, amplitude, e_break, alpha_1, alpha_2, e_cutoff, beta):
+        """One dimensional broken power law model function"""
+
+        alpha = np.where(e < e_break, alpha_1, alpha_2)
+        ee = e / e_break
+        ee2 = e / e_cutoff
+        return amplitude * ee ** (-alpha) * np.exp(- (ee2 ** beta))
+
+    def __call__(self,e):
+        """One dimensional power law model function"""
+
+        e = _validate_ene(e)
+
+        return self.eval(e.to('eV').value, self.amplitude,
+                self.e_break.to('eV').value, self.alpha_1, self.alpha_2,
+                self.e_cutoff.to('eV').value, self.beta)
+
 class LogParabola(object):
     """
     One dimensional log parabola model (sometimes called curved power law).
@@ -195,10 +263,10 @@ class LogParabola(object):
     ----------
     amplitude : float
         Model amplitude
-    e_0 : float
+    e_0 : `~astropy.units.Quantity` float
         Reference point
     alpha : float
-        Power law indee
+        Power law index
     beta : float
         Power law curvature
 

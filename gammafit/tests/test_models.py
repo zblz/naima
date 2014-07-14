@@ -194,16 +194,19 @@ def test_pion_decay(particle_dists):
     assert_allclose(Wps, Wp_ref)
 
 def test_inputs():
-    """ test input validation with LogParabola
+    """ test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw
     """
 
-    from ..models import LogParabola
+    from ..models import LogParabola, ExponentialCutoffBrokenPowerLaw
 
 
     LP = LogParabola(1., e_0, 1.7, 0.2)
 
     LP(np.logspace(1,10,10)*u.TeV)
     LP(10*u.TeV)
+
+    ECBPL = ExponentialCutoffBrokenPowerLaw(1., e_0, 1.5, 2.5, e_cutoff, 2.0)
+    ECBPL(np.logspace(1,10,10)*u.TeV)
 
     with pytest.raises(TypeError):
         data = {'flux':[1,2,4]}
