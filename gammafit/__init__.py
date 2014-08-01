@@ -19,3 +19,9 @@ from .plot import *
 from .utils import *
 
 from . import models
+
+try:
+    import sherpa
+    from . import sherpamod
+except ImportError:
+    pass
