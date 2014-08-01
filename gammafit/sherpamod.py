@@ -1,5 +1,5 @@
 """
-Wrappers around ElectronOZM and ProtonOZM to be used as sherpa models
+Wrappers around InverseCompton, Synchrotron and PionDecay to be used as sherpa models
 """
 
 import numpy as np
@@ -8,7 +8,7 @@ import astropy.units as u
 from sherpa.models.parameter import Parameter, tinyval
 from sherpa.models.model import ArithmeticModel, modelCacher1d
 
-eV = 1.602176565e-12
+__all__ = ['InverseCompton', 'Synchrotron', 'PionDecay', ]
 
 from . import models
 from .utils import trapz_loglog
@@ -35,7 +35,7 @@ class InverseCompton(ArithmeticModel):
     def __init__(self,name='IC'):
         self.index   = Parameter(name, 'index', 2.0, min=-10, max=10)
         self.ref     = Parameter(name, 'ref', 20, min=0, frozen=True, units='TeV')
-        self.ampl    = Parameter(name, 'ampl', 1, min=0, max=1e100, units='1/eV')
+        self.ampl    = Parameter(name, 'ampl', 1, min=0, max=1e60, hard_max=1e100, units='1/eV')
         self.cutoff  = Parameter(name, 'cutoff', 0.0, min=0,frozen=True, units='TeV')
         self.beta    = Parameter(name, 'beta', 1, min=0, max=10, frozen=True)
         self.TFIR    = Parameter(name, 'TFIR', 70, min=0, frozen=True, units='K')
@@ -65,7 +65,7 @@ class InverseCompton(ArithmeticModel):
         if xhi is None:
             outspec = x * u.keV
         else:
-            outspec = _mergex(xlo,xhi) * u.keV
+            outspec = _mergex(x,xhi) * u.keV
 
         if cutoff == 0.0:
             pdist = models.PowerLaw(ampl * u.Unit('1/eV'), ref * u.TeV, index)
@@ -100,7 +100,7 @@ class Synchrotron(ArithmeticModel):
     def __init__(self,name='IC'):
         self.index   = Parameter(name, 'index', 2.0, min=-10, max=10)
         self.ref     = Parameter(name, 'ref', 20, min=0, frozen=True, units='TeV')
-        self.ampl    = Parameter(name, 'ampl', 1, min=0, max=1e100, units='1/eV')
+        self.ampl    = Parameter(name, 'ampl', 1, min=0, max=1e60, hard_max=1e100, units='1/eV')
         self.cutoff  = Parameter(name, 'cutoff', 0.0, min=0,frozen=True, units='TeV')
         self.beta    = Parameter(name, 'beta', 1, min=0, max=10, frozen=True)
         self.B       = Parameter(name, 'B', 1, min=0, max=10, frozen=True, units='G')
@@ -126,7 +126,7 @@ class Synchrotron(ArithmeticModel):
         if xhi is None:
             outspec = x * u.keV
         else:
-            outspec = _mergex(xlo,xhi) * u.keV
+            outspec = _mergex(x,xhi) * u.keV
 
         if cutoff == 0.0:
             pdist = models.PowerLaw(ampl * u.Unit('1/eV'), ref * u.TeV, index)
@@ -153,11 +153,11 @@ class Synchrotron(ArithmeticModel):
 class PionDecay(ArithmeticModel):
     def __init__(self,name='pp'):
         self.index   = Parameter(name , 'index'   , 2.1 , min=-10 , max=10)
-        self.ref     = Parameter(name , 'ref'     , 60  , min=0   , frozen=True    , units='TeV')
-        self.ampl    = Parameter(name , 'ampl'    , 100 , min=0   , units='1/eV')
-        self.cutoff  = Parameter(name , 'cutoff'  , 0   , min=0   , frozen=True    , units='TeV')
-        self.beta    = Parameter(name , 'beta'    , 1   , min=0   , max=10         , frozen=True)
-        self.nh      = Parameter(name , 'nH'      , 1   , min=0   , frozen=True    , units='1/cm3')
+        self.ref     = Parameter(name , 'ref'     , 60  , min=0   , frozen=True  , units='TeV')
+        self.ampl    = Parameter(name , 'ampl'    , 100 , min=0   , max=1e60     , hard_max=1e100 , units='1/eV')
+        self.cutoff  = Parameter(name , 'cutoff'  , 0   , min=0   , frozen=True  , units='TeV')
+        self.beta    = Parameter(name , 'beta'    , 1   , min=0   , max=10       , frozen=True)
+        self.nh      = Parameter(name , 'nH'      , 1   , min=0   , frozen=True  , units='1/cm3')
         self.verbose = Parameter(name , 'verbose' , 0   , min=0   , frozen=True)
         ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,self.cutoff,self.beta,self.nh,self.verbose))
         self._use_caching = True
@@ -180,7 +180,7 @@ class PionDecay(ArithmeticModel):
         if xhi is None:
             outspec = x * u.keV
         else:
-            outspec = _mergex(xlo,xhi) * u.keV
+            outspec = _mergex(x,xhi) * u.keV
 
         if cutoff == 0.0:
             pdist = models.PowerLaw(ampl * u.Unit('1/eV'), ref * u.TeV, index)
@@ -190,7 +190,7 @@ class PionDecay(ArithmeticModel):
 
         pp = models.PionDecay(pdist, nh=nh*u.Unit('1/cm3'))
 
-        model = sy.flux(outspec, distance=1*u.kpc).to('1/(s cm2 keV)')
+        model = pp.flux(outspec, distance=1*u.kpc).to('1/(s cm2 keV)')
 
         # Do a trapz integration to obtain the photons per bin
         if xhi is None:
