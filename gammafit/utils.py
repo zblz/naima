@@ -153,7 +153,7 @@ def sed_conversion(energy, model_unit, sed):
 
     return f_unit, sedf
 
-def trapz_loglog(y, x, axis=-1):
+def trapz_loglog(y, x, axis=-1, intervals=False):
     """
     Integrate along the given axis using the composite trapezoidal rule in
     loglog space.
@@ -212,6 +212,9 @@ def trapz_loglog(y, x, axis=-1):
 
     tozero = (y[slice1] == 0.) + (y[slice2] == 0.) + (x[slice1] == x[slice2])
     trapzs[tozero] = 0.
+
+    if intervals:
+        return trapzs * x_unit * y_unit
 
     ret = np.add.reduce(trapzs,axis) * x_unit * y_unit
 
