@@ -76,9 +76,9 @@ class InverseCompton(ArithmeticModel):
         # Build seedspec definition
         seedspec=['CMB',]
         if uFIR>0.0:
-            seedspec.append(['FIR',TFIR * u.K, uFIR * u.ev/u.cm**3])
+            seedspec.append(['FIR',TFIR * u.K, uFIR * u.eV/u.cm**3])
         if uNIR>0.0:
-            seedspec.append(['NIR',TNIR * u.K, uNIR * u.ev/u.cm**3])
+            seedspec.append(['NIR',TNIR * u.K, uNIR * u.eV/u.cm**3])
 
         ic = models.InverseCompton(pdist, seed_photon_fields=seedspec,
                 log10gmin=5, log10gmax=10, ngamd=100)

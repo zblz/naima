@@ -6,6 +6,8 @@ omit =
    *version*
    gammafit/_astropy_init.py
    gammafit/conftest.py
+   # Don't test sherpamod coverage as sherpa is not available in travis
+   gammafit/sherpamod.py
    gammafit/extern/*
 
 [report]
