@@ -39,7 +39,7 @@ def plot_chain(sampler, p=None, **kwargs):
 
     return fig
 
-def _latex_float(f,format=".3g"):
+def _latex_float(f, format=".3g"):
     """ http://stackoverflow.com/a/13490601
     """
     float_str = "{{0:{0}}}".format(format).format(f)
@@ -55,7 +55,7 @@ def _plot_chain_func(sampler, p, last_step=False):
 
     import matplotlib.pyplot as plt
     # Plot everything in serif to match math exponents
-    plt.rc('font',family='serif')
+    plt.rc('font', family='serif')
 
     from scipy import stats
     if len(chain.shape) > 2:
@@ -78,7 +78,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     ax1 = f.add_subplot(221)
     ax2 = f.add_subplot(122)
 
-    f.subplots_adjust(left=0.1,bottom=0.15,right=0.95,top=0.9)
+    f.subplots_adjust(left=0.1, bottom=0.15, right=0.95, top=0.9)
 
 # plot five percent of the traces darker
 
@@ -149,7 +149,7 @@ def _plot_chain_func(sampler, p, last_step=False):
 '     - Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n'
 
-    info_line =' '*10 + '{label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
+    info_line = ' '*10 + '{label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
             label=label, median=_latex_float(quantiles[50]),
             uncs=(_latex_float(quantiles[50] - quantiles[16]),
                       _latex_float(quantiles[84] - quantiles[50])))
@@ -166,7 +166,7 @@ def _plot_chain_func(sampler, p, last_step=False):
             new_dist = np.exp(dist)
 
         quant = [16, 50, 84]
-        quantiles = dict(six.moves.zip(quant, np.percentile(new_dist,quant)))
+        quantiles = dict(six.moves.zip(quant, np.percentile(new_dist, quant)))
 
         label_template = '\n'+' '*10+'{{label:>{0}}}'.format(len(label))
 
@@ -183,25 +183,6 @@ def _plot_chain_func(sampler, p, last_step=False):
     f.text(0.05, 0.45, chain_props, ha='left', va='top')
 
     return f
-
-
-def gelman_rubin_statistic(chains):
-    """
-    Compute Gelman-Rubin statistic for convergence testing of Markov chains.
-
-    Gelman & Rubin (1992), Statistical Science 7, pp. 457-511
-    """
-    # normalize it so it doesn't do strange things with very low values
-    chains = chains.copy()/np.average(chains)
-    eta = float(chains.shape[1])
-    m = float(chains.shape[0])
-    avgchain = np.average(chains, axis=1)
-
-    W = np.sum(np.sum((chains.T-avgchain)**2, axis=1))/m/(eta-1)
-    B = eta/(m-1)*np.sum((avgchain-np.mean(chains)))
-    var = (1-1/eta)*W+1/eta*B
-
-    return np.sqrt(var / W)
 
 def _process_blob(sampler, modelidx,last_step=True):
     """
@@ -241,7 +222,7 @@ def _process_blob(sampler, modelidx,last_step=True):
                 for walkerblob in step:
                     model.append(walkerblob[modelidx])
             model = u.Quantity(model)
-    elif (isinstance(blob0,list) or isinstance(blob0,tuple)):
+    elif (isinstance(blob0, list) or isinstance(blob0, tuple)):
         if (len(blob0) == 2 and isinstance(blob0[0], u.Quantity)
             and isinstance(blob0[1], u.Quantity)):
             # Energy array for model is item 0 in blob, model flux is item 1
@@ -391,7 +372,7 @@ def find_ML(sampler, modelidx):
 
     MLerr = []
     for dist in sampler.flatchain.T:
-        hilo = np.percentile(dist,[16.,84.])
+        hilo = np.percentile(dist, [16., 84.])
         MLerr.append((hilo[1]-hilo[0])/2.)
     ML = sampler.lnprobability[index]
 
@@ -402,15 +383,15 @@ def _latex_unit(unit):
 
         Will be obsolete with format='latex_inline' in astropy 0.4.1
     """
-    l=unit.to_string('cds').split('.')
+    l = unit.to_string('cds').split('.')
     out = ''
     for uni in l:
         try:
             int(uni[-1])
             if uni[-2] == '-':
-                out += ' {0}$^{{{1}}}$'.format(uni[:-2],uni[-2:])
+                out += ' {0}$^{{{1}}}$'.format(uni[:-2], uni[-2:])
             else:
-                out += ' {0}$^{1}$'.format(uni[:-1],uni[-1:])
+                out += ' {0}$^{1}$'.format(uni[:-1], uni[-1:])
         except ValueError:
             out += ' ' + uni
 
@@ -492,7 +473,7 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
     import matplotlib.pyplot as plt
 
     # Plot everything in serif to match math exponents
-    plt.rc('font',family='serif')
+    plt.rc('font', family='serif')
 
     ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
@@ -502,7 +483,7 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
     for p, v, ilabel in zip(MLp, MLerr, sampler.labels):
         infostr += vartemplate.format(p, v, ilabel)
 
-    #log.info(infostr)
+    # log.info(infostr)
 
     data = sampler.data
 
@@ -565,7 +546,7 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
         # Hack to show y errors compatible with 0 in loglog plot
         yerr = data['dflux'][:, notul]
         y = data['flux'][notul].to(yerr.unit)
-        bad_err = np.where((y-yerr[0])<=0.)
+        bad_err = np.where((y-yerr[0]) <= 0.)
         yerr[0][bad_err] = y[bad_err]*(1.-1e-7)
 
         ax1.errorbar(data['energy'][notul].to(e_unit).value,
@@ -629,7 +610,7 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
         xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['dene'][1]).value))
         ax1.set_xlim(xmin, xmax)
         # avoid autoscaling to errorbars to 0
-        if np.any(data['dflux'][:,notul][0] >= data['flux'][notul]):
+        if np.any(data['dflux'][:, notul][0] >= data['flux'][notul]):
             elo  = ((data['flux'][notul] * sedf[notul]).to(f_unit).value -
                     (data['dflux'][0][notul] * sedf[notul]).to(f_unit).value)
             gooderr = np.where(data['dflux'][0][notul] < data['flux'][notul])
@@ -721,15 +702,15 @@ def plot_distribution(samples, label):
 
 
     quant = [16, 50, 84]
-    quantiles = dict(six.moves.zip(quant, np.percentile(samples,quant)))
+    quantiles = dict(six.moves.zip(quant, np.percentile(samples, quant)))
     std = np.std(samples)
 
-    if isinstance(samples[0],u.Quantity):
+    if isinstance(samples[0], u.Quantity):
         unit = samples[0].unit
     else:
         unit = ''
 
-    if isinstance(std,u.Quantity):
+    if isinstance(std, u.Quantity):
         std = std.value
 
     dist_props = '{label} distribution properties:\n \
@@ -752,7 +733,7 @@ def plot_distribution(samples, label):
     histnbins = min(max(25, int(len(samples)/100.)), 100)
     xlabel = label
     n, x, patch = ax.hist(samples, histnbins, histtype='stepfilled', color='#CC0000', lw=0, normed=1)
-    if isinstance(samples,u.Quantity):
+    if isinstance(samples, u.Quantity):
         samples_nounit = samples.value
     else:
         samples_nunit = samples

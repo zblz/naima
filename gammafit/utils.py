@@ -14,46 +14,50 @@ __all__ = ["generate_energy_edges", "sed_conversion",
 
 # Input validation tools
 
-def validate_column(data_table,key,pt,domain='positive'):
+
+def validate_column(data_table, key, pt, domain='positive'):
     try:
         column = data_table[key]
-        array = validate_array(key, u.Quantity(column,unit=column.unit),
-                physical_type=pt, domain=domain)
+        array = validate_array(key, u.Quantity(column, unit=column.unit),
+                               physical_type=pt, domain=domain)
     except KeyError as e:
-        raise TypeError('Data table does not contain required column "{0}"'.format(key))
+        raise TypeError(
+            'Data table does not contain required column "{0}"'.format(key))
 
     return array
+
 
 def validate_data_table(data_table):
 
     data = {}
 
-    flux_types = ['flux','differential flux','power','differential power']
+    flux_types = ['flux', 'differential flux', 'power', 'differential power']
 
     # Energy and flux arrays
-    data['energy'] = validate_column(data_table,'energy','energy')
-    data['flux'] = validate_column(data_table,'flux',flux_types)
+    data['energy'] = validate_column(data_table, 'energy', 'energy')
+    data['flux'] = validate_column(data_table, 'flux', flux_types)
 
     # Flux uncertainties
     if 'flux_error' in data_table.keys():
-        dflux = validate_column(data_table,'flux_error',flux_types)
-        data['dflux'] = u.Quantity((dflux,dflux))
+        dflux = validate_column(data_table, 'flux_error', flux_types)
+        data['dflux'] = u.Quantity((dflux, dflux))
     elif 'flux_error_lo' in data_table.keys() and 'flux_error_hi' in data_table.keys():
         data['dflux'] = u.Quantity((
-            validate_column(data_table,'flux_error_lo',flux_types),
-            validate_column(data_table,'flux_error_hi',flux_types)))
+            validate_column(data_table, 'flux_error_lo', flux_types),
+            validate_column(data_table, 'flux_error_hi', flux_types)))
     else:
         raise TypeError('Data table does not contain required column'
                         ' "flux_error" or columns "flux_error_lo" and "flux_error_hi"')
 
     # Energy bin edges
     if 'ene_width' in data_table.keys():
-        ene_width = validate_column(data_table,'ene_width', 'energy')
-        data['dene'] = u.Quantity((ene_width/2.,ene_width/2.))
+        ene_width = validate_column(data_table, 'ene_width', 'energy')
+        data['dene'] = u.Quantity((ene_width / 2., ene_width / 2.))
     elif 'ene_lo' in data_table.keys() and 'ene_hi' in data_table.keys():
-        ene_lo = validate_column(data_table,'ene_lo', 'energy')
-        ene_hi = validate_column(data_table,'ene_hi', 'energy')
-        data['dene'] = u.Quantity((data['energy']-ene_lo,ene_hi-data['energy']))
+        ene_lo = validate_column(data_table, 'ene_lo', 'energy')
+        ene_hi = validate_column(data_table, 'ene_hi', 'energy')
+        data['dene'] = u.Quantity(
+            (data['energy'] - ene_lo, ene_hi - data['energy']))
     else:
         data['dene'] = generate_energy_edges(data['energy'])
 
@@ -69,19 +73,21 @@ def validate_data_table(data_table):
                 if ul != 'True' and ul != 'False':
                     strbool = False
             if strbool:
-                data['ul'] = np.array((eval(ul) for ul in ul_col),dtype=np.bool)
+                data['ul'] = np.array((eval(ul)
+                                      for ul in ul_col), dtype=np.bool)
             else:
                 raise TypeError('UL column is in wrong format')
         else:
             raise TypeError('UL column is in wrong format')
     else:
-        data['ul'] = np.array([False,]*len(data['energy']))
+        data['ul'] = np.array([False, ] * len(data['energy']))
 
     HAS_CL = False
     if 'keywords' in data_table.meta.keys():
         if 'cl' in data_table.meta['keywords'].keys():
             HAS_CL = True
-            data['cl'] = validate_scalar('cl',data_table.meta['keywords']['cl']['value'])
+            data['cl'] = validate_scalar(
+                'cl', data_table.meta['keywords']['cl']['value'])
 
     if not HAS_CL:
         data['cl'] = 0.9
@@ -90,7 +96,6 @@ def validate_data_table(data_table):
                         'will be assumed to be at 90% confidence level')
 
     return data
-
 
 
 # Convenience tools
@@ -134,7 +139,7 @@ def sed_conversion(energy, model_unit, sed):
             sedf = ones
         elif model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
             # From SED to differential
-            sedf = 1 / (energy**2)
+            sedf = 1 / (energy ** 2)
         else:
             raise u.UnitsError(
                 'Model physical type ({0}) is not supported'.format(model_pt),
@@ -149,9 +154,10 @@ def sed_conversion(energy, model_unit, sed):
 
     log.debug(
         'Converted from {0} ({1}) into {2} ({3}) for sed={4}'.format(model_unit, model_pt,
-        f_unit, f_unit.physical_type, sed))
+                                                                     f_unit, f_unit.physical_type, sed))
 
     return f_unit, sedf
+
 
 def trapz_loglog(y, x, axis=-1, intervals=False):
     """
@@ -188,8 +194,8 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
     y = np.asanyarray(y)
     x = np.asanyarray(x)
 
-    slice1 = [slice(None)]*y.ndim
-    slice2 = [slice(None)]*y.ndim
+    slice1 = [slice(None)] * y.ndim
+    slice2 = [slice(None)] * y.ndim
     slice1[axis] = slice(None, -1)
     slice2[axis] = slice(1, None)
 
@@ -197,7 +203,6 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
         shape = [1] * y.ndim
         shape[axis] = x.shape[0]
         x = x.reshape(shape)
-
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -216,7 +221,7 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
     if intervals:
         return trapzs * x_unit * y_unit
 
-    ret = np.add.reduce(trapzs,axis) * x_unit * y_unit
+    ret = np.add.reduce(trapzs, axis) * x_unit * y_unit
 
     return ret
 
@@ -249,8 +254,8 @@ def generate_energy_edges(ene):
 
 
 def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
-        flux_error_hi=None, ene_width=None, ene_lo=None, ene_hi=None, ul=None,
-        cl=None):
+                     flux_error_hi=None, ene_width=None, ene_lo=None, ene_hi=None, ul=None,
+                     cl=None):
     """
     Read data into data dict.
 
@@ -288,13 +293,13 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
         Data stored in a `dict`.
     """
 
-    from astropy.table import Table,Column
+    from astropy.table import Table, Column
 
     table = Table()
 
     if cl is not None:
-        cl = validate_scalar('cl',cl)
-        table.meta['keywords']={'cl':{'value':cl}}
+        cl = validate_scalar('cl', cl)
+        table.meta['keywords'] = {'cl': {'value': cl}}
 
     table.add_column(Column(name='energy', data=energy))
 
@@ -318,12 +323,14 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
         ul = np.array(ul, dtype=np.int)
         table.add_column(Column(name='ul', data=ul))
 
-    table.meta['comments']=['Table generated with gammafit.build_data_table',]
+    table.meta['comments'] = [
+        'Table generated with gammafit.build_data_table', ]
 
     # test table units, format, etc
     data = validate_data_table(table)
 
     return table
+
 
 def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None, **kwargs):
     """
@@ -415,8 +422,8 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
 
         try:
             log.info('Plotting model output {0}...'.format(modelidx))
-            f = plot_blob(sampler, blobidx=modelidx, label='Model output {0}'.format(modelidx), sed=plot_sed,
-                          n_samples=100, **kwargs)
+            f = plot_blob(sampler, blobidx=modelidx, label='Model output {0}'.format(modelidx),
+                          sed=plot_sed, n_samples=100, **kwargs)
             if pdf:
                 f.savefig(outpdf, format='pdf')
             else:
