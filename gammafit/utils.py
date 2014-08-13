@@ -368,6 +368,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
 
     for par, label in zip(six.moves.range(sampler.chain.shape[-1]), sampler.labels):
         try:
+            log.info('Plotting chain of parameter {0}...'.format(label))
             f = plot_chain(sampler, par, **kwargs)
             if pdf:
                 f.savefig(outpdf, format='pdf')
@@ -377,13 +378,15 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
                 f.savefig('{0}_chain_{1}.png'.format(outname, label))
             del f
         except Exception as e:
-            log.warning('plot_chain failed for paramter {0}: {1}'.format(par,e))
+            log.warning('plot_chain failed for paramter {0} ({1}): {2}'.format(label,par,e))
 
     # Corner plot
 
     try:
         from triangle import corner
         from .plot import find_ML
+
+        log.info('Plotting corner plot...')
 
         ML, MLp, MLvar, model_ML = find_ML(sampler, 0)
         f = corner(sampler.flatchain, labels=sampler.labels,
@@ -411,15 +414,16 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
     for modelidx, plot_sed in zip(modelidxs, sed):
 
         try:
-            f = plot_blob(sampler, blobidx=modelidx, sed=plot_sed,
+            log.info('Plotting model output {0}...'.format(modelidx))
+            f = plot_blob(sampler, blobidx=modelidx, label='Model output {0}'.format(modelidx), sed=plot_sed,
                           n_samples=100, **kwargs)
             if pdf:
                 f.savefig(outpdf, format='pdf')
             else:
-                f.savefig('{0}_fit_model{1}.png'.format(outname, modelidx))
+                f.savefig('{0}_model{1}.png'.format(outname, modelidx))
             del f
         except Exception as e:
-            log.warning('plot_blob failed for paramter {0}: {1}'.format(par,e))
+            log.warning('plot_blob failed for model output {0}: {1}'.format(par,e))
 
     if pdf:
         outpdf.close()

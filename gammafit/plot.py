@@ -137,6 +137,9 @@ def _plot_chain_func(sampler, p, last_step=False):
     else:
         clen = 'whole chain'
 
+    maxlen = np.max([len(ilabel) for ilabel in sampler.labels])
+    vartemplate = '{{2:>{0}}}: {{0:>8.3g}} +/- {{1:<8.3g}}\n'.format(maxlen)
+
     chain_props = 'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers, nsteps) + \
             'Autocorrelation time: {0}\n'.format(autocorr_message) +\
             'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
@@ -144,11 +147,15 @@ def _plot_chain_func(sampler, p, last_step=False):
     - median: ${median}$ \n \
     - std: ${std}$ \n' .format(median=_latex_float(quantiles[50]), std=_latex_float(std), clen=clen) +\
 '     - Median with uncertainties based on \n \
-      the 16th and 84th percentiles ($\sim$1$\sigma$):\n \
-          {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
-                  label=label, median=_latex_float(quantiles[50]),
-                  uncs=(_latex_float(quantiles[50] - quantiles[16]),
-                        _latex_float(quantiles[84] - quantiles[50])), clen=clen, mode=mode,)
+      the 16th and 84th percentiles ($\sim$1$\sigma$):\n'
+
+    info_line =' '*10 + '{label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
+            label=label, median=_latex_float(quantiles[50]),
+            uncs=(_latex_float(quantiles[50] - quantiles[16]),
+                      _latex_float(quantiles[84] - quantiles[50])))
+
+    chain_props += info_line
+
 
     if 'log10(' in label or 'log(' in label:
         nlabel = label.split('(')[-1].split(')')[0]
@@ -161,14 +168,18 @@ def _plot_chain_func(sampler, p, last_step=False):
         quant = [16, 50, 84]
         quantiles = dict(six.moves.zip(quant, np.percentile(new_dist,quant)))
 
-        chain_props +='\n\
-           {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
+        label_template = '\n'+' '*10+'{{label:>{0}}}'.format(len(label))
+
+        new_line = label_template.format(label=nlabel)
+        new_line += ' = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
                     label=nlabel, median=_latex_float(quantiles[50]),
                     uncs=(_latex_float(quantiles[50] - quantiles[16]),
                           _latex_float(quantiles[84] - quantiles[50])))
 
+        chain_props += new_line
+        info_line += new_line
 
-    log.info('\n {0:-^50}\n'.format(label) + chain_props)
+    log.info('{0:-^50}\n'.format(label) + info_line)
     f.text(0.05, 0.45, chain_props, ha='left', va='top')
 
     return f
@@ -433,11 +444,11 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, **kwargs):
         # Blob is scalar, plot distribution
         f = plot_distribution(model, label)
     else:
-        f = plot_fit(sampler,modelidx=blobidx,last_step=last_step,**kwargs)
+        f = plot_fit(sampler,modelidx=blobidx,last_step=last_step,label=label,**kwargs)
 
     return f
 
-def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
+def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         n_samples=None, sed=False, figure=None, residualCI=True, plotdata=None,
         e_unit=None, **kwargs):
     """
@@ -451,6 +462,8 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         Sampler with a stored chain.
     modelidx : int, optional
         Model index to plot.
+    label : str, optional
+        Label for the title of the plot.
     xlabel : str, optional
         Label for the ``x`` axis of the plot.
     ylabel : str, optional
@@ -484,12 +497,12 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
     infostr += 'Maximum Likelihood values:\n'
-    maxlen = np.max([len(label) for label in sampler.labels])
+    maxlen = np.max([len(ilabel) for ilabel in sampler.labels])
     vartemplate = '{{2:>{0}}}: {{0:>8.3g}} +/- {{1:<8.3g}}\n'.format(maxlen)
-    for p, v, label in zip(MLp, MLerr, sampler.labels):
-        infostr += vartemplate.format(p, v, label)
+    for p, v, ilabel in zip(MLp, MLerr, sampler.labels):
+        infostr += vartemplate.format(p, v, ilabel)
 
-    log.info(infostr)
+    #log.info(infostr)
 
     data = sampler.data
 
@@ -641,6 +654,9 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     if confs is not None:
         ax1.text(0.05, 0.05, infostr, ha='left', va='bottom',
                 transform=ax1.transAxes, family='monospace')
+
+    if label is not None:
+        ax1.set_title(label)
 
     if ylabel is None:
         if sed:
