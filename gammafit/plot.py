@@ -9,7 +9,7 @@ from astropy import log
 
 from .utils import sed_conversion
 
-__all__ = ["plot_chain", "plot_fit", "plot_data"]
+__all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob"]
 
 
 def plot_chain(sampler, p=None, **kwargs):
@@ -101,14 +101,14 @@ def _plot_chain_func(sampler, p, last_step=False):
     ax2.plot(x, kde(x), c='k', label='KDE')
     # for m,ls,lab in zip([np.mean(dist),np.median(dist)],('--','-.'),('mean: {0:.4g}','median: {0:.4g}')):
         # ax2.axvline(m,ls=ls,c='k',alpha=0.5,lw=2,label=lab.format(m))
-    ns = len(dist)
-    quant = [0.01, 0.1, 0.16, 0.5, 0.84, 0.9, 0.99]
-    sdist = np.sort(dist)
-    xquant = [sdist[int(q*ns)] for q in quant]
-    ax2.axvline(xquant[quant.index(0.5)], ls='--',
-                c='k', alpha=0.5, lw=2, label='50% quantile')
-    ax2.axvspan(xquant[quant.index(0.16)], xquant[
-                quant.index(0.84)], color='0.5', alpha=0.25, label='68% CI')
+    quant = [16, 50, 84]
+    xquant = np.percentile(dist, quant)
+    quantiles = dict(six.moves.zip(quant, xquant))
+
+    ax2.axvline(quantiles[50], ls='--', c='k', alpha=0.5, lw=2,
+                label='50% quantile')
+    ax2.axvspan(quantiles[16], quantiles[84], color='0.5', alpha=0.25,
+                label='68% CI')
     # ax2.legend()
     [l.set_rotation(45) for l in ax2.get_xticklabels()]
     #[l.set_rotation(45) for l in ax2.get_yticklabels()]
@@ -137,20 +137,25 @@ def _plot_chain_func(sampler, p, last_step=False):
     else:
         clen = 'whole chain'
 
-    quantiles = dict(six.moves.zip(quant, xquant))
+    maxlen = np.max([len(ilabel) for ilabel in sampler.labels])
+    vartemplate = '{{2:>{0}}}: {{0:>8.3g}} +/- {{1:<8.3g}}\n'.format(maxlen)
 
     chain_props = 'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers, nsteps) + \
             'Autocorrelation time: {0}\n'.format(autocorr_message) +\
             'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
             'Distribution properties for the {clen}:\n \
     - median: ${median}$ \n \
-    - std: ${std}$ \n' .format(median=_latex_float(quantiles[0.5]), std=_latex_float(std), clen=clen) +\
+    - std: ${std}$ \n' .format(median=_latex_float(quantiles[50]), std=_latex_float(std), clen=clen) +\
 '     - Median with uncertainties based on \n \
-      the 16th and 84th percentiles ($\sim$1$\sigma$):\n \n\
-          {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
-                  label=label, median=_latex_float(quantiles[0.5]),
-                  uncs=(_latex_float(quantiles[0.5] - quantiles[0.16]),
-                        _latex_float(quantiles[0.84] - quantiles[0.5])), clen=clen, mode=mode,)
+      the 16th and 84th percentiles ($\sim$1$\sigma$):\n'
+
+    info_line =' '*10 + '{label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
+            label=label, median=_latex_float(quantiles[50]),
+            uncs=(_latex_float(quantiles[50] - quantiles[16]),
+                      _latex_float(quantiles[84] - quantiles[50])))
+
+    chain_props += info_line
+
 
     if 'log10(' in label or 'log(' in label:
         nlabel = label.split('(')[-1].split(')')[0]
@@ -160,20 +165,21 @@ def _plot_chain_func(sampler, p, last_step=False):
         elif ltype == 'log':
             new_dist = np.exp(dist)
 
-        ns = len(new_dist)
-        quant = [0.16, 0.5, 0.84]
-        sdist = np.sort(new_dist)
-        xquant = [sdist[int(q*ns)] for q in quant]
-        quantiles = dict(six.moves.zip(quant, xquant))
+        quant = [16, 50, 84]
+        quantiles = dict(six.moves.zip(quant, np.percentile(new_dist,quant)))
 
-        chain_props +='\n\
-          {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
-                    label=nlabel, median=_latex_float(quantiles[0.5]),
-                    uncs=(_latex_float(quantiles[0.5] - quantiles[0.16]),
-                          _latex_float(quantiles[0.84] - quantiles[0.5])))
+        label_template = '\n'+' '*10+'{{label:>{0}}}'.format(len(label))
 
+        new_line = label_template.format(label=nlabel)
+        new_line += ' = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
+                    label=nlabel, median=_latex_float(quantiles[50]),
+                    uncs=(_latex_float(quantiles[50] - quantiles[16]),
+                          _latex_float(quantiles[84] - quantiles[50])))
 
-    log.info('\n {0:-^50}\n'.format(label) + chain_props)
+        chain_props += new_line
+        info_line += new_line
+
+    log.info('{0:-^50}\n'.format(label) + info_line)
     f.text(0.05, 0.45, chain_props, ha='left', va='top')
 
     return f
@@ -201,15 +207,18 @@ def _process_blob(sampler, modelidx,last_step=True):
     """
     Process binary blob in sampler. If blob in position modelidx is:
 
-    - a Quantity: use blob as mode, data['energy'] as modelx
+    - a Quantity array of len(blob[i])=len(data['energy']: use blob as model, data['energy'] as modelx
     - a tuple: use first item as modelx, second as model
+    - a Quantity scalar: return array of scalars
     """
 
     blob0 = sampler.blobs[-1][0][modelidx]
     if isinstance(blob0, u.Quantity):
-        # Energy array for blob is not provided, use data['energy']
-        modelx = sampler.data['energy']
-        has_ene = False
+        if blob0.size == sampler.data['energy'].size:
+            # Energy array for blob is not provided, use data['energy']
+            modelx = sampler.data['energy']
+        elif blob0.size == 1:
+            modelx = None
 
         if last_step:
             model = u.Quantity([m[modelidx] for m in sampler.blobs[-1]])
@@ -220,22 +229,36 @@ def _process_blob(sampler, modelidx,last_step=True):
                 for walkerblob in step:
                     model.append(walkerblob[modelidx])
             model = u.Quantity(model)
+    elif np.isscalar(blob0):
+        modelx = None
 
-    elif len(blob0) == 2 and isinstance(blob0[0], u.Quantity) and isinstance(blob0[0], u.Quantity):
-        # Energy array for model is item 0 in blob, model flux is item 1
-        modelx = blob0[0]
-        has_ene = True
-
-        model_unit = blob0[1].unit
         if last_step:
-            model = u.Quantity([m[modelidx][1] for m in sampler.blobs[-1]])
+            model = u.Quantity([m[modelidx] for m in sampler.blobs[-1]])
         else:
             nsteps = len(sampler.blobs)
             model = []
             for step in sampler.blobs:
                 for walkerblob in step:
-                    model.append(walkerblob[modelidx][1])
+                    model.append(walkerblob[modelidx])
             model = u.Quantity(model)
+    elif (isinstance(blob0,list) or isinstance(blob0,tuple)):
+        if (len(blob0) == 2 and isinstance(blob0[0], u.Quantity)
+            and isinstance(blob0[1], u.Quantity)):
+            # Energy array for model is item 0 in blob, model flux is item 1
+            modelx = blob0[0]
+
+            if last_step:
+                model = u.Quantity([m[modelidx][1] for m in sampler.blobs[-1]])
+            else:
+                nsteps = len(sampler.blobs)
+                model = []
+                for step in sampler.blobs:
+                    for walkerblob in step:
+                        model.append(walkerblob[modelidx][1])
+                model = u.Quantity(model)
+        else:
+            raise TypeError('Model {0} has wrong blob format'.format(modelidx))
+
     else:
         raise TypeError('Model {0} has wrong blob format'.format(modelidx))
 
@@ -393,8 +416,39 @@ def _latex_unit(unit):
 
     return out[1:]
 
+def plot_blob(sampler, blobidx=0, label=None, last_step=False, **kwargs):
+    """
+    Plot a metadata blob as a fit to spectral data or value distribution
 
-def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
+    Additional ``kwargs`` are passed to `plot_fit`.
+
+    Parameters
+    ----------
+    sampler : `emcee.EnsembleSampler`
+        Sampler with a stored chain.
+    blobidx : int, optional
+        Metadata blob index to plot.
+    label : str, optional
+        Label for the value distribution. Labels for the fit plot can be passed
+        as ``xlabel`` and ``ylabel`` and will be passed to `plot_fit`.
+
+    Returns
+    -------
+    figure : `matplotlib.pyplot.Figure`
+        `matplotlib` figure instance containing the plot.
+    """
+
+    modelx, model = _process_blob(sampler, blobidx, last_step)
+
+    if modelx is None:
+        # Blob is scalar, plot distribution
+        f = plot_distribution(model, label)
+    else:
+        f = plot_fit(sampler,modelidx=blobidx,last_step=last_step,label=label,**kwargs)
+
+    return f
+
+def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         n_samples=None, sed=False, figure=None, residualCI=True, plotdata=None,
         e_unit=None, **kwargs):
     """
@@ -408,6 +462,8 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         Sampler with a stored chain.
     modelidx : int, optional
         Model index to plot.
+    label : str, optional
+        Label for the title of the plot.
     xlabel : str, optional
         Label for the ``x`` axis of the plot.
     ylabel : str, optional
@@ -441,12 +497,12 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
     infostr += 'Maximum Likelihood values:\n'
-    maxlen = np.max([len(label) for label in sampler.labels])
+    maxlen = np.max([len(ilabel) for ilabel in sampler.labels])
     vartemplate = '{{2:>{0}}}: {{0:>8.3g}} +/- {{1:<8.3g}}\n'.format(maxlen)
-    for p, v, label in zip(MLp, MLerr, sampler.labels):
-        infostr += vartemplate.format(p, v, label)
+    for p, v, ilabel in zip(MLp, MLerr, sampler.labels):
+        infostr += vartemplate.format(p, v, ilabel)
 
-    log.info(infostr)
+    #log.info(infostr)
 
     data = sampler.data
 
@@ -599,6 +655,9 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
         ax1.text(0.05, 0.05, infostr, ha='left', va='bottom',
                 transform=ax1.transAxes, family='monospace')
 
+    if label is not None:
+        ax1.set_title(label)
+
     if ylabel is None:
         if sed:
             ax1.set_ylabel(r'$E^2\mathsf{{d}}N/\mathsf{{d}}E$'
@@ -622,7 +681,6 @@ def plot_fit(sampler, modelidx=0,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
     f.subplots_adjust(hspace=0)
 
     return f
-
 
 def plot_data(sampler, xlabel=None,ylabel=None,
         sed=False, figure=None,**kwargs):
@@ -652,5 +710,68 @@ def plot_data(sampler, xlabel=None,ylabel=None,
 
     f = plot_fit(sampler, confs=None,xlabel=xlabel,ylabel=ylabel,
         sed=sed, figure=figure,plotdata=True,**kwargs)
+
+    return f
+
+
+def plot_distribution(samples, label):
+
+    from scipy import stats
+    import matplotlib.pyplot as plt
+
+
+    quant = [16, 50, 84]
+    quantiles = dict(six.moves.zip(quant, np.percentile(samples,quant)))
+    std = np.std(samples)
+
+    if isinstance(samples[0],u.Quantity):
+        unit = samples[0].unit
+    else:
+        unit = ''
+
+    if isinstance(std,u.Quantity):
+        std = std.value
+
+    dist_props = '{label} distribution properties:\n \
+    - median: ${median}$ {unit}\n \
+    - std: ${std}$ {unit}\n \
+    - Median with uncertainties based on \n \
+      the 16th and 84th percentiles ($\sim$1$\sigma$):\n\
+          {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$ {unit}'.format(
+                  label=label, median=_latex_float(quantiles[50]),
+                  uncs=(_latex_float(quantiles[50] - quantiles[16]),
+                        _latex_float(quantiles[84] - quantiles[50])), std=_latex_float(std), unit=unit)
+
+    f = plt.figure()
+
+    f.text(0.1, 0.23, dist_props, ha='left', va='top')
+
+    ax = f.add_subplot(111)
+    f.subplots_adjust(bottom=0.35)
+
+    histnbins = min(max(25, int(len(samples)/100.)), 100)
+    xlabel = label
+    n, x, patch = ax.hist(samples, histnbins, histtype='stepfilled', color='#CC0000', lw=0, normed=1)
+    if isinstance(samples,u.Quantity):
+        samples_nounit = samples.value
+    else:
+        samples_nunit = samples
+
+    kde = stats.kde.gaussian_kde(samples_nounit)
+    ax.plot(x, kde(x), c='k', label='KDE')
+
+    ax.axvline(quantiles[50], ls='--', c='k', alpha=0.5, lw=2,
+                label='50% quantile')
+    ax.axvspan(quantiles[16], quantiles[84], color='0.5', alpha=0.25,
+                label='68% CI')
+    # ax.legend()
+    [l.set_rotation(45) for l in ax.get_xticklabels()]
+    #[l.set_rotation(45) for l in ax.get_yticklabels()]
+    if unit != '':
+        xlabel += ' [{0}]'.format(unit)
+    ax.set_xlabel(xlabel)
+    ax.xaxis.set_label_coords(0.5, -0.1)
+    ax.set_title('posterior distribution of {0}'.format(label))
+    ax.set_ylim(top=n.max() * 1.05)
 
     return f

@@ -354,7 +354,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
         Whether to save plots to multipage pdf.
     """
 
-    from .plot import plot_fit, plot_chain
+    from .plot import plot_chain, plot_blob
 
     if pdf:
         from matplotlib import pyplot as plt
@@ -368,6 +368,7 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
 
     for par, label in zip(six.moves.range(sampler.chain.shape[-1]), sampler.labels):
         try:
+            log.info('Plotting chain of parameter {0}...'.format(label))
             f = plot_chain(sampler, par, **kwargs)
             if pdf:
                 f.savefig(outpdf, format='pdf')
@@ -377,13 +378,15 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
                 f.savefig('{0}_chain_{1}.png'.format(outname, label))
             del f
         except Exception as e:
-            log.warning('plot_chain failed for paramter {0}: {1}'.format(par,e))
+            log.warning('plot_chain failed for paramter {0} ({1}): {2}'.format(label,par,e))
 
     # Corner plot
 
     try:
         from triangle import corner
         from .plot import find_ML
+
+        log.info('Plotting corner plot...')
 
         ML, MLp, MLvar, model_ML = find_ML(sampler, 0)
         f = corner(sampler.flatchain, labels=sampler.labels,
@@ -409,36 +412,18 @@ def generate_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=N
         sed = [sed for idx in modelidxs]
 
     for modelidx, plot_sed in zip(modelidxs, sed):
+
         try:
-            blob0 = sampler.blobs[-1][0][modelidx]
-            if isinstance(blob0, u.Quantity):
-                modelx = sampler.data['energy']
-                modely = blob0
-            elif len(blob0) == 2:
-                modelx = blob0[0]
-                modely = blob0[1]
+            log.info('Plotting model output {0}...'.format(modelidx))
+            f = plot_blob(sampler, blobidx=modelidx, label='Model output {0}'.format(modelidx), sed=plot_sed,
+                          n_samples=100, **kwargs)
+            if pdf:
+                f.savefig(outpdf, format='pdf')
             else:
-                raise TypeError
-            assert(len(modelx) == len(modely))
-        except (TypeError, AssertionError):
-            log.warning(
-                'Not plotting model {0} because of wrong blob format'.format(modelidx))
-            continue
-
-        try:
-            e_unit = modelx.unit
-            f_unit = modely.unit
-        except AttributeError:
-            log.warning(
-                'Not plotting model {0} because of lack of units'.format(modelidx))
-            continue
-
-        f = plot_fit(sampler, modelidx=modelidx, sed=plot_sed, n_samples=100, **kwargs)
-        if pdf:
-            f.savefig(outpdf, format='pdf')
-        else:
-            f.savefig('{0}_fit_model{1}.png'.format(outname, modelidx))
-        del f
+                f.savefig('{0}_model{1}.png'.format(outname, modelidx))
+            del f
+        except Exception as e:
+            log.warning('plot_blob failed for model output {0}: {1}'.format(par,e))
 
     if pdf:
         outpdf.close()
