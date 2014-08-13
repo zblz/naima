@@ -78,10 +78,14 @@ def cutoffexp(pars, data):
     model2 = 1e-10 * np.ones(len(x))
     # save a model with wrong length to check that it is dealt with gracefully
     model3 = 1e-10 * np.ones(len(x) * 2) * u.Unit('erg/s')
+    # add a scalar value to test plot_distribution
+    model4 = np.trapz(model,ene).to('1/(cm2 s)')
+    # and without units
+    model5 = model4.value
 
     # save flux model as tuple with energies and without
 
-    return flux, flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3)
+    return flux, flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3), model4, model5
 
 # Prior definition
 
