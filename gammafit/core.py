@@ -77,11 +77,20 @@ def lnprob(pars, data, modelfunc, priorfunc):
         modelout = modelfunc(pars, data)
 
         # Save blobs or save model if no blobs given
+        # If model is not in blobs, save model+blobs
         if ((type(modelout) == tuple or type(modelout) == list)
                 and (type(modelout) != np.ndarray)):
-            # print len(modelout)
             model = modelout[0]
-            blob = modelout[1:]
+
+            MODEL_IN_BLOB = False
+            for blob in modelout[1:]:
+                if np.all(blob == model):
+                    MODEL_IN_BLOB=True
+
+            if MODEL_IN_BLOB:
+                blob = modelout[1:]
+            else:
+                blob = modelout
         else:
             model = modelout
             blob = (modelout, )
