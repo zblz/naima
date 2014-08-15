@@ -1,6 +1,7 @@
-"""
-Wrappers around InverseCompton, Synchrotron and PionDecay to be used as sherpa models
-"""
+# -*- coding: utf-8 -*-
+# Licensed under a 3-clause BSD style license - see LICENSE.rst
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import numpy as np
 import astropy.units as u
@@ -92,7 +93,7 @@ class InverseCompton(ArithmeticModel):
             photons = trapz_loglog(model,outspec,intervals=True).to('1/(s cm2)').value
 
         if verbose:
-            print self.thawedpars, trapz_loglog(outspec*model,outspec).to('erg/(s cm2)')
+            print(self.thawedpars, trapz_loglog(outspec*model,outspec).to('erg/(s cm2)'))
 
         return photons
 
@@ -146,7 +147,7 @@ class Synchrotron(ArithmeticModel):
             photons = trapz_loglog(model,outspec,intervals=True).to('1/(s cm2)').value
 
         if verbose:
-            print self.thawedpars, trapz_loglog(outspec*model,outspec).to('erg/(s cm2)')
+            print(self.thawedpars, trapz_loglog(outspec*model,outspec).to('erg/(s cm2)'))
 
         return photons
 
@@ -199,6 +200,6 @@ class PionDecay(ArithmeticModel):
             photons = trapz_loglog(model,outspec,intervals=True).to('1/(s cm2)').value
 
         if verbose:
-            print self.thawedpars, trapz_loglog(outspec*model,outspec).to('erg/(s cm2)')
+            print(self.thawedpars, trapz_loglog(outspec*model,outspec).to('erg/(s cm2)'))
 
         return photons
