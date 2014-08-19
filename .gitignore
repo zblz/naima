@@ -48,5 +48,4 @@ distribute-*.tar.gz
 .settings
 docs/_generated/
 docs/api/
-gammafit/gammafit.cfg
 
