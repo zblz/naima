@@ -69,7 +69,7 @@ class InverseCompton(ArithmeticModel):
             outspec = _mergex(x,xhi) * u.keV
 
         if cutoff == 0.0:
-            pdist = models.PowerLaw(ampl * u.Unit('1/eV'), ref * u.TeV, index)
+            pdist = models.PowerLaw(ampl * 1e30 * u.Unit('1/eV'), ref * u.TeV, index)
         else:
             pdist = models.ExponentialCutoffPowerLaw(ampl * 1e30 * u.Unit('1/eV'),
                     ref * u.TeV, index, cutoff * u.TeV, beta=beta)
@@ -101,7 +101,7 @@ class Synchrotron(ArithmeticModel):
     def __init__(self,name='IC'):
         self.index   = Parameter(name, 'index', 2.0, min=-10, max=10)
         self.ref     = Parameter(name, 'ref', 20, min=0, frozen=True, units='TeV')
-        self.ampl    = Parameter(name, 'ampl', 1, min=0, max=1e60, hard_max=1e100, units='1/eV')
+        self.ampl    = Parameter(name, 'ampl', 1, min=0, max=1e60, hard_max=1e100, units='1e30/eV')
         self.cutoff  = Parameter(name, 'cutoff', 0.0, min=0,frozen=True, units='TeV')
         self.beta    = Parameter(name, 'beta', 1, min=0, max=10, frozen=True)
         self.B       = Parameter(name, 'B', 1, min=0, max=10, frozen=True, units='G')
@@ -130,9 +130,9 @@ class Synchrotron(ArithmeticModel):
             outspec = _mergex(x,xhi) * u.keV
 
         if cutoff == 0.0:
-            pdist = models.PowerLaw(ampl * u.Unit('1/eV'), ref * u.TeV, index)
+            pdist = models.PowerLaw(ampl * 1e30 * u.Unit('1/eV'), ref * u.TeV, index)
         else:
-            pdist = models.ExponentialCutoffPowerLaw(ampl * u.Unit('1/eV'),
+            pdist = models.ExponentialCutoffPowerLaw(ampl * 1e30 * u.Unit('1/eV'),
                     ref * u.TeV, index, cutoff * u.TeV, beta=beta)
 
         sy = models.Synchrotron(pdist, B=B*u.G,
@@ -155,7 +155,7 @@ class PionDecay(ArithmeticModel):
     def __init__(self,name='pp'):
         self.index   = Parameter(name , 'index'   , 2.1 , min=-10 , max=10)
         self.ref     = Parameter(name , 'ref'     , 60  , min=0   , frozen=True  , units='TeV')
-        self.ampl    = Parameter(name , 'ampl'    , 100 , min=0   , max=1e60     , hard_max=1e100 , units='1/eV')
+        self.ampl    = Parameter(name , 'ampl'    , 100 , min=0   , max=1e60     , hard_max=1e100 , units='1e30/eV')
         self.cutoff  = Parameter(name , 'cutoff'  , 0   , min=0   , frozen=True  , units='TeV')
         self.beta    = Parameter(name , 'beta'    , 1   , min=0   , max=10       , frozen=True)
         self.nh      = Parameter(name , 'nH'      , 1   , min=0   , frozen=True  , units='1/cm3')
@@ -184,9 +184,9 @@ class PionDecay(ArithmeticModel):
             outspec = _mergex(x,xhi) * u.keV
 
         if cutoff == 0.0:
-            pdist = models.PowerLaw(ampl * u.Unit('1/eV'), ref * u.TeV, index)
+            pdist = models.PowerLaw(ampl * 1e30 * u.Unit('1/eV'), ref * u.TeV, index)
         else:
-            pdist = models.ExponentialCutoffPowerLaw(ampl * u.Unit('1/eV'),
+            pdist = models.ExponentialCutoffPowerLaw(ampl * 1e30 * u.Unit('1/eV'),
                     ref * u.TeV, index, cutoff * u.TeV, beta=beta)
 
         pp = models.PionDecay(pdist, nh=nh*u.Unit('1/cm3'))
