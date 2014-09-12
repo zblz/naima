@@ -31,7 +31,7 @@ def particle_dists():
     ECPL = ExponentialCutoffPowerLaw(amplitude=1*pdist_unit, e_0=e_0,
             alpha=alpha, e_cutoff=e_cutoff)
     PL = PowerLaw(amplitude=1*pdist_unit, e_0=e_0, alpha=alpha)
-    BPL = BrokenPowerLaw(amplitude=1*pdist_unit, e_break=e_break,
+    BPL = BrokenPowerLaw(amplitude=1*pdist_unit, e_0=e_0, e_break=e_break,
             alpha_1=alpha_1, alpha_2=alpha_2)
     return ECPL,PL,BPL
 
@@ -46,11 +46,11 @@ def test_synchrotron_lum(particle_dists):
 
     lum_ref = [2.52019515e-04,
                1.68850644e-02,
-               3.48312402e-06]
+               3.11540083e-04]
 
     We_ref = [8.78185021e+09,
               1.44389652e+10,
-              1.18149452e+07]
+              1.05676083e+09]
 
     Wes = []
     lsys = []
@@ -83,11 +83,11 @@ def test_inverse_compton_lum(particle_dists):
 
     lum_ref = [2.83131305e-04,
                3.94322297e-03,
-               1.36772761e-06]
+               1.22333276e-04]
 
     We_ref = [8.78209566e+09,
               1.44389652e+10,
-              1.18158237e+07]
+              1.05683940e+09]
 
     Wes = []
     lums = []
@@ -171,12 +171,12 @@ def test_pion_decay(particle_dists):
         pdist.amplitude = 1*(1/u.TeV)
 
     lum_ref = [5.54225481494e-13,
-            1.21723084093e-12,
-            8.22791925348e-16]
+               1.21723084093e-12,
+               7.35927471e-14]
 
     Wp_ref = [5.40535654e+03,
-            2.74631565e+04,
-            6.29678421e+00]
+              2.74631565e+04,
+              563.20150113]
 
     energy = np.logspace(9, 13, 20) * u.eV
     Wps = []
@@ -205,7 +205,7 @@ def test_inputs():
     LP(np.logspace(1,10,10)*u.TeV)
     LP(10*u.TeV)
 
-    ECBPL = ExponentialCutoffBrokenPowerLaw(1., e_0, 1.5, 2.5, e_cutoff, 2.0)
+    ECBPL = ExponentialCutoffBrokenPowerLaw(1., e_0, e_break, 1.5, 2.5, e_cutoff, 2.0)
     ECBPL(np.logspace(1,10,10)*u.TeV)
 
     with pytest.raises(TypeError):

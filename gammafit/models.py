@@ -138,6 +138,8 @@ class BrokenPowerLaw(object):
     ----------
     amplitude : float
         Model amplitude at the break energy
+    e_0 : `~astropy.units.Quantity` float
+        Reference point
     e_break : `~astropy.units.Quantity` float
         Break energy
     alpha_1 : float
@@ -151,34 +153,34 @@ class BrokenPowerLaw(object):
 
     Notes
     -----
-    Model formula (with :math:`A` for ``amplitude`` and :math:`\\alpha_1`
-    for ``alpha_1`` and :math:`\\alpha_2` for ``alpha_2``):
+    Model formula (with :math:`A` for ``amplitude``, :math:`E_0` for ``e_0``,
+    :math:`\\alpha_1` for ``alpha_1`` and :math:`\\alpha_2` for ``alpha_2``):
 
         .. math::
 
             f(E) = \\left \\{
                      \\begin{array}{ll}
-                       A (E / E_{break}) ^ {-\\alpha_1} & : E < E_{break} \\\\
-                       A (E / E_{break}) ^ {-\\alpha_2} & :  E > E_{break} \\\\
+                       A (E / E_0) ^ {-\\alpha_1} & : E < E_{break} \\\\
+                       A (E_{break}/E_0) ^ {\\alpha_2-\\alpha_1} (E / E_0) ^ {-\\alpha_2} & :  E > E_{break} \\\\
                      \\end{array}
                    \\right.
     """
 
-    param_names = ['amplitude', 'e_break', 'alpha_1', 'alpha_2']
+    param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2']
 
-    def __init__(self, amplitude, e_break, alpha_1, alpha_2):
+    def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2):
         self.amplitude = amplitude
+        self.e_0 = validate_scalar('e_0', e_0, domain='positive', physical_type='energy')
         self.e_break = validate_scalar('e_break', e_break, domain='positive', physical_type='energy')
         self.alpha_1 = alpha_1
         self.alpha_2 = alpha_2
 
     @staticmethod
-    def eval(e, amplitude, e_break, alpha_1, alpha_2):
+    def eval(e, amplitude, e_0, e_break, alpha_1, alpha_2):
         """One dimensional broken power law model function"""
-
+        K = np.where(e < e_break, 1, (e_break / e_0) ** (alpha_2 - alpha_1))
         alpha = np.where(e < e_break, alpha_1, alpha_2)
-        ee = e / e_break
-        return amplitude * ee ** (-alpha)
+        return amplitude * K * (e / e_0) ** -alpha
 
     def __call__(self,e):
         """One dimensional power law model function"""
@@ -186,7 +188,8 @@ class BrokenPowerLaw(object):
         e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
-                self.e_break.to('eV').value, self.alpha_1, self.alpha_2)
+                self.e_0.to('eV').value, self.e_break.to('eV').value,
+                self.alpha_1, self.alpha_2)
 
 class ExponentialCutoffBrokenPowerLaw(object):
     """
@@ -196,6 +199,8 @@ class ExponentialCutoffBrokenPowerLaw(object):
     ----------
     amplitude : float
         Model amplitude at the break point
+    e_0 : `~astropy.units.Quantity` float
+        Reference point
     e_break : `~astropy.units.Quantity` float
         Break energy
     alpha_1 : float
@@ -213,24 +218,27 @@ class ExponentialCutoffBrokenPowerLaw(object):
 
     Notes
     -----
-    Model formula (with :math:`A` for ``amplitude``, :math:`\\alpha_1` for
-    ``alpha_1``, :math:`\\alpha_2` for ``alpha_2``, and :math:`\\beta` for
-    ``beta``):
+    Model formula (with :math:`A` for ``amplitude``, :math:`E_0` for ``e_0``,
+    :math:`\\alpha_1` for ``alpha_1``, :math:`\\alpha_2` for ``alpha_2``,
+    :math:`E_{cutoff}` for ``e_cutoff``, and :math:`\\beta` for ``beta``):
 
         .. math::
 
+
             f(E) = \\exp(-(E / E_{cutoff})^\\beta)\\left \\{
                      \\begin{array}{ll}
-                       A (E / E_{break}) ^ {-\\alpha_1} & : E < E_{break} \\\\
-                       A (E / E_{break}) ^ {-\\alpha_2} & :  E > E_{break} \\\\
+                       A (E / E_0) ^ {-\\alpha_1}                                         & : E < E_{break} \\\\
+                       A (E_{break}/E_0) ^ {\\alpha_2-\\alpha_1} (E / E_0) ^ {-\\alpha_2} & : E > E_{break} \\\\
                      \\end{array}
                    \\right.
+
     """
 
-    param_names = ['amplitude', 'e_break', 'alpha_1', 'alpha_2']
+    param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2']
 
-    def __init__(self, amplitude, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0):
+    def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0):
         self.amplitude = amplitude
+        self.e_0 = validate_scalar('e_0', e_0, domain='positive', physical_type='energy')
         self.e_break = validate_scalar('e_break', e_break, domain='positive', physical_type='energy')
         self.alpha_1 = alpha_1
         self.alpha_2 = alpha_2
@@ -238,13 +246,12 @@ class ExponentialCutoffBrokenPowerLaw(object):
         self.beta = beta
 
     @staticmethod
-    def eval(e, amplitude, e_break, alpha_1, alpha_2, e_cutoff, beta):
+    def eval(e, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta):
         """One dimensional broken power law model function"""
-
+        K = np.where(e < e_break, 1, (e_break / e_0) ** (alpha_2 - alpha_1))
         alpha = np.where(e < e_break, alpha_1, alpha_2)
-        ee = e / e_break
         ee2 = e / e_cutoff
-        return amplitude * ee ** (-alpha) * np.exp(- (ee2 ** beta))
+        return amplitude * K * (e / e_0) ** -alpha * np.exp(- (ee2 ** beta))
 
     def __call__(self,e):
         """One dimensional power law model function"""
@@ -252,8 +259,9 @@ class ExponentialCutoffBrokenPowerLaw(object):
         e = _validate_ene(e)
 
         return self.eval(e.to('eV').value, self.amplitude,
-                self.e_break.to('eV').value, self.alpha_1, self.alpha_2,
-                self.e_cutoff.to('eV').value, self.beta)
+                self.e_0.to('eV').value, self.e_break.to('eV').value,
+                self.alpha_1, self.alpha_2, self.e_cutoff.to('eV').value,
+                self.beta)
 
 class LogParabola(object):
     """
