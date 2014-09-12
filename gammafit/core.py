@@ -45,7 +45,7 @@ def lnprobmodel(model, data):
 
     difference = model[notul] - data['flux'][notul]
 
-    if np.rank(data['dflux']) > 1:
+    if data['dflux'].ndim > 1:
 # use different errors for model above or below data
         sign = difference > 0
         loerr, hierr = 1 * -sign, 1 * sign
