@@ -10,6 +10,8 @@ from .utils import trapz_loglog
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
 
 from astropy.extern import six
+import os
+from astropy.utils.data import get_pkg_data_filename
 import warnings
 import logging
 # Get a new logger to avoid changing the level of the astropy logger
@@ -421,14 +423,16 @@ class PionDecayKafexhiu14(BaseRadiative):
     `arXiv:1406.7369 <http://www.arxiv.org/abs/1406.7369>`_.
     """
 
-    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, **kwargs):
+    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, useLUT = True, **kwargs):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
+        self.useLUT = useLUT
         self.hiEmodel = 'Pythia8'
         self.log10Epmin = np.log10(self._m_p + self._Tth) # Threshold energy ~1.22 GeV
         self.log10Epmax = np.log10(10.e6) # 10 PeV
         self.nEpd = 100
         self.__dict__.update(**kwargs)
+
 
     # define model parameters from tables
     #
@@ -729,13 +733,25 @@ class PionDecayKafexhiu14(BaseRadiative):
             Photon energy array.
         """
 
+        # Load LUT if available, otherwise use self._diffsigma
+        if self.useLUT:
+            LUT_fname = 'PionDecayKafexhiu14_LUT_{0}.npz'.format(self.hiEmodel)
+            try:
+                filename = get_pkg_data_filename(os.path.join('data',LUT_fname))
+                self.diffsigma = LookupTable(filename)
+            except IOError:
+                warnings.warn('Differential cross section LUT {0} not found'.format(LUT_fname))
+                self.diffsigma = self._diffsigma
+        else:
+            self.diffsigma = self._diffsigma
+
         Egamma = _validate_ene(photon_energy).to('GeV')
         Ep = self._Ep * u.GeV
         J = self._J * u.Unit('1/GeV')
 
         specpp = []
         for Eg in Egamma:
-            diffsigma = self._diffsigma(Ep.value,Eg.value) * u.Unit('cm2/GeV')
+            diffsigma = self.diffsigma(Ep.value,Eg.value) * u.Unit('cm2/GeV')
             specpp.append(trapz_loglog(diffsigma * J, Ep))
 
         self.specpp = u.Quantity(specpp)
@@ -763,6 +779,10 @@ class PionDecayKelner06(BaseRadiative):
     nh : `~astropy.units.Quantity`
         Number density of the target protons. Default is :math:`1 cm^{-3}`.
 
+    useLUT : bool
+        Use precomputed lookup tables for the differential cross section.
+        Default is False.
+
     Other parameters
     ----------------
     Etrans : `~astropy.units.Quantity`
@@ -780,6 +800,7 @@ class PionDecayKelner06(BaseRadiative):
     def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, **kwargs):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
+
         self.__dict__.update(**kwargs)
 
     def _particle_distribution(self,E):
@@ -946,4 +967,66 @@ class PionDecayKelner06(BaseRadiative):
         return density_factor * self.specpp.to('1/(s eV)')
 
 PionDecay = PionDecayKafexhiu14
+
+class LookupTable(object):
+    """
+    Helper class for two-dimensional look up table
+
+    Lookup table should be saved as an npz file with numpy.savez or
+    numpy.savez_compressed. The file should have three arrays:
+
+    * X: log10(x)
+    * Y: log10(y)
+    * lut: log10(z)
+
+    The instantiated object can be called with arguments (x,y), and the
+    interpolated value of z will be returned. The interpolation is done through
+    a cubic spline in semi-logarithmic space.
+    """
+    def __init__(self,filename):
+        from scipy.interpolate import RectBivariateSpline
+        f_lut = np.load(filename)
+        X = f_lut.f.X
+        Y = f_lut.f.Y
+        lut = f_lut.f.lut
+        self.int_lut = RectBivariateSpline(X, Y, 10**lut, kx=3, ky=3, s=0)
+
+    def __call__(self,X,Y):
+        return self.int_lut(np.log10(X),np.log10(Y)).flatten()
+
+def _calc_lut_pp(args):
+    epr,eph,hiEmodel = args
+    #print('Computing diffsigma for Egamma = {0}...'.format(eph))
+    from astropy import constants as const
+    from .radiative import PionDecay
+    from .models import PowerLaw
+    pl = PowerLaw(1/u.eV,1*u.TeV,0.0)
+    pp = PionDecayKafexhiu14(pl,hiEmodel=hiEmodel)
+
+    diffsigma = pp._diffsigma(epr.to('GeV').value, eph.to('GeV').value)
+
+    return diffsigma
+
+
+def generate_lut_pp(Ep=np.logspace(0.085623713910610105,7,800)*u.GeV,
+        Eg=np.logspace(-5,3,1024)*u.TeV, out_base='PionDecayKafexhiu14_LUT_',
+        hiEmodel=None):
+    from emcee.interruptible_pool import InterruptiblePool as Pool
+
+    pool = Pool()
+    if hiEmodel is None:
+        hiEmodel = ['Geant4','Pythia8','SIBYLL','QGSJET']
+    elif type(hiEmodel) is str:
+        hiEmodel = [hiEmodel,]
+
+    for model in hiEmodel:
+        out_file = out_base + model + '.npz'
+        print('Saving LUT for model {0} in {1}...'.format(model,out_file))
+        args = [(Ep, eg, model) for eg in Eg]
+        diffsigma_list = pool.map(_calc_lut_pp,args)
+
+        diffsigma = np.array(diffsigma_list).T
+
+        np.savez_compressed(out_file, X=np.log10(Ep.to('GeV').value),
+                Y=np.log10(Eg.to('GeV').value), lut=np.log10(diffsigma))
 
