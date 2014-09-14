@@ -96,7 +96,7 @@ class BaseElectron(BaseRadiative):
         """ Lorentz factor array
         """
         return np.logspace(self.log10gmin,self.log10gmax,
-                self.ngamd*self.log10gmax/self.log10gmin)
+                self.ngamd*(self.log10gmax - self.log10gmin))
 
     @property
     def _nelec(self):
