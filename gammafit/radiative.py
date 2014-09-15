@@ -10,6 +10,8 @@ from .utils import trapz_loglog
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
 
 from astropy.extern import six
+import os
+from astropy.utils.data import get_pkg_data_filename
 import warnings
 import logging
 # Get a new logger to avoid changing the level of the astropy logger
@@ -26,8 +28,6 @@ mec2 = (m_e * c ** 2).cgs
 mec2_unit = u.Unit(mec2)
 
 ar = (4 * sigma_sb / c).to('erg/(cm3 K4)')
-
-heaviside = lambda x: (np.sign(x) + 1) / 2.
 
 def _validate_ene(ene):
     from astropy.table import Table
@@ -379,7 +379,7 @@ class InverseCompton(BaseElectron):
 
         return self.specic
 
-class PionDecay(BaseRadiative):
+class PionDecayKafexhiu14(BaseRadiative):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
@@ -398,6 +398,393 @@ class PionDecay(BaseRadiative):
 
     Other parameters
     ----------------
+    log10Epmin : float
+        Base 10 logarithm of the minimum proton energy for the proton
+        distribution. Default is 0.086, the dynamical threshold for pion
+        production in pp interactions. (:math:`E_p ≈ 1.22` GeV)
+
+    log10Epmax : float
+        Base 10 logarithm of the minimum proton energy for the proton
+        distribution. Default is 7 (:math:`E_p = 10` PeV).
+
+    nEpd : scalar
+        Number of points per decade in energy for the proton energy and
+        distribution arrays. Default is 100.
+
+    hiEmodel : str
+        Monte Carlo model to use for computation of high-energy differential
+        cross section. Can be one of ``Geant4``, ``Pythia8``, ``SIBYLL``, or
+        ``QGSJET``. See Kafexhiu et al. (2014) for details. Default is
+        ``Pythia8``.
+
+    References
+    ----------
+    Kafexhiu, E., Aharonian, F., Taylor, A.~M., and Vila, G.~S.\ 2014,
+    `arXiv:1406.7369 <http://www.arxiv.org/abs/1406.7369>`_.
+    """
+
+    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, useLUT = True, **kwargs):
+        self.particle_distribution = particle_distribution
+        self.nh = validate_scalar('nh', nh, physical_type='number density')
+        self.useLUT = useLUT
+        self.hiEmodel = 'Pythia8'
+        self.log10Epmin = np.log10(self._m_p + self._Tth) # Threshold energy ~1.22 GeV
+        self.log10Epmax = np.log10(10.e6) # 10 PeV
+        self.nEpd = 100
+        self.__dict__.update(**kwargs)
+
+
+    # define model parameters from tables
+    #
+    # Table IV
+    _a = {}
+    _a['Geant4']  = [0.728, 0.596,  0.491, 0.2503, 0.117] # Tp > 5
+    _a['Pythia8'] = [0.652, 0.0016, 0.488, 0.1928, 0.483] # Tp > 50
+    _a['SIBYLL']  = [5.436, 0.254,  0.072, 0.075,  0.166] # Tp > 100
+    _a['QGSJET']  = [0.908, 0.0009, 6.089, 0.176,  0.448] # Tp > 100
+    #
+    # table V data
+    # note that np.nan indicate that functions of Tp are needed and are defined
+    # as need in function F
+    # parameter order is lambda, alpha, beta, gamma
+    _F_mp = {}
+    _F_mp['ExpData']  = [1.0,  1.0, np.nan, 0.0]    # Tth  <= Tp <= 1.0
+    _F_mp['Geant4_0'] = [3.0,  1.0, np.nan, np.nan] # 1.0  <  Tp <= 4.0
+    _F_mp['Geant4_1'] = [3.0,  1.0, np.nan, np.nan] # 4.0  <  Tp <= 20.0
+    _F_mp['Geant4_2'] = [3.0,  0.5, 4.2,    1.0]    # 20.0 <  Tp <= 100
+    _F_mp['Geant4']   = [3.0,  0.5, 4.9,    1.0]    # Tp > 100
+    _F_mp['Pythia8']  = [3.5,  0.5, 4.0,    1.0]    # Tp > 50
+    _F_mp['SIBYLL']   = [3.55, 0.5, 3.6,    1.0]    # Tp > 100
+    _F_mp['QGSJET']   = [3.55, 0.5, 4.5,    1.0]    # Tp > 100
+    #
+    # Table VII
+    _b = {}
+    _b['Geant4_0'] = [9.53,  0.52,   0.054]   # 1 <= Tp < 5
+    _b['Geant4']   = [9.13,  0.35,   9.7e-3]  # Tp >= 5
+    _b['Pythia8']  = [9.06,  0.3795, 0.01105] # Tp >  50
+    _b['SIBYLL']   = [10.77, 0.412,  0.01264] # Tp >  100
+    _b['QGSJET']   = [13.16, 0.4419, 0.01439] # Tp >  100
+
+    # energy at which each of the hiE models start being valid
+    _Etrans = {'Pythia8':50, 'SIBYLL':100, 'QGSJET':100, 'Geant4': 100}
+    #
+    _m_p = (m_p * c ** 2).to('GeV').value
+    _m_pi = 0.1349766  # GeV/c2
+    _Tth = 0.27966184
+
+
+    def _sigma_inel(self, Tp):
+        """
+        Inelastic cross-section for p-p interaction. KATV14 Eq. 1
+
+        Parameters
+        ----------
+        Tp : float
+            Kinetic energy of proton (i.e. Ep - m_p*c**2) [GeV]
+
+        Returns
+        -------
+        sigma_inel : float
+            Inelastic cross-section for p-p interaction [1/cm2].
+
+        """
+        L = np.log(Tp/self._Tth)
+        sigma = 30.7 - 0.96 * L + 0.18 * L ** 2
+        sigma *= (1 - (self._Tth / Tp) ** 1.9) ** 3
+        return sigma * 1e-27  # convert from mbarn to cm-2
+
+    def _sigma_pi_loE(self,Tp):
+        """
+        inclusive cross section for Tth < Tp < 2 GeV
+        Fit from experimental data
+        """
+        m_p = self._m_p
+        m_pi = self._m_pi
+        Mres = 1.1883 # GeV
+        Gres = 0.2264 # GeV
+        s = 2 * m_p * (Tp + 2 * m_p) # center of mass energy
+        gamma = np.sqrt(Mres**2 * (Mres**2 + Gres**2))
+        K = np.sqrt(8) * Mres * Gres * gamma
+        K /= np.pi * np.sqrt(Mres**2 + gamma)
+
+        fBW = m_p * K
+        fBW /= ((np.sqrt(s) - m_p)**2 - Mres**2) ** 2 + Mres**2 * Gres**2
+
+        mu = np.sqrt((s - m_pi**2 - 4 * m_p**2)**2 - 16 * m_pi**2 * m_p**2)
+        mu /= 2 * m_pi * np.sqrt(s)
+
+        sigma0 = 7.66e-3 # mb
+
+        sigma1pi = sigma0 * mu**1.95 * (1 + mu + mu**5) * fBW**1.86
+
+        # two pion production
+        sigma2pi = 5.7 # mb
+        sigma2pi /= 1 + np.exp(-9.3*(Tp - 1.4))
+
+        E2pith = 0.56 # GeV
+        sigma2pi[np.where(Tp < E2pith)] = 0.
+
+        return (sigma1pi + sigma2pi) * 1e-27 # return in cm-2
+
+    def _sigma_pi_midE(self,Tp):
+        """
+        Geant 4.10.0 model for 2 GeV < Tp < 5 GeV
+        """
+        m_p = self._m_p
+        m_pi = self._m_pi
+        Qp = (Tp - self._Tth) / m_p
+        multip = -6e-3 + 0.237 * Qp - 0.023 * Qp**2
+        return self._sigma_inel(Tp) * multip
+
+    def _sigma_pi_hiE(self,Tp,a):
+        """
+        General expression for Tp > 5 GeV (Eq 7)
+        """
+        m_p = self._m_p
+        m_pi = self._m_pi
+        csip = (Tp - 3.0) / m_p
+        m1 = a[0] * csip ** a[3] * (1 + np.exp(-a[1] * csip ** a[4]))
+        m2 = 1 - np.exp(-a[2] * csip ** 0.25)
+        multip = m1 * m2
+        return self._sigma_inel(Tp) * multip
+
+
+    def _sigma_pi(self,Tp):
+        sigma = np.zeros_like(Tp)
+
+        # for E<2GeV
+        idx1 = np.where(Tp < 2.0)
+        sigma[idx1] = self._sigma_pi_loE(Tp[idx1])
+        # for 2GeV<=E<5GeV
+        idx2 = np.where((Tp >= 2.0) * (Tp < 5.0))
+        sigma[idx2] = self._sigma_pi_midE(Tp[idx2])
+        # for 5GeV<=E<Etrans
+        idx3 = np.where((Tp >= 5.0) * (Tp < self._Etrans[self.hiEmodel]))
+        sigma[idx3] = self._sigma_pi_hiE(Tp[idx3], self._a['Geant4'])
+        # for E>=Etrans
+        idx4 = np.where((Tp >= self._Etrans[self.hiEmodel]))
+        sigma[idx4] = self._sigma_pi_hiE(Tp[idx4],self._a[self.hiEmodel])
+
+        return sigma
+
+    def _b_params(self,Tp):
+        b0 = 5.9
+        hiE = np.where(Tp >= 1.0)
+        TphiE = Tp[hiE]
+        b1 = np.zeros(TphiE.size)
+        b2 = np.zeros(TphiE.size)
+        b3 = np.zeros(TphiE.size)
+
+        idx = np.where(TphiE < 5.0)
+        b1[idx], b2[idx], b3[idx] = self._b['Geant4_0']
+
+        idx = np.where(TphiE >= 5.0)
+        b1[idx], b2[idx], b3[idx] = self._b['Geant4']
+
+        idx = np.where(TphiE >= self._Etrans[self.hiEmodel])
+        b1[idx], b2[idx], b3[idx] = self._b[self.hiEmodel]
+
+        return b0, b1, b2, b3
+
+    def _calc_coll_props(self,Tp):
+        m_p = self._m_p
+        m_pi = self._m_pi
+        # Eq 10
+        s = 2 * m_p * (Tp + 2 * m_p) # center of mass energy
+        EpiCM = (s - 4 * m_p**2 + m_pi**2) / (2 * np.sqrt(s))
+        PpiCM = np.sqrt(EpiCM ** 2 - m_pi **2)
+        gCM = (Tp + 2 * m_p)/np.sqrt(s)
+        betaCM = np.sqrt(1 - gCM ** -2)
+        EpimaxLAB = gCM * (EpiCM + PpiCM * betaCM)
+        gpiLAB = EpimaxLAB / m_pi
+        betapiLAB = np.sqrt(1 - gpiLAB ** -2)
+        Egmax = (m_pi / 2) * gpiLAB * ( 1 + betapiLAB)
+
+        return Egmax, EpimaxLAB
+
+    def _Amax(self,Tp):
+        m_p = self._m_p
+        m_pi = self._m_pi
+        loE = np.where(Tp<1.0)
+        hiE = np.where(Tp>=1.0)
+
+        Amax = np.zeros(Tp.size)
+
+        b = self._b_params(Tp)
+
+        Egmax, EpimaxLAB = self._calc_coll_props(Tp)
+        Amax[loE] = b[0] * self._sigma_pi(Tp[loE]) / EpimaxLAB[loE]
+        thetap = Tp / m_p
+        Amax[hiE] = (b[1] * thetap[hiE] ** -b[2] *
+                     np.exp(b[3]*np.log(thetap[hiE])**2) *
+                     self._sigma_pi(Tp[hiE]) / m_p)
+
+        return Amax
+
+    def _F_func(self,Tp,Egamma,modelparams):
+        lamb, alpha, beta, gamma = modelparams
+        m_p = self._m_p
+        m_pi = self._m_pi
+        # Eq 9
+        Egmax, EpimaxLAB = self._calc_coll_props(Tp)
+        Yg = Egamma + m_pi ** 2 / (4 * Egamma)
+        Ygmax = Egmax + m_pi ** 2 / (4 * Egmax)
+        Xg = (Yg - m_pi)/(Ygmax - m_pi)
+        # zero out invalid fields (Xg > 1)
+        Xg[np.where(Xg > 1)] = 1.0
+        # Eq 11
+        C = lamb * m_pi / Ygmax
+        F = (1 - Xg ** alpha) ** beta
+        F /= (1 + Xg / C) ** gamma
+        #
+        return F
+
+    def _kappa(self,Tp):
+        thetap = Tp / self._m_p
+        return 3.29 - thetap ** -1.5 / 5.
+
+    def _mu(self,Tp):
+        q = (Tp - 1.0)/self._m_p
+        x = 5./4.
+        return x * q ** x * np.exp(-x*q)
+
+    def _F(self,Tp,Egamma):
+        F = np.zeros_like(Tp)
+# below Tth
+        F[np.where(Tp < self._Tth)] = 0.0
+# Tth <= E <= 1GeV: Experimental data
+        idx = np.where((Tp >= self._Tth) * (Tp <= 1.0))
+        if idx[0].size > 0:
+            kappa = self._kappa(Tp[idx])
+            mp = self._F_mp['ExpData']
+            mp[2] = kappa
+            F[idx] = self._F_func(Tp[idx], Egamma, mp)
+# 1GeV < Tp < 4 GeV: Geant4 model 0
+        idx = np.where((Tp > 1.0) * (Tp <= 4.0))
+        if idx[0].size > 0:
+            mp = self._F_mp['Geant4_0']
+            mu = self._mu(Tp[idx])
+            mp[2] = mu + 2.45
+            mp[3] = mu + 1.45
+            F[idx] = self._F_func(Tp[idx], Egamma, mp)
+# 4 GeV < Tp < 20 GeV
+        idx = np.where((Tp > 4.0) * (Tp <= 20.0))
+        if idx[0].size > 0:
+            mp = self._F_mp['Geant4_1']
+            mu = self._mu(Tp[idx])
+            mp[2] = 1.5 * mu + 4.95
+            mp[3] = mu + 1.50
+            F[idx] = self._F_func(Tp[idx], Egamma, mp)
+# 20 GeV < Tp < 100 GeV
+        idx = np.where((Tp > 20.0) * (Tp <= 100.0))
+        if idx[0].size > 0:
+            mp = self._F_mp['Geant4_2']
+            F[idx] = self._F_func(Tp[idx], Egamma, mp)
+# Tp > Etrans
+        idx = np.where(Tp > self._Etrans[self.hiEmodel])
+        if idx[0].size > 0:
+            mp = self._F_mp[self.hiEmodel]
+            F[idx] = self._F_func(Tp[idx], Egamma, mp)
+
+        return F
+
+    def _diffsigma(self,Ep,Egamma):
+        """
+        Differential cross section
+
+        dsigma/dEg = Amax(Tp) * F(Tp,Egamma)
+        """
+        Tp = Ep - self._m_p
+
+        diffsigma = self._Amax(Tp) * self._F(Tp,Egamma)
+
+        return diffsigma
+
+    @property
+    def _Ep(self):
+        """ Proton energy array in GeV
+        """
+        return np.logspace(self.log10Epmin,self.log10Epmax,
+                           self.nEpd * (self.log10Epmax-self.log10Epmin))
+
+    @property
+    def _J(self):
+        """ Particles per unit proton energy in particles per GeV
+        """
+        pd = self.particle_distribution(self._Ep * u.GeV)
+        return pd.to('1/GeV').value
+
+    @property
+    def Wp(self):
+        """Total energy in protons
+        """
+        Wp = trapz_loglog(self._Ep * self._J, self._Ep) * u.GeV
+        return Wp.to('erg')
+
+    def spectrum(self,photon_energy):
+        """
+        Compute differential spectrum from pp interactions using the parametrization of
+        Kafexhiu, E., Aharonian, F., Taylor, A.~M., and Vila, G.~S.\ 2014,
+        `arXiv:1406.7369 <http://www.arxiv.org/abs/1406.7369>`_.
+
+        Parameters
+        ----------
+        photon_energy : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+        """
+
+        # Load LUT if available, otherwise use self._diffsigma
+        if self.useLUT:
+            LUT_fname = 'PionDecayKafexhiu14_LUT_{0}.npz'.format(self.hiEmodel)
+            try:
+                filename = get_pkg_data_filename(os.path.join('data',LUT_fname))
+                self.diffsigma = LookupTable(filename)
+            except IOError:
+                warnings.warn('Differential cross section LUT {0} not found'.format(LUT_fname))
+                self.diffsigma = self._diffsigma
+        else:
+            self.diffsigma = self._diffsigma
+
+        Egamma = _validate_ene(photon_energy).to('GeV')
+        Ep = self._Ep * u.GeV
+        J = self._J * u.Unit('1/GeV')
+
+        specpp = []
+        for Eg in Egamma:
+            diffsigma = self.diffsigma(Ep.value,Eg.value) * u.Unit('cm2/GeV')
+            specpp.append(trapz_loglog(diffsigma * J, Ep))
+
+        self.specpp = u.Quantity(specpp)
+
+        self.specpp *= self.nh * c.cgs * 4 * np.pi
+
+        return self.specpp.to('1/(s eV)')
+
+heaviside = lambda x: (np.sign(x) + 1) / 2.
+
+class PionDecayKelner06(BaseRadiative):
+    r"""Pion decay gamma-ray emission from a proton population.
+
+    Compute gamma-ray spectrum arising from the interaction of a relativistic
+    proton distribution with stationary target protons.
+
+    Parameters
+    ----------
+    particle_distribution : function
+        Particle distribution function, taking proton energies as a
+        `~astropy.units.Quantity` array or float, and returning the particle
+        energy density in units of number of protons per unit energy as a
+        `~astropy.units.Quantity` array or float.
+
+    nh : `~astropy.units.Quantity`
+        Number density of the target protons. Default is :math:`1 cm^{-3}`.
+
+    useLUT : bool
+        Use precomputed lookup tables for the differential cross section.
+        Default is False.
+
+    Other parameters
+    ----------------
     Etrans : `~astropy.units.Quantity`
         For photon energies below ``Etrans``, the delta-functional approximation
         is used for the spectral calculation, and the full calculation is used
@@ -413,6 +800,7 @@ class PionDecay(BaseRadiative):
     def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, **kwargs):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
+
         self.__dict__.update(**kwargs)
 
     def _particle_distribution(self,E):
@@ -490,7 +878,7 @@ class PionDecay(BaseRadiative):
         # ], n = 40)[0]
         from scipy.integrate import quad
         Egamma = Egamma.to('TeV').value
-        specpp = c.cgs.value * quad(
+        specpp = 4 * np.pi * c.cgs.value * quad(
             self._photon_integrand, 0., 1., args=Egamma,
             epsrel=1e-3, epsabs=0)[0]
 
@@ -516,7 +904,7 @@ class PionDecay(BaseRadiative):
         Egamma = Egamma.to('TeV').value
         Epimin = Egamma + self._m_pi ** 2 / (4 * Egamma)
 
-        result = 2 * quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3,
+        result = 4 * np.pi * 2 * quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3,
                           epsabs=0)[0]
 
         return result * u.Unit('1/(s TeV)')
@@ -577,4 +965,68 @@ class PionDecay(BaseRadiative):
         density_factor = (self.nh / (1 * u.Unit('1/cm3'))).decompose().value
 
         return density_factor * self.specpp.to('1/(s eV)')
+
+PionDecay = PionDecayKafexhiu14
+
+class LookupTable(object):
+    """
+    Helper class for two-dimensional look up table
+
+    Lookup table should be saved as an npz file with numpy.savez or
+    numpy.savez_compressed. The file should have three arrays:
+
+    * X: log10(x)
+    * Y: log10(y)
+    * lut: log10(z)
+
+    The instantiated object can be called with arguments (x,y), and the
+    interpolated value of z will be returned. The interpolation is done through
+    a cubic spline in semi-logarithmic space.
+    """
+    def __init__(self,filename):
+        from scipy.interpolate import RectBivariateSpline
+        f_lut = np.load(filename)
+        X = f_lut.f.X
+        Y = f_lut.f.Y
+        lut = f_lut.f.lut
+        self.int_lut = RectBivariateSpline(X, Y, 10**lut, kx=3, ky=3, s=0)
+
+    def __call__(self,X,Y):
+        return self.int_lut(np.log10(X),np.log10(Y)).flatten()
+
+def _calc_lut_pp(args):
+    epr,eph,hiEmodel = args
+    #print('Computing diffsigma for Egamma = {0}...'.format(eph))
+    from astropy import constants as const
+    from .radiative import PionDecay
+    from .models import PowerLaw
+    pl = PowerLaw(1/u.eV,1*u.TeV,0.0)
+    pp = PionDecayKafexhiu14(pl,hiEmodel=hiEmodel)
+
+    diffsigma = pp._diffsigma(epr.to('GeV').value, eph.to('GeV').value)
+
+    return diffsigma
+
+
+def generate_lut_pp(Ep=np.logspace(0.085623713910610105,7,800)*u.GeV,
+        Eg=np.logspace(-5,3,1024)*u.TeV, out_base='PionDecayKafexhiu14_LUT_',
+        hiEmodel=None):
+    from emcee.interruptible_pool import InterruptiblePool as Pool
+
+    pool = Pool()
+    if hiEmodel is None:
+        hiEmodel = ['Geant4','Pythia8','SIBYLL','QGSJET']
+    elif type(hiEmodel) is str:
+        hiEmodel = [hiEmodel,]
+
+    for model in hiEmodel:
+        out_file = out_base + model + '.npz'
+        print('Saving LUT for model {0} in {1}...'.format(model,out_file))
+        args = [(Ep, eg, model) for eg in Eg]
+        diffsigma_list = pool.map(_calc_lut_pp,args)
+
+        diffsigma = np.array(diffsigma_list).T
+
+        np.savez_compressed(out_file, X=np.log10(Ep.to('GeV').value),
+                Y=np.log10(Eg.to('GeV').value), lut=np.log10(diffsigma))
 
