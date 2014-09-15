@@ -44,13 +44,13 @@ def test_synchrotron_lum(particle_dists):
 
     ECPL,PL,BPL = particle_dists
 
-    lum_ref = [2.52019515e-04,
-               1.68850644e-02,
-               3.11540083e-04]
+    lum_ref = [2.523130675e-04,
+               1.689956354e-02,
+               3.118110763e-04]
 
-    We_ref = [8.78185021e+09,
-              1.44389652e+10,
-              1.05676083e+09]
+    We_ref = [8.782070535e+09,
+              1.443896523e+10,
+              1.056827286e+09]
 
     Wes = []
     lsys = []
@@ -70,7 +70,7 @@ def test_synchrotron_lum(particle_dists):
 
     lsy = trapz_loglog(sy.spectrum(energy) * energy, energy).to('erg/s')
     assert(lsy.unit == u.erg / u.s)
-    assert_allclose(lsy.value, 31636229.606947254)
+    assert_allclose(lsy.value, 31668900.60668014)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_inverse_compton_lum(particle_dists):
@@ -81,13 +81,13 @@ def test_inverse_compton_lum(particle_dists):
 
     ECPL,PL,BPL = particle_dists
 
-    lum_ref = [2.83131305e-04,
-               3.94322297e-03,
-               1.22333276e-04]
+    lum_ref = [2.831786558e-04,
+               3.944243128e-03,
+               1.223578354e-04]
 
-    We_ref = [8.78209566e+09,
-              1.44389652e+10,
-              1.05683940e+09]
+    We_ref = [8.782119978e+09,
+              1.443896523e+10,
+              1.056842782e+09]
 
     Wes = []
     lums = []
@@ -105,7 +105,7 @@ def test_inverse_compton_lum(particle_dists):
     ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'])
 
     lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
-    assert_allclose(lic.value, 0.0003597722741746664)
+    assert_allclose(lic.value, 0.0003598440781547531)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_flux_sed(particle_dists):
@@ -170,28 +170,64 @@ def test_pion_decay(particle_dists):
     for pdist in [ECPL,PL,BPL]:
         pdist.amplitude = 1*(1/u.TeV)
 
-    lum_ref = [5.54225481494e-13,
-               1.21723084093e-12,
-               7.35927471e-14]
+    lum_ref_LUT = [7.174134253610530e-12,
+                   2.181208377204211e-11,
+                   1.165378509215748e-12]
+
+    lum_ref_noLUT = [7.174637595507385e-12,
+                     2.181259406974256e-11,
+                     1.165440411263819e-12]
+
+    Wp_ref = [5406.414240250574,
+              10203.262632871427,
+              560.3384945615009]
+
+    energy = np.logspace(-3, 3, 60) * u.TeV
+    Wps = []
+    lpps_LUT = []
+    lpps_noLUT = []
+    for pdist in particle_dists:
+        pp = PionDecay(pdist,useLUT=True)
+        Wps.append(pp.Wp.to('erg').value)
+        lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
+        assert(lpp.unit == u.erg / u.s)
+        lpps_LUT.append(lpp.value)
+        pp.useLUT=False
+        lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
+        lpps_noLUT.append(lpp.value)
+
+    assert_allclose(lpps_LUT, lum_ref_LUT)
+    assert_allclose(lpps_noLUT, lum_ref_noLUT)
+    assert_allclose(Wps, Wp_ref)
+
+@pytest.mark.skipif('not HAS_SCIPY')
+def test_pion_decay_kelner(particle_dists):
+    """
+    test PionDecayKelner06
+    """
+    from ..radiative import PionDecayKelner06 as PionDecay
+
+    ECPL,PL,BPL = particle_dists
+
+    for pdist in [ECPL,PL,BPL]:
+        pdist.amplitude = 1*(1/u.TeV)
+
+    lum_ref = [5.54225481494e-13*4*np.pi,
+               1.21723084093e-12*4*np.pi,
+               7.35927471e-14*4*np.pi]
 
     Wp_ref = [5.40535654e+03,
               2.74631565e+04,
               563.20150113]
 
     energy = np.logspace(9, 13, 20) * u.eV
-    Wps = []
-    lpps = []
-    for pdist in particle_dists:
-        pp = PionDecay(pdist)
+    pp = PionDecay(ECPL)
+    Wp = pp.Wp.to('erg').value
+    lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
+    assert(lpp.unit == u.erg / u.s)
 
-        Wps.append(pp.Wp.to('erg').value)
-
-        lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
-        assert(lpp.unit == u.erg / u.s)
-        lpps.append(lpp.value)
-
-    assert_allclose(lpps, lum_ref)
-    assert_allclose(Wps, Wp_ref)
+    assert_allclose(lpp.value, lum_ref[0])
+    assert_allclose(Wp, Wp_ref[0])
 
 def test_inputs():
     """ test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw
