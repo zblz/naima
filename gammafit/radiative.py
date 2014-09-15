@@ -435,31 +435,32 @@ class PionDecay(BaseRadiative):
     #
     # Table IV
     _a = {}
-    _a['Geant4']  = [0.728, 0.596,  0.491, 0.2503, 0.117] # E > 5
-    _a['Pythia8'] = [0.652, 0.0016, 0.488, 0.1928, 0.483] # E > 50
-    _a['SIBYLL']  = [5.436, 0.254,  0.072, 0.075,  0.166] # E > 100
-    _a['QGSJET']  = [0.908, 0.0009, 6.089, 0.176,  0.448] # E > 100
+    _a['Geant4']  = [0.728, 0.596,  0.491, 0.2503, 0.117] # Tp > 5
+    _a['Pythia8'] = [0.652, 0.0016, 0.488, 0.1928, 0.483] # Tp > 50
+    _a['SIBYLL']  = [5.436, 0.254,  0.072, 0.075,  0.166] # Tp > 100
+    _a['QGSJET']  = [0.908, 0.0009, 6.089, 0.176,  0.448] # Tp > 100
     #
     # table V data
     # note that np.nan indicate that functions of Tp are needed and are defined
     # as need in function F
     # parameter order is lambda, alpha, beta, gamma
     _F_mp = {}
-    _F_mp['ExpData']  = [1.0,  1.0, np.nan, 0.0]
-    _F_mp['Geant4_0'] = [3.0,  1.0, np.nan, np.nan]
-    _F_mp['Geant4_1'] = [3.0,  1.0, np.nan, np.nan]
-    _F_mp['Geant4_2'] = [3.0,  0.5, 4.2,    1.0]
-    _F_mp['Geant4']   = [3.0,  0.5, 4.9,    1.0]
-    _F_mp['Pythia8']  = [3.5,  0.5, 4.0,    1.0]
-    _F_mp['SIBYLL']   = [3.55, 0.5, 3.6,    1.0]
-    _F_mp['QGSJET']   = [3.55, 0.5, 4.5,    1.0]
+    _F_mp['ExpData']  = [1.0,  1.0, np.nan, 0.0]    # Tth  <= Tp <= 1.0
+    _F_mp['Geant4_0'] = [3.0,  1.0, np.nan, np.nan] # 1.0  <  Tp <= 4.0
+    _F_mp['Geant4_1'] = [3.0,  1.0, np.nan, np.nan] # 4.0  <  Tp <= 20.0
+    _F_mp['Geant4_2'] = [3.0,  0.5, 4.2,    1.0]    # 20.0 <  Tp <= 100
+    _F_mp['Geant4']   = [3.0,  0.5, 4.9,    1.0]    # Tp > 100
+    _F_mp['Pythia8']  = [3.5,  0.5, 4.0,    1.0]    # Tp > 50
+    _F_mp['SIBYLL']   = [3.55, 0.5, 3.6,    1.0]    # Tp > 100
+    _F_mp['QGSJET']   = [3.55, 0.5, 4.5,    1.0]    # Tp > 100
     #
     # Table VII
     _b = {}
-    _b['Geant4']  = [9.13,  0.35,   9.7e-3]
-    _b['Pythia8'] = [9.06,  0.3795, 0.01105]
-    _b['SIBYLL']  = [10.77, 0.412,  0.01264]
-    _b['QGSJET']  = [13.16, 0.4419, 0.01439]
+    _b['Geant4_0'] = [9.53,  0.52,   0.054]   # 1 <= Tp < 5
+    _b['Geant4']   = [9.13,  0.35,   9.7e-3]  # Tp >= 5
+    _b['Pythia8']  = [9.06,  0.3795, 0.01105] # Tp >  50
+    _b['SIBYLL']   = [10.77, 0.412,  0.01264] # Tp >  100
+    _b['QGSJET']   = [13.16, 0.4419, 0.01439] # Tp >  100
 
     # energy at which each of the hiE models start being valid
     _Etrans = {'Pythia8':50, 'SIBYLL':100, 'QGSJET':100, 'Geant4': 100}
@@ -572,7 +573,7 @@ class PionDecay(BaseRadiative):
         b3 = np.zeros(TphiE.size)
 
         idx = np.where(TphiE < 5.0)
-        b1[idx], b2[idx], b3[idx] = 9.53, 0.52, 0.054
+        b1[idx], b2[idx], b3[idx] = self._b['Geant4_0']
 
         idx = np.where(TphiE >= 5.0)
         b1[idx], b2[idx], b3[idx] = self._b['Geant4']
