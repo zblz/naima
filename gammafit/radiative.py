@@ -377,9 +377,7 @@ class InverseCompton(BaseElectron):
 
         return self.specic
 
-PionDecay = PionDecayKafexhiu
-
-class PionDecayKafexhiu(BaseRadiative):
+class PionDecayKafexhiu14(BaseRadiative):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
@@ -415,7 +413,7 @@ class PionDecayKafexhiu(BaseRadiative):
         Monte Carlo model to use for computation of high-energy differential
         cross section. Can be one of ``Geant4``, ``Pythia8``, ``SIBYLL``, or
         ``QGSJET``. See Kafexhiu et al. (2014) for details. Default is
-        ``SIBYLL``.
+        ``Pythia8``.
 
     References
     ----------
@@ -426,7 +424,7 @@ class PionDecayKafexhiu(BaseRadiative):
     def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, **kwargs):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
-        self.hiEmodel = 'SIBYLL'
+        self.hiEmodel = 'Pythia8'
         self.log10Epmin = np.log10(self._m_p + self._Tth) # Threshold energy ~1.22 GeV
         self.log10Epmax = np.log10(10.e6) # 10 PeV
         self.nEpd = 100
@@ -489,7 +487,7 @@ class PionDecayKafexhiu(BaseRadiative):
         L = np.log(Tp/self._Tth)
         sigma = 30.7 - 0.96 * L + 0.18 * L ** 2
         sigma *= (1 - (self._Tth / Tp) ** 1.9) ** 3
-        return sigma * 1e-27  # convert from mbarn to cm2
+        return sigma * 1e-27  # convert from mbarn to cm-2
 
     def _sigma_pi_loE(self,Tp):
         """
@@ -731,24 +729,24 @@ class PionDecayKafexhiu(BaseRadiative):
             Photon energy array.
         """
 
-        outspecene = _validate_ene(photon_energy).to('GeV')
+        Egamma = _validate_ene(photon_energy).to('GeV')
+        Ep = self._Ep * u.GeV
+        J = self._J * u.Unit('1/GeV')
 
-        self.specpp = np.zeros(outspecene.size) * u.Unit('1/(s GeV)')
+        specpp = []
+        for Eg in Egamma:
+            diffsigma = self._diffsigma(Ep.value,Eg.value) * u.Unit('cm2/GeV')
+            specpp.append(trapz_loglog(diffsigma * J, Ep))
 
-        Ep = self._Ep
-        J = self._J
+        self.specpp = u.Quantity(specpp)
 
-        for j,Egamma in enumerate(outspecene.value):
-            diffsigma = self._diffsigma(Ep,Egamma)
-            self.specpp[j] = trapz_loglog(diffsigma * J, Ep) * u.Unit('1/(s GeV)')
+        self.specpp *= self.nh * c.cgs * 4 * np.pi
 
-        self.specpp *= 4 * np.pi
+        return self.specpp.to('1/(s eV)')
 
-        density_factor = (self.nh / (1 * u.Unit('1/cm3'))).decompose().value
+heaviside = lambda x: (np.sign(x) + 1) / 2.
 
-        return density_factor * self.specpp.to('1/(s eV)')
-
-class PionDecayKelner(BaseRadiative):
+class PionDecayKelner06(BaseRadiative):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
@@ -859,7 +857,7 @@ class PionDecayKelner(BaseRadiative):
         # ], n = 40)[0]
         from scipy.integrate import quad
         Egamma = Egamma.to('TeV').value
-        specpp = c.cgs.value * quad(
+        specpp = 4 * np.pi * c.cgs.value * quad(
             self._photon_integrand, 0., 1., args=Egamma,
             epsrel=1e-3, epsabs=0)[0]
 
@@ -885,7 +883,7 @@ class PionDecayKelner(BaseRadiative):
         Egamma = Egamma.to('TeV').value
         Epimin = Egamma + self._m_pi ** 2 / (4 * Egamma)
 
-        result = 2 * quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3,
+        result = 4 * np.pi * 2 * quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3,
                           epsabs=0)[0]
 
         return result * u.Unit('1/(s TeV)')
@@ -946,3 +944,6 @@ class PionDecayKelner(BaseRadiative):
         density_factor = (self.nh / (1 * u.Unit('1/cm3'))).decompose().value
 
         return density_factor * self.specpp.to('1/(s eV)')
+
+PionDecay = PionDecayKafexhiu14
+
