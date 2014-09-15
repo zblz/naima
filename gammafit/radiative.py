@@ -377,8 +377,9 @@ class InverseCompton(BaseElectron):
 
         return self.specic
 
+PionDecay = PionDecayKafexhiu
 
-class PionDecay(BaseRadiative):
+class PionDecayKafexhiu(BaseRadiative):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
@@ -747,3 +748,201 @@ class PionDecay(BaseRadiative):
 
         return density_factor * self.specpp.to('1/(s eV)')
 
+class PionDecayKelner(BaseRadiative):
+    r"""Pion decay gamma-ray emission from a proton population.
+
+    Compute gamma-ray spectrum arising from the interaction of a relativistic
+    proton distribution with stationary target protons.
+
+    Parameters
+    ----------
+    particle_distribution : function
+        Particle distribution function, taking proton energies as a
+        `~astropy.units.Quantity` array or float, and returning the particle
+        energy density in units of number of protons per unit energy as a
+        `~astropy.units.Quantity` array or float.
+
+    nh : `~astropy.units.Quantity`
+        Number density of the target protons. Default is :math:`1 cm^{-3}`.
+
+    Other parameters
+    ----------------
+    Etrans : `~astropy.units.Quantity`
+        For photon energies below ``Etrans``, the delta-functional approximation
+        is used for the spectral calculation, and the full calculation is used
+        at higher energies. Default is 0.1 TeV.
+
+    References
+    ----------
+    Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
+    (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_).
+
+    """
+
+    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, **kwargs):
+        self.particle_distribution = particle_distribution
+        self.nh = validate_scalar('nh', nh, physical_type='number density')
+        self.__dict__.update(**kwargs)
+
+    def _particle_distribution(self,E):
+        return self.particle_distribution(E*u.TeV).to('1/TeV').value
+
+    def _Fgamma(self, x, Ep):
+        """
+        KAB06 Eq.58
+
+        Note: Quantities are not used in this function
+
+        Parameters
+        ----------
+        x : float
+            Egamma/Eprot
+        Ep : float
+            Eprot [TeV]
+        """
+        L = np.log(Ep)
+        B = 1.30 + 0.14 * L + 0.011 * L ** 2  # Eq59
+        beta = (1.79 + 0.11 * L + 0.008 * L ** 2) ** -1  # Eq60
+        k = (0.801 + 0.049 * L + 0.014 * L ** 2) ** -1  # Eq61
+        xb = x ** beta
+
+        F1 = B * (np.log(x) / x) * ((1 - xb) / (1 + k * xb * (1 - xb))) ** 4
+        F2 = 1. / np.log(x) - (4 * beta * xb) / (1 - xb) - (
+            4 * k * beta * xb * (1 - 2 * xb)) / (1 + k * xb * (1 - xb))
+
+        return F1 * F2
+
+    def _sigma_inel(self, Ep):
+        """
+        Inelastic cross-section for p-p interaction. KAB06 Eq. 73, 79
+
+        Note: Quantities are not used in this function
+
+        Parameters
+        ----------
+        Ep : float
+            Eprot [TeV]
+
+        Returns
+        -------
+        sigma_inel : float
+            Inelastic cross-section for p-p interaction [1/cm2].
+
+        """
+        L = np.log(Ep)
+        sigma = 34.3 + 1.88 * L + 0.25 * L ** 2
+        if Ep <= 0.1:
+            Eth = 1.22e-3
+            sigma *= (1 - (Eth / Ep) ** 4) ** 2 * heaviside(Ep - Eth)
+        return sigma * 1e-27  # convert from mbarn to cm2
+
+    def _photon_integrand(self, x, Egamma):
+        """
+        Integrand of Eq. 72
+        """
+        try:
+            return self._sigma_inel(Egamma / x) * self._particle_distribution((Egamma / x)) \
+                * self._Fgamma(x, Egamma / x) / x
+        except ZeroDivisionError:
+            return np.nan
+
+    def _calc_specpp_hiE(self, Egamma):
+        """
+        Spectrum computed as in Eq. 42 for Egamma >= 0.1 TeV
+        """
+        # Fixed quad with n=40 is about 15 times faster and is always within
+        # 0.5% of the result of adaptive quad for Egamma>0.1
+        # WARNING: It also produces artifacts for steep distributions (e.g.
+        # Maxwellian) at ~500 GeV. Reverting to adaptative quadrature
+        # from scipy.integrate import fixed_quad
+        # result=c*fixed_quad(self._photon_integrand, 0., 1., args = [Egamma,
+        # ], n = 40)[0]
+        from scipy.integrate import quad
+        Egamma = Egamma.to('TeV').value
+        specpp = c.cgs.value * quad(
+            self._photon_integrand, 0., 1., args=Egamma,
+            epsrel=1e-3, epsabs=0)[0]
+
+        return specpp * u.Unit('1/(s TeV)')
+
+    # variables for delta integrand
+    _c = c.cgs.value
+    _Kpi = 0.17
+    _mp = (m_p * c ** 2).to('TeV').value
+    _m_pi = 1.349766e-4  # TeV/c2
+
+    def _delta_integrand(self, Epi):
+        Ep0 = self._mp + Epi / self._Kpi
+        qpi = self._c * \
+            (self.nhat / self._Kpi) * self._sigma_inel(Ep0) * self._particle_distribution(Ep0)
+        return qpi / np.sqrt(Epi ** 2 + self._m_pi ** 2)
+
+    def _calc_specpp_loE(self, Egamma):
+        """
+        Delta-functional approximation for low energies Egamma < 0.1 TeV
+        """
+        from scipy.integrate import quad
+        Egamma = Egamma.to('TeV').value
+        Epimin = Egamma + self._m_pi ** 2 / (4 * Egamma)
+
+        result = 2 * quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3,
+                          epsabs=0)[0]
+
+        return result * u.Unit('1/(s TeV)')
+
+    @property
+    def Wp(self):
+        """Total energy in protons above 1.22 GeV threshold (erg).
+        """
+        from scipy.integrate import quad
+        Eth = 1.22e-3
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            Wp = quad(lambda x: x * self._particle_distribution(x), Eth, np.Inf)[0]
+
+        return (Wp * u.TeV).to('erg')
+
+    def spectrum(self,photon_energy):
+        """
+        Compute differential spectrum from pp interactions using Eq.71 and Eq.58 of
+        Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
+        (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_).
+
+        Parameters
+        ----------
+        photon_energy : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+        """
+
+        outspecene = _validate_ene(photon_energy)
+
+        if not hasattr(self, 'Etrans'):
+            # Energy at which we change from delta functional to accurate
+            # calculation
+            self.Etrans = 0.1 * u.TeV
+        else:
+            validate_scalar('Etrans', self.Etrans,
+                    domain='positive', physical_type='energy')
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.nhat = 1.  # initial value, works for index~2.1
+            if np.any(outspecene < self.Etrans) and np.any(outspecene >= self.Etrans):
+                # compute value of nhat so that delta functional matches accurate
+                # calculation at 0.1TeV
+                full = self._calc_specpp_hiE(self.Etrans)
+                delta = self._calc_specpp_loE(self.Etrans)
+                self.nhat *= (full / delta).decompose().value
+
+            self.specpp = np.zeros(len(outspecene)) * u.Unit('1/(s TeV)')
+
+            for i, Egamma in enumerate(outspecene):
+                if Egamma >= self.Etrans:
+                    self.specpp[i] = self._calc_specpp_hiE(Egamma)
+                else:
+                    self.specpp[i] = self._calc_specpp_loE(Egamma)
+
+        density_factor = (self.nh / (1 * u.Unit('1/cm3'))).decompose().value
+
+        return density_factor * self.specpp.to('1/(s eV)')
