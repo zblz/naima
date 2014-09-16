@@ -7,7 +7,7 @@ from .extern.validator import validate_scalar, validate_array, validate_physical
 
 from .utils import trapz_loglog
 
-__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay']
+__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'PionDecayKelner06']
 
 from astropy.extern import six
 import os
@@ -630,7 +630,7 @@ class PionDecayKafexhiu14(BaseRadiative):
         Yg = Egamma + m_pi ** 2 / (4 * Egamma)
         Ygmax = Egmax + m_pi ** 2 / (4 * Egmax)
         Xg = (Yg - m_pi)/(Ygmax - m_pi)
-        # zero out invalid fields (Xg > 1)
+        # zero out invalid fields (Egamma > Egmax -> Xg > 1)
         Xg[np.where(Xg > 1)] = 1.0
         # Eq 11
         C = lamb * m_pi / Ygmax
@@ -740,8 +740,9 @@ class PionDecayKafexhiu14(BaseRadiative):
                 filename = get_pkg_data_filename(os.path.join('data',LUT_fname))
                 self.diffsigma = LookupTable(filename)
             except IOError:
-                warnings.warn('Differential cross section LUT {0} not found'.format(LUT_fname))
+                warnings.warn('LUT {0} not found, reverting to useLUT = False'.format(LUT_fname))
                 self.diffsigma = self._diffsigma
+                self.useLUT = False
         else:
             self.diffsigma = self._diffsigma
 
