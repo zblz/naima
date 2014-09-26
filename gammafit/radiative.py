@@ -396,6 +396,12 @@ class PionDecayKafexhiu14(BaseRadiative):
     nh : `~astropy.units.Quantity`
         Number density of the target protons. Default is :math:`1 cm^{-3}`.
 
+    nuclear_enhancement : bool
+        Whether to apply the energy-dependent nuclear enhancement factor
+        considering a target gas with local ISM abundances. See Section IV of
+        Kafexhiu et al. (2014) for details. Here the proton-nucleus inelastic
+        cross section of Sihver et al. (1993, PhysRevC 47, 1225) is used.
+
     Other parameters
     ----------------
     log10Epmin : float
@@ -417,16 +423,23 @@ class PionDecayKafexhiu14(BaseRadiative):
         ``QGSJET``. See Kafexhiu et al. (2014) for details. Default is
         ``Pythia8``.
 
+    useLUT : bool
+        Whether to use a lookup table for the differential cross section. The
+        only lookup table packaged with gammafit is for the Pythia 8 model and
+        ISM nuclear enhancement factor.
+
     References
     ----------
     Kafexhiu, E., Aharonian, F., Taylor, A.~M., and Vila, G.~S.\ 2014,
     `arXiv:1406.7369 <http://www.arxiv.org/abs/1406.7369>`_.
     """
 
-    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, useLUT = True, **kwargs):
+    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3,
+            nuclear_enhancement = True, **kwargs):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
-        self.useLUT = useLUT
+        self.nuclear_enhancement = nuclear_enhancement
+        self.useLUT = True
         self.hiEmodel = 'Pythia8'
         self.log10Epmin = np.log10(self._m_p + self._Tth) # Threshold energy ~1.22 GeV
         self.log10Epmax = np.log10(10.e6) # 10 PeV
@@ -698,7 +711,36 @@ class PionDecayKafexhiu14(BaseRadiative):
 
         diffsigma = self._Amax(Tp) * self._F(Tp,Egamma)
 
+        if self.nuclear_enhancement:
+            diffsigma *= self._nuclear_factor(Tp)
+
         return diffsigma
+
+    def _nuclear_factor(self,Tp):
+        """
+        Compute nuclear enhancement factor
+        """
+        sigmaRpp = 10 * np.pi * 1e-27
+        sigmainel = self._sigma_inel(Tp)
+        sigmainel0 = self._sigma_inel(1e3) # at 1e3 GeV
+        f = sigmainel / sigmainel0
+        f2 = np.where(f > 1, f, 1.0)
+        G = 1.0 + np.log(f2)
+        # epsilon factors computed from Eqs 21 to 23 with local ISM abundances
+        epsC = 1.37
+        eps1 = 0.29
+        eps2 = 0.1
+
+        epstotal = np.where(Tp > self._Tth,
+                            epsC + (eps1 + eps2) * sigmaRpp * G / sigmainel,
+                            0.0)
+
+        if np.any(Tp < 1.0):
+            # nuclear enhancement factor diverges towards Tp = Tth, fix Tp<1 to eps(1.0) = 1.91
+            loE=np.where((Tp > self._Tth) * (Tp < 1.0))
+            epstotal[loE] = 1.9141
+
+        return epstotal
 
     @property
     def _Ep(self):
@@ -735,7 +777,10 @@ class PionDecayKafexhiu14(BaseRadiative):
 
         # Load LUT if available, otherwise use self._diffsigma
         if self.useLUT:
-            LUT_fname = 'PionDecayKafexhiu14_LUT_{0}.npz'.format(self.hiEmodel)
+            LUT_base = 'PionDecayKafexhiu14_LUT_'
+            if self.nuclear_enhancement:
+                LUT_base += 'NucEnh_'
+            LUT_fname = LUT_base+'{0}.npz'.format(self.hiEmodel)
             try:
                 filename = get_pkg_data_filename(os.path.join('data',LUT_fname))
                 self.diffsigma = LookupTable(filename)
@@ -757,7 +802,7 @@ class PionDecayKafexhiu14(BaseRadiative):
 
         self.specpp = u.Quantity(specpp)
 
-        self.specpp *= self.nh * c.cgs * 4 * np.pi
+        self.specpp *= self.nh * c.cgs
 
         return self.specpp.to('1/(s eV)')
 
@@ -879,7 +924,7 @@ class PionDecayKelner06(BaseRadiative):
         # ], n = 40)[0]
         from scipy.integrate import quad
         Egamma = Egamma.to('TeV').value
-        specpp = 4 * np.pi * c.cgs.value * quad(
+        specpp = c.cgs.value * quad(
             self._photon_integrand, 0., 1., args=Egamma,
             epsrel=1e-3, epsabs=0)[0]
 
@@ -905,7 +950,7 @@ class PionDecayKelner06(BaseRadiative):
         Egamma = Egamma.to('TeV').value
         Epimin = Egamma + self._m_pi ** 2 / (4 * Egamma)
 
-        result = 4 * np.pi * 2 * quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3,
+        result = 2 * quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3,
                           epsabs=0)[0]
 
         return result * u.Unit('1/(s TeV)')
@@ -996,13 +1041,13 @@ class LookupTable(object):
         return self.int_lut(np.log10(X),np.log10(Y)).flatten()
 
 def _calc_lut_pp(args):
-    epr,eph,hiEmodel = args
+    epr, eph, hiEmodel, nuc = args
     #print('Computing diffsigma for Egamma = {0}...'.format(eph))
     from astropy import constants as const
     from .radiative import PionDecay
     from .models import PowerLaw
     pl = PowerLaw(1/u.eV,1*u.TeV,0.0)
-    pp = PionDecayKafexhiu14(pl,hiEmodel=hiEmodel)
+    pp = PionDecayKafexhiu14(pl,hiEmodel=hiEmodel,nuclear_enhancement=nuc)
 
     diffsigma = pp._diffsigma(epr.to('GeV').value, eph.to('GeV').value)
 
@@ -1011,7 +1056,7 @@ def _calc_lut_pp(args):
 
 def generate_lut_pp(Ep=np.logspace(0.085623713910610105,7,800)*u.GeV,
         Eg=np.logspace(-5,3,1024)*u.TeV, out_base='PionDecayKafexhiu14_LUT_',
-        hiEmodel=None):
+        hiEmodel=None, nuclear_enhancement=True):
     from emcee.interruptible_pool import InterruptiblePool as Pool
 
     pool = Pool()
@@ -1020,10 +1065,13 @@ def generate_lut_pp(Ep=np.logspace(0.085623713910610105,7,800)*u.GeV,
     elif type(hiEmodel) is str:
         hiEmodel = [hiEmodel,]
 
+    if nuclear_enhancement:
+        out_base += 'NucEnh_'
+
     for model in hiEmodel:
         out_file = out_base + model + '.npz'
         print('Saving LUT for model {0} in {1}...'.format(model,out_file))
-        args = [(Ep, eg, model) for eg in Eg]
+        args = [(Ep, eg, model, nuclear_enhancement) for eg in Eg]
         diffsigma_list = pool.map(_calc_lut_pp,args)
 
         diffsigma = np.array(diffsigma_list).T

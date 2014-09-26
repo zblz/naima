@@ -170,13 +170,13 @@ def test_pion_decay(particle_dists):
     for pdist in [ECPL,PL,BPL]:
         pdist.amplitude = 1*(1/u.TeV)
 
-    lum_ref_LUT = [7.174134253610530e-12,
-                   2.181208377204211e-11,
-                   1.165378509215748e-12]
+    lum_ref_LUT = [9.94070934e-13,
+                   2.97169776e-12,
+                   1.60123974e-13]
 
-    lum_ref_noLUT = [7.174637595507385e-12,
-                     2.181259406974256e-11,
-                     1.165440411263819e-12]
+    lum_ref_noLUT = [9.94139675e-13,
+                     2.97176747e-12,
+                     1.60132670e-13]
 
     Wp_ref = [5406.414240250574,
               10203.262632871427,
@@ -201,6 +201,29 @@ def test_pion_decay(particle_dists):
     assert_allclose(Wps, Wp_ref)
 
 @pytest.mark.skipif('not HAS_SCIPY')
+def test_pion_decay_no_nuc_enh(particle_dists):
+    """
+    test PionDecayKelner06
+    """
+    from ..radiative import PionDecay
+
+    ECPL,PL,BPL = particle_dists
+
+    for pdist in [ECPL,PL,BPL]:
+        pdist.amplitude = 1*(1/u.TeV)
+
+    lum_ref = [5.693076005515401e-13,]
+
+    energy = np.logspace(9, 13, 20) * u.eV
+    pp = PionDecay(ECPL,nuclear_enhancement=False, useLUT=False)
+    Wp = pp.Wp.to('erg').value
+    lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
+    assert(lpp.unit == u.erg / u.s)
+
+    assert_allclose(lpp.value, lum_ref[0])
+
+
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_pion_decay_kelner(particle_dists):
     """
     test PionDecayKelner06
@@ -212,13 +235,9 @@ def test_pion_decay_kelner(particle_dists):
     for pdist in [ECPL,PL,BPL]:
         pdist.amplitude = 1*(1/u.TeV)
 
-    lum_ref = [5.54225481494e-13*4*np.pi,
-               1.21723084093e-12*4*np.pi,
-               7.35927471e-14*4*np.pi]
-
-    Wp_ref = [5.40535654e+03,
-              2.74631565e+04,
-              563.20150113]
+    lum_ref = [5.54225481494e-13,
+               1.21723084093e-12,
+               7.35927471e-14]
 
     energy = np.logspace(9, 13, 20) * u.eV
     pp = PionDecay(ECPL)
@@ -227,7 +246,6 @@ def test_pion_decay_kelner(particle_dists):
     assert(lpp.unit == u.erg / u.s)
 
     assert_allclose(lpp.value, lum_ref[0])
-    assert_allclose(Wp, Wp_ref[0])
 
 def test_inputs():
     """ test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw

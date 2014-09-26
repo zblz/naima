@@ -43,7 +43,7 @@ def ppgamma(pars,data):
     model = PP.flux(data,distance).to('1/(s cm2 TeV)')
 
     # Save a realization of the particle distribution to the metadata blob
-    proton_dist= PP.particle_distribution(proton_energy) * u.Unit('1/TeV')
+    proton_dist= PP.particle_distribution(proton_energy)
 
     return model, model, (proton_energy, proton_dist)
 

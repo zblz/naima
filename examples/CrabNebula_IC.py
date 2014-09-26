@@ -18,7 +18,7 @@ labels=['norm','index','log10(cutoff)']
 
 from gammafit.models import InverseCompton, ExponentialCutoffPowerLaw
 
-ECPL = ExponentialCutoffPowerLaw(1 * u.Unit('1/TeV'),10.*u.TeV,2,10.*u.TeV)
+ECPL = ExponentialCutoffPowerLaw(1 * u.Unit('1/eV'),10.*u.TeV,2,10.*u.TeV)
 IC = InverseCompton(ECPL,seed_photon_fields=['CMB'])
 
 distance = 2.0 * u.kpc
@@ -27,7 +27,7 @@ mec2 = u.Unit(m_e*c**2)
 
 def ElectronIC(pars,data):
 
-    IC.particle_distribution.amplitude = pars[0] / u.TeV
+    IC.particle_distribution.amplitude = pars[0] / u.eV
     IC.particle_distribution.alpha = pars[1]
     IC.particle_distribution.e_cutoff = (10**pars[2])*u.TeV
 
