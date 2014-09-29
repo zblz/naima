@@ -431,7 +431,7 @@ class Bremsstrahlung(BaseElectron):
         s1 = 4 * r0**2 * alpha / eps / mec2_unit
         s2 = 1 + (1./3. - eps/gam) * (1 - eps/gam)
         s3 = np.log(2 * gam * (gam - eps) / eps) - 1./2.
-        s3[np.where(eps >= gam)] = 0.0
+        s3[np.where(gam < eps)] = 0.0
         return s1 * s2 * s3
 
     @staticmethod
@@ -454,7 +454,7 @@ class Bremsstrahlung(BaseElectron):
         s2_3 = -2 + 2 / eps - 5 / (8 * eps**2)
         s2 = s2_1 * (s2_2 + s2_3)
 
-        return s0 * np.where(eps <= 0.5, s1, s2) * np.where(eps >= gam, 0., 1.)
+        return s0 * np.where(eps <= 0.5, s1, s2) * heaviside(gam - eps)
 
     def _sigma_ee_rel(self,gam,eps):
         """
@@ -490,20 +490,21 @@ class Bremsstrahlung(BaseElectron):
         x = 4 * eps / (gam**2 - 1)
         sigma_nonrel = s0 * self._F(x,gam)
         sigma_nonrel[np.where(eps >= 0.25*(gam**2 - 1.))] = 0.0
+        sigma_nonrel[np.where(gam*np.ones_like(eps) < 1.0)] = 0.0
         return sigma_nonrel / mec2_unit
 
     def _sigma_ee(self,gam,Eph):
         eps = (Eph / mec2).decompose().value
         # initialize shape and units of cross section
         sigma = np.zeros_like(gam*eps) * u.Unit(u.cm**2 / Eph.unit)
-        eps_trans = (2 * u.MeV / mec2).decompose().value
+        gam_trans = (2 * u.MeV / mec2).decompose().value
         # Non relativistic below 2 MeV
-        if np.any(eps <= eps_trans):
-            nr_matrix = np.where(eps * np.ones_like(gam*eps) <= eps_trans)
+        if np.any(gam <= gam_trans):
+            nr_matrix = np.where(gam * np.ones_like(gam*eps) <= gam_trans)
             sigma[nr_matrix] = self._sigma_ee_nonrel(gam, eps)[nr_matrix]
         # Relativistic above 2 MeV
-        if np.any(eps > eps_trans):
-            rel_matrix = np.where(eps * np.ones_like(gam*eps) > eps_trans)
+        if np.any(gam > gam_trans):
+            rel_matrix = np.where(gam * np.ones_like(gam*eps) > gam_trans)
             sigma[rel_matrix] = self._sigma_ee_rel(gam, eps)[rel_matrix]
 
         return sigma.to(u.cm**2 / Eph.unit)
