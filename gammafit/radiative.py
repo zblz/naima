@@ -7,7 +7,7 @@ from .extern.validator import validate_scalar, validate_array, validate_physical
 
 from .utils import trapz_loglog
 
-__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'PionDecayKelner06']
+__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung', 'PionDecayKelner06']
 
 from astropy.extern import six
 import os
@@ -391,9 +391,10 @@ class Bremsstrahlung(BaseElectron):
     abundances. If pure electron-electron bremsstrahlung is desired, ``n0`` can
     be set to the electron density, ``weight_ep`` to 0 and ``weight_ee`` to 1.
 
-    Parameters:
-    -----------
-    n0 : Total ion number density.
+    Parameters
+    ----------
+    n0 : :class:`~astropy.units.Quantity` float
+        Total ion number density.
 
     Other parameters
     ----------------
@@ -559,7 +560,7 @@ class Bremsstrahlung(BaseElectron):
         return spec
 
 
-class PionDecayKafexhiu14(BaseRadiative):
+class PionDecay(BaseRadiative):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
@@ -574,7 +575,7 @@ class PionDecayKafexhiu14(BaseRadiative):
         `~astropy.units.Quantity` array or float.
 
     nh : `~astropy.units.Quantity`
-        Number density of the target protons. Default is :math:`1 cm^{-3}`.
+        Number density of the target protons. Default is :math:`1 \mathrm{cm}^{-3}`.
 
     nuclear_enhancement : bool
         Whether to apply the energy-dependent nuclear enhancement factor
@@ -1191,8 +1192,6 @@ class PionDecayKelner06(BaseRadiative):
         density_factor = (self.nh / (1 * u.Unit('1/cm3'))).decompose().value
 
         return density_factor * self.specpp.to('1/(s eV)')
-
-PionDecay = PionDecayKafexhiu14
 
 class LookupTable(object):
     """

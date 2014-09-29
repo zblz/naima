@@ -12,6 +12,9 @@ Leptonic models
 .. autoclass:: InverseCompton
     :members:
     :inherited-members:
+.. autoclass:: Bremsstrahlung
+    :members:
+    :inherited-members:
 
 Hadronic model
 --------------
@@ -22,7 +25,6 @@ Hadronic model
 
 Particle Distributions
 ----------------------
-
 
 .. autoclass:: PowerLaw
     :members:
