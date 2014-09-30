@@ -501,11 +501,15 @@ class Bremsstrahlung(BaseElectron):
         # Non relativistic below 2 MeV
         if np.any(gam <= gam_trans):
             nr_matrix = np.where(gam * np.ones_like(gam*eps) <= gam_trans)
-            sigma[nr_matrix] = self._sigma_ee_nonrel(gam, eps)[nr_matrix]
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                sigma[nr_matrix] = self._sigma_ee_nonrel(gam, eps)[nr_matrix]
         # Relativistic above 2 MeV
         if np.any(gam > gam_trans):
             rel_matrix = np.where(gam * np.ones_like(gam*eps) > gam_trans)
-            sigma[rel_matrix] = self._sigma_ee_rel(gam, eps)[rel_matrix]
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                sigma[rel_matrix] = self._sigma_ee_rel(gam, eps)[rel_matrix]
 
         return sigma.to(u.cm**2 / Eph.unit)
 
@@ -515,7 +519,9 @@ class Bremsstrahlung(BaseElectron):
         Eph > 10 MeV
         ToDo: add complete e-p cross-section
         """
-        return self._sigma_1(gam,eps)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return self._sigma_1(gam,eps)
 
     def _emiss_ee(self,Eph):
         """
