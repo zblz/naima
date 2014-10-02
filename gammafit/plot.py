@@ -714,8 +714,7 @@ def plot_distribution(samples, label):
         std = std.value
 
     dist_props = '{label} distribution properties:\n \
-    - median: ${median}$ {unit}\n \
-    - std: ${std}$ {unit}\n \
+    - median: ${median}$ {unit}, std: ${std}$ {unit}\n \
     - Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n\
           {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$ {unit}'.format(
