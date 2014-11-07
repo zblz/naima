@@ -73,6 +73,24 @@ def test_synchrotron_lum(particle_dists):
     assert_allclose(lsy.value, 31668900.60668014)
 
 @pytest.mark.skipif('not HAS_SCIPY')
+def test_bremsstrahlung_lum(particle_dists):
+    """
+    test sync calculation
+    """
+    from ..models import Bremsstrahlung
+
+    ECPL,PL,BPL = particle_dists
+
+    # avoid low-energy (E<2MeV) where there are problems with cross-section
+    energy2 = np.logspace(8,14,100) * u.eV
+
+    brems = Bremsstrahlung(ECPL, n0 = 1 * u.cm**-3, log10gmin=0)
+    lbrems = trapz_loglog(brems.spectrum(energy2) * energy2, energy2).to('erg/s')
+
+    lum_ref = 2.3064095039069847e-05
+    assert_allclose(lbrems, lum_ref)
+
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_inverse_compton_lum(particle_dists):
     """
     test IC calculation

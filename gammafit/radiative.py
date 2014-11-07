@@ -7,7 +7,7 @@ from .extern.validator import validate_scalar, validate_array, validate_physical
 
 from .utils import trapz_loglog
 
-__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'PionDecayKelner06']
+__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung', 'PionDecayKelner06']
 
 from astropy.extern import six
 import os
@@ -21,13 +21,14 @@ log.setLevel(logging.INFO)
 # Constants and units
 from astropy import units as u
 # import constant values from astropy.constants
-from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p, M_sun
+from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p, M_sun, alpha
 e = e.gauss
 
 mec2 = (m_e * c ** 2).cgs
 mec2_unit = u.Unit(mec2)
 
 ar = (4 * sigma_sb / c).to('erg/(cm3 K4)')
+r0 = (e**2 / mec2).to('cm')
 
 def _validate_ene(ene):
     from astropy.table import Table
@@ -379,7 +380,194 @@ class InverseCompton(BaseElectron):
 
         return self.specic
 
-class PionDecayKafexhiu14(BaseRadiative):
+
+class Bremsstrahlung(BaseElectron):
+    """
+    Bremsstrahlung radiation on a completely ionised gas.
+
+    Following Baring, Ellison, Reynolds, Grenier, and Goret 1999, ApJ 513, 311.
+
+    The default weights are assuming a completely ionised target gas with ISM
+    abundances. If pure electron-electron bremsstrahlung is desired, ``n0`` can
+    be set to the electron density, ``weight_ep`` to 0 and ``weight_ee`` to 1.
+
+    Parameters
+    ----------
+    n0 : :class:`~astropy.units.Quantity` float
+        Total ion number density.
+
+    Other parameters
+    ----------------
+    weight_ee : float
+        Weight of electron-electron bremsstrahlung. Defined as :math:`\sum_i Z_i
+        X_i`, default is 1.088.
+    weight_ep : float
+        Weight of electron-proton bremsstrahlung. Defined as :math:`\sum_i Z_i^2
+        X_i`, default is 1.263.
+    """
+
+    def __init__(self, particle_distribution, n0 = 1 / u.cm**3, **kwargs):
+        self.particle_distribution = particle_distribution
+        self.n0 = n0
+        self.log10gmin = 4
+        self.log10gmax = 9
+        self.ngamd = 300
+        # compute ee and ep weights from H and He abundances in ISM assumin ionized medium
+        Y = np.array([1.,9.59e-2])
+        Z = np.array([1,2])
+        N = np.sum(Y)
+        X = Y/N
+        self.weight_ee = np.sum(Z*X)
+        self.weight_ep = np.sum(Z**2*X)
+        self.__dict__.update(**kwargs)
+
+    @staticmethod
+    def _sigma_1(gam, eps):
+        """
+        gam and eps in units of m_e c^2
+        Eq. A2 of Baring et al. (1999)
+        Return in units of cm2 / mec2
+        """
+        s1 = 4 * r0**2 * alpha / eps / mec2_unit
+        s2 = 1 + (1./3. - eps/gam) * (1 - eps/gam)
+        s3 = np.log(2 * gam * (gam - eps) / eps) - 1./2.
+        s3[np.where(gam < eps)] = 0.0
+        return s1 * s2 * s3
+
+    @staticmethod
+    def _sigma_2(gam, eps):
+        """
+        gam and eps in units of m_e c^2
+        Eq. A3 of Baring et al. (1999)
+        Return in units of cm2 / mec2
+        """
+        s0 = r0**2 * alpha / (3 * eps) / mec2_unit
+
+        s1_1 = 16 * (1 - eps + eps**2) * np.log(gam / eps)
+        s1_2 = -1 / eps**2 + 3 / eps - 4 - 4 * eps - 8 * eps**2
+        s1_3 = -2 * (1 - 2 * eps) * np.log(1 - 2 * eps)
+        s1_4 = 1 / (4 * eps**3) - 1 / (2 * eps**2) + 3 / eps - 2 + 4 * eps
+        s1 = s1_1 + s1_2 + s1_3 * s1_4
+
+        s2_1 = 2 / eps
+        s2_2 = (4 - 1 / eps + 1 / (4 * eps**2)) * np.log(2 * gam)
+        s2_3 = -2 + 2 / eps - 5 / (8 * eps**2)
+        s2 = s2_1 * (s2_2 + s2_3)
+
+        return s0 * np.where(eps <= 0.5, s1, s2) * heaviside(gam - eps)
+
+    def _sigma_ee_rel(self,gam,eps):
+        """
+        Eq. A1, A4 of Baring et al. (1999)
+        Use for Ee > 2 MeV
+        """
+        A = 1 - 8 / 3 * (gam - 1)**0.2 / (gam + 1) * (eps / gam)**(1./3.)
+
+        return (self._sigma_1(gam,eps) + self._sigma_2(gam,eps)) * A
+
+    @staticmethod
+    def _F(x,gam):
+        """
+        Eqs. A6, A7 of Baring et al. (1999)
+        """
+        beta = np.sqrt(1 - gam**-2)
+        B = 1 + 0.5 * (gam**2 - 1)
+        C = 10 * x * gam * beta * (2 + gam * beta)
+        C /= 1 + x**2 * (gam**2 - 1)
+
+        F_1 = (17 - 3 * x**2 / (2 - x)**2 - C) * np.sqrt(1 - x)
+        F_2 = 12 * (2 -x) - 7 * x**2 / (2 - x) - 3 * x**4 / (2 - x)**3
+        F_3 = np.log((1 + np.sqrt(1 - x)) / np.sqrt(x))
+
+        return B * F_1 + F_2 * F_3
+
+    def _sigma_ee_nonrel(self,gam,eps):
+        """
+        Eq. A5 of Baring et al. (1999)
+        Use for Ee < 2 MeV
+        """
+        s0 = 4 * r0**2 * alpha / (15 * eps)
+        x = 4 * eps / (gam**2 - 1)
+        sigma_nonrel = s0 * self._F(x,gam)
+        sigma_nonrel[np.where(eps >= 0.25*(gam**2 - 1.))] = 0.0
+        sigma_nonrel[np.where(gam*np.ones_like(eps) < 1.0)] = 0.0
+        return sigma_nonrel / mec2_unit
+
+    def _sigma_ee(self,gam,Eph):
+        eps = (Eph / mec2).decompose().value
+        # initialize shape and units of cross section
+        sigma = np.zeros_like(gam*eps) * u.Unit(u.cm**2 / Eph.unit)
+        gam_trans = (2 * u.MeV / mec2).decompose().value
+        # Non relativistic below 2 MeV
+        if np.any(gam <= gam_trans):
+            nr_matrix = np.where(gam * np.ones_like(gam*eps) <= gam_trans)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                sigma[nr_matrix] = self._sigma_ee_nonrel(gam, eps)[nr_matrix]
+        # Relativistic above 2 MeV
+        if np.any(gam > gam_trans):
+            rel_matrix = np.where(gam * np.ones_like(gam*eps) > gam_trans)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                sigma[rel_matrix] = self._sigma_ee_rel(gam, eps)[rel_matrix]
+
+        return sigma.to(u.cm**2 / Eph.unit)
+
+    def _sigma_ep(self,gam,eps):
+        """
+        Using sigma_1 only applies to the ultrarelativistic regime.
+        Eph > 10 MeV
+        ToDo: add complete e-p cross-section
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            return self._sigma_1(gam,eps)
+
+    def _emiss_ee(self,Eph):
+        """
+        Electron-electron bremsstrahlung emissivity per unit photon energy
+        """
+        if self.weight_ee == 0.0:
+            return np.zeros_like(Eph)
+
+        gam = np.vstack(self._gam)
+        # compute integral with electron distribution
+        emiss = c.cgs * trapz_loglog(np.vstack(self._nelec) * self._sigma_ee(gam,Eph),
+                                     self._gam, axis=0)
+        return emiss
+
+    def _emiss_ep(self,Eph):
+        """
+        Electron-proton bremsstrahlung emissivity per unit photon energy
+        """
+        if self.weight_ep == 0.0:
+            return np.zeros_like(Eph)
+
+        gam = np.vstack(self._gam)
+        eps = (Eph / mec2).decompose().value
+        # compute integral with electron distribution
+        emiss = c.cgs * trapz_loglog(np.vstack(self._nelec) * self._sigma_1(gam,eps),
+                                     self._gam, axis=0).to(u.cm**2 / Eph.unit)
+        return emiss
+
+    def spectrum(self,photon_energy):
+        """Compute differential bremsstrahlung spectrum for energies in ``photon_energy``.
+
+        Parameters
+        ----------
+        photon_energy : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+        """
+
+        Eph = _validate_ene(photon_energy)
+
+        spec = self.n0 * (self.weight_ee * self._emiss_ee(Eph)
+                                        + self.weight_ep * self._emiss_ep(Eph))
+
+        return spec
+
+
+class PionDecay(BaseRadiative):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
@@ -394,7 +582,7 @@ class PionDecayKafexhiu14(BaseRadiative):
         `~astropy.units.Quantity` array or float.
 
     nh : `~astropy.units.Quantity`
-        Number density of the target protons. Default is :math:`1 cm^{-3}`.
+        Number density of the target protons. Default is :math:`1 \mathrm{cm}^{-3}`.
 
     nuclear_enhancement : bool
         Whether to apply the energy-dependent nuclear enhancement factor
@@ -1012,8 +1200,6 @@ class PionDecayKelner06(BaseRadiative):
 
         return density_factor * self.specpp.to('1/(s eV)')
 
-PionDecay = PionDecayKafexhiu14
-
 class LookupTable(object):
     """
     Helper class for two-dimensional look up table
@@ -1078,4 +1264,3 @@ def generate_lut_pp(Ep=np.logspace(0.085623713910610105,7,800)*u.GeV,
 
         np.savez_compressed(out_file, X=np.log10(Ep.to('GeV').value),
                 Y=np.log10(Eg.to('GeV').value), lut=np.log10(diffsigma))
-

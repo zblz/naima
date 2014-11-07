@@ -5,11 +5,11 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 from .extern.validator import validate_scalar, validate_array, validate_physical_type
-from .radiative import Synchrotron, InverseCompton, PionDecay
+from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
 
-__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'BrokenPowerLaw',
-           'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola',
-           'ExponentialCutoffBrokenPowerLaw' ]
+__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
+           'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw',
+           'LogParabola', 'ExponentialCutoffBrokenPowerLaw' ]
 
 def _validate_ene(ene):
     from astropy.table import Table
