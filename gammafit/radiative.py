@@ -204,7 +204,7 @@ class Synchrotron(BaseElectron):
         return spec
 
 class InverseCompton(BaseElectron):
-    """Synchrotron emission from an electron population.
+    """Inverse Compton emission from an electron population.
 
     Parameters
     ----------
@@ -222,7 +222,8 @@ class InverseCompton(BaseElectron):
           radiation fields with temperatures of 2.72 K, 70 K, and 5000 K, and
           energy densities of 0.261, 0.5, and 1 eV/cm³ will be used
 
-        * A list of length three composed of:
+        * A list of length three (isotropic source) or four (anisotropic source)
+          composed of:
 
             1. A name for the seed photon field
             2. Its temperature as a :class:`~astropy.units.Quantity` float
@@ -231,6 +232,9 @@ class InverseCompton(BaseElectron):
                :class:`~astropy.units.Quantity` float instance. If the photon
                field energy density if set to 0, its blackbody energy density
                will be computed through the Stefan-Boltzman law.
+            4. Optional: The angle between the seed photon direction and the scattered
+               photon direction as a :class:`~astropy.units.Quantity` float
+               instance.
 
     Other parameters
     ----------------
@@ -273,23 +277,38 @@ class InverseCompton(BaseElectron):
 
         self.seeduf = {}
         self.seedT = {}
+        self.seedisotropic = {}
+        self.seedtheta = {}
         for idx, inseed in enumerate(self.seed_photon_fields):
             if isinstance(inseed, six.string_types):
                 if inseed == 'CMB':
                     self.seedT[inseed] = Tcmb
                     self.seeduf[inseed] = 1.0
+                    self.seedisotropic[inseed] = True
                 elif inseed == 'FIR':
                     self.seedT[inseed] = Tfir
                     self.seeduf[inseed] = (ufir / (ar * Tfir ** 4)).decompose()
+                    self.seedisotropic[inseed] = True
                 elif inseed == 'NIR':
                     self.seedT[inseed] = Tnir
                     self.seeduf[inseed] = (unir / (ar * Tnir ** 4)).decompose()
+                    self.seedisotropic[inseed] = True
                 else:
                     log.warning('Will not use seed {0} because it is not '
                                 'CMB, FIR or NIR'.format(inseed))
                     raise TypeError
-            elif type(inseed) == list and len(inseed) == 3:
-                name, T, uu = inseed
+            elif type(inseed) == list and (len(inseed) == 3 or len(inseed) == 4):
+                isotropic = len(inseed) == 3
+
+                if isotropic:
+                    name, T, uu = inseed
+                    self.seedisotropic[name] = True
+                else:
+                    name, T, uu, theta = inseed
+                    self.seedisotropic[name] = False
+                    self.seedtheta[name] = validate_scalar('{0}-theta'.format(name),
+                            theta, physical_type='angle')
+
                 validate_scalar('{0}-T'.format(name), T, domain='positive',
                                 physical_type='temperature')
                 self.seed_photon_fields[idx] = name
@@ -297,9 +316,9 @@ class InverseCompton(BaseElectron):
                 if uu == 0:
                     self.seeduf[name] = 1.0
                 else:
-                    validate_scalar(
-                        '{0}-u'.format(name), uu, domain='positive',
-                        physical_type='pressure')  # pressure has same physical type as energy density
+                    # pressure has same physical type as energy density
+                    validate_scalar('{0}-u'.format(name), uu,
+                            domain='positive', physical_type='pressure')
                     self.seeduf[name] = (uu / (ar * T ** 4)).decompose()
             else:
                 log.warning(
@@ -310,8 +329,8 @@ class InverseCompton(BaseElectron):
     def _iso_ic_on_planck(electron_energy, soft_photon_temperature, gamma_energy):
         """
         IC cross-section for isotropic interaction with a blackbody photon
-        spectrum following Khangulyan, Aharonian, and Kelner 2014, ApJ 783,
-        100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
+        spectrum following Eq. 14 of Khangulyan, Aharonian, and Kelner 2014, ApJ
+        783, 100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
 
         `electron_energy` and `gamma_energy` are in units of m_ec^2
         `soft_photon_temperature` is in units of K
@@ -348,6 +367,49 @@ class InverseCompton(BaseElectron):
         return np.where(cc, cross_section,
                         np.zeros_like(cross_section))
 
+    @staticmethod
+    def _ani_ic_on_planck(electron_energy, soft_photon_temperature, gamma_energy, theta):
+        """
+        IC cross-section for anisotropic interaction with a blackbody photon
+        spectrum following Eq. 11 of Khangulyan, Aharonian, and Kelner 2014, ApJ
+        783, 100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
+
+        `electron_energy` and `gamma_energy` are in units of m_ec^2
+        `soft_photon_temperature` is in units of K
+        `theta` is in radians
+        """
+        Ktomec2 = 1.6863699549e-10
+        soft_photon_temperature *= Ktomec2
+
+        def G12(x, a):
+            """
+            Eqs 20, 24, 25
+            """
+            alpha, a, beta, b = a
+            pi26 = np.pi ** 2 / 6.0
+            G = (pi26 + x) * np.exp(-x)
+            tmp = 1 + b * x ** beta
+            g = 1. / (a * x ** alpha / tmp + 1.)
+            return G * g
+
+        gamma_energy = np.vstack(gamma_energy)
+        # Parameters from Eqs 21, 22
+        a1 = [0.857, 0.153, 1.840, 0.254]
+        a2 = [0.691, 1.330, 1.668, 0.534]
+        z = gamma_energy / electron_energy
+        ttheta = 2. * electron_energy * soft_photon_temperature * (1. - np.cos(theta))
+        x = z / (1 - z) / ttheta
+        # Eq. 11
+        cross_section = z ** 2 / (2 * (1 - z)) * G12(x, a1) + G12(x, a2)
+        tmp = (soft_photon_temperature / electron_energy) ** 2
+        # r0 = (e**2 / m_e / c**2).to('cm')
+        # (2 * r0 ** 2 * m_e ** 3 * c ** 4 / (pi * hbar ** 3)).cgs
+        tmp *= 2.6318735743809104e+16
+        cross_section = tmp * cross_section
+        cc = ((gamma_energy < electron_energy) * (electron_energy > 1))
+        return np.where(cc, cross_section,
+                        np.zeros_like(cross_section))
+
     def _calc_specic(self, seed, outspecene):
         log.debug(
             '_calc_specic: Computing IC on {0} seed photons...'.format(seed))
@@ -359,7 +421,11 @@ class InverseCompton(BaseElectron):
         # Catch numpy RuntimeWarnings of overflowing exp (which are then discarded anyway)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            gamint = self._iso_ic_on_planck(self._gam, T.to('K').value, Eph)
+            if self.seedisotropic[seed]:
+                gamint = self._iso_ic_on_planck(self._gam, T.to('K').value, Eph)
+            else:
+                theta = self.seedtheta[seed].to('rad').value
+                gamint = self._ani_ic_on_planck(self._gam, T.to('K').value, Eph, theta)
             lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
         lum *= u.Unit('1/s')
 

@@ -125,6 +125,32 @@ def test_inverse_compton_lum(particle_dists):
     assert_allclose(lic.value, 0.0003578443114378644)
 
 @pytest.mark.skipif('not HAS_SCIPY')
+def test_anisotropic_inverse_compton_lum(particle_dists):
+    """
+    test IC calculation
+    """
+    from ..models import InverseCompton
+
+    ECPL,PL,BPL = particle_dists
+
+    angles = [45, 90, 135] * u.deg
+
+    lum_ref = [70784.18174673796,
+               225774.8736156951,
+               363909.5108043967]
+
+    lums = []
+    for angle in angles:
+        ic = InverseCompton(PL,
+                seed_photon_fields=[['Star',20000*u.K, 0.1*u.erg/u.cm**3, angle],])
+        lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
+        assert(lic.unit == u.erg / u.s)
+        lums.append(lic.value)
+
+    assert_allclose(lums, lum_ref)
+
+
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_flux_sed(particle_dists):
     """
     test IC calculation
