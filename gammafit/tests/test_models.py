@@ -99,9 +99,9 @@ def test_inverse_compton_lum(particle_dists):
 
     ECPL,PL,BPL = particle_dists
 
-    lum_ref = [2.831786558e-04,
-               3.944243128e-03,
-               1.223578354e-04]
+    lum_ref = [0.000281452745620887,
+               0.003931822421643624,
+               0.000121835256282793]
 
     We_ref = [8.782119978e+09,
               1.443896523e+10,
@@ -111,7 +111,6 @@ def test_inverse_compton_lum(particle_dists):
     lums = []
     for pdist in particle_dists:
         ic = InverseCompton(pdist)
-
         Wes.append(ic.We.to('erg').value)
         lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
         assert(lic.unit == u.erg / u.s)
@@ -123,7 +122,7 @@ def test_inverse_compton_lum(particle_dists):
     ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'])
 
     lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
-    assert_allclose(lic.value, 0.0003598440781547531)
+    assert_allclose(lic.value, 0.0003578443114378644)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_flux_sed(particle_dists):
