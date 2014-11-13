@@ -319,20 +319,30 @@ class InverseCompton(BaseElectron):
         Ktomec2 = 1.6863699549e-10
         soft_photon_temperature *= Ktomec2
 
-        def g(x, a):
-            tmp = 1 + a[2] * x ** a[3]
-            tmp2 = a[0] * x ** a[1] / tmp + 1.
-            return 1. / tmp2
+        def G34(x, a):
+            """
+            Eqs 20, 24, 25
+            """
+            alpha, a, beta, b, c = a
+            pi26 = np.pi ** 2 / 6.0
+            tmp = (1 + c * x) / (1 + pi26 * c * x)
+            G = pi26 * tmp * np.exp(-x)
+            tmp = 1 + b * x ** beta
+            g = 1. / (a * x ** alpha / tmp + 1.)
+            return G * g
+
         gamma_energy = np.vstack(gamma_energy)
-        a3 = [0.192, 0.448, 0.546, 1.377]
-        a4 = [1.69, 0.549, 1.06, 1.406]
+        # Parameters from Eqs 26, 27
+        a3 = [0.606, 0.443, 1.481, 0.540, 0.319]
+        a4 = [0.461, 0.726, 1.457, 0.382, 6.620]
         z = gamma_energy / electron_energy
         x = z / (1 - z) / (4. * electron_energy * soft_photon_temperature)
-        tmp = 1.644934 * x
-        F = (1.644934 + tmp) / (1. + tmp) * np.exp(-x)
-        cross_section = F * (z ** 2 / (2 * (1 - z)) * g(x, a3) + g(x, a4))
+        # Eq. 14
+        cross_section = z ** 2 / (2 * (1 - z)) * G34(x, a3) + G34(x, a4)
         tmp = (soft_photon_temperature / electron_energy) ** 2
-        tmp *= 2.6433905738281024e+16
+        # r0 = (e**2 / m_e / c**2).to('cm')
+        # (2 * r0 ** 2 * m_e ** 3 * c ** 4 / (pi * hbar ** 3)).cgs
+        tmp *= 2.6318735743809104e+16
         cross_section = tmp * cross_section
         cc = ((gamma_energy < electron_energy) * (electron_energy > 1))
         return np.where(cc, cross_section,
