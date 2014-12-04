@@ -248,7 +248,7 @@ def generate_energy_edges(ene):
     elo, ehi = np.zeros(len(ene)) * ene.unit, np.zeros(len(ene)) * ene.unit
     elo[1:] = ene[1:] - midene
     ehi[:-1] = midene - ene[:-1]
-    elo[0] = ehi[0]
+    elo[0] = ene[0]**2/(ehi[0]+ene[0])
     ehi[-1] = elo[-1]
     return np.array((elo, ehi)) * ene.unit
 
