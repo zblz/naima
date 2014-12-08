@@ -6,8 +6,10 @@ import numpy as np
 import astropy.units as u
 from astropy.extern import six
 from astropy import log
+from astropy import table
+import emcee
 
-from .utils import sed_conversion
+from .utils import sed_conversion, validate_data_table
 
 __all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob"]
 
@@ -663,8 +665,8 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
 
     return f
 
-def plot_data(sampler, xlabel=None,ylabel=None,
-        sed=False, figure=None,**kwargs):
+def plot_data(input_data, xlabel=None,ylabel=None,
+        sed=True, figure=None, e_unit=None, **kwargs):
     """
     Plot spectral data.
 
@@ -673,8 +675,10 @@ def plot_data(sampler, xlabel=None,ylabel=None,
 
     Parameters
     ----------
-    sampler : `emcee.EnsembleSampler`
-        Sampler with a stored chain.
+    input_data : `emcee.EnsembleSampler`, `astropy.table.Table`, or `dict`
+        Spectral data to plot. Can be given as a data table, a dict generated
+        with `validate_data_table` or a `emcee.EnsembleSampler` with a data
+        property.
     xlabel : str, optional
         Label for the ``x`` axis of the plot.
     ylabel : str, optional
@@ -685,12 +689,91 @@ def plot_data(sampler, xlabel=None,ylabel=None,
         `matplotlib` figure to plot on. If omitted a new one will be generated.
 
     """
-    for par in ['confs', 'plotdata']:
-        if par in kwargs:
-            kwargs.pop(par)
+    import matplotlib.pyplot as plt
 
-    f = plot_fit(sampler, confs=None,xlabel=xlabel,ylabel=ylabel,
-        sed=sed, figure=figure,plotdata=True,**kwargs)
+    # Plot everything in serif to match math exponents
+    plt.rc('font', family='serif')
+
+    if isinstance(input_data, table.Table):
+        data = validate_data_table(input_data)
+    elif isinstance(input_data, emcee.EnsembleSampler):
+        data = input_data.data
+    elif isinstance(input_data, dict) and 'energy' in input_data.keys():
+        data = input_data
+    else:
+        log.warning('input_data format not know, no plotting data!')
+        return None
+
+    datacol = 'r'
+    if e_unit is None:
+        e_unit = data['energy'].unit
+
+    if figure == None:
+        f = plt.figure()
+    else:
+        f = figure
+
+    ax1 = f.add_subplot(111)
+
+    def plot_ulims(ax, x, y, xerr):
+        """
+        Plot upper limits as arrows with cap at value of upper limit.
+        """
+        ax.errorbar(x, y, xerr=xerr, ls='',
+                color=datacol, elinewidth=2, capsize=0)
+        ax.errorbar(x, 0.75 * y, yerr=0.25*y, ls='', lolims=True,
+                color=datacol, elinewidth=2, capsize=5, zorder=10)
+
+    f_unit, sedf = sed_conversion(data['energy'], data['flux'].unit, sed)
+
+    ul = data['ul']
+    notul = -ul
+
+    # Hack to show y errors compatible with 0 in loglog plot
+    yerr = data['dflux'][:, notul]
+    y = data['flux'][notul].to(yerr.unit)
+    bad_err = np.where((y-yerr[0]) <= 0.)
+    yerr[0][bad_err] = y[bad_err]*(1.-1e-7)
+
+    ax1.errorbar(data['energy'][notul].to(e_unit).value,
+            (data['flux'][notul] * sedf[notul]).to(f_unit).value,
+            yerr=(yerr * sedf[notul]).to(f_unit).value,
+            xerr=(data['dene'][:, notul]).to(e_unit).value,
+            zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
+            mec='w', mew=0, ms=6, color=datacol)
+
+    if np.any(ul):
+        plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
+                (data['flux'][ul] * sedf[ul]).to(f_unit).value,
+                (data['dene'][:, ul]).to(e_unit).value)
+
+    ax1.set_xscale('log')
+    ax1.set_yscale('log')
+    xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['dene'][0]).value))
+    xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['dene'][1]).value))
+    ax1.set_xlim(xmin, xmax)
+    # avoid autoscaling to errorbars to 0
+    if np.any(data['dflux'][:, notul][0] >= data['flux'][notul]):
+        elo  = ((data['flux'][notul] * sedf[notul]).to(f_unit).value -
+                (data['dflux'][0][notul] * sedf[notul]).to(f_unit).value)
+        gooderr = np.where(data['dflux'][0][notul] < data['flux'][notul])
+        ymin = 10 ** np.floor(np.log10(np.min(elo[gooderr])))
+        ax1.set_ylim(bottom=ymin)
+
+    if ylabel is None:
+        if sed:
+            ax1.set_ylabel(r'$E^2\mathsf{{d}}N/\mathsf{{d}}E$'
+                ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
+        else:
+            ax1.set_ylabel(r'$\mathsf{{d}}N/\mathsf{{d}}E$'
+                    ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
+    else:
+        ax1.set_ylabel(ylabel)
+
+    if xlabel is None:
+        ax1.set_xlabel('Energy [{0}]'.format(_latex_unit(e_unit)))
+    else:
+        ax1.set_xlabel(xlabel)
 
     return f
 
