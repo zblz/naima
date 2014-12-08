@@ -132,11 +132,11 @@ class Synchrotron(BaseElectron):
     ----------------
     log10gmin : float
         Base 10 logarithm of the minimum Lorentz factor for the electron
-        distribution. Default is 4 (:math:`E_e ≈ 5` GeV).
+        distribution. Default is 4 (:math:`E_e \\approx 5` GeV).
 
     log10gmax : float
         Base 10 logarithm of the maximum Lorentz factor for the electron
-        distribution. Default is 9 (:math:`E_e ≈ 510` TeV).
+        distribution. Default is 9 (:math:`E_e \\approx 510` TeV).
 
     ngamd : scalar
         Number of points per decade in energy for the electron energy and
@@ -240,11 +240,11 @@ class InverseCompton(BaseElectron):
     ----------------
     log10gmin : float
         Base 10 logarithm of the minimum Lorentz factor for the electron
-        distribution. Default is 4 (:math:`E_e ≈ 5` GeV).
+        distribution. Default is 4 (:math:`E_e \\approx 5` GeV).
 
     log10gmax : float
         Base 10 logarithm of the maximum Lorentz factor for the electron
-        distribution. Default is 9 (:math:`E_e ≈ 510` TeV).
+        distribution. Default is 9 (:math:`E_e \\approx 510` TeV).
 
     ngamd : scalar
         Number of points per decade in energy for the electron energy and
@@ -671,7 +671,7 @@ class PionDecay(BaseRadiative):
     log10Epmin : float
         Base 10 logarithm of the minimum proton energy for the proton
         distribution. Default is 0.086, the dynamical threshold for pion
-        production in pp interactions. (:math:`E_p ≈ 1.22` GeV)
+        production in pp interactions. (:math:`E_p \\approx 1.22` GeV)
 
     log10Epmax : float
         Base 10 logarithm of the minimum proton energy for the proton
