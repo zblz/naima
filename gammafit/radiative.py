@@ -61,15 +61,20 @@ class BaseRadiative(object):
             Photon energy array.
 
         distance : :class:`~astropy.units.Quantity` float, optional
-            Distance to the source. Default is 1 kpc.
+            Distance to the source. If set to 0, the intrinsic differential
+            luminosity will be returned. Default is 1 kpc.
         """
 
         spec = self.spectrum(photon_energy)
 
-        distance = validate_scalar('distance', distance, physical_type='length')
-        spec /= 4 * np.pi * distance.to('cm') ** 2
+        if distance != 0:
+            distance = validate_scalar('distance', distance, physical_type='length')
+            spec /= 4 * np.pi * distance.to('cm') ** 2
+            out_unit = '1/(s cm2 eV)'
+        else:
+            out_unit = '1/(s eV)'
 
-        return spec.to('1/(s cm2 eV)')
+        return spec.to(out_unit)
 
     def sed(self, photon_energy, distance=1*u.kpc):
         """Spectral energy distribution at a given distance from the source.
@@ -80,10 +85,15 @@ class BaseRadiative(object):
             Photon energy array.
 
         distance : :class:`~astropy.units.Quantity` float, optional
-            Distance to the source. Default is 1 kpc.
+            Distance to the source. If set to 0, the intrinsic luminosity will
+            be returned. Default is 1 kpc.
         """
+        if distance !=0:
+            out_unit = 'erg/(cm2 s)'
+        else:
+            out_unit = 'erg/s'
 
-        sed = (self.flux(photon_energy,distance) * photon_energy ** 2.).to('erg/(cm2 s)')
+        sed = (self.flux(photon_energy,distance) * photon_energy ** 2.).to(out_unit)
 
         return sed
 
