@@ -1,7 +1,7 @@
 Models
 ======
 
-.. currentmodule:: gammafit.models
+.. currentmodule:: naima.models
 
 Leptonic models
 ---------------

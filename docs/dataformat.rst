@@ -57,7 +57,7 @@ all the necessary fields.  This format is focused on being human readable.::
       20.9     7.26e-15        1.70e-15        1.50e-15        0
       30.5     9.58e-16        5.60e-16        4.25e-16        0
 
-A data table to be used with gammafit can then be read with the
+A data table to be used with naima can then be read with the
 `astropy.io.ascii` reader::
 
     >>> from astropy.io import ascii
@@ -70,7 +70,7 @@ file.
 A note on physical types
 ------------------------
 
-Units defined through `astropy.units.Unit` have an associtaed physical type. gammafit defines a few additional physical types to those defined in
+Units defined through `astropy.units.Unit` have an associtaed physical type. naima defines a few additional physical types to those defined in
 `astropy.units`. They are used internally to check that the inputs have the
 approaprite physical type and can be converted to the appropriate units. These are:
 

@@ -5,8 +5,8 @@ include ez_setup.py
 include ah_bootstrap.py
 include setup.cfg
 
-recursive-include gammafit *.pyx *.c 
-recursive-include gammafit/data *.npz 
+recursive-include naima *.pyx *.c 
+recursive-include naima/data *.npz 
 recursive-include examples *.py CrabNebula_HESS_2006.dat
 
 recursive-include docs *

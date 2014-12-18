@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-gammafit requires Python 2.6, 2.7, 3.2, 3.3, or 3.4, and the following
+naima requires Python 2.6, 2.7, 3.2, 3.3, or 3.4, and the following
 packages to be installed:
 
 * `Numpy <http://www.numpy.org>`_
@@ -29,18 +29,18 @@ Installation
 ------------
 
 To install from the latest development source (recommended until a version
-stable is released), install ``gammafit`` from the `github repository
-<https://github.com/zblz/gammafit>`_ through pip::
+stable is released), install ``naima`` from the `github repository
+<https://github.com/zblz/naima>`_ through pip::
 
-    pip install git+http://github.com/zblz/gammafit.git#egg=gammafit
+    pip install git+http://github.com/zblz/naima.git#egg=naima
 
 You may need to use ``sudo`` if you want to install it system-wide, or the flag
 ``--user`` to install only for the current user. You can also install
-``gammafit`` by cloning the repository::
+``naima`` by cloning the repository::
 
-    git clone https://github.com/zblz/gammafit
+    git clone https://github.com/zblz/naima
 
-entering the directory ``gammafit``, and running::
+entering the directory ``naima``, and running::
 
     python setup.py install
 

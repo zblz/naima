@@ -15,7 +15,7 @@ from astropy.utils.data import get_pkg_data_filename
 import warnings
 import logging
 # Get a new logger to avoid changing the level of the astropy logger
-log = logging.getLogger('gammafit.radiative')
+log = logging.getLogger('naima.radiative')
 log.setLevel(logging.INFO)
 
 # Constants and units
@@ -725,7 +725,7 @@ class PionDecay(BaseRadiative):
 
     useLUT : bool
         Whether to use a lookup table for the differential cross section. The
-        only lookup table packaged with gammafit is for the Pythia 8 model and
+        only lookup table packaged with naima is for the Pythia 8 model and
         ISM nuclear enhancement factor.
 
     References

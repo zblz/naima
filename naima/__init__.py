@@ -1,10 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
 """
-`gammafit` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra
+`naima` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra
 to constrain the properties of their parent relativistic particle distributions.
 
-The workhorse of gammafit is the powerful `~emcee`
+The workhorse of naima is the powerful `~emcee`
 affine-invariant ensemble sampler for Markov chain Monte Carlo.
 """
 

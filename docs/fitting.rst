@@ -4,7 +4,7 @@ Fitting a model to a spectrum
 The first step in fitting a model to an observed spectrum is to read the
 spectrum into the appropriate format. See :ref:`dataformat` for an explanation
 of the format and an example, and :ref:`units` for a brief explanation of the
-unit system used in `gammafit`.
+unit system used in `naima`.
 
 Building the model and prior functions
 --------------------------------------
@@ -13,7 +13,7 @@ The model function is be the function that will be called to compare with the
 observed spectrum. It must take two parameters: an array of the free parameters
 of the model, and the data table.
 
-`gammafit` includes several models in the `gammafit.models` module that make it
+`naima` includes several models in the `naima.models` module that make it
 easier to fit common functional forms for spectra (`models.PowerLaw`,
 `models.ExponentialCutoffPowerLaw`, `models.BrokenPowerLaw`, and
 `models.LogParabola`), as well as several radiative models (see :ref:`radiative`
@@ -27,7 +27,7 @@ Building the model function from one of the functional forms is easy. In the
 following example, the three model parameters in the ``pars`` array are the
 amplitude, the spectral index, and the cutoff energy::
 
-    from gammafit.models import ExponentialCutoffPowerLaw
+    from naima.models import ExponentialCutoffPowerLaw
     import astropy.units as u
 
     def model(pars, data):
@@ -43,12 +43,12 @@ amplitude, the spectral index, and the cutoff energy::
 In addition, we must build a function to return the prior function, i.e., a
 function that encodes any previous knowledge you have about the parameters, such
 as previous measurements or physically acceptable ranges. Two simple priors
-functions are included with gammafit: `normal_prior` and `uniform_prior`.
+functions are included with naima: `normal_prior` and `uniform_prior`.
 `uniform_prior` can be used to set parameter limits. Following the example
 above, we might want to limit the amplitude to be positive,
 and the spectral index to be between 0.5 and 3.5::
 
-    from gammafit import uniform_prior
+    from naima import uniform_prior
 
     def prior(pars):
         lnprior = uniform_prior(pars[0], 0., np.inf) \
@@ -63,7 +63,7 @@ extra information can be returned from the model call. This extra information
 (known as metadata blobs) is stored in the sampler object returned from the
 fitting and can be accessed later. There are three formats for the data
 stored as a metadata blob that will be understood by the plotting routines of
-`gammafit`:
+`naima`:
 
 - A `~astropy.units.Quantity` scalar. A histogram and distribution properties
   (median, 16th and 84th percentiles, etc.) will be plotted.
@@ -79,7 +79,7 @@ on the particle distribution (e.g., the actual particle distribution and the
 total energy in relativistic particles) can be saved as a metadata blob.  Below
 is an example that does precisely this with an Inverse Compton emission model::
 
-    from gammafit.models import ExponentialCutoffPowerLaw, InverseCompton
+    from naima.models import ExponentialCutoffPowerLaw, InverseCompton
     import astropy.units as u
     import numpy as np
 

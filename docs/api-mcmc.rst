@@ -1,7 +1,7 @@
 MCMC
 ====
 
-.. currentmodule:: gammafit
+.. currentmodule:: naima
 
 Fitting
 -------

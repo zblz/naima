@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
-import gammafit
+import naima
 
 from astropy import units as u
 from astropy.io import ascii
@@ -21,7 +21,7 @@ ph_energy = u.Quantity(data['energy'])
 # If a cutoff is present, this should be reduced to reduce parameter correlation
 e_0 = 5.*np.sqrt(ph_energy[0]*ph_energy[-1])
 
-from gammafit.models import PionDecay, ExponentialCutoffPowerLaw
+from naima.models import PionDecay, ExponentialCutoffPowerLaw
 
 ECPL = ExponentialCutoffPowerLaw(1 / u.TeV, e_0, 2, 60. * u.TeV)
 PP = PionDecay(ECPL)
@@ -55,8 +55,8 @@ def lnprior(pars):
 	Parameter limits should be done here through uniform prior ditributions
 	"""
 
-	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
-                + gammafit.uniform_prior(pars[1],-1,5)
+	logprob = naima.uniform_prior(pars[0],0.,np.inf) \
+                + naima.uniform_prior(pars[1],-1,5)
 
 	return logprob
 
@@ -64,7 +64,7 @@ if __name__=='__main__':
 
 ## Run sampler
 
-    sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels,
+    sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
             model=ppgamma, prior=lnprior, nwalkers=16, nburn=50, nrun=10,
             threads=4)
 
@@ -77,5 +77,5 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    gammafit.generate_diagnostic_plots('CrabNebula_proton',sampler,sed=True)
+    naima.generate_diagnostic_plots('CrabNebula_proton',sampler,sed=True)
 

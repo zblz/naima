@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
-import gammafit
+import naima
 import astropy.units as u
 from astropy.constants import m_e,c
 from astropy.io import ascii
@@ -16,7 +16,7 @@ labels=['norm','index','log10(cutoff)']
 
 ## Model definition
 
-from gammafit.models import InverseCompton, ExponentialCutoffPowerLaw
+from naima.models import InverseCompton, ExponentialCutoffPowerLaw
 
 ECPL = ExponentialCutoffPowerLaw(1 * u.Unit('1/eV'),10.*u.TeV,2,10.*u.TeV)
 IC = InverseCompton(ECPL,seed_photon_fields=['CMB'])
@@ -53,8 +53,8 @@ def lnprior(pars):
 	Parameter limits should be done here through uniform prior ditributions
 	"""
 
-	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
-                + gammafit.uniform_prior(pars[1],-1,5)
+	logprob = naima.uniform_prior(pars[0],0.,np.inf) \
+                + naima.uniform_prior(pars[1],-1,5)
 
 	return logprob
 
@@ -62,7 +62,7 @@ if __name__=='__main__':
 
 ## Run sampler
 
-    sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels, model=ElectronIC,
+    sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels, model=ElectronIC,
             prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
 
 ## Save sampler
@@ -73,6 +73,6 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    gammafit.generate_diagnostic_plots('CrabNebula_IC',sampler,sed=True)
+    naima.generate_diagnostic_plots('CrabNebula_IC',sampler,sed=True)
 
 

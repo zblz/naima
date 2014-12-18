@@ -324,7 +324,7 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
         table.add_column(Column(name='ul', data=ul))
 
     table.meta['comments'] = [
-        'Table generated with gammafit.build_data_table', ]
+        'Table generated with naima.build_data_table', ]
 
     # test table units, format, etc
     data = validate_data_table(table)

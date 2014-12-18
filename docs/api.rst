@@ -1,7 +1,7 @@
 Detailed description of functions and arguments (API)
 =====================================================
 
-.. currentmodule:: gammafit
+.. currentmodule:: naima
 
 .. toctree::
     :maxdepth: 2

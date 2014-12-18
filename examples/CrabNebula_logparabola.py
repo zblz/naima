@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
-import gammafit
+import naima
 import astropy.units as u
 from astropy.io import ascii
 
@@ -18,7 +18,7 @@ labels=['norm','alpha','beta']
 
 ## Model definition
 
-from gammafit.models import LogParabola
+from naima.models import LogParabola
 
 # initialise an instance of ECPL
 flux_unit = data['flux'].unit
@@ -40,15 +40,15 @@ def lnprior(pars):
 	Parameter limits should be done here through uniform prior ditributions
 	"""
 
-	logprob = gammafit.uniform_prior(pars[0],0.,np.inf) \
-                + gammafit.uniform_prior(pars[1],-1,5)
+	logprob = naima.uniform_prior(pars[0],0.,np.inf) \
+                + naima.uniform_prior(pars[1],-1,5)
 
 	return logprob
 
 if __name__=='__main__':
 ## Run sampler
 
-    sampler,pos = gammafit.run_sampler(data_table=data, p0=p0, labels=labels,
+    sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
             model=logparabola, prior=lnprior, nwalkers=256, nburn=50, nrun=10,
             threads=4)
 
@@ -59,7 +59,7 @@ if __name__=='__main__':
     cPickle.dump(sampler,open('CrabNebula_logparabola_sampler.pickle','wb'))
 
 ## Diagnostic plots
-    gammafit.generate_diagnostic_plots('CrabNebula_logparabola',sampler,
+    naima.generate_diagnostic_plots('CrabNebula_logparabola',sampler,
             sed=True,last_step=False)
 
 

@@ -1,7 +1,7 @@
 Convenience functions
 =====================
 
-.. currentmodule:: gammafit
+.. currentmodule:: naima
 
 .. autofunction:: generate_energy_edges
 .. autofunction:: sed_conversion
