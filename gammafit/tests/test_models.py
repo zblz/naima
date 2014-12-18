@@ -20,6 +20,9 @@ e_break = 1 * u.TeV
 alpha_1 = 1.5
 alpha_2 = 2.5
 
+electron_properties = {'Eemin':100*u.GeV, 'Eemax':1*u.PeV}
+proton_properties = {'Epmax':1*u.PeV}
+
 energy = np.logspace(0, 15, 1000) * u.eV
 
 from astropy.constants import m_e, c
@@ -44,18 +47,14 @@ def test_synchrotron_lum(particle_dists):
 
     ECPL,PL,BPL = particle_dists
 
-    lum_ref = [2.523130675e-04,
-               1.689956354e-02,
-               3.118110763e-04]
+    lum_ref = [0.00025231299317576985, 0.03316716140790719, 0.00044597094281743937]
 
-    We_ref = [8.782070535e+09,
-              1.443896523e+10,
-              1.056827286e+09]
+    We_ref = [5064124681.509977, 11551172186.500914, 926633862.864901]
 
     Wes = []
     lsys = []
     for pdist in particle_dists:
-        sy = Synchrotron(pdist)
+        sy = Synchrotron(pdist, **electron_properties)
 
         Wes.append(sy.We.to('erg').value)
 
@@ -66,11 +65,11 @@ def test_synchrotron_lum(particle_dists):
     assert_allclose(lsys, lum_ref)
     assert_allclose(Wes, We_ref)
 
-    sy = Synchrotron(ECPL,B=1*u.G)
+    sy = Synchrotron(ECPL,B=1*u.G, **electron_properties)
 
     lsy = trapz_loglog(sy.spectrum(energy) * energy, energy).to('erg/s')
     assert(lsy.unit == u.erg / u.s)
-    assert_allclose(lsy.value, 31668900.60668014)
+    assert_allclose(lsy.value, 31374135.447829477)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_bremsstrahlung_lum(particle_dists):
@@ -84,7 +83,7 @@ def test_bremsstrahlung_lum(particle_dists):
     # avoid low-energy (E<2MeV) where there are problems with cross-section
     energy2 = np.logspace(8,14,100) * u.eV
 
-    brems = Bremsstrahlung(ECPL, n0 = 1 * u.cm**-3, log10gmin=0)
+    brems = Bremsstrahlung(ECPL, n0 = 1 * u.cm**-3, Eemin = m_e*c**2)
     lbrems = trapz_loglog(brems.spectrum(energy2) * energy2, energy2).to('erg/s')
 
     lum_ref = 2.3064095039069847e-05
@@ -99,18 +98,14 @@ def test_inverse_compton_lum(particle_dists):
 
     ECPL,PL,BPL = particle_dists
 
-    lum_ref = [0.000281452745620887,
-               0.003931822421643624,
-               0.000121835256282793]
+    lum_ref = [0.00027822017772343816, 0.004821189282097695, 0.00012916583207749083]
 
-    We_ref = [8.782119978e+09,
-              1.443896523e+10,
-              1.056842782e+09]
+    We_ref = [5064124681.509977, 11551172186.500914, 926633862.864901]
 
     Wes = []
     lums = []
     for pdist in particle_dists:
-        ic = InverseCompton(pdist)
+        ic = InverseCompton(pdist, **electron_properties)
         Wes.append(ic.We.to('erg').value)
         lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
         assert(lic.unit == u.erg / u.s)
@@ -122,7 +117,7 @@ def test_inverse_compton_lum(particle_dists):
     ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'])
 
     lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
-    assert_allclose(lic.value, 0.0003578443114378644)
+    assert_allclose(lic.value,0.00035803644460162635)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_anisotropic_inverse_compton_lum(particle_dists):
@@ -135,14 +130,13 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
 
     angles = [45, 90, 135] * u.deg
 
-    lum_ref = [70784.18174673796,
-               225774.8736156951,
-               363909.5108043967]
+    lum_ref = [48901.37566513,  111356.44973684,  149800.27022024]
 
     lums = []
     for angle in angles:
         ic = InverseCompton(PL,
-                seed_photon_fields=[['Star',20000*u.K, 0.1*u.erg/u.cm**3, angle],])
+                seed_photon_fields=[['Star',20000*u.K, 0.1*u.erg/u.cm**3, angle],],
+                **electron_properties)
         lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
         assert(lic.unit == u.erg / u.s)
         lums.append(lic.value)
@@ -162,7 +156,7 @@ def test_flux_sed(particle_dists):
     d1 = 2.5 * u.kpc
     d2 = 10. * u.kpc
 
-    ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'])
+    ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'], **electron_properties)
 
     luminosity = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s').value
 
@@ -213,24 +207,18 @@ def test_pion_decay(particle_dists):
     for pdist in [ECPL,PL,BPL]:
         pdist.amplitude = 1*(1/u.TeV)
 
-    lum_ref_LUT = [9.94070934e-13,
-                   2.97169776e-12,
-                   1.60123974e-13]
+    lum_ref_LUT = [9.94070311e-13,   2.30256683e-12,   1.57263936e-13]
 
-    lum_ref_noLUT = [9.94139675e-13,
-                     2.97176747e-12,
-                     1.60132670e-13]
+    lum_ref_noLUT = [9.94144387e-13,   2.30264140e-12,   1.57272216e-13]
 
-    Wp_ref = [5406.414240250574,
-              10203.262632871427,
-              560.3384945615009]
+    Wp_ref = [5406.36160963,  8727.55086557,   554.13864492]
 
     energy = np.logspace(-3, 3, 60) * u.TeV
     Wps = []
     lpps_LUT = []
     lpps_noLUT = []
     for pdist in particle_dists:
-        pp = PionDecay(pdist,useLUT=True)
+        pp = PionDecay(pdist,useLUT=True, **proton_properties)
         Wps.append(pp.Wp.to('erg').value)
         lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
         assert(lpp.unit == u.erg / u.s)
@@ -255,10 +243,10 @@ def test_pion_decay_no_nuc_enh(particle_dists):
     for pdist in [ECPL,PL,BPL]:
         pdist.amplitude = 1*(1/u.TeV)
 
-    lum_ref = [5.693076005515401e-13,]
+    lum_ref = [5.693100769654807e-13,]
 
     energy = np.logspace(9, 13, 20) * u.eV
-    pp = PionDecay(ECPL,nuclear_enhancement=False, useLUT=False)
+    pp = PionDecay(ECPL,nuclear_enhancement=False, useLUT=False, **proton_properties)
     Wp = pp.Wp.to('erg').value
     lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
     assert(lpp.unit == u.erg / u.s)
@@ -283,7 +271,7 @@ def test_pion_decay_kelner(particle_dists):
                7.35927471e-14]
 
     energy = np.logspace(9, 13, 20) * u.eV
-    pp = PionDecay(ECPL)
+    pp = PionDecay(ECPL, **proton_properties)
     Wp = pp.Wp.to('erg').value
     lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
     assert(lpp.unit == u.erg / u.s)

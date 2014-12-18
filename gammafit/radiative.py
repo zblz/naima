@@ -106,8 +106,10 @@ class BaseElectron(BaseRadiative):
     def _gam(self):
         """ Lorentz factor array
         """
-        return np.logspace(self.log10gmin,self.log10gmax,
-                self.ngamd*(self.log10gmax - self.log10gmin))
+        log10gmin = np.log10(self.Eemin / mec2).value
+        log10gmax = np.log10(self.Eemax / mec2).value
+        return np.logspace(log10gmin, log10gmax,
+                self.nEed*(log10gmax - log10gmin))
 
     @property
     def _nelec(self):
@@ -118,9 +120,38 @@ class BaseElectron(BaseRadiative):
 
     @property
     def We(self):
-        """ Total energy in electrons
+        """ Total energy in electrons used for the radiative calculation
         """
-        return trapz_loglog(self._gam * self._nelec, self._gam * mec2)
+        We = trapz_loglog(self._gam * self._nelec, self._gam * mec2)
+        return We
+
+    def compute_We(self, Eemin=None, Eemax=None):
+        """ Total energy in electrons between energies Eemin and Eemax
+
+        Parameters
+        ----------
+        Eemin : :class:`~astropy.units.Quantity` float, optional
+            Minimum electron energy for energy content calculation.
+
+        Eemax : :class:`~astropy.units.Quantity` float, optional
+            Maximum electron energy for energy content calculation.
+        """
+        if Eemin is None and Eemax is None:
+            We = self.We
+        else:
+            if Eemax is None:
+                Eemax = self.Eemax
+            if Eemin is None:
+                Eemin = self.Eemin
+
+            log10gmin = np.log10(Eemin / mec2)
+            log10gmax = np.log10(Eemax / mec2)
+            gam = np.logspace(log10gmin, log10gmax,
+                    self.nEed*(log10gmax - log10gmin))
+            nelec = self.particle_distribution(gam * mec2).to(1/mec2_unit).value
+            We = trapz_loglog(gam * nelec, gam * mec2)
+
+        return We
 
 
 class Synchrotron(BaseElectron):
@@ -140,15 +171,13 @@ class Synchrotron(BaseElectron):
 
     Other parameters
     ----------------
-    log10gmin : float
-        Base 10 logarithm of the minimum Lorentz factor for the electron
-        distribution. Default is 4 (:math:`E_e \\approx 5` GeV).
+    Eemin : :class:`~astropy.units.Quantity` float instance, optional
+        Minimum electron energy for the electron distribution. Default is 1 GeV.
 
-    log10gmax : float
-        Base 10 logarithm of the maximum Lorentz factor for the electron
-        distribution. Default is 9 (:math:`E_e \\approx 510` TeV).
+    Eemax : :class:`~astropy.units.Quantity` float instance, optional
+        Maximum electron energy for the electron distribution. Default is 510 TeV.
 
-    ngamd : scalar
+    nEed : scalar
         Number of points per decade in energy for the electron energy and
         distribution arrays. Default is 100.
     """
@@ -158,9 +187,9 @@ class Synchrotron(BaseElectron):
         P = self.particle_distribution(1*u.TeV)
         validate_scalar('particle distribution', P, physical_type='differential energy')
         self.B = validate_scalar('B',B,physical_type='magnetic flux density')
-        self.log10gmin = 4
-        self.log10gmax = 9
-        self.ngamd = 100
+        self.Eemin = 1 * u.GeV
+        self.Eemax = 1e9 * mec2
+        self.nEed = 100
         self.__dict__.update(**kwargs)
 
     def spectrum(self, photon_energy):
@@ -248,15 +277,13 @@ class InverseCompton(BaseElectron):
 
     Other parameters
     ----------------
-    log10gmin : float
-        Base 10 logarithm of the minimum Lorentz factor for the electron
-        distribution. Default is 4 (:math:`E_e \\approx 5` GeV).
+    Eemin : :class:`~astropy.units.Quantity` float instance, optional
+        Minimum electron energy for the electron distribution. Default is 1 GeV.
 
-    log10gmax : float
-        Base 10 logarithm of the maximum Lorentz factor for the electron
-        distribution. Default is 9 (:math:`E_e \\approx 510` TeV).
+    Eemax : :class:`~astropy.units.Quantity` float instance, optional
+        Maximum electron energy for the electron distribution. Default is 510 TeV.
 
-    ngamd : scalar
+    nEed : scalar
         Number of points per decade in energy for the electron energy and
         distribution arrays. Default is 300.
     """
@@ -265,9 +292,9 @@ class InverseCompton(BaseElectron):
         self.particle_distribution = particle_distribution
         self.seed_photon_fields = seed_photon_fields
         self._process_input_seed()
-        self.log10gmin = 4
-        self.log10gmax = 9
-        self.ngamd = 300
+        self.Eemin = 1 * u.GeV
+        self.Eemax = 1e9 * mec2
+        self.nEed = 100
         self.__dict__.update(**kwargs)
 
     def _process_input_seed(self):
@@ -495,9 +522,9 @@ class Bremsstrahlung(BaseElectron):
     def __init__(self, particle_distribution, n0 = 1 / u.cm**3, **kwargs):
         self.particle_distribution = particle_distribution
         self.n0 = n0
-        self.log10gmin = 4
-        self.log10gmax = 9
-        self.ngamd = 300
+        self.Eemin = 100 * u.MeV
+        self.Eemax = 1e9 * mec2
+        self.nEed = 300
         # compute ee and ep weights from H and He abundances in ISM assumin ionized medium
         Y = np.array([1.,9.59e-2])
         Z = np.array([1,2])
@@ -678,14 +705,13 @@ class PionDecay(BaseRadiative):
 
     Other parameters
     ----------------
-    log10Epmin : float
-        Base 10 logarithm of the minimum proton energy for the proton
-        distribution. Default is 0.086, the dynamical threshold for pion
-        production in pp interactions. (:math:`E_p \\approx 1.22` GeV)
+    Epmin : `~astropy.units.Quantity` float
+        Minimum proton energy for the proton distribution. Default is 1.22 GeV,
+        the dynamical threshold for pion production in pp interactions.
 
-    log10Epmax : float
-        Base 10 logarithm of the minimum proton energy for the proton
-        distribution. Default is 7 (:math:`E_p = 10` PeV).
+    Epmax : `~astropy.units.Quantity` float
+        Minimum proton energy for the proton
+        distribution. Default is 10 PeV.
 
     nEpd : scalar
         Number of points per decade in energy for the proton energy and
@@ -715,8 +741,8 @@ class PionDecay(BaseRadiative):
         self.nuclear_enhancement = nuclear_enhancement
         self.useLUT = True
         self.hiEmodel = 'Pythia8'
-        self.log10Epmin = np.log10(self._m_p + self._Tth) # Threshold energy ~1.22 GeV
-        self.log10Epmax = np.log10(10.e6) # 10 PeV
+        self.Epmin = (self._m_p + self._Tth + 1e-4) * u.GeV # Threshold energy ~1.22 GeV
+        self.Epmax = 10 * u.PeV # 10 PeV
         self.nEpd = 100
         self.__dict__.update(**kwargs)
 
@@ -1020,8 +1046,8 @@ class PionDecay(BaseRadiative):
     def _Ep(self):
         """ Proton energy array in GeV
         """
-        return np.logspace(self.log10Epmin,self.log10Epmax,
-                           self.nEpd * (self.log10Epmax-self.log10Epmin))
+        return np.logspace(np.log10(self.Epmin.to('GeV').value),np.log10(self.Epmax.to('GeV').value),
+                self.nEpd * (np.log10(self.Epmax/self.Epmin)))
 
     @property
     def _J(self):
