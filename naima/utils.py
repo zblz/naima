@@ -50,14 +50,17 @@ def validate_data_table(data_table):
                         ' "flux_error" or columns "flux_error_lo" and "flux_error_hi"')
 
     # Energy bin edges
-    if 'ene_width' in data_table.keys():
-        ene_width = validate_column(data_table, 'ene_width', 'energy')
-        data['dene'] = u.Quantity((ene_width / 2., ene_width / 2.))
-    elif 'ene_lo' in data_table.keys() and 'ene_hi' in data_table.keys():
-        ene_lo = validate_column(data_table, 'ene_lo', 'energy')
-        ene_hi = validate_column(data_table, 'ene_hi', 'energy')
+    if 'energy_width' in data_table.keys():
+        energy_width = validate_column(data_table, 'energy_width', 'energy')
+        data['dene'] = u.Quantity((energy_width / 2., energy_width / 2.))
+    elif 'energy_error' in data_table.keys():
+        energy_error = validate_column(data_table, 'energy_error', 'energy')
+        data['dene'] = u.Quantity((energy_error, enery_error))
+    elif 'energy_lo' in data_table.keys() and 'energy_hi' in data_table.keys():
+        energy_lo = validate_column(data_table, 'energy_lo', 'energy')
+        energy_hi = validate_column(data_table, 'energy_hi', 'energy')
         data['dene'] = u.Quantity(
-            (data['energy'] - ene_lo, ene_hi - data['energy']))
+            (data['energy'] - energy_lo, energy_hi - data['energy']))
     else:
         data['dene'] = generate_energy_edges(data['energy'])
 
