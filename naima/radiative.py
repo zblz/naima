@@ -93,6 +93,8 @@ class BaseRadiative(object):
         else:
             out_unit = 'erg/s'
 
+        photon_energy = _validate_ene(photon_energy)
+
         sed = (self.flux(photon_energy,distance) * photon_energy ** 2.).to(out_unit)
 
         return sed
