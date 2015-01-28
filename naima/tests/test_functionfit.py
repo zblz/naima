@@ -121,3 +121,15 @@ def test_init_exception_data():
         sampler, pos = get_sampler(p0=p0, labels=labels, model=cutoffexp,
                                    prior=lnprior, nwalkers=10, nburn=0, threads=1)
 
+@pytest.mark.skipif('not HAS_EMCEE')
+def test_multiple_data_tables():
+    sampler, pos = get_sampler(data_table=[data_table, data_table2], p0=p0,
+            labels=labels, model=cutoffexp, prior=lnprior, nwalkers=10, nburn=0,
+            threads=1)
+
+@pytest.mark.skipif('not HAS_EMCEE')
+def test_data_table_in_list():
+    sampler, pos = get_sampler(data_table=[data_table], p0=p0,
+            labels=labels, model=cutoffexp, prior=lnprior, nwalkers=10, nburn=0,
+            threads=1)
+

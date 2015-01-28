@@ -139,11 +139,12 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
     Parameters
     ----------
-    data_table : `~astropy.table.Table`
-        Table containing the observed spectrum. The table needs at least these
-        columns, with the appropriate associated units (with the physical type
-        indicated in brackets below) as either a `~astropy.units.Unit`
-        instance or parseable string:
+    data_table : `~astropy.table.Table` or list of `~astropy.table.Table`
+        Table containing the observed spectrum. If multiple tables are passed as
+        a string, they will be concatenated in the order given. Each table needs
+        at least these columns, with the appropriate associated units (with the
+        physical type indicated in brackets below) as either a
+        `~astropy.units.Unit` instance or parseable string:
 
         - ``energy``: Observed photon energy [``energy``]
         - ``flux``: Observed fluxes [``flux`` or ``differential flux``]
@@ -217,8 +218,6 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
     if data_table is None:
         raise TypeError ('Data table is missing!')
-    elif not isinstance(data_table,astropy.table.Table):
-        raise TypeError ('Data is not provided as an astropy.table.Table object!')
     else:
         data = validate_data_table(data_table)
 

@@ -5,6 +5,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 from astropy.extern import six
+from astropy.table import Table
 from astropy import log
 import warnings
 from .extern.validator import validate_array, validate_scalar
@@ -26,8 +27,89 @@ def validate_column(data_table, key, pt, domain='positive'):
 
     return array
 
-
 def validate_data_table(data_table):
+    """
+    Validate all columns of a data table. If a list of tables is passed, all
+    tables will be validated and then concatenated
+
+    Parameters
+    ----------
+
+    data_table : `astropy.table.Table` or list of `astropy.table.Table`.
+    """
+    if isinstance(data_table,Table):
+        return _validate_single_data_table(data_table)
+    try:
+        for dt in data_table:
+            if not isinstance(dt,Table):
+                raise TypeError("An object passed as data_table is not an astropy Table!")
+    except TypeError:
+        raise TypeError("Argument passed to validate_data_table is not a table and not a list")
+
+    data_list = []
+    for dt in data_table:
+        dt_val = _validate_single_data_table(dt)
+        data_list.append(dt_val)
+
+    if len(data_list) == 1:
+        # In case a single table is passed in list
+        return data_list[0]
+
+    # concatenate input data tables
+    data_new = data_list[0].copy()
+    e_unit = data_new['energy'].unit
+    de_unit = data_new['dene'].unit
+    f_unit = data_new['flux'].unit
+    df_unit = data_new['dflux'].unit
+
+    f_pt = f_unit.physical_type
+    first_is_sed = f_pt in ['flux','power']
+
+    for dt in data_list[1:]:
+        # ugly but could not find better way to preserve units through concatenate
+        data_new['energy'] = u.Quantity(
+                np.concatenate((data_new['energy'], dt['energy'].to(e_unit))).value,
+                unit = e_unit )
+        data_new['dene'] = u.Quantity(
+                np.concatenate((data_new['dene'], dt['dene'].to(de_unit)),axis=1).value,
+                unit = de_unit )
+
+        nf_pt = dt['flux'].unit.physical_type
+        if (('flux' in nf_pt and 'power' in f_pt) or
+                ('power' in nf_pt and 'flux' in f_pt)):
+            raise TypeError('The physical types of the data tables could not be '
+                    'matched: Some are in flux and others in luminosity units')
+
+        # Manage conversion from differential flux to SED and viceversa
+        if dt['flux'].unit.physical_type == f_unit.physical_type:
+            flux = dt['flux'].to(f_unit)
+            dflux = dt['dflux'].to(f_unit)
+        elif first_is_sed and 'differential' in nf_pt:
+            flux = (dt['flux'] * dt['energy']**2).to(f_unit)
+            dflux = (dt['dflux'] * dt['energy']**2).to(f_unit)
+        elif not first_is_sed and nf_pt in ['power','flux']:
+            flux = (dt['flux'] / dt['energy']**2).to(f_unit)
+            dflux = (dt['dflux'] / dt['energy']**2).to(f_unit)
+        else:
+            raise TypeError('The physical types of the data tables could not be matched.')
+
+
+        data_new['flux'] = u.Quantity(
+                np.concatenate((data_new['flux'], flux.to(f_unit))).value,
+                unit = f_unit )
+        data_new['dflux'] = u.Quantity(
+                np.concatenate((data_new['dflux'], dflux.to(df_unit)),axis=1).value,
+                unit = df_unit )
+
+        data_new['ul'] = np.concatenate((data_new['ul'], dt['ul']))
+        if data_new['cl'] != dt['cl']:
+            raise TypeError('Upper limits are at different confidence levels.')
+
+    return data_new
+
+
+
+def _validate_single_data_table(data_table):
 
     data = {}
 
