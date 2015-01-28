@@ -21,6 +21,8 @@ Optional columns:
 
 - ``energy_width``: Width of the energy bin [``energy``], or
 - ``energy_error``: Half-width of the energy bin [``energy``], or
+- ``energy_error_lo`` and ``energy_error_hi``: Distance from bin center to lower
+  and upper bin edges [``energy``], or
 - ``energy_lo`` and ``energy_hi``: Energy edges of the corresponding
   energy bin [``energy``]
 - ``flux_error_lo`` and ``flux_error_hi``: 68% CL gaussian lower and
