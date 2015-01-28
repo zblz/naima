@@ -137,7 +137,7 @@ def _validate_single_data_table(data_table):
         data['dene'] = u.Quantity((energy_width / 2., energy_width / 2.))
     elif 'energy_error' in data_table.keys():
         energy_error = validate_column(data_table, 'energy_error', 'energy')
-        data['dene'] = u.Quantity((energy_error, enery_error))
+        data['dene'] = u.Quantity((energy_error, energy_error))
     elif 'energy_lo' in data_table.keys() and 'energy_hi' in data_table.keys():
         energy_lo = validate_column(data_table, 'energy_lo', 'energy')
         energy_hi = validate_column(data_table, 'energy_hi', 'energy')
