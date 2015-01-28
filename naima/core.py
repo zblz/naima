@@ -231,20 +231,44 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     elif len(labels) < len(p0):
         labels += ['par{0}'.format(i) for i in range(len(labels), len(p0))]
 
-    if guess:
-        # guess normalization parameter from p0
-        modelout = model(p0, data)
-        if ((type(modelout) == tuple or type(modelout) == list)
-                and (type(modelout) != np.ndarray)):
-            spec = modelout[0]
-        else:
-            spec = modelout
 
-        nunit, sedf = sed_conversion(data['energy'],spec.unit,False)
-        p0[labels.index('norm')] *= (
-                np.trapz(data['energy']*data['flux']*sedf, data['energy']) /
-                np.trapz(data['energy']*spec*sedf, data['energy'])
-                )
+    # Check that the model returns fluxes in same physical type as data
+    modelout = model(p0, data)
+    if ((type(modelout) == tuple or type(modelout) == list)
+            and (type(modelout) != np.ndarray)):
+        spec = modelout[0]
+    else:
+        spec = modelout
+
+    if spec.unit.physical_type != data['flux'].unit.physical_type:
+        raise u.UnitsError('The physical type of the model and data units are not compatible,'
+                ' please modify your model or data so they match:\n'
+                ' Model units: {0} [{1}]\n Data units: {2} [{3}]\n'.format(
+                    spec.unit, spec.unit.physical_type,
+                    data['flux'].unit, data['flux'].unit.physical_type))
+
+    if guess:
+        normNames = ['norm', 'ampl', 'Norm', 'Ampl']
+        idxs = []
+        for l in normNames:
+            for l2 in labels:
+                if l2.startswith(l):
+                    # check with startswith to include normalization, amplitude, etc.
+                    idxs.append(labels.index(l2))
+
+        if len(idxs) == 1:
+
+            nunit, sedf = sed_conversion(data['energy'],spec.unit,False)
+            currFlux = np.trapz(data['energy']*(spec*sedf).to(nunit), data['energy'])
+            dataFlux = np.trapz(data['energy']*(data['flux']*sedf).to(nunit), data['energy'])
+            p0[idxs[0]] *= (dataFlux / currFlux)
+
+        elif len(idxs) == 0:
+            log.warning('No label starting with [{0}] found: not applying'
+                    ' normalization guess.'.format(','.join(normNames)))
+        elif len(idxs) > 1:
+            log.warning('More than one label starting with [{0}] found:'
+                    ' not applying normalization guess.'.format(','.join(normNames)))
 
     ndim = len(p0)
 
