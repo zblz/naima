@@ -16,6 +16,28 @@ data_table = ascii.read(fname)
 fname_sym = get_pkg_data_filename('data/CrabNebula_HESS_ipac_symmetric.dat')
 data_table_sym = ascii.read(fname_sym)
 
+def test_validate_energy_error_types():
+    for etype in ['edges','error','width','errors']:
+        fname = get_pkg_data_filename( 
+                'data/CrabNebula_HESS_ipac_energy_{0}.dat'.format(etype))
+        dt = ascii.read(fname)
+        data = validate_data_table(dt)
+
+def test_sed():
+    fname = get_pkg_data_filename('data/Fake_ipac_sed.dat')
+    validate_data_table(ascii.read(fname))
+
+def test_concatenation():
+    fname0 = get_pkg_data_filename('data/Fake_ipac_sed.dat')
+    dt0 = ascii.read(fname0)
+
+    validate_data_table([dt0,data_table])
+    validate_data_table([data_table,dt0])
+    validate_data_table([dt0,dt0])
+    dt0.meta['keywords']['cl']['value']=0.5
+    with pytest.raises(TypeError):
+        validate_data_table([dt0,data_table])
+
 
 def test_validate_data_types():
     data_table2 = data_table.copy()
@@ -26,6 +48,10 @@ def test_validate_data_types():
 def test_validate_missing_column():
     data_table2 = data_table.copy()
     data_table2.remove_column('energy')
+    with pytest.raises(TypeError):
+        data = validate_data_table(data_table2)
+    data_table2 = data_table_sym.copy()
+    data_table2.remove_column('flux_error')
     with pytest.raises(TypeError):
         data = validate_data_table(data_table2)
 
