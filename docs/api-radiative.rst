@@ -1,3 +1,5 @@
+.. _naima.models:
+
 Models
 ======
 
@@ -31,6 +33,8 @@ Particle Distributions
 .. autoclass:: ExponentialCutoffPowerLaw
     :members:
 .. autoclass:: BrokenPowerLaw
+    :members:
+.. autoclass:: ExponentialCutoffBrokenPowerLaw
     :members:
 .. autoclass:: LogParabola
     :members:
