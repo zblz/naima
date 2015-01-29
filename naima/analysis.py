@@ -7,7 +7,7 @@ import astropy.units as u
 from astropy.table import Table
 from astropy.io import ascii
 from astropy import log
-import six
+from astropy.extern import six
 import warnings
 
 HAS_PYYAML = True
@@ -59,7 +59,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
 
     # Chains
 
-    for par, label in zip(six.moves.range(sampler.chain.shape[-1]), sampler.labels):
+    for par, label in six.moves.zip(six.moves.range(sampler.chain.shape[-1]), sampler.labels):
         try:
             log.info('Plotting chain of parameter {0}...'.format(label))
             f = plot_chain(sampler, par, **kwargs)
@@ -97,14 +97,14 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
 
     if modelidxs is None:
         nmodels = len(sampler.blobs[-1][0])
-        modelidxs = list(range(nmodels))
+        modelidxs = list(six.moves.range(nmodels))
 
     if sed is None:
         sed = [None for idx in modelidxs]
     elif isinstance(sed, bool):
         sed = [sed for idx in modelidxs]
 
-    for modelidx, plot_sed in zip(modelidxs, sed):
+    for modelidx, plot_sed in six.moves.zip(modelidxs, sed):
 
         try:
             log.info('Plotting model output {0}...'.format(modelidx))
