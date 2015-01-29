@@ -118,6 +118,14 @@ def sampler():
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_results_table(sampler):
+    for last_step in [True, False]:
+        for convert_log in [True,False]:
+            for table_format in ['ascii.ipac','ascii.ecsv','ascii']:
+                t1 = save_results_table('test_table', sampler, convert_log=convert_log,
+                        last_step=last_step, table_format=table_format)
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_chain_plots(sampler):
 
     f = plot_chain(sampler, last_step=True)
@@ -168,10 +176,3 @@ def test_diagnostic_plots(sampler):
         'test_function_3', sampler, sed=[True, True, False, ])
     save_diagnostic_plots('test_function_4', sampler, sed=False)
     save_diagnostic_plots('test_function_5', sampler, sed=True, pdf=True)
-
-@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
-def test_results_table(sampler):
-    t1 = save_results_table('test_table', sampler, convert_log=True)
-    t1 = save_results_table('test_table', sampler, convert_log=False)
-    t1 = save_results_table('test_table', sampler, table_format='ascii.ipac')
-    t1 = save_results_table('test_table', sampler, last_step=False)

@@ -164,7 +164,7 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
 
     quant = [16, 50, 84]
     # Do we need more info on the distributions?
-    t=Table(names=['label','median','-1sigma','+1sigma'],
+    t=Table(names=['label','median','err_lo','err_hi'],
             dtype=['S{0}'.format(maxlenlabel),'f8','f8','f8'])
     t['label'].description   = 'Name of the parameter'
     t['median'].description  = 'Median of the posterior distribution function'
