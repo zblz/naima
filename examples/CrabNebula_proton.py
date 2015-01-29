@@ -77,5 +77,5 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    naima.generate_diagnostic_plots('CrabNebula_proton',sampler,sed=True)
+    naima.save_diagnostic_plots('CrabNebula_proton',sampler,sed=True)
 

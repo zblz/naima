@@ -59,7 +59,7 @@ if __name__=='__main__':
     cPickle.dump(sampler,open('CrabNebula_logparabola_sampler.pickle','wb'))
 
 ## Diagnostic plots
-    naima.generate_diagnostic_plots('CrabNebula_logparabola',sampler,
+    naima.save_diagnostic_plots('CrabNebula_logparabola',sampler,
             sed=True,last_step=False)
 
 

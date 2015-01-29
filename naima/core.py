@@ -285,7 +285,8 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     # Add run_info dict
     sampler.run_info = {'n_walkers':nwalkers,
                         'n_burn': nburn,
-                        'p0': p0,
+                        # convert from np.float to regular float
+                        'p0': [float(p) for p in p0],
                         'guess':guess,
                         }
 
@@ -333,7 +334,7 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
         sampler, pos = get_sampler(**kwargs)
 
     sampler.run_info['n_run'] = nrun
-    sampler.run_info['p0_run'] = pos
+    sampler.run_info['p0_run_median'] = [float(p) for p in np.median(pos,axis=0)]
 
     print('\nWalker burn in finished, running {0} steps...'.format(nrun))
     sampler.reset()

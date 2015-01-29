@@ -57,7 +57,7 @@ if __name__=='__main__':
 ## Run sampler
 
     sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
-            model=cutoffexp, prior=lnprior, nwalkers=512, nburn=50, nrun=10,
+            model=cutoffexp, prior=lnprior, nwalkers=128, nburn=50, nrun=10,
             threads=4)
 
 ## Save sampler
@@ -67,7 +67,9 @@ if __name__=='__main__':
     cPickle.dump(sampler,open('CrabNebula_ecpl_sampler.pickle','wb'))
 
 ## Diagnostic plots
-    naima.generate_diagnostic_plots('CrabNebula_ecpl',sampler,
+    naima.save_results_table('CrabNebula_ecpl',sampler,
+            last_step=False)
+    naima.save_diagnostic_plots('CrabNebula_ecpl',sampler,
             sed=True,last_step=False)
 
 

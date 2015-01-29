@@ -73,6 +73,6 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    naima.generate_diagnostic_plots('CrabNebula_IC',sampler,sed=True)
+    naima.save_diagnostic_plots('CrabNebula_IC',sampler,sed=True)
 
 
