@@ -20,7 +20,7 @@ try:
 except:
     HAS_EMCEE = False
 
-from ..analysis import save_diagnostic_plots
+from ..analysis import save_diagnostic_plots, save_results_table
 from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_fit, plot_data
 
@@ -168,3 +168,10 @@ def test_diagnostic_plots(sampler):
         'test_function_3', sampler, sed=[True, True, False, ])
     save_diagnostic_plots('test_function_4', sampler, sed=False)
     save_diagnostic_plots('test_function_5', sampler, sed=True, pdf=True)
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_results_table(sampler):
+    t1 = save_results_table('test_table', sampler, convert_log=True)
+    t1 = save_results_table('test_table', sampler, convert_log=False)
+    t1 = save_results_table('test_table', sampler, table_format='ascii.ipac')
+    t1 = save_results_table('test_table', sampler, last_step=False)

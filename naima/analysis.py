@@ -155,21 +155,23 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
     """
 
     labels = sampler.labels
+    maxlenlabel = max([len(l) for l in labels])
 
     if last_step == True:
         dists = sampler.chain[:,-1,:]
     else:
         dists = sampler.flatchain
 
+    quant = [16, 50, 84]
     # Do we need more info on the distributions?
     t=Table(names=['label','median','-1sigma','+1sigma'],
-            description=['Name of the parameter','Median of the posterior distribution function',
-                'Difference between the median and the 16th percentile of the pdf, ~1sigma lower uncertainty',
-                'Difference between the 84th percentile and the median of the pdf, ~1sigma upper uncertainty'],
-            dtype=['S20','f8','f8','f8'])
-    quant = [16, 50, 84]
-
-    #ToDo: Add info from sampler to table metadata
+            dtype=['S{0}'.format(maxlenlabel),'f8','f8','f8'])
+    t['label'].description   = 'Name of the parameter'
+    t['median'].description  = 'Median of the posterior distribution function'
+    t['err_lo'].description = ('Difference between the median and the'
+                ' {0}th percentile of the pdf, ~1sigma lower uncertainty'.format(quant[0]))
+    t['err_hi'].description = ('Difference between the {0}th percentile'
+                ' and the median of the pdf, ~1sigma upper uncertainty'.format(quant[2]))
 
     # Start with info from the distributions used for storing the results
     t.meta['n_samples']= dists.shape[0]
