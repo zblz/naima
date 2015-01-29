@@ -10,6 +10,12 @@ from astropy import log
 import six
 import warnings
 
+HAS_PYYAML = True
+try:
+    import yaml
+except ImportError:
+    HAS_PYYAML = False
+
 __all__ = ["save_diagnostic_plots", "save_results_table"]
 
 def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None, **kwargs):
@@ -34,10 +40,10 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
     sampler : `emcee.EnsembleSampler` instance
         Sampler instance from which chains, blobs and data are read.
 
-    modelidxs : iterable (optional)
+    modelidxs : iterable of integers, optional
         Model numbers to be plotted. Default: All returned in sampler.blobs
 
-    pdf : bool (optional)
+    pdf : bool, optional
         Whether to save plots to multipage pdf.
     """
 
@@ -116,7 +122,8 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
         outpdf.close()
 
 
-def save_results_table(outname, sampler, convert_log=True, last_step=True, **kwargs):
+def save_results_table(outname, sampler, table_format='ascii.ecsv',
+        convert_log=True, last_step=True, **kwargs):
     """
     Save an ASCII table with the results stored in the `~emcee.EnsembleSampler`.
 
@@ -131,6 +138,14 @@ def save_results_table(outname, sampler, convert_log=True, last_step=True, **kwa
     sampler : `emcee.EnsembleSampler` instance
         Sampler instance from which chains, blobs and data are read.
 
+    table_format : str, optional Format of the saved table. Must be a format
+        string accepted by `astropy.table.Table.write`, see the `astropy unified
+        file read/write interface documentation
+        <https://astropy.readthedocs.org/en/latest/io/unified.html>`_. Only the
+        'ascii.ecsv' format is able to preserve all the information stored in
+        the `run_info` dictionary of the sampler.  Defaults to 'ascii.ecsv' if
+        available (only in astropy > v1.0), else 'ascii.ipac'.
+
     convert_log : bool, optional
         Whether to convert natural or base-10 logarithms into original values in
         addition to saving the logarithm value.
@@ -140,21 +155,30 @@ def save_results_table(outname, sampler, convert_log=True, last_step=True, **kwa
     """
 
     labels = sampler.labels
-    chain = sampler.chain
 
+    if last_step == True:
+        dists = sampler.chain[:,-1,:]
+    else:
+        dists = sampler.flatchain
+
+    # Do we need more info on the distributions?
     t=Table(names=['label','median','-1sigma','+1sigma'],
+            description=['Name of the parameter','Median of the posterior distribution function',
+                'Difference between the median and the 16th percentile of the pdf, ~1sigma lower uncertainty',
+                'Difference between the 84th percentile and the median of the pdf, ~1sigma upper uncertainty'],
             dtype=['S20','f8','f8','f8'])
     quant = [16, 50, 84]
 
     #ToDo: Add info from sampler to table metadata
 
-    for p,label in enumerate(labels):
-        traces = chain[:,:, p]
-        if last_step == True:
-            dist = traces[:, -1]
-        else:
-            dist = traces.flatten()
+    # Start with info from the distributions used for storing the results
+    t.meta['n_samples']= dists.shape[0]
+    # And add all info stored in the sampler.run_info dict
+    if hasattr(sampler,'run_info'):
+        t.meta.update(sampler.run_info)
 
+    for p,label in enumerate(labels):
+        dist = dists[:,p]
         xquant = np.percentile(dist, quant)
         quantiles = dict(six.moves.zip(quant, xquant))
         med = quantiles[50]
@@ -177,9 +201,18 @@ def save_results_table(outname, sampler, convert_log=True, last_step=True, **kwa
 
             t.add_row((nlabel, med, lo, hi))
 
-    if hasattr(ascii,'Ecsv'):
-        out_format = 'ascii.ecsv'
-    else:
-        out_format = 'ascii'
+    file_extension = 'ecsv'
+    if not hasattr(ascii,'ecsv') and table_format == 'ascii.ecsv':
+        table_format = 'ascii.ipac'
+        file_extension = 'dat'
+        log.warning("ECSV format not available (only in astropy >= v1.0), falling back to {0}: the "
+                "run information will not be saved to file!".format(table_format))
+    elif not HAS_PYYAML and table_format == 'ascii.ecsv':
+        table_format = 'ascii.ipac'
+        file_extension = 'dat'
+        log.warning("PyYAML package is required for ECSV format, falling back to {0}: the "
+                "run information will not be saved to file!".format(table_format))
 
-    t.write(outname+'_results.txt',format='ascii.ecsv')
+    t.write('{0}_results.{1}'.format(outname,file_extension),format=table_format)
+
+    return t

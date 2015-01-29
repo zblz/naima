@@ -282,6 +282,12 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     sampler.data_table = data_table
     sampler.data = data
     sampler.labels = labels
+    # Add run_info dict
+    sampler.run_info = {'n_walkers':nwalkers,
+                        'n_burn': nburn,
+                        'p0': p0,
+                        'guess':guess,
+                        }
 
     # Initialize walkers in a ball of relative size 5% in all dimensions
     p0var = np.array([0.05 * pp for pp in p0])
@@ -325,6 +331,9 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
 
     if sampler is None or pos is None:
         sampler, pos = get_sampler(**kwargs)
+
+    sampler.run_info['n_run'] = nrun
+    sampler.run_info['p0_run'] = pos
 
     print('\nWalker burn in finished, running {0} steps...'.format(nrun))
     sampler.reset()

@@ -5,7 +5,7 @@ from astropy.utils.data import get_pkg_data_filename
 from astropy.extern import six
 import astropy.units as u
 
-from ..utils import save_diagnostic_plots
+from ..analysis import save_diagnostic_plots
 from ..core import run_sampler, get_sampler, uniform_prior, normal_prior
 
 try:

@@ -20,7 +20,7 @@ try:
 except:
     HAS_EMCEE = False
 
-from ..utils import save_diagnostic_plots
+from ..analysis import save_diagnostic_plots
 from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_fit, plot_data
 
