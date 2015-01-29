@@ -20,7 +20,7 @@ try:
 except:
     HAS_EMCEE = False
 
-from ..utils import generate_diagnostic_plots
+from ..utils import save_diagnostic_plots
 from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_fit, plot_data
 
@@ -162,9 +162,9 @@ def test_diagnostic_plots(sampler):
     # Diagnostic plots
     # try to plot all models, including those with wrong format/units
 
-    generate_diagnostic_plots('test_function_1', sampler)
-    generate_diagnostic_plots('test_function_2', sampler, sed=True)
-    generate_diagnostic_plots(
+    save_diagnostic_plots('test_function_1', sampler)
+    save_diagnostic_plots('test_function_2', sampler, sed=True)
+    save_diagnostic_plots(
         'test_function_3', sampler, sed=[True, True, False, ])
-    generate_diagnostic_plots('test_function_4', sampler, sed=False)
-    generate_diagnostic_plots('test_function_5', sampler, sed=True, pdf=True)
+    save_diagnostic_plots('test_function_4', sampler, sed=False)
+    save_diagnostic_plots('test_function_5', sampler, sed=True, pdf=True)

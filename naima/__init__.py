@@ -17,6 +17,7 @@ from ._astropy_init import *
 from .core import *
 from .plot import *
 from .utils import *
+from .analysis import *
 
 from . import models
 
