@@ -252,6 +252,8 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
     if guess:
         normNames = ['norm', 'ampl', 'Norm', 'Ampl']
+        normNames += ['log(norm', 'log(ampl', 'log(Norm', 'log(Ampl']
+        normNames += ['log10(norm', 'log10(ampl', 'log10(Norm', 'log10(Ampl']
         idxs = []
         for l in normNames:
             for l2 in labels:
@@ -264,7 +266,13 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
             nunit, sedf = sed_conversion(data['energy'],spec.unit,False)
             currFlux = np.trapz(data['energy']*(spec*sedf).to(nunit), data['energy'])
             dataFlux = np.trapz(data['energy']*(data['flux']*sedf).to(nunit), data['energy'])
-            p0[idxs[0]] *= (dataFlux / currFlux)
+            ratio = (dataFlux / currFlux)
+            if labels[idxs[0]].startswith('log('):
+                p0[idxs[0]] += np.log(ratio)
+            elif labels[idxs[0]].startswith('log10('):
+                p0[idxs[0]] += np.log10(ratio)
+            else:
+                p0[idxs[0]] *= ratio
 
         elif len(idxs) == 0:
             log.warning('No label starting with [{0}] found: not applying'

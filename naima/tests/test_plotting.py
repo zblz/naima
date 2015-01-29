@@ -37,7 +37,7 @@ def cutoffexp(pars, data):
     Powerlaw with exponential cutoff
 
     Parameters:
-        - 0: PL normalization
+        - 0: log(PL normalization)
         - 1: PL index
         - 2: log10(cutoff energy)
         - 3: cutoff exponent (beta)
@@ -48,7 +48,7 @@ def cutoffexp(pars, data):
     # energy
     x0 = np.sqrt(x[0] * x[-1])
 
-    N = pars[0]
+    N = np.exp(pars[0])
     gamma = pars[1]
     ecut = (10**pars[2]) * u.TeV
     # beta  = pars[3]
@@ -85,7 +85,7 @@ def cutoffexp(pars, data):
 
     # save flux model as tuple with energies and without
 
-    return flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3), model4, model5
+    return flux, flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3), model4, model5
 
 # Prior definition
 
@@ -96,15 +96,15 @@ def lnprior(pars):
     Parameter limits should be done here through uniform prior ditributions
     """
 
-    logprob = uniform_prior(pars[0], 0., np.inf) \
-        + uniform_prior(pars[1], -1, 5)
+    #logprob = uniform_prior(np.exp(pars[0]), 0., np.inf) \
+    logprob = uniform_prior(pars[1], -1, 5)
 
     return logprob
 
 # Set initial parameters
 
-p0=np.array((1.8e-12,2.4,np.log10(15.0),))
-labels=['norm','index','log10(cutoff)']
+p0=np.array((np.log(1.8e-12),2.4,np.log10(15.0),))
+labels=['log(norm)','index','log10(cutoff)']
 
 # Run sampler
 
