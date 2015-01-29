@@ -85,7 +85,7 @@ def cutoffexp(pars, data):
 
     # save flux model as tuple with energies and without
 
-    return flux, flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3), model4, model5
+    return flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3), model4, model5
 
 # Prior definition
 

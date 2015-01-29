@@ -154,6 +154,23 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
         Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
     """
 
+    if not hasattr(ascii,'ecsv') and table_format == 'ascii.ecsv':
+        table_format = 'ascii.ipac'
+        log.warning("ECSV format not available (only in astropy >= v1.0),"
+                " falling back to {0}...".format(table_format))
+    elif not HAS_PYYAML and table_format == 'ascii.ecsv':
+        table_format = 'ascii.ipac'
+        log.warning("PyYAML package is required for ECSV format,"
+                " falling back to {0}...".format(table_format))
+    elif table_format not in ['ascii.ecsv','ascii.ipac']:
+        log.warning('The chosen table format does not have an astropy'
+                ' writer that suppports metadata writing, no run info'
+                ' will be saved to the file!')
+
+    file_extension = 'dat'
+    if table_format == 'ascii.ecsv':
+        file_extension = 'ecsv'
+
     labels = sampler.labels
     maxlenlabel = max([len(l) for l in labels])
 
@@ -173,11 +190,21 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
     t['err_hi'].description = ('Difference between the {0}th percentile'
                 ' and the median of the pdf, ~1sigma upper uncertainty'.format(quant[2]))
 
+    metadata = {}
     # Start with info from the distributions used for storing the results
-    t.meta['n_samples']= dists.shape[0]
+    metadata['n_samples']= dists.shape[0]
     # And add all info stored in the sampler.run_info dict
     if hasattr(sampler,'run_info'):
-        t.meta.update(sampler.run_info)
+        metadata.update(sampler.run_info)
+
+    if table_format == 'ascii.ipac':
+        # Only keywords are written to IPAC tables
+        t.meta['keywords'] = {}
+        for di in metadata.items():
+            t.meta['keywords'][di[0]]={'value':di[1]}
+    else:
+        # Save it directly in meta for readability in ECSV
+        t.meta.update(metadata)
 
     for p,label in enumerate(labels):
         dist = dists[:,p]
@@ -203,17 +230,6 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
 
             t.add_row((nlabel, med, lo, hi))
 
-    file_extension = 'ecsv'
-    if not hasattr(ascii,'ecsv') and table_format == 'ascii.ecsv':
-        table_format = 'ascii.ipac'
-        file_extension = 'dat'
-        log.warning("ECSV format not available (only in astropy >= v1.0), falling back to {0}: the "
-                "run information will not be saved to file!".format(table_format))
-    elif not HAS_PYYAML and table_format == 'ascii.ecsv':
-        table_format = 'ascii.ipac'
-        file_extension = 'dat'
-        log.warning("PyYAML package is required for ECSV format, falling back to {0}: the "
-                "run information will not be saved to file!".format(table_format))
 
     t.write('{0}_results.{1}'.format(outname,file_extension),format=table_format)
 
