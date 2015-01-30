@@ -39,6 +39,7 @@ distribute-*.tar.gz
 *.png
 *.pdf
 *.pickle
+*_results.*
 
 # Mac OSX
 .DS_Store

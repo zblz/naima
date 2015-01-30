@@ -20,9 +20,10 @@ User documentation
  
    introduction.rst
    installation.rst
-   fitting.rst
+   MCMC.rst
    radiative.rst
    tutorial.rst
+   examples.rst
 
 Appendices
 ----------
@@ -34,4 +35,6 @@ Appendices
    dataformat.rst
    units.rst
    api.rst
+
+.. _naima: http://naima.rtd.org/
 

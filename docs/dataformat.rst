@@ -11,10 +11,10 @@ manipulating `~astropy.table.Table` can be found in the `astropy`_ documentation
 The table needs at least these columns, with the appropriate associated units
 (with the physical type indicated in brackets below):
 
-- ``energy``: Observed photon energy [energy]
-- ``flux``: Observed fluxes [flux or differential flux]
-- ``flux_error``: 68% CL gaussian uncertainty of the flux [flux or
-  differential flux]. It can also be provided as ``flux_error_lo``
+- ``energy``: Observed photon energy [``energy``]
+- ``flux``: Observed fluxes [``flux`` or ``differential flux``]
+- ``flux_error``: 68% CL gaussian uncertainty of the flux [``flux`` or
+  ``differential flux``]. It can also be provided as ``flux_error_lo``
   and ``flux_error_hi`` (see below).
 
 Optional columns:
@@ -55,13 +55,14 @@ Below you can see an example of a file in :class:`~astropy.io.ascii.Ecsv` format
 that includes all the necessary fields.
 
 .. literalinclude:: ../examples/CrabNebula_HESS_2006.ecsv
+    :language: guess
 
 Ipac
 ++++
 
 The same table shown in :class:`~astropy.io.ascii.Ipac` format. This format is
-focused on being human readable. Everything starting with a slash and a space is
-a comment, and keywords are given after a slash without a space.
+focused on being human readable. Everything starting with a slash and a space
+is a comment, and keywords are given after a slash without a space.
 
 .. literalinclude:: ../examples/CrabNebula_HESS_2006_ipac.dat
 
@@ -71,6 +72,7 @@ SExtractor
 And the same table shown in the :class:`~astropy.io.ascii.SExtractor` format
 
 .. literalinclude:: ../examples/CrabNebula_HESS_2006_sextractor.dat
+    :language: guess
 
 
 If the table is in :class:`~astropy.io.ascii.SExtractor` format, the
