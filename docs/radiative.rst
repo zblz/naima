@@ -87,36 +87,38 @@ These spectra can then be analysed or plotted:
     plt.ylabel('$E^2 dN/dE$ [{0}]'.format(
             sed_SYN.unit.to_string('latex_inline')))
     plt.ylim(bottom=1e-15)
-    ax=plt.gca()
-    #p1=ax.get_position()
-    #p1.y0 += 0.1
-    #ax.set_position(p1)
     plt.tight_layout()
     plt.legend(loc='lower left')
 
 
+.. _IC:
 
 Inverse Compton radiative model
 -------------------------------
-.. _IC:
 
 The inverse Compton (IC) scattering of soft photons by relativistic electrons is
 the main gamma-ray production channel for electron populations. Often, the seed
 photon field will be a blackbody or a diluted blackbody, and the calculation of
 IC must be done taking this into account. `naima` implements the analytical
-approximations to IC upscattering of blackbody radiation developed by Khangulyan
-et al. (2014). These have the advantage of being computationally cheap compared
-to a numerical integration over the spectrum of the blackbody, and remain
-accurate within one percent over a wide range of energies. For more information
-on the method, see `Khangulyan, D., Aharonian, F.A., & Kelner, S.R.  2014,
-Astrophysical Journal, 783, 100
-<http://adsabs.harvard.edu/abs/2014ApJ...783..100K>`_. Both the isotropic IC and
-anisotropic IC approximations are available in `naima`.
+approximations to IC upscattering of blackbody radiation developed by
+`Khangulyan et al. (2014)`_. These have the advantage of being computationally
+cheap compared to a numerical integration over the spectrum of the blackbody,
+and remain accurate within one percent over a wide range of energies. Both the
+isotropic IC and anisotropic IC approximations are available in `naima`. If you
+use this class in your research, please cite `Khangulyan, D., Aharonian, F.A., &
+Kelner, S.R.  2014, Astrophysical Journal, 783, 100
+<http://adsabs.harvard.edu/abs/2014ApJ...783..100K>`_.
+
+.. _Khangulyan et al. (2014): http://adsabs.harvard.edu/abs/2014ApJ...783..100K
 
 The implementation in `naima` allows to specify which blackbody seed photon
-fields to use in the calculation, and provides through the `seed_photon_fields` parameter of
-the `~naima.models.InverseCompton` model. This parameter should be provided with
-a list of items, which can be either:
+fields to use in the calculation, and provides the three dominant galactic
+photon fields at the location of the Solar System through the `CMB` (Cosmic
+Microwave Background), `FIR` (far-infrared dust emission), and `NIR`
+(near-infrared stellar emission) keywords. The seed photon fields can be
+selected though the `seed_photon_fields` parameter of the
+`~naima.models.InverseCompton` model. This parameter should be provided with a
+list of items, each of which can be either:
 
     * A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
       radiation fields with temperatures of 2.72 K, 70 K, and 5000 K, and
@@ -137,32 +139,44 @@ a list of items, which can be either:
            instance. If this is provided, the anisotropic IC differential
            cross-section will be used.
 
+.. _SY:
 
 Synchrotron radiative model
 ---------------------------
-.. _SY:
 
-[Aha10]_
+Following `Aharonian, F.A., Kelner, S.R., & Prosekin, A.Y. 2010, Physical Review D, 82,
+043002 <http://adsabs.harvard.edu/abs/2010PhRvD..82d3002A>`_. 
 
+
+.. _BR:
 
 Nonthermal Bremsstrahlung radiative model
 -----------------------------------------
-.. _BR:
 
-[Bar99]_
+Following `Baring, M.G., Ellison, D.C., Reynolds, S.P., Grenier, I.A., & Goret, P. 1999,
+Astrophysical Journal, 513, 311 <http://adsabs.harvard.edu/abs/1999ApJ...513..311B>`_.
 
+
+.. _PP:
 
 Pion Decay radiative model
 --------------------------
-.. _PP:
 
-[Kaf14]_
+The main gamma-ray production for relativistic protons are p-p interactions
+followed by pion decay, which results in a photon with :math:`E_\gamma >
+100\,\mathrm{MeV}`. Until recently, the only parametrizations available for the
+integral cross-section and photon emission spectra were either only applicable
+to limited energy ranges, or were given as extensive numerical tables (e.g.,
+`Kelner et al. (2006) <http://ukads.nottingham.ac.uk/abs/2006PhRvD..74c4018K>`_;
+`Kamae et al. (2006) <http://ukads.nottingham.ac.uk/abs/2006ApJ...647..692K>`_).
+By considering Monte Carlo results and a compilation of accelerator data on p-p
+interactions, `Kafexhiu et al. (2014)
+<http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_ were able to develop
+analytic parametrizations to the energy spectra and production rates of gamma
+rays from p-p interactions. The `~naima.models.PionDecay` class uses an
+implementation of the formulae presented in their paper, and gives the choice of
+which high-energy model to use (from the parametrization to the different Monte
+Carlo results) through the `hiEmodel` parameter. If you use this class, please
+cite `Kafexhiu, E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014, Physical
+Review D, 90, 123014 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_. 
 
-
-
-.. [Aha10] `Aharonian, F.A., Kelner, S.R., & Prosekin, A.Y. 2010, Physical Review D, 82,
-    043002 <http://adsabs.harvard.edu/abs/2010PhRvD..82d3002A>`_.
-.. [Bar99] `Baring, M.G., Ellison, D.C., Reynolds, S.P., Grenier, I.A., & Goret, P. 1999,
-    Astrophysical Journal, 513, 311 <http://adsabs.harvard.edu/abs/1999ApJ...513..311B>`_.
-.. [Kaf14] `Kafexhiu, E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014, Physical Review D,
-    90, 123014 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_.
