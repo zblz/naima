@@ -4,7 +4,7 @@ Tutorial: Fitting a model to a spectrum
 The first step in fitting a model to an observed spectrum is to read the
 spectrum into the appropriate format. See :ref:`dataformat`  for an explanation
 of the format and an example, and :ref:`units`  for a brief explanation of the
-unit system used in `naima`.
+unit system used in ``naima``.
 
 Building the model and prior functions
 --------------------------------------
@@ -13,7 +13,7 @@ The model function is be the function that will be called to compare with the
 observed spectrum. It must take two parameters: an array of the free parameters
 of the model, and the data table.
 
-`naima` includes several models in the `naima.models` module that make it easier
+``naima`` includes several models in the `naima.models` module that make it easier
 to fit common functional forms for spectra (`~naima.models.PowerLaw`,
 `~naima.models.ExponentialCutoffPowerLaw`, `~naima.models.BrokenPowerLaw`, and
 `~naima.models.LogParabola`), as well as several radiative models
@@ -63,6 +63,8 @@ and the spectral index to be between 0.5 and 3.5::
         return lnprior
 
 
+.. _blobs:
+
 Saving additional information --- Metadata blobs
 ------------------------------------------------
 
@@ -72,7 +74,7 @@ extra information can be returned from the model call. This extra information
 <http://dan.iel.fm/emcee/current/user/advanced/#arbitrary-metadata-blobs>`_) is
 stored in the sampler object returned from the fitting and can be accessed
 later. There are three formats for the data stored as a metadata blob that will
-be understood by the plotting routines of `naima`:
+be understood by the plotting routines of ``naima``:
 
 - A `~astropy.units.Quantity` scalar. A histogram and distribution properties
   (median, 16th and 84th percentiles, etc.) will be plotted.
@@ -134,6 +136,9 @@ sampling procedure, ``nburn`` specifies how many steps to be run as *burn-in*,
 and ``nrun`` specifies how many steps to run after the *burn-in* and save these
 samples in the sampler object. For details on these parameters, see the
 `documentation of the emcee package <http://dan.iel.fm/emcee/current/>`_.
+
+
+.. _plotting:
 
 Plotting and saving the results of the run
 ------------------------------------------

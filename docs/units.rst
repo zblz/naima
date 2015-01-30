@@ -24,7 +24,7 @@ A note on physical types
 ------------------------
 
 Units defined through `astropy.units.Unit` have an associated physical type.
-`naima` defines a few additional physical types to those defined in
+``naima`` defines a few additional physical types to those defined in
 `astropy.units`. They are used internally to check that the inputs have the
 correct physical type and can be converted to the appropriate units. These are:
 
