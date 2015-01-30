@@ -7,7 +7,7 @@ include setup.cfg
 
 recursive-include naima *.pyx *.c 
 recursive-include naima/data *.npz 
-recursive-include examples *.py CrabNebula_HESS_2006.dat
+recursive-include examples *.py CrabNebula_HESS_2006*
 
 recursive-include docs *
 recursive-include licenses *

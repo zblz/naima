@@ -6,21 +6,17 @@ from astropy.io import ascii
 
 ## Read data
 
-data=ascii.read('CrabNebula_HESS_2006.dat')
+data=ascii.read('CrabNebula_HESS_2006_ipac.dat')
 
 ene = u.Quantity(data['energy'])
 ene0 = np.sqrt(ene[0]*ene[-1])
 
-## Set initial parameters
-
-p0=np.array((1.5e-12,2.7,0.12,))
-labels=['norm','alpha','beta']
 
 ## Model definition
 
 from naima.models import LogParabola
 
-# initialise an instance of ECPL
+# initialise an instance of LogParabola
 flux_unit = data['flux'].unit
 LP = LogParabola(1e-12 * flux_unit, ene0, 2, 0.5)
 
@@ -46,20 +42,24 @@ def lnprior(pars):
 	return logprob
 
 if __name__=='__main__':
-## Run sampler
+    # Set initial parameters
+    p0=np.array((1.5e-12,2.7,0.12,))
+    labels=['norm','alpha','beta']
 
+    # Run sampler
     sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
             model=logparabola, prior=lnprior, nwalkers=256, nburn=50, nrun=10,
             threads=4)
 
-## Save sampler
+    # Save sampler
     from astropy.extern import six
     from six.moves import cPickle
     sampler.pool=None
     cPickle.dump(sampler,open('CrabNebula_logparabola_sampler.pickle','wb'))
 
-## Diagnostic plots
+    # Diagnostic plots
     naima.save_diagnostic_plots('CrabNebula_logparabola',sampler,
             sed=True,last_step=False)
+    naima.save_results_table('CrabNebula_logparabola',sampler)
 
 
