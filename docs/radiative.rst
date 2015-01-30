@@ -83,9 +83,9 @@ These spectra can then be analysed or plotted:
             label='IC (total)',c='r')
     plt.loglog(spectrum_energy,sed_SYN,lw=2,label='Sync',c='b')
     plt.xlabel('Photon energy [{0}]'.format(
-            spectrum_energy.unit.to_string('latex_inline')))
+            naima.plot._latex_unit(spectrum_energy.unit)))
     plt.ylabel('$E^2 dN/dE$ [{0}]'.format(
-            sed_SYN.unit.to_string('latex_inline')))
+            naima.plot._latex_unit(sed_SYN.unit)))
     plt.ylim(bottom=1e-15)
     plt.tight_layout()
     plt.legend(loc='lower left')
