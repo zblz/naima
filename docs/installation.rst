@@ -39,14 +39,4 @@ version is released), install ``naima`` from the `github repository`_ through pi
 
     pip install git+http://github.com/zblz/naima.git#egg=naima
 
-
-Contributing
-------------
-
-All development of ``naima`` is done through the `github repository`_, and
-contributions to the code are welcome.  The development model is similar to that
-of `astropy`_, so you can check the `astropy Developer Documentation
-<https://astropy.readthedocs.org/en/latest/#developer-documentation>`_ if you
-need information on how to make a code contribution.
-
 .. _github repository: https://github.com/zblz/naima

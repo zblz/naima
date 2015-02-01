@@ -4,9 +4,9 @@ Units system used
 =================
 
 The package makes use of the :mod:`astropy.units` package to handle units and
-unit conversions. Several of the options that need to be specified in the
-functions described below require :class:`~astropy.units.quantity.Quantity`
-instances. Defining quantities is straightforward::
+unit conversions. Several of the arguments of the functions and classes of
+``naima`` require :class:`~astropy.units.quantity.Quantity` instances. Defining
+quantities is straightforward::
 
     from astropy import units as u
 

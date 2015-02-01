@@ -26,20 +26,20 @@ Under this assumption, the likelihood of observed data given the spectral model
 
 .. math::
     \mathcal{L} = \prod^N_{i=1} \frac{1}{\sqrt{2 \pi \sigma^2_i}} 
-                \exp\left(-\frac{(S(\vec{p};E_i) - F_i)^2}{2\sigma^2_i}\right)
+                \exp\left(-\frac{(S(\vec{p};E_i) - F_i)^2}{2\sigma^2_i}\right),
 
 where :math:`(F_i,\sigma_i)` are the flux measurement and uncertainty at an
 energy :math:`E_i` over :math:`N` spectral measurements. Taking the logarithm,
 
 .. math::
-    \ln\mathcal{L} = K - \sum^N_{i=1} \frac{(S(\vec{p};E_i) - F_i)^2}{2\sigma^2_i}
+    \ln\mathcal{L} = K - \sum^N_{i=1} \frac{(S(\vec{p};E_i) - F_i)^2}{2\sigma^2_i}.
 
 Given that the MCMC procedure will sample the areas of the distribution with
 maximum value of the objective function, it is useful to define the objective
 function as the negative log-likelihood (NLL) disregarding constant factors:
 
 .. math::
-    \mathrm{NLL} =  \sum^N_{i=1} \frac{(S(\vec{p};E_i) - F_i)^2}{\sigma^2_i}
+    \mathrm{NLL} =  \sum^N_{i=1} \frac{(S(\vec{p};E_i) - F_i)^2}{\sigma^2_i}.
 
 The NLL function in this assumption can be related to the :math:`\chi^2`
 parameter as :math:`\chi^2=-2\mathrm{NLL}`, so that maximization of the NLL is
@@ -47,11 +47,12 @@ equivalent to a minimization of :math:`\chi^2`.
     
 This NLL function is passed onto the `emcee.EnsembleSampler`, and the MCMC run
 is started. `emcee <http://dan.iel.fm/emcee/current/>`_ uses an affine-invariant
-MCMC sampler (`Goodman & Weare (2010)
+MCMC sampler (`Goodman & Weare 2010
 <http://msp.org/camcos/2010/5-1/p04.xhtml>`_) that has the advantage of being
-able to sample complex parameter spaces without any sampling. In addition,
-having multiple simultaneous *walkers* improves the efficiency of the sampling
-and reduces the number of computationally-expensive likelihood calls required.
+able to sample complex parameter spaces without any tuning required. In
+addition, having multiple simultaneous *walkers* improves the efficiency of the
+sampling and reduces the number of computationally-expensive likelihood calls
+required.
 
 The sampler works best by using as many samplers as possible, and starting them
 in a compact ball around the best fitting parameter values. After a *burn-in*

@@ -106,8 +106,8 @@ advantage of being computationally cheap compared to a numerical integration
 over the spectrum of the blackbody, and remain accurate within one percent over
 a wide range of energies. Both the isotropic IC and anisotropic IC
 approximations are available in ``naima``. If you use this class in your
-research, please cite `Khangulyan, D., Aharonian, F.A., & Kelner, S.R.  2014,
-Astrophysical Journal, 783, 100
+research, please consult and cite `Khangulyan, D., Aharonian, F.A., & Kelner,
+S.R.  2014, Astrophysical Journal, 783, 100
 <http://adsabs.harvard.edu/abs/2014ApJ...783..100K>`_.
 
 .. _Khangulyan et al. (2014): http://adsabs.harvard.edu/abs/2014ApJ...783..100K
@@ -152,7 +152,7 @@ A full description and derivation of its properties can be found in `Blumenthal
 uniform magnetic field direction, but that is rarely thought to be the case in
 astrophysical sources. Considering random magnetic fields results in a shift of
 the maximum emissivity from :math:`E_\mathrm{peak}=0.29 E_\mathrm{c}` to
-:math:`0.3 E_c`, where :math:`E_c` is the synchrotron characteristic energy. The
+:math:`0.23 E_c`, where :math:`E_c` is the synchrotron characteristic energy. The
 `~naima.models.Synchrotron` class implements the parametrization of the
 emissivity function of synchrotron radiation in random magnetic fields presented
 by `Aharonian et al. (2010; Appendix D)`_. This parametrization is particularly
@@ -173,7 +173,7 @@ Nonthermal Bremsstrahlung radiative model
 
 Nonthermal bremsstrahlung radiation arises when a population of relativistic
 particles interact with a thermal particle population (see `Blumenthal & Gould
-(1970)`_). For the computation of the bremsstrahlung emission spectrum, The
+1970`_). For the computation of the bremsstrahlung emission spectrum, The
 `~naima.models.Bremsstrahlung` class implements the approximation of `Baring et
 al. (1999)`_ to the original cross-section presented by `Haug (1975)`_.
 Electron-electron bremsstrahlung is implemented for the complete energy range,
@@ -181,7 +181,7 @@ whereas electron-ion bremsstrahlung is at the moment only available for photon
 energies above 10 MeV. The normalization of the emission, and importance of the
 electron-electron versus the electron-ion channels, are given by the class
 arguments ``n0`` (ion total number density), ``weight_ee`` (weight of the e-e
-channel, given by :math:`\sum_i Z_i X_i`, and ``weight_ep`` (weight of the e-p
+channel, given by :math:`\sum_i Z_i X_i`), and ``weight_ep`` (weight of the e-p
 channel, given by  :math:`\sum_i Z_i^2 X_i`). The defaults for ``weight_ee`` and
 ``weight_ep`` correspond to a fully ionised medium with solar abundances.
 
@@ -202,8 +202,8 @@ followed by pion decay, which results in a photon with :math:`E_\gamma >
 100\,\mathrm{MeV}`. Until recently, the only parametrizations available for the
 integral cross-section and photon emission spectra were either only applicable
 to limited energy ranges, or were given as extensive numerical tables (e.g.,
-`Kelner et al. (2006) <http://ukads.nottingham.ac.uk/abs/2006PhRvD..74c4018K>`_;
-`Kamae et al. (2006) <http://ukads.nottingham.ac.uk/abs/2006ApJ...647..692K>`_).
+`Kelner et al. 2006 <http://ukads.nottingham.ac.uk/abs/2006PhRvD..74c4018K>`_;
+`Kamae et al. 2006 <http://ukads.nottingham.ac.uk/abs/2006ApJ...647..692K>`_).
 By considering Monte Carlo results and a compilation of accelerator data on p-p
 interactions, `Kafexhiu et al. (2014)
 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_ were able to develop
@@ -212,8 +212,9 @@ rays from p-p interactions. The `~naima.models.PionDecay` class uses an
 implementation of the formulae presented in their paper, and gives the choice of
 which high-energy model to use (from the parametrization to the different Monte
 Carlo results) through the `hiEmodel` parameter. If you use this class, please
-cite `Kafexhiu, E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014, Physical
-Review D, 90, 123014 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_. 
+consult and cite `Kafexhiu, E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014,
+Physical Review D, 90, 123014
+<http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_. 
 
 
 .. _Blumenthal & Gould 1970: 
