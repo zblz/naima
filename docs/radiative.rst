@@ -97,16 +97,17 @@ Inverse Compton radiative model
 -------------------------------
 
 The inverse Compton (IC) scattering of soft photons by relativistic electrons is
-the main gamma-ray production channel for electron populations. Often, the seed
-photon field will be a blackbody or a diluted blackbody, and the calculation of
-IC must be done taking this into account. ``naima`` implements the analytical
-approximations to IC upscattering of blackbody radiation developed by
-`Khangulyan et al. (2014)`_. These have the advantage of being computationally
-cheap compared to a numerical integration over the spectrum of the blackbody,
-and remain accurate within one percent over a wide range of energies. Both the
-isotropic IC and anisotropic IC approximations are available in ``naima``. If you
-use this class in your research, please cite `Khangulyan, D., Aharonian, F.A., &
-Kelner, S.R.  2014, Astrophysical Journal, 783, 100
+the main gamma-ray production channel for electron populations (`Blumenthal &
+Gould 1970`_). Often, the seed photon field will be a blackbody or a diluted
+blackbody, and the calculation of IC must be done taking this into account.
+``naima`` implements the analytical approximations to IC upscattering of
+blackbody radiation developed by `Khangulyan et al. (2014)`_. These have the
+advantage of being computationally cheap compared to a numerical integration
+over the spectrum of the blackbody, and remain accurate within one percent over
+a wide range of energies. Both the isotropic IC and anisotropic IC
+approximations are available in ``naima``. If you use this class in your
+research, please cite `Khangulyan, D., Aharonian, F.A., & Kelner, S.R.  2014,
+Astrophysical Journal, 783, 100
 <http://adsabs.harvard.edu/abs/2014ApJ...783..100K>`_.
 
 .. _Khangulyan et al. (2014): http://adsabs.harvard.edu/abs/2014ApJ...783..100K
@@ -144,18 +145,52 @@ list of items, each of which can be either:
 Synchrotron radiative model
 ---------------------------
 
-Following `Aharonian, F.A., Kelner, S.R., & Prosekin, A.Y. 2010, Physical Review D, 82,
-043002 <http://adsabs.harvard.edu/abs/2010PhRvD..82d3002A>`_. 
+Synchrotron radiation is produced by all charged particles in the presence of
+magnetic fields, and is ubiquitous in the emitted spectrum of leptonic sources.
+A full description and derivation of its properties can be found in `Blumenthal
+& Gould (1970)`_. The derivation of the spectrum is usually done considering a
+uniform magnetic field direction, but that is rarely thought to be the case in
+astrophysical sources. Considering random magnetic fields results in a shift of
+the maximum emissivity from :math:`E_\mathrm{peak}=0.29 E_\mathrm{c}` to
+:math:`0.3 E_c`, where :math:`E_c` is the synchrotron characteristic energy. The
+`~naima.models.Synchrotron` class implements the parametrization of the
+emissivity function of synchrotron radiation in random magnetic fields presented
+by `Aharonian et al. (2010; Appendix D)`_. This parametrization is particularly
+useful as it avoids using special functions, and achieves an accuracy of 0.2%
+over the entire range of emission energy.
 
+If you use this class in your research, please cite `Aharonian, F.A., Kelner,
+S.R., & Prosekin, A.Y. 2010, Physical Review D, 82, 043002
+<http://adsabs.harvard.edu/abs/2010PhRvD..82d3002A>`_. 
+
+.. _Aharonian et al. (2010; Appendix D):
+        http://adsabs.harvard.edu/abs/2010PhRvD..82d3002A
 
 .. _BR:
 
 Nonthermal Bremsstrahlung radiative model
 -----------------------------------------
 
-Following `Baring, M.G., Ellison, D.C., Reynolds, S.P., Grenier, I.A., & Goret, P. 1999,
-Astrophysical Journal, 513, 311 <http://adsabs.harvard.edu/abs/1999ApJ...513..311B>`_.
+Nonthermal bremsstrahlung radiation arises when a population of relativistic
+particles interact with a thermal particle population (see `Blumenthal & Gould
+(1970)`_). For the computation of the bremsstrahlung emission spectrum, The
+`~naima.models.Bremsstrahlung` class implements the approximation of `Baring et
+al. (1999)`_ to the original cross-section presented by `Haug (1975)`_.
+Electron-electron bremsstrahlung is implemented for the complete energy range,
+whereas electron-ion bremsstrahlung is at the moment only available for photon
+energies above 10 MeV. The normalization of the emission, and importance of the
+electron-electron versus the electron-ion channels, are given by the class
+arguments ``n0`` (ion total number density), ``weight_ee`` (weight of the e-e
+channel, given by :math:`\sum_i Z_i X_i`, and ``weight_ep`` (weight of the e-p
+channel, given by  :math:`\sum_i Z_i^2 X_i`). The defaults for ``weight_ee`` and
+``weight_ep`` correspond to a fully ionised medium with solar abundances.
 
+If you use this class in your research, please cite `Baring, M.G., Ellison,
+D.C., Reynolds, S.P., Grenier, I.A., & Goret, P. 1999, Astrophysical Journal,
+513, 311 <http://adsabs.harvard.edu/abs/1999ApJ...513..311B>`_.
+
+.. _Baring et al. (1999): http://adsabs.harvard.edu/abs/1999ApJ...513..311B
+.. _Haug (1975): http://adsabs.harvard.edu/abs/1975ZNatA..30.1099H
 
 .. _PP:
 
@@ -179,4 +214,10 @@ which high-energy model to use (from the parametrization to the different Monte
 Carlo results) through the `hiEmodel` parameter. If you use this class, please
 cite `Kafexhiu, E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014, Physical
 Review D, 90, 123014 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_. 
+
+
+.. _Blumenthal & Gould 1970: 
+        http://ukads.nottingham.ac.uk/abs/1970RvMP...42..237B
+.. _Blumenthal & Gould (1970): 
+        http://ukads.nottingham.ac.uk/abs/1970RvMP...42..237B
 
