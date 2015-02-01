@@ -19,3 +19,16 @@ instances. Defining quantities is straightforward::
     # Define array quantity using a Numpy array
     q3 = np.array([1., 2., 3.]) * u.cm ** 2 / u.g
 
+
+A note on physical types
+------------------------
+
+Units defined through `astropy.units.Unit` have an associated physical type.
+``naima`` defines a few additional physical types to those defined in
+`astropy.units`. They are used internally to check that the inputs have the
+correct physical type and can be converted to the appropriate units. These are:
+
+- ``flux``: convertible to :math:`\mathrm{erg\,cm^{-2}\,s^{-1}}`
+- ``differential flux``: convertible to :math:`\mathrm{1/(s\,cm^2\,eV)}`
+- ``differential power``: convertible to :math:`\mathrm{1/(s\,eV)}`
+- ``differential energy``: convertible to :math:`\mathrm{1/eV}`

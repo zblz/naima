@@ -7,5 +7,5 @@ Detailed description of functions and arguments (API)
     :maxdepth: 2
 
     api-mcmc.rst
-    api-radiative.rst
+    api-models.rst
     api-convenience.rst

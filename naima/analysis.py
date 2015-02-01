@@ -23,14 +23,15 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
     Generate diagnostic plots.
 
     - A corner plot of sample density in the two dimensional parameter space of
-      all parameter pairs of the run: ``outname_corner.png``
+      all parameter pairs of the run: ``outname_corner.png`` (see `triangle.corner`).
     - A plot for each of the chain parameters showing walker progression, final
       sample distribution and several statistical measures of this distribution:
-      ``outname_chain_parN.png``
+      ``outname_chain_parN.png`` (see `naima.plot_chain`).
     - A plot for each of the models returned as blobs by the model function. The
       maximum likelihood model is shown, as well as the 1 and 3 sigma confidence
       level contours. The first model will be compared with observational data
-      and residuals shown. ``outname_fit_modelN.png``
+      and residuals shown. ``outname_fit_modelN.png`` (see `naima.plot_fit` and
+      `naima.plot_blob`).
 
     Parameters
     ----------
@@ -133,25 +134,35 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
     Parameters
     ----------
     outname : str
-        Name to be used to save the table.
+        Root name to be used to save the table. ``_results.dat`` will be
+        appended for the output filename.
 
     sampler : `emcee.EnsembleSampler` instance
         Sampler instance from which chains, blobs and data are read.
 
-    table_format : str, optional Format of the saved table. Must be a format
-        string accepted by `astropy.table.Table.write`, see the `astropy unified
-        file read/write interface documentation
+    table_format : str, optional
+        Format of the saved table. Must be a format string accepted by
+        `astropy.table.Table.write`, see the `astropy unified file read/write
+        interface documentation
         <https://astropy.readthedocs.org/en/latest/io/unified.html>`_. Only the
-        'ascii.ecsv' format is able to preserve all the information stored in
-        the `run_info` dictionary of the sampler.  Defaults to 'ascii.ecsv' if
-        available (only in astropy > v1.0), else 'ascii.ipac'.
+        ``ascii.ecsv`` and ``ascii.ipac`` formats are able to preserve all the
+        information stored in the ``run_info`` dictionary of the sampler.
+        Defaults to ``ascii.ecsv`` if available (only in astropy > v1.0), else
+        ``ascii.ipac``.
 
     convert_log : bool, optional
         Whether to convert natural or base-10 logarithms into original values in
         addition to saving the logarithm value.
 
     last_step : bool, optional
-        Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
+        Whether to only use the positions in the final step of the run (True,
+        default) or the whole chain (False).
+
+    Returns
+    -------
+
+    table : `~astropy.table.Table`
+        Table with the results.
     """
 
     if not hasattr(ascii,'ecsv') and table_format == 'ascii.ecsv':

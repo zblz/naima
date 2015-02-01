@@ -11,7 +11,7 @@ packages to be installed:
 
 * `Scipy <http://www.scipy.org>`_
 
-* `Astropy 0.3 or later <http://www.astropy.org>`_
+* `Astropy 0.4 or later <http://www.astropy.org>`_
 
 * `Matplotlib <http://www.matplotlib.org>`_
 
@@ -28,19 +28,25 @@ Distribution <http://continuum.io/downloads>`_) or can be installed through
 Installation
 ------------
 
-To install from the latest development source (recommended until a version
-stable is released), install ``naima`` from the `github repository
-<https://github.com/zblz/naima>`_ through pip::
+Th lastest version can be installed through pip (You may need to use ``sudo`` if
+you want to install it system-wide, or the flag ``--user`` to install only for
+the current user)::
+
+    pip install naima
+
+To install from the latest development source (recommended until a stable
+version is released), install ``naima`` from the `github repository`_ through pip::
 
     pip install git+http://github.com/zblz/naima.git#egg=naima
 
-You may need to use ``sudo`` if you want to install it system-wide, or the flag
-``--user`` to install only for the current user. You can also install
-``naima`` by cloning the repository::
 
-    git clone https://github.com/zblz/naima
+Contributing
+------------
 
-entering the directory ``naima``, and running::
+All development of ``naima`` is done through the `github repository`_, and
+contributions to the code are welcome.  The development model is similar to that
+of `astropy`_, so you can check the `astropy Developer Documentation
+<https://astropy.readthedocs.org/en/latest/#developer-documentation>`_ if you
+need information on how to make a code contribution.
 
-    python setup.py install
-
+.. _github repository: https://github.com/zblz/naima
