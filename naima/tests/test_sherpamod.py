@@ -3,10 +3,21 @@ import numpy as np
 from astropy.tests.helper import pytest
 
 try:
-    import sherpa
+    from sherpa import ui
     HAS_SHERPA = True
 except ImportError:
     HAS_SHERPA = False
+
+energies = np.logspace(8,10,100) # 0.1 to 10 TeV in keV
+test_spec_points = 1e-20 * (energies / 1e9 ) ** -0.7 * (1 + 0.2 * np.random.randn(energies.size))
+test_err_points = 0.2 * test_spec_points
+
+elo = energies[:-1]
+ehi = energies[1:]
+midene = np.sqrt(elo*ehi)
+test_spec_int = (1e-20 * (midene / 1e9 ) ** -0.7 * (1 + 0.2 * np.random.randn(elo.size)))
+test_err_int = 0.2 * test_spec_int
+
 
 @pytest.mark.skipif('not HAS_SHERPA')
 def test_electron_models():
@@ -16,19 +27,34 @@ def test_electron_models():
 
     from ..sherpamod import InverseCompton, Synchrotron, PionDecay
 
-    energies = np.logspace(8,10,100) # 0.1 to 10 TeV in keV
 
     for modelclass in [InverseCompton, Synchrotron]:
         model = modelclass()
 
-        model.ampl = 1e36
+        model.ampl = 1e-8
         model.index = 2.1
 
         # point calc
         output = model.calc([p.val for p in model.pars],energies)
 
+        # test as well ECPL
+        model.cutoff = 100
+
         # integrated
         output = model.calc([p.val for p in model.pars],energies[:-1],xhi=energies[1:])
+
+        if modelclass is InverseCompton:
+            # Perform a fit to fake data
+            ui.load_arrays(1, energies, test_spec_points, test_err_points)
+            ui.set_model(model)
+            ui.guess()
+            ui.fit()
+
+            #test with integrated data
+            ui.load_arrays(1, elo, ehi, test_spec_int, test_err_int, ui.Data1DInt)
+            ui.set_model(model)
+            ui.guess()
+            ui.fit()
 
 
 @pytest.mark.skipif('not HAS_SHERPA')
@@ -52,4 +78,17 @@ def test_proton_model():
     # integrated
     output = model.calc([p.val for p in model.pars],energies[:-1],xhi=energies[1:])
 
+    # test as well ECPL
+    model.cutoff = 1000
+
+    # Perform a fit to fake data
+    ui.load_arrays(1, energies, test_spec, test_err)
+    ui.set_model(model)
+    ui.guess()
+    ui.fit()
+    #test with integrated data
+    ui.load_arrays(1, elo, ehi, test_spec_int, test_err_int, ui.Data1DInt)
+    ui.set_model(model)
+    ui.guess()
+    ui.fit()
 

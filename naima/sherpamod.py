@@ -51,10 +51,15 @@ class InverseCompton(ArithmeticModel):
 
     def guess(self,dep,*args,**kwargs):
         # guess normalization from total flux
-        xlo,xhi=args
+        if len(args) == 1:
+            xlo = args[0]
+            xhi = None
+            obsflux = trapz_loglog(dep,xlo)
+        else:
+            xlo,xhi=args
+            obsflux=trapz_loglog(dep*(xhi-xlo),xlo)
         model=self.calc([p.val for p in self.pars],xlo,xhi)
         modflux=trapz_loglog(model,xlo)
-        obsflux=trapz_loglog(dep*(xhi-xlo),xlo)
         self.ampl.set(self.ampl.val*obsflux/modflux)
 
     @modelCacher1d
@@ -110,12 +115,18 @@ class Synchrotron(ArithmeticModel):
         self._use_caching = True
         self.cache = 10
 
+
     def guess(self,dep,*args,**kwargs):
         # guess normalization from total flux
-        xlo,xhi=args
+        if len(args) == 1:
+            xlo = args[0]
+            xhi = None
+            obsflux = trapz_loglog(dep,xlo)
+        else:
+            xlo,xhi=args
+            obsflux=trapz_loglog(dep*(xhi-xlo),xlo)
         model=self.calc([p.val for p in self.pars],xlo,xhi)
         modflux=trapz_loglog(model,xlo)
-        obsflux=trapz_loglog(dep*(xhi-xlo),xlo)
         self.ampl.set(self.ampl.val*obsflux/modflux)
 
     @modelCacher1d
@@ -166,10 +177,15 @@ class PionDecay(ArithmeticModel):
 
     def guess(self,dep,*args,**kwargs):
         # guess normalization from total flux
-        xlo,xhi=args
+        if len(args) == 1:
+            xlo = args[0]
+            xhi = None
+            obsflux = trapz_loglog(dep,xlo)
+        else:
+            xlo,xhi=args
+            obsflux=trapz_loglog(dep*(xhi-xlo),xlo)
         model=self.calc([p.val for p in self.pars],xlo,xhi)
         modflux=trapz_loglog(model,xlo)
-        obsflux=trapz_loglog(dep*(xhi-xlo),xlo)
         self.ampl.set(self.ampl.val*obsflux/modflux)
 
     @modelCacher1d
