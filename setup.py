@@ -41,7 +41,7 @@ URL = metadata.get('url', 'http://astropy.org')
 # Get the long description from the section between 'split here' comments in docs/index.rst
 f = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'index.rst'))
 long_description = f.read().strip()
-LONG_DESCRIPTION = long_description.split('.. comment: split here\n\n')[1].strip()
+LONG_DESCRIPTION = long_description.split('.. comment: split here\n\n')[1].strip().replace('.. comment: ','')
 
 # Store the package name in a built-in variable so it's easy
 # to get from other parts of the setup infrastructure
@@ -108,7 +108,6 @@ setup(name=PACKAGENAME,
       classifiers = [ 'Programming Language :: Python :: 3',
                       'Programming Language :: Python :: 2.6',
                       'Programming Language :: Python :: 2.7',
-                      'Programming Language :: Python :: 3.2',
                       'Programming Language :: Python :: 3.3',
                       'Programming Language :: Python :: 3.4',
                       'Development Status :: 4 - Beta',

@@ -8,6 +8,10 @@ constrain the properties of their parent relativistic particle distributions.
 The workhorse of ``naima`` is the powerful `emcee <http://dan.iel.fm/emcee>`_
 affine-invariant ensemble sampler for Markov chain Monte Carlo.
 
+.. comment: - Code: http://www.github.com/zblz/naima
+
+.. comment: - Documentation: http://naima.readthedocs.org
+
 .. comment: split here
 
 There are two main components of the package: a set of nonthermal
