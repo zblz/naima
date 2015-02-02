@@ -3,21 +3,26 @@ MCMC
 
 .. currentmodule:: naima
 
-Fitting
--------
+- MCMC sampling
+    - `naima.get_sampler`
+    - `naima.run_sampler`
+- Priors
+    - `naima.normal_prior`
+    - `naima.uniform_prior`
+- Plotting and analysis
+    - `naima.plot_chain`
+    - `naima.plot_fit`
+    - `naima.plot_blob`
+    - `naima.save_diagnostic_plots`
+    - `naima.save_results_table`
+    
+API
+---
 
 .. autofunction:: get_sampler
 .. autofunction:: run_sampler
-
-Priors
-------
-
 .. autofunction:: normal_prior
 .. autofunction:: uniform_prior
-
-Plotting and Analysis
----------------------
-
 .. autofunction:: plot_chain
 .. autofunction:: plot_fit
 .. autofunction:: plot_data
