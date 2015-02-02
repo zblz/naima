@@ -13,5 +13,5 @@ Documentation is at `naima.readthedocs.org
 .. image:: http://travis-ci.org/zblz/naima.svg
    :target: https://travis-ci.org/zblz/naima
 
-.. image:: http://coveralls.io/repos/zblz/naima/badge.png
+.. image:: http://coveralls.io/repos/zblz/naima/badge.svg
    :target: https://coveralls.io/r/zblz/naima
