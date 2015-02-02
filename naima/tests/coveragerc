@@ -6,8 +6,6 @@ omit =
    *version*
    naima/_astropy_init.py
    naima/conftest.py
-   # Don't test sherpamod coverage as sherpa is not available in travis
-   naima/sherpamod.py
    naima/extern/*
 
 [report]

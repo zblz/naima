@@ -26,9 +26,9 @@ env:
 matrix:
     include:
 
-        # Do a coverage test in Python 2.
+        # Do a coverage test in Python 2 w/ numpy 1.8 for sherpa.
         - python: 2.7
-          env: SETUP_CMD='test --coverage'
+          env: NUMPY_VERSION=1.8 SETUP_CMD='test --coverage'
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
@@ -100,6 +100,8 @@ install:
     # install since this ensures Numpy does not get automatically upgraded.
     - if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy matplotlib ; fi
     - if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL emcee triangle_plot; fi
+    # Add sherpa conda repository for Python 2.7, numpy 1.8
+    - if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]] && [[ $TRAVIS_PYTHON_VERSION == 2.7 ]] && [[ $NUMPY_VERSION == 1.8 ]]; then conda config --add channels https://conda.binstar.org/cxc ; $CONDA_INSTALL sherpa; fi
 
     # DOCUMENTATION DEPENDENCIES
     # build_sphinx needs sphinx and matplotlib (for plot_directive). Note that
