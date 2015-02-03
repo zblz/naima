@@ -72,7 +72,7 @@ def test_synchrotron_lum(particle_dists):
     assert_allclose(lsy.value, 31374135.447829477)
 
 @pytest.mark.skipif('not HAS_SCIPY')
-def test_luminosity(particle_dists):
+def test_bolometric_luminosity(particle_dists):
     """
     test sync calculation
     """
@@ -85,6 +85,25 @@ def test_luminosity(particle_dists):
     sy.flux(energy, distance=0)
     sy.sed(energy, distance=0*u.kpc)
     sy.sed(energy, distance=0)
+
+@pytest.mark.skipif('not HAS_SCIPY')
+def test_compute_We(particle_dists):
+    """
+    test sync calculation
+    """
+    from ..models import Synchrotron
+
+    ECPL,PL,BPL = particle_dists
+
+    sy = Synchrotron(ECPL,B=1*u.G, **electron_properties)
+
+    Eemax, Eemin = 10*u.GeV, 100*u.TeV
+
+    sy.compute_We()
+    sy.compute_We(Eemin=Eemin)
+    sy.compute_We(Eemax=Eemax)
+    sy.compute_We(Eemin=Eemin, Eemax=Eemax)
+    assert sy.We == sy.compute_We(Eemin=sy.Eemin,Eemax=sy.Eemax)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_bremsstrahlung_lum(particle_dists):
@@ -245,6 +264,10 @@ def test_pion_decay(particle_dists):
     assert_allclose(lpps_LUT, lum_ref_LUT)
     assert_allclose(lpps_noLUT, lum_ref_noLUT)
     assert_allclose(Wps, Wp_ref)
+
+    # test LUT not found
+    pp = PionDecay(PL,useLUT=True,hiEmodel='Geant4', **proton_properties)
+    pp.spectrum(energy)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_pion_decay_no_nuc_enh(particle_dists):

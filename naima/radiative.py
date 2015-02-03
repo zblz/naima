@@ -671,7 +671,7 @@ class Bremsstrahlung(BaseElectron):
         gam = np.vstack(self._gam)
         eps = (Eph / mec2).decompose().value
         # compute integral with electron distribution
-        emiss = c.cgs * trapz_loglog(np.vstack(self._nelec) * self._sigma_1(gam,eps),
+        emiss = c.cgs * trapz_loglog(np.vstack(self._nelec) * self._sigma_ep(gam,eps),
                                      self._gam, axis=0).to(u.cm**2 / Eph.unit)
         return emiss
 
@@ -977,16 +977,18 @@ class PionDecay(BaseRadiative):
 
     def _F(self,Tp,Egamma):
         F = np.zeros_like(Tp)
-# below Tth
+        # below Tth
         F[np.where(Tp < self._Tth)] = 0.0
-# Tth <= E <= 1GeV: Experimental data
+
+        # Tth <= E <= 1GeV: Experimental data
         idx = np.where((Tp >= self._Tth) * (Tp <= 1.0))
         if idx[0].size > 0:
             kappa = self._kappa(Tp[idx])
             mp = self._F_mp['ExpData']
             mp[2] = kappa
             F[idx] = self._F_func(Tp[idx], Egamma, mp)
-# 1GeV < Tp < 4 GeV: Geant4 model 0
+
+        # 1GeV < Tp < 4 GeV: Geant4 model 0
         idx = np.where((Tp > 1.0) * (Tp <= 4.0))
         if idx[0].size > 0:
             mp = self._F_mp['Geant4_0']
@@ -994,7 +996,8 @@ class PionDecay(BaseRadiative):
             mp[2] = mu + 2.45
             mp[3] = mu + 1.45
             F[idx] = self._F_func(Tp[idx], Egamma, mp)
-# 4 GeV < Tp < 20 GeV
+
+        # 4 GeV < Tp < 20 GeV
         idx = np.where((Tp > 4.0) * (Tp <= 20.0))
         if idx[0].size > 0:
             mp = self._F_mp['Geant4_1']
@@ -1002,12 +1005,14 @@ class PionDecay(BaseRadiative):
             mp[2] = 1.5 * mu + 4.95
             mp[3] = mu + 1.50
             F[idx] = self._F_func(Tp[idx], Egamma, mp)
-# 20 GeV < Tp < 100 GeV
+
+        # 20 GeV < Tp < 100 GeV
         idx = np.where((Tp > 20.0) * (Tp <= 100.0))
         if idx[0].size > 0:
             mp = self._F_mp['Geant4_2']
             F[idx] = self._F_func(Tp[idx], Egamma, mp)
-# Tp > Etrans
+
+        # Tp > Etrans
         idx = np.where(Tp > self._Etrans[self.hiEmodel])
         if idx[0].size > 0:
             mp = self._F_mp[self.hiEmodel]
@@ -1352,7 +1357,7 @@ class LookupTable(object):
     def __call__(self,X,Y):
         return self.int_lut(np.log10(X),np.log10(Y)).flatten()
 
-def _calc_lut_pp(args):
+def _calc_lut_pp(args): # pragma: no cover
     epr, eph, hiEmodel, nuc = args
     #print('Computing diffsigma for Egamma = {0}...'.format(eph))
     from astropy import constants as const
@@ -1368,7 +1373,7 @@ def _calc_lut_pp(args):
 
 def generate_lut_pp(Ep=np.logspace(0.085623713910610105,7,800)*u.GeV,
         Eg=np.logspace(-5,3,1024)*u.TeV, out_base='PionDecayKafexhiu14_LUT_',
-        hiEmodel=None, nuclear_enhancement=True):
+        hiEmodel=None, nuclear_enhancement=True): # pragma: no cover
     from emcee.interruptible_pool import InterruptiblePool as Pool
 
     pool = Pool()
