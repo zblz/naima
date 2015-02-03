@@ -33,6 +33,7 @@ User documentation
    installation.rst
    MCMC.rst
    radiative.rst
+   sherpa.rst
    tutorial.rst
    examples.rst
 
