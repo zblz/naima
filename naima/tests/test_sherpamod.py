@@ -49,6 +49,11 @@ def test_electron_models():
             ui.guess()
             ui.fit()
 
+            # add FIR and NIR components and test verbose
+            model.uNIR.set(1.0)
+            model.uFIR.set(1.0)
+            model.verbose.set(1)
+
             #test with integrated data
             ui.load_arrays(1, elo, ehi, test_spec_int, test_err_int, ui.Data1DInt)
             ui.set_model(model)

@@ -25,10 +25,10 @@ def _mergex(xlo,xhi,midpoints=False):
     x[:N]=xlo.copy()
     x[-1]=xhi[-1]
 
-    if midpoints:
-        mid=(xlo+xhi)/2.
-        x=np.concatenate((x,mid))
-        x.sort()
+    #if midpoints:
+        #mid=(xlo+xhi)/2.
+        #x=np.concatenate((x,mid))
+        #x.sort()
 
     return x
 
@@ -80,7 +80,7 @@ def _get_PowerLawDistVerbParams(name):
             'cutoff'  : Parameter(name , 'cutoff'   , 0   , min=0   , frozen=True  , units='TeV'),
             'beta'    : Parameter(name , 'beta'     , 1   , min=0   , max=10       , frozen=True),
             'distance': Parameter(name , 'distance' , 1   , min=0   , max=1e6      , frozen=True    , units='kpc'),
-            'verbose' : Parameter(name , 'verbose'  , 0   , min=0   , frozen=True)
+            'verbose' : Parameter(name , 'verbose'  , 0   , min=0   , max=1        , frozen=True)
             }
     return PowerLawDistVerbParams
 
@@ -127,8 +127,6 @@ class InverseCompton(SherpaModel):
                 Eemin=1*u.GeV, Eemax=100*u.TeV, Eed=100)
 
         return ic.flux(Eph, distance=distance*u.kpc).to('1/(s cm2 keV)')
-
-        return model
 
 class Synchrotron(SherpaModel):
     """ Sherpa model for Synchrotron emission from a Power Law or Exponential
