@@ -24,7 +24,7 @@ def test_electron_models():
     test import
     """
 
-    from ..sherpamod import InverseCompton, Synchrotron, Bremsstrahlung
+    from ..sherpa_models import InverseCompton, Synchrotron, Bremsstrahlung
 
 
     for modelclass in [InverseCompton, Synchrotron, Bremsstrahlung]:
@@ -62,7 +62,7 @@ def test_proton_model():
     test import
     """
 
-    from ..sherpamod import PionDecay
+    from ..sherpa_models import PionDecay
 
     model = PionDecay()
 
