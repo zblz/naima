@@ -71,29 +71,31 @@ class SherpaModel(ArithmeticModel):
 
         return photons
 
-def _get_PowerLawDistVerbParams(name):
-    """ Define a dictionary of parameters all models will have """
-    PowerLawDistVerbParams = {
-            'index'   : Parameter(name , 'index'    , 2.1 , min=-10 , max=10),
-            'ref'     : Parameter(name , 'ref'      , 60  , min=0   , frozen=True  , units='TeV'),
-            'ampl'    : Parameter(name , 'ampl'     , 100 , min=0   , max=1e60     , hard_max=1e100 , units='1e30/eV'),
-            'cutoff'  : Parameter(name , 'cutoff'   , 0   , min=0   , frozen=True  , units='TeV'),
-            'beta'    : Parameter(name , 'beta'     , 1   , min=0   , max=10       , frozen=True),
-            'distance': Parameter(name , 'distance' , 1   , min=0   , max=1e6      , frozen=True    , units='kpc'),
-            'verbose' : Parameter(name , 'verbose'  , 0   , min=0   , max=1        , frozen=True)
-            }
-    return PowerLawDistVerbParams
+class SherpaModelECPL(SherpaModel):
+    """ Base class for Sherpa models with a PL or ECPL particle distribution
+    """
+    def __init__(self,name='Model'):
+        # Initialize ECPL parameters
+        self.index   = Parameter(name , 'index'    , 2.1 , min=-10 , max=10)
+        self.ref     = Parameter(name , 'ref'      , 60  , min=0   , frozen=True  , units='TeV')
+        self.ampl    = Parameter(name , 'ampl'     , 100 , min=0   , max=1e60     , hard_max=1e100 , units='1e30/eV')
+        self.cutoff  = Parameter(name , 'cutoff'   , 0   , min=0   , frozen=True  , units='TeV')
+        self.beta    = Parameter(name , 'beta'     , 1   , min=0   , max=10       , frozen=True)
+        self.distance= Parameter(name , 'distance' , 1   , min=0   , max=1e6      , frozen=True    , units='kpc')
+        self.verbose = Parameter(name , 'verbose'  , 0   , min=0   , max=1        , frozen=True)
 
-def _get_pdist(index,ref,ampl,cutoff,beta):
-    """ Get PL or ECPL based on parameters """
-    if cutoff == 0.0:
-        pdist = models.PowerLaw(ampl * 1e30 * u.Unit('1/eV'), ref * u.TeV, index)
-    else:
-        pdist = models.ExponentialCutoffPowerLaw(ampl * 1e30 * u.Unit('1/eV'),
-                ref * u.TeV, index, cutoff * u.TeV, beta=beta)
-    return pdist
+    @staticmethod
+    def _pdist(p):
+        """ Return PL or ECPL instance based on parameters p """
+        index,ref,ampl,cutoff,beta = p[:5]
+        if cutoff == 0.0:
+            pdist = models.PowerLaw(ampl * 1e30 * u.Unit('1/eV'), ref * u.TeV, index)
+        else:
+            pdist = models.ExponentialCutoffPowerLaw(ampl * 1e30 * u.Unit('1/eV'),
+                    ref * u.TeV, index, cutoff * u.TeV, beta=beta)
+        return pdist
 
-class InverseCompton(SherpaModel):
+class InverseCompton(SherpaModelECPL):
     """ Sherpa model for Inverse Compton emission from a Power Law or
     Exponential Cutoff PowerLaw particle distribution
 
@@ -105,7 +107,9 @@ class InverseCompton(SherpaModel):
         self.uFIR = Parameter(name , 'uFIR' , 0.0  , min=0 , frozen=True , units='eV/cm3') # , 0.2eV/cm3 typical in outer disk
         self.TNIR = Parameter(name , 'TNIR' , 3800 , min=0 , frozen=True , units='K')
         self.uNIR = Parameter(name , 'uNIR' , 0.0  , min=0 , frozen=True , units='eV/cm3') # , 0.2eV/cm3 typical in outer disk
-        self.__dict__.update(_get_PowerLawDistVerbParams(name))
+        # add ECPL params
+        super(InverseCompton,self).__init__(name=name)
+        # Initialize model
         ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,
                                  self.cutoff,self.beta,self.TFIR,
                                  self.uFIR, self.TNIR, self.uNIR, self.distance,self.verbose))
@@ -114,7 +118,6 @@ class InverseCompton(SherpaModel):
 
     def flux(self,p,Eph):
         index,ref,ampl,cutoff,beta,TFIR,uFIR,TNIR,uNIR,distance,verbose = p
-        pdist = _get_pdist(index,ref,ampl,cutoff,beta)
 
         # Build seedspec definition
         seedspec=['CMB',]
@@ -123,12 +126,12 @@ class InverseCompton(SherpaModel):
         if uNIR>0.0:
             seedspec.append(['NIR',TNIR * u.K, uNIR * u.eV/u.cm**3])
 
-        ic = models.InverseCompton(pdist, seed_photon_fields=seedspec,
+        ic = models.InverseCompton(self._pdist(p), seed_photon_fields=seedspec,
                 Eemin=1*u.GeV, Eemax=100*u.TeV, Eed=100)
 
         return ic.flux(Eph, distance=distance*u.kpc).to('1/(s cm2 keV)')
 
-class Synchrotron(SherpaModel):
+class Synchrotron(SherpaModelECPL):
     """ Sherpa model for Synchrotron emission from a Power Law or Exponential
     Cutoff PowerLaw particle distribution
 
@@ -137,7 +140,9 @@ class Synchrotron(SherpaModel):
     """
     def __init__(self,name='Sync'):
         self.B = Parameter(name, 'B', 1, min=0, max=10, frozen=True, units='G')
-        self.__dict__.update(_get_PowerLawDistVerbParams(name))
+        # add ECPL params
+        super(Synchrotron,self).__init__(name=name)
+        # Initialize model
         ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,
                                  self.cutoff,self.beta,self.B,self.distance,self.verbose))
         self._use_caching = True
@@ -145,12 +150,11 @@ class Synchrotron(SherpaModel):
 
     def flux(self,p,Eph):
         index,ref,ampl,cutoff,beta,B,distance,verbose = p
-        pdist = _get_pdist(index,ref,ampl,cutoff,beta)
-        sy = models.Synchrotron(pdist, B=B*u.G)
+        sy = models.Synchrotron(self._pdist(p), B=B*u.G)
 
         return sy.flux(Eph, distance=distance*u.kpc).to('1/(s cm2 keV)')
 
-class Bremsstrahlung(SherpaModel):
+class Bremsstrahlung(SherpaModelECPL):
     """ Sherpa model for Bremsstrahlung emission from a Power Law or Exponential
     Cutoff PowerLaw particle distribution
 
@@ -161,7 +165,9 @@ class Bremsstrahlung(SherpaModel):
         self.n0 = Parameter(name, 'n0', 1, min=0, max=1e20, frozen=True, units='1/cm3')
         self.weight_ee = Parameter(name, 'weight_ee', 1.088, min=0, max=10, frozen=True)
         self.weight_ep = Parameter(name, 'weight_ep', 1.263, min=0, max=10, frozen=True)
-        self.__dict__.update(_get_PowerLawDistVerbParams(name))
+        # add ECPL params
+        super(Bremsstrahlung,self).__init__(name=name)
+        # Initialize model
         ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,
                                  self.cutoff,self.beta,self.n0,self.weight_ee,self.weight_ep,
                                  self.distance,self.verbose))
@@ -170,13 +176,12 @@ class Bremsstrahlung(SherpaModel):
 
     def flux(self,p,Eph):
         index,ref,ampl,cutoff,beta,n0,weight_ee,weight_ep,distance,verbose = p
-        pdist = _get_pdist(index,ref,ampl,cutoff,beta)
-        brems = models.Bremsstrahlung(pdist, n0=n0 / u.cm**3, weight_ee=weight_ee,
+        brems = models.Bremsstrahlung(self._pdist(p), n0=n0 / u.cm**3, weight_ee=weight_ee,
                               weight_ep=weight_ep)
 
         return brems.flux(Eph, distance=distance*u.kpc).to('1/(s cm2 keV)')
 
-class PionDecay(SherpaModel):
+class PionDecay(SherpaModelECPL):
     """ Sherpa model for Pion Decay emission from a Power Law or Exponential
     Cutoff PowerLaw particle distribution
 
@@ -185,7 +190,9 @@ class PionDecay(SherpaModel):
     """
     def __init__(self,name='pp'):
         self.nh = Parameter(name, 'nH', 1, min=0, frozen=True, units='1/cm3')
-        self.__dict__.update(_get_PowerLawDistVerbParams(name))
+        # add ECPL params
+        super(PionDecay,self).__init__(name=name)
+        # Initialize model
         ArithmeticModel.__init__(self,name,(self.index,self.ref,self.ampl,
                                  self.cutoff,self.beta,self.nh,self.distance,self.verbose))
         self._use_caching = True
@@ -193,7 +200,6 @@ class PionDecay(SherpaModel):
 
     def flux(self,p,Eph):
         index,ref,ampl,cutoff,beta,nh,distance,verbose = p
-        pdist = _get_pdist(index,ref,ampl,cutoff,beta)
-        pp = models.PionDecay(pdist, nh=nh*u.Unit('1/cm3'))
+        pp = models.PionDecay(self._pdist(p), nh=nh*u.Unit('1/cm3'))
 
         return pp.flux(Eph, distance=distance*u.kpc).to('1/(s cm2 keV)')
