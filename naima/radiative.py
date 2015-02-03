@@ -159,6 +159,10 @@ class BaseElectron(BaseRadiative):
 class Synchrotron(BaseElectron):
     """Synchrotron emission from an electron population.
 
+    This class uses the approximation of the synchrotron emissivity in a
+    random magnetic field of Aharonian, Kelner, and Prosekin 2010, PhysRev D
+    82, 3002 (`arXiv:1006.1045 <http://arxiv.org/abs/1006.1045>`_).
+
     Parameters
     ----------
     particle_distribution : function
@@ -246,6 +250,10 @@ class Synchrotron(BaseElectron):
 
 class InverseCompton(BaseElectron):
     """Inverse Compton emission from an electron population.
+
+    If you use this class in your research, please consult and cite `Khangulyan,
+    D., Aharonian, F.A., & Kelner, S.R.  2014, Astrophysical Journal, 783, 100
+    <http://adsabs.harvard.edu/abs/2014ApJ...783..100K>`_
 
     Parameters
     ----------
@@ -500,7 +508,9 @@ class Bremsstrahlung(BaseElectron):
     """
     Bremsstrahlung radiation on a completely ionised gas.
 
-    Following Baring, Ellison, Reynolds, Grenier, and Goret 1999, ApJ 513, 311.
+    This class uses the cross-section approximation of `Baring, M.G., Ellison,
+    D.C., Reynolds, S.P., Grenier, I.A., & Goret, P. 1999, Astrophysical
+    Journal, 513, 311 <http://adsabs.harvard.edu/abs/1999ApJ...513..311B>`_.
 
     The default weights are assuming a completely ionised target gas with ISM
     abundances. If pure electron-electron bremsstrahlung is desired, ``n0`` can
@@ -686,7 +696,14 @@ class PionDecay(BaseRadiative):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
-    proton distribution with stationary target protons.
+    proton distribution with stationary target protons using the parametrization
+    of Kafexhiu et al. (2014).
+
+    If you use this class in your research, please consult and cite `Kafexhiu,
+    E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014, Physical Review D, 90,
+    123014 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_.
+
+
 
     Parameters
     ----------
@@ -729,11 +746,6 @@ class PionDecay(BaseRadiative):
         Whether to use a lookup table for the differential cross section. The
         only lookup table packaged with naima is for the Pythia 8 model and
         ISM nuclear enhancement factor.
-
-    References
-    ----------
-    Kafexhiu, E., Aharonian, F., Taylor, A.~M., and Vila, G.~S.\ 2014,
-    `arXiv:1406.7369 <http://www.arxiv.org/abs/1406.7369>`_.
     """
 
     def __init__(self, particle_distribution, nh = 1.0 / u.cm**3,

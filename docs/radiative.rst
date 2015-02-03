@@ -211,9 +211,9 @@ analytic parametrizations to the energy spectra and production rates of gamma
 rays from p-p interactions. The `~naima.models.PionDecay` class uses an
 implementation of the formulae presented in their paper, and gives the choice of
 which high-energy model to use (from the parametrization to the different Monte
-Carlo results) through the `hiEmodel` parameter. If you use this class, please
-consult and cite `Kafexhiu, E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014,
-Physical Review D, 90, 123014
+Carlo results) through the `hiEmodel` parameter. If you use this class in your
+research, please consult and cite `Kafexhiu, E., Aharonian, F., Taylor, A.M., &
+Vila, G.S. 2014, Physical Review D, 90, 123014
 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_. 
 
 
