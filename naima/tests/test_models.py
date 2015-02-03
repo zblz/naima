@@ -72,6 +72,21 @@ def test_synchrotron_lum(particle_dists):
     assert_allclose(lsy.value, 31374135.447829477)
 
 @pytest.mark.skipif('not HAS_SCIPY')
+def test_luminosity(particle_dists):
+    """
+    test sync calculation
+    """
+    from ..models import Synchrotron
+
+    ECPL,PL,BPL = particle_dists
+
+    sy = Synchrotron(ECPL,B=1*u.G, **electron_properties)
+    sy.flux(energy, distance=0*u.kpc)
+    sy.flux(energy, distance=0)
+    sy.sed(energy, distance=0*u.kpc)
+    sy.sed(energy, distance=0)
+
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_bremsstrahlung_lum(particle_dists):
     """
     test sync calculation
