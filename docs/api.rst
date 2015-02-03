@@ -8,5 +8,4 @@ Detailed description of functions and arguments (API)
 
     api-mcmc.rst
     api-models.rst
-    api-sherpa_models.rst
     api-convenience.rst
