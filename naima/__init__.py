@@ -23,6 +23,6 @@ from . import models
 
 try:
     import sherpa
-    from . import sherpamod
+    from . import sherpa_models
 except ImportError:
     pass
