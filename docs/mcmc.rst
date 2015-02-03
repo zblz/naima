@@ -20,9 +20,9 @@ D., Hogg, D.W., Lang, D., & Goodman, J. 2013, PASP, 125, 306
 
 The measurements and uncertainties in the provided spectrum are assumed to be
 correct, Gaussian, and independent (note that this is unlikely to be the case,
-see in `Future improvements`_ on how this might be tackled in the future).
-Under this assumption, the likelihood of observed data given the spectral model
-:math:`S(\vec{p};E)`, for a parameter vector :math:`\vec{p}`, is
+see `Avoiding the Gaussian error assumption`_ on how this might be tackled in
+the future).  Under this assumption, the likelihood of observed data given the
+spectral model :math:`S(\vec{p};E)`, for a parameter vector :math:`\vec{p}`, is
 
 .. math::
     \mathcal{L} = \prod^N_{i=1} \frac{1}{\sqrt{2 \pi \sigma^2_i}} 
@@ -64,11 +64,19 @@ with the model spectrum, and any metadata blobs provided by the model function
 compare them to the input spectrum: see :ref:`plotting`.
 
 
-Future improvements
--------------------
+Avoiding the Gaussian error assumption
+--------------------------------------
 
-To overcome the assumption of correct, Gaussian, independent errors, several
-approaches will be considered for inclusion in ``naima``.
+``naima`` provides an alternative to MCMC fitting by providing wrappers around
+the radiative models that can be used in `sherpa`_. This package allows to take
+into account instrument response functions that include bin correlation. See
+:ref:`sherpamod` for more details on these sherpa wrappers.
+
+.. _sherpa: http://cxc.cfa.harvard.edu/sherpa/
+
+However, within the framework of MCMC fitting in ``naima``, several approaches
+will be considered for inclusion in the future to overcome the assumption of
+correct, Gaussian, independent errors.
 
 - The first is a probabilistic approach to the uncertainty, by including
   generative models for the uncertainties in the NLL function. Such models could
@@ -78,7 +86,7 @@ approaches will be considered for inclusion in ``naima``.
 - An alternative approach to avoid bin correlation would be to call an external
   program that can do forward-folding comparison of models. However, doing this
   requires a full set of Instrument Response Functions that might not be
-  available for all published data.
+  available for all published data. 
 - A proper Poisson statistic could also be used is the fit was performed in
   counts space rather than in flux space. For this, the effective area and
   exposure in each bin would be required to convert between the model flux and

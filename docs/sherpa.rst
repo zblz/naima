@@ -1,13 +1,16 @@
+.. _sherpamod:
+
 Sherpa models
 =============
 
 The `sherpa`_ package is a modeling and fitting application which can be used to
 fit a variety of data from spatial morphology to forward-folding spectral
 analysis. It is part of the Chandra analysis software pacakage (`CIAO
-<http://cxc.cfa.harvard.edu/ciao/>`_), but it
-can be easily installed standalone by using the `Anaconda Python
-<http://continuum.io/downloads>`_ distribution. Once you have a Python 2.7
-Anaconda environment setup, installing `sherpa`_ 4.7b is done as follows::
+<http://cxc.cfa.harvard.edu/ciao/>`_), but it can be easily installed standalone
+by using the `Anaconda Python <http://continuum.io/downloads>`_ distribution.
+Once you have a Python 2.7 Anaconda environment setup, the `standalone Python
+version of sherpa <http://cxc.cfa.harvard.edu/contrib/sherpa47b/>`_ is installed
+as follows::
 
     $ export PATH=PATH_TO_ANACONDA/bin:$PATH
     $ conda config --add channels https://conda.binstar.org/cxc
@@ -64,6 +67,4 @@ parameters as `~astropy.units.Quantity` objects given that their units are
 fixed. You can see the units for each of the parameters with the `show_model`
 sherpa command.
 
-
-
-.. _sherpa: http://cxc.cfa.harvard.edu/contrib/sherpa/
+.. _sherpa: http://cxc.cfa.harvard.edu/sherpa/

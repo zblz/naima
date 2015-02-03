@@ -31,7 +31,7 @@ User documentation
    :maxdepth: 1
  
    installation.rst
-   MCMC.rst
+   mcmc.rst
    radiative.rst
    sherpa.rst
    tutorial.rst
