@@ -26,18 +26,19 @@ def test_validate_energy_error_types():
 def test_sed():
     fname = get_pkg_data_filename('data/Fake_ipac_sed.dat')
     validate_data_table(ascii.read(fname))
+    validate_data_table([ascii.read(fname),])
 
 def test_concatenation():
     fname0 = get_pkg_data_filename('data/Fake_ipac_sed.dat')
     dt0 = ascii.read(fname0)
 
-    validate_data_table([dt0,data_table])
-    validate_data_table([data_table,dt0])
-    validate_data_table([dt0,dt0])
+    for sed in [True, False]:
+        validate_data_table([dt0,data_table],sed=sed)
+        validate_data_table([data_table,dt0],sed=sed)
+        validate_data_table([dt0,dt0],sed=sed)
     dt0.meta['keywords']['cl']['value']=0.5
     with pytest.raises(TypeError):
         validate_data_table([dt0,data_table])
-
 
 def test_validate_data_types():
     data_table2 = data_table.copy()
