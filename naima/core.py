@@ -134,7 +134,7 @@ def _run_mcmc(sampler, pos, nrun):
 
 def get_sampler(data_table=None, p0=None, model=None, prior=None,
                 nwalkers=500, nburn=100,
-                guess=True, labels=None, threads=4):
+                guess=True, labels=None, threads=4, data_sed=None):
     """Generate a new MCMC sampler.
 
     Parameters
@@ -205,6 +205,10 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     guess : bool, optional
         Whether to attempt to guess the normalization (first) parameter of the
         model. Default is True.
+    data_sed : bool, optional
+        When providing more than one data table, whether to convert them to SED
+        format. If unset or None, all tables will be converted to the format of
+        the first table.
 
     Returns
     -------
@@ -222,7 +226,7 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     if data_table is None:
         raise TypeError ('Data table is missing!')
     else:
-        data = validate_data_table(data_table)
+        data = validate_data_table(data_table,sed=data_sed)
 
     if model is None:
         raise TypeError ('Model function is missing!')

@@ -27,7 +27,7 @@ def validate_column(data_table, key, pt, domain='positive'):
 
     return array
 
-def validate_data_table(data_table):
+def validate_data_table(data_table, sed=None):
     """
     Validate all columns of a data table. If a list of tables is passed, all
     tables will be validated and then concatenated
@@ -36,6 +36,10 @@ def validate_data_table(data_table):
     ----------
 
     data_table : `astropy.table.Table` or list of `astropy.table.Table`.
+
+    sed : bool, optional
+        Whether to convert the fluxes to SED. If unset, all data tables are
+        converted to the format of the first data table.
     """
     if isinstance(data_table,Table):
         return _validate_single_data_table(data_table)
@@ -59,11 +63,18 @@ def validate_data_table(data_table):
     data_new = data_list[0].copy()
     e_unit = data_new['energy'].unit
     de_unit = data_new['dene'].unit
+    f_pt = data_new['flux'].unit.physical_type
+    first_is_sed = f_pt in ['flux','power']
+
     f_unit = data_new['flux'].unit
     df_unit = data_new['dflux'].unit
-
-    f_pt = f_unit.physical_type
-    first_is_sed = f_pt in ['flux','power']
+    if sed is None:
+        sed = first_is_sed
+    elif sed != first_is_sed:
+        f_unit, sedf = sed_conversion(data_new['energy'], f_unit, sed)
+        df_unit = f_unit
+        data_new['flux'] = (data_new['flux']*sedf).to(f_unit)
+        data_new['dflux'] = (data_new['dflux']*sedf).to(df_unit)
 
     for dt in data_list[1:]:
         # ugly but could not find better way to preserve units through concatenate
@@ -84,10 +95,10 @@ def validate_data_table(data_table):
         if dt['flux'].unit.physical_type == f_unit.physical_type:
             flux = dt['flux'].to(f_unit)
             dflux = dt['dflux'].to(f_unit)
-        elif first_is_sed and 'differential' in nf_pt:
+        elif sed and 'differential' in nf_pt:
             flux = (dt['flux'] * dt['energy']**2).to(f_unit)
             dflux = (dt['dflux'] * dt['energy']**2).to(f_unit)
-        elif not first_is_sed and nf_pt in ['power','flux']:
+        elif not sed and nf_pt in ['power','flux']:
             flux = (dt['flux'] / dt['energy']**2).to(f_unit)
             dflux = (dt['dflux'] / dt['energy']**2).to(f_unit)
         else:
@@ -101,9 +112,13 @@ def validate_data_table(data_table):
                 np.concatenate((data_new['dflux'], dflux.to(df_unit)),axis=1).value,
                 unit = df_unit )
 
-        data_new['ul'] = np.concatenate((data_new['ul'], dt['ul']))
-        if data_new['cl'] != dt['cl']:
+        # check that there are upper limits at the CL previously set, else set the new CL
+        if data_new['cl'] != dt['cl'] and np.sum(data_new['ul']) > 0:
             raise TypeError('Upper limits are at different confidence levels.')
+        else:
+            data_new['cl'] = dt['cl']
+
+        data_new['ul'] = np.concatenate((data_new['ul'], dt['ul']))
 
     return data_new
 
