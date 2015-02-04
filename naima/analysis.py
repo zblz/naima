@@ -53,14 +53,15 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
     if pdf:
         from matplotlib import pyplot as plt
         plt.rc('pdf', fonttype=42)
-        print(
-            'Generating diagnostic plots in file {0}_plots.pdf'.format(outname))
+        log.info( 'Generating diagnostic plots in file '
+                '{0}_plots.pdf'.format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
         outpdf = PdfPages('{0}_plots.pdf'.format(outname))
 
     # Chains
 
-    for par, label in six.moves.zip(six.moves.range(sampler.chain.shape[-1]), sampler.labels):
+    for par, label in six.moves.zip(six.moves.range(sampler.chain.shape[-1]),
+                                    sampler.labels):
         try:
             log.info('Plotting chain of parameter {0}...'.format(label))
             f = plot_chain(sampler, par, **kwargs)
@@ -72,7 +73,8 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
                 f.savefig('{0}_chain_{1}.png'.format(outname, label))
             del f
         except Exception as e:
-            log.warning('plot_chain failed for paramter {0} ({1}): {2}'.format(label,par,e))
+            log.warning('plot_chain failed for paramter'
+                    ' {0} ({1}): {2}'.format(label,par,e))
 
     # Corner plot
 
@@ -92,7 +94,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
             f.savefig('{0}_corner.png'.format(outname))
         del f
     except ImportError:
-        print('triangle_plot not installed, corner plot not available')
+        log.warning('triangle_plot not installed, corner plot not available')
 
     # Fit
 

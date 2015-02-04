@@ -38,7 +38,6 @@ class SherpaModel(ArithmeticModel):
 
     def guess(self,dep,*args,**kwargs):
         # guess normalization from total flux
-        print(dep,args)
         if len(args) == 1:
             xlo = args[0]
             xhi = None
