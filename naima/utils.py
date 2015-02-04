@@ -344,8 +344,8 @@ def generate_energy_edges(ene):
 
 
 def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
-                     flux_error_hi=None, ene_width=None, ene_lo=None, ene_hi=None, ul=None,
-                     cl=None):
+                     flux_error_hi=None, energy_width=None, energy_lo=None,
+                     energy_hi=None, ul=None, cl=None):
     """
     Read data into data dict.
 
@@ -360,15 +360,15 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
 
     flux_error, flux_error_hi, flux_error_lo : :class:`~astropy.units.Quantity` array instance
         68% CL gaussian uncertainty of the flux [physical type ``flux`` or
-        ``differential flux``]. Either ``flux_error`` (symmetrical uncertainty) or
-        ``flux_error_hi`` and ``flux_error_lo`` (asymmetrical uncertainties) must be
-        provided.
+        ``differential flux``]. Either ``flux_error`` (symmetrical uncertainty)
+        or ``flux_error_hi`` and ``flux_error_lo`` (asymmetrical uncertainties)
+        must be provided.
 
-    ene_width, ene_lo, ene_hi : :class:`~astropy.units.Quantity` array instance, optional
-        Width of the energy bins [physical type ``energy``]. Either ``ene_width``
-        (bin width) or ``ene_lo`` and ``ene_hi`` (Energies of the lower and upper
-        bin edges) can be provided. If none are provided,
-        ``generate_energy_edges`` will be used.
+    energy_width, energy_lo, energy_hi : :class:`~astropy.units.Quantity` array instance, optional
+        Width of the energy bins [physical type ``energy``]. Either
+        ``energy_width`` (bin width) or ``energy_lo`` and ``energy_hi``
+        (Energies of the lower and upper bin edges) can be provided. If none are
+        provided, ``generate_energy_edges`` will be used.
 
     ul : boolean or int array, optional
         Boolean array indicating which of the flux values given in ``flux``
@@ -393,11 +393,11 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
 
     table.add_column(Column(name='energy', data=energy))
 
-    if ene_width is not None:
-        table.add_column(Column(name='ene_width', data=ene_width))
-    elif ene_lo is not None and ene_hi is not None:
-        table.add_column(Column(name='ene_lo', data=ene_lo))
-        table.add_column(Column(name='ene_hi', data=ene_hi))
+    if energy_width is not None:
+        table.add_column(Column(name='energy_width', data=energy_width))
+    elif energy_lo is not None and energy_hi is not None:
+        table.add_column(Column(name='energy_lo', data=energy_lo))
+        table.add_column(Column(name='energy_hi', data=energy_hi))
 
     table.add_column(Column(name='flux', data=flux))
 

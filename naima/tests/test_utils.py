@@ -97,8 +97,8 @@ def test_build_data_table():
 
     table = build_data_table(ene, flux, flux_error_hi=flux_error_hi, flux_error_lo=flux_error_lo, ul=ul)
     table = build_data_table(ene, flux, flux_error_hi=flux_error_hi, flux_error_lo=flux_error_lo, ul=ul, cl=0.99)
-    table = build_data_table(ene, flux, flux_error=flux_error_hi, ene_width=dene[0])
-    table = build_data_table(ene, flux, flux_error=flux_error_hi, ene_lo=(ene-dene[0]), ene_hi=(ene+dene[1]))
+    table = build_data_table(ene, flux, flux_error=flux_error_hi, energy_width=dene[0])
+    table = build_data_table(ene, flux, flux_error=flux_error_hi, energy_lo=(ene-dene[0]), energy_hi=(ene+dene[1]))
 
     # no flux_error
     with pytest.raises(TypeError):
