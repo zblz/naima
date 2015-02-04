@@ -199,7 +199,7 @@ def _validate_single_data_table(data_table):
 
     if not HAS_CL:
         data['cl'] = 0.9
-        if 'ul' in data_table.keys():
+        if np.sum(data['ul']) > 0:
             log.warning('"cl" keyword not provided in input data table, upper limits'
                         ' will be assumed to be at 90% confidence level')
 
