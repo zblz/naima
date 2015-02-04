@@ -9,9 +9,17 @@ affine-invariant ensemble sampler for Markov chain Monte Carlo.
 Documentation is at `naima.readthedocs.org
 <http://naima.readthedocs.org>`_.
 
+Code status
+^^^^^^^^^^^
 
 .. image:: http://travis-ci.org/zblz/naima.svg
    :target: https://travis-ci.org/zblz/naima
 
 .. image:: http://coveralls.io/repos/zblz/naima/badge.svg
    :target: https://coveralls.io/r/zblz/naima
+
+License
+^^^^^^^
+
+Naima is released under a 3-clause BSD style license - see the
+``LICENSE.rst`` file.
