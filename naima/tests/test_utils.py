@@ -66,6 +66,9 @@ def test_validate_string_uls():
 
     data = validate_data_table(data_table2)
 
+    assert np.sum(data['ul']) == 1
+    assert np.sum(-data['ul']) == len(data_table2)-1
+
     # put an invalid value
     data_table2['ul'][2] = 'invalid'
 

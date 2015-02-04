@@ -163,6 +163,9 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
         - ``flux_error_lo`` and ``flux_error_hi``: 68% CL gaussian lower and
           upper uncertainties of the flux.
         - ``ul``: Flag to indicate that a flux measurement is an upper limit.
+        - ``flux_ul``: Upper limit to the flux. If not present, the ``flux``
+          column will be taken as an upper limit for those measurements with the
+          ``ul`` flag set to True or 1.
 
         The ``keywords`` metadata field of the table can be used to provide the
         confidence level of the upper limits with the keyword ``cl``, which

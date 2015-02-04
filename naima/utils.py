@@ -178,14 +178,17 @@ def _validate_single_data_table(data_table):
                 if ul != 'True' and ul != 'False':
                     strbool = False
             if strbool:
-                data['ul'] = np.array((eval(ul)
-                                      for ul in ul_col), dtype=np.bool)
+                data['ul'] = np.array([eval(ul)
+                                      for ul in ul_col], dtype=np.bool)
             else:
                 raise TypeError('UL column is in wrong format')
         else:
             raise TypeError('UL column is in wrong format')
     else:
         data['ul'] = np.array([False, ] * len(data['energy']))
+
+    if 'flux_ul' in data_table.keys():
+        data['flux'][data['ul']] = u.Quantity(data_table['flux_ul'])[data['ul']]
 
     HAS_CL = False
     if 'keywords' in data_table.meta.keys():
@@ -198,7 +201,7 @@ def _validate_single_data_table(data_table):
         data['cl'] = 0.9
         if 'ul' in data_table.keys():
             log.warning('"cl" keyword not provided in input data table, upper limits'
-                        'will be assumed to be at 90% confidence level')
+                        ' will be assumed to be at 90% confidence level')
 
     return data
 

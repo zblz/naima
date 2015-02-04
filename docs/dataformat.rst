@@ -29,6 +29,9 @@ Optional columns:
   upper uncertainties of the flux.
 - ``ul``: Flag to indicate that a flux measurement is an upper limit. The flux
   error values for this measurement will be disregarded.
+- ``flux_ul``: Upper limit to the flux. If not present, the ``flux``
+  column will be taken as an upper limit for those measurements with the
+  ``ul`` flag.
 
 The ``keywords`` metadata field of the table can be used to provide the
 confidence level of the upper limits with the keyword ``cl``, which defaults to
