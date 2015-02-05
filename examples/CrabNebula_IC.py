@@ -57,13 +57,13 @@ if __name__=='__main__':
 
 ## Set initial parameters and labels
 
-    p0=np.array((4.9,3.3,np.log10(48.0),))
+    p0=np.array((1.0,2.0,2.0,))
     labels=['norm','index','log10(cutoff)']
 
 ## Run sampler
 
     sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels, model=ElectronIC,
-            prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4)
+            prior=lnprior, nwalkers=50, nburn=50, nrun=10, threads=4, prefit=True)
 
 ## Save sampler
     from astropy.extern import six
@@ -73,7 +73,7 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    naima.save_diagnostic_plots('CrabNebula_IC',sampler,sed=True)
+    naima.save_diagnostic_plots('CrabNebula_IC',sampler,sed=True,last_step=False)
     naima.save_results_table('CrabNebula_IC',sampler)
 
 

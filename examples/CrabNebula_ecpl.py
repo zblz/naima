@@ -57,7 +57,7 @@ if __name__=='__main__':
 
     sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
             model=cutoffexp, prior=lnprior, nwalkers=128, nburn=50, nrun=10,
-            threads=4)
+            threads=4, prefit=True)
 
 ## Save sampler
     from astropy.extern import six
