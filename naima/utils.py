@@ -42,7 +42,8 @@ def validate_data_table(data_table, sed=None):
         converted to the format of the first data table.
     """
     if isinstance(data_table,Table):
-        return _validate_single_data_table(data_table)
+        data_table = [data_table,]
+
     try:
         for dt in data_table:
             if not isinstance(dt,Table):
@@ -54,10 +55,6 @@ def validate_data_table(data_table, sed=None):
     for dt in data_table:
         dt_val = _validate_single_data_table(dt)
         data_list.append(dt_val)
-
-    if len(data_list) == 1:
-        # In case a single table is passed in list
-        return data_list[0]
 
     # concatenate input data tables
     data_new = data_list[0].copy()
