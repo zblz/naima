@@ -453,12 +453,12 @@ def estimate_B(xray_table, vhe_table, photon_energy_density = 0.261*u.eV/u.cm**3
     energy density.
 
     Note that this assumes that the ratio of observed fluxes is equal to the
-    ratio of bolometric synchrotron and IC luminosities. This assumption is safe
-    as long as the X-ray and gamma-ray emission contain the bulk of the
-    bolometric emission (i.e., the peak in the SED is in the X-ray and gamma-ray
-    observed bands). Even if the assumption does not hold, this is a good
-    starting point for the magnetic field when doing simultaneous X-ray and
-    gamma-ray spectral fits.
+    ratio of bolometric synchrotron and IC luminosities, and that IC proceeds in
+    the Thomson regims. This assumption is safe as long as the X-ray and
+    gamma-ray emission contain the bulk of the bolometric emission (i.e., the
+    peak in the SED is in the X-ray and gamma-ray observed bands). Even if the
+    assumption does not hold, this is a good starting point for the magnetic
+    field when doing simultaneous X-ray and gamma-ray spectral fits.
 
     Parameters
     ----------

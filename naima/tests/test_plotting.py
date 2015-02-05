@@ -152,7 +152,11 @@ def test_plot_data(sampler):
     # only plot data
     f = plot_data(sampler,)
     f = plot_data(sampler, sed=True)
-    f = plot_data(sampler, sed=True, figure=f)
+    # change the energy units between calls
+    data = sampler.data
+    f = plot_data(data, sed=True)
+    data['energy'] = (data['energy']/1000).to('keV')
+    f = plot_data(data, sed=True, figure=f)
     # try to break it
     f = plot_data(sampler, plotdata=False)
     f = plot_data(sampler, confs=[3, 1, 0.5])
