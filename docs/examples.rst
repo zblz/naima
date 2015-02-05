@@ -10,7 +10,7 @@ Examples
 Fitting a function
 ------------------
 
-.. literalinclude:: ../examples/CrabNebula_ecpl.py
+.. literalinclude:: ../examples/CrabNebula_ECPL.py
     :language: python
 
 Fitting IC emission from an electron distribution
@@ -28,5 +28,5 @@ Fitting Synchrotron and IC emission from an electron distribution
 Fitting pp emission from a proton distribution
 ----------------------------------------------
 
-.. literalinclude:: ../examples/CrabNebula_proton.py
+.. literalinclude:: ../examples/CrabNebula_PionDecay.py
     :language: python

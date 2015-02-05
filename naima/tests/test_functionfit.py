@@ -14,6 +14,12 @@ try:
 except ImportError:
     HAS_EMCEE = False
 
+try:
+    import scipy
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+
 from astropy.io import ascii
 
 # Read data
@@ -84,6 +90,11 @@ def test_init():
     # test that the CL keyword has been correctly read
     assert sampler.data['cl'] == 0.99
 
+@pytest.mark.skipif('not HAS_EMCEE or not HAS_SCIPY')
+def test_prefit():
+    sampler, pos = get_sampler(
+        data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
+        prior=lnprior, nwalkers=10, nburn=5, threads=1, prefit=True)
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_init_symmetric_dflux():

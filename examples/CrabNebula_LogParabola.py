@@ -8,23 +8,15 @@ from astropy.io import ascii
 
 data=ascii.read('CrabNebula_HESS_2006_ipac.dat')
 
-ene = u.Quantity(data['energy'])
-ene0 = np.sqrt(ene[0]*ene[-1])
-
-
 ## Model definition
 
 from naima.models import LogParabola
 
-# initialise an instance of LogParabola
-flux_unit = data['flux'].unit
-LP = LogParabola(1e-12 * flux_unit, ene0, 2, 0.5)
-
 def logparabola(pars,data):
-
-    LP.amplitude = pars[0] * flux_unit
-    LP.alpha = pars[1]
-    LP.beta = pars[2]
+    amplitude = pars[0] * data['flux'].unit
+    alpha = pars[1]
+    beta = pars[2]
+    LP = LogParabola(amplitude, 1*u.TeV, alpha, beta)
 
     return LP(data)
 
@@ -48,8 +40,8 @@ if __name__=='__main__':
 
     # Run sampler
     sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
-            model=logparabola, prior=lnprior, nwalkers=256, nburn=50, nrun=10,
-            threads=4)
+            model=logparabola, prior=lnprior, nwalkers=128, nburn=100, nrun=50,
+            threads=4, prefit=True)
 
     # Save sampler
     from astropy.extern import six
