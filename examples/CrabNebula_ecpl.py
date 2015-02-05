@@ -8,12 +8,9 @@ from astropy.io import ascii
 
 data=ascii.read('CrabNebula_HESS_2006_ipac.dat')
 
-ene = u.Quantity(data['energy'])
-ene0 = np.sqrt(ene[0]*ene[-1])
-
 ## Set initial parameters
 
-p0=np.array((1.5e-12,2.4,np.log10(15.0),))
+p0=np.array((1e-12,2.4,np.log10(15.0),))
 labels=['norm','index','log10(cutoff)']
 
 ## Model definition
@@ -33,10 +30,10 @@ def cutoffexp(pars,data):
         - 2: log10(cutoff energy)
     """
 
-    ECPL = ExponentialCutoffPowerLaw(1 * flux_unit, ene0, 2, ene0)
-    ECPL.amplitude = pars[0] * flux_unit
-    ECPL.alpha = pars[1]
-    ECPL.e_cutoff = (10**pars[2])*u.TeV
+    amplitude = pars[0] * flux_unit
+    alpha = pars[1]
+    e_cutoff = (10**pars[2])*u.TeV
+    ECPL = ExponentialCutoffPowerLaw(amplitude, 1*u.TeV, alpha, e_cutoff)
 
     return ECPL(data)
 
