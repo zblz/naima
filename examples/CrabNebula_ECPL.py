@@ -56,7 +56,7 @@ if __name__=='__main__':
 ## Run sampler
 
     sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
-            model=cutoffexp, prior=lnprior, nwalkers=128, nburn=50, nrun=10,
+            model=cutoffexp, prior=lnprior, nwalkers=64, nburn=100, nrun=20,
             threads=4, prefit=True)
 
 ## Save sampler
