@@ -666,17 +666,31 @@ def plot_data(input_data, xlabel=None,ylabel=None,
     else:
         f = figure
 
-    if e_unit is None:
+    if len(f.axes) > 0:
+        ax1 = f.axes[0]
+    else:
+        ax1 = f.add_subplot(111)
+
+    # try to get units from previous plot in figure
+    try:
+        old_e_unit = u.Unit(ax1.get_xlabel().split('[')[-1].split(']')[0])
+    except ValueError:
+        old_e_unit = u.Unit('')
+
+    if e_unit is None and old_e_unit.physical_type == 'energy':
+        e_unit = old_e_unit
+    elif e_unit is None:
         e_unit = data['energy'].unit
 
-    ax1 = f.add_subplot(111)
     _plot_data_to_ax(data, ax1, e_unit=e_unit, sed=sed, data_color=data_color,
             ylabel=ylabel)
 
-    if xlabel is None:
-        ax1.set_xlabel('Energy [{0}]'.format(_latex_unit(e_unit)))
-    else:
+    if xlabel is not None:
         ax1.set_xlabel(xlabel)
+    elif xlabel is None and ax1.get_xlabel() == '':
+        ax1.set_xlabel('Energy [{0}]'.format(_latex_unit(e_unit)))
+
+    ax1.autoscale()
 
     return f
 
