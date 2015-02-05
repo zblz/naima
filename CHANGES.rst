@@ -13,6 +13,7 @@ Bug Fixes
 - Fix sherpa models guess() for integrated datasets.
 - Only complain about CL when there are ULs at a different CL.
 - Fix parsing of string upper limit columns in Python 3.
+- Use old energy unit when plotting a new data set onto a figure [#64]
 
 API Changes
 ^^^^^^^^^^^
