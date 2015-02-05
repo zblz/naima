@@ -14,23 +14,17 @@ data=ascii.read('CrabNebula_HESS_2006_ipac.dat')
 
 from naima.models import PionDecay, ExponentialCutoffPowerLaw
 
-# Find the normalization energy for the powerlaw
-# peak gamma ph_energy production is ~0.1*Ep, so enemid corresponds to Ep=10*enemid
-# If a cutoff is present, this should be reduced to reduce parameter correlation
-ph_energy = u.Quantity(data['energy'])
-e_0 = 5.*np.sqrt(ph_energy[0]*ph_energy[-1])
-
 Epmin = ph_energy[0]*1e-2
 Epmax = ph_energy[-1]*1e3
 proton_energy = np.logspace(np.log10(Epmin.value),
-                               np.log10(Epmax.value),50)*ph_energy.unit
+                            np.log10(Epmax.value),50)*ph_energy.unit
 
 def ppgamma(pars,data):
     amplitude = pars[0] / u.TeV
     alpha = pars[1]
     e_cutoff = (10**pars[2])*u.TeV
 
-    ECPL = ExponentialCutoffPowerLaw(amplitude, e_0, alpha, e_cutoff)
+    ECPL = ExponentialCutoffPowerLaw(amplitude, 30*u.TeV, alpha, e_cutoff)
     PP = PionDecay(ECPL)
 
     # convert to same units as observed differential spectrum
@@ -39,7 +33,7 @@ def ppgamma(pars,data):
     # Save a realization of the particle distribution to the metadata blob
     proton_dist= PP.particle_distribution(proton_energy)
 
-    return model, (proton_energy, proton_dist)
+    return model, (proton_energy, proton_dist), PP.Wp
 
 ## Prior definition
 
