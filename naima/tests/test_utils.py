@@ -1,10 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import numpy as np
+from numpy.testing import assert_allclose
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 import astropy.units as u
 
-from ..utils import validate_data_table, sed_conversion, generate_energy_edges, build_data_table
+from ..utils import validate_data_table, sed_conversion, generate_energy_edges, build_data_table, estimate_B
 
 from astropy.io import ascii
 
@@ -114,4 +115,13 @@ def test_build_data_table():
 
     with pytest.raises(TypeError):
         table = build_data_table(ene.value*u.Unit('erg/(cm2 s)'), flux, flux_error=flux_error_hi)
+
+def test_estimate_B():
+
+    fname = get_pkg_data_filename('data/CrabNebula_Fake_Xray.dat')
+    xray = ascii.read(fname)
+
+    B = estimate_B(xray, data_table)
+
+    assert_allclose(B.to('uG'), 0.4848756912803697 * u.uG)
 

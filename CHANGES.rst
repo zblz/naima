@@ -6,6 +6,7 @@
   tables to SED or choose format of first data tables when providing multiple
   data tables.
 - Added support for  a ``flux_ul`` column in input data tables.
+- Added a method to estimate magnetic field: `naima.estimate_B`
 
 Bug Fixes
 ^^^^^^^^^

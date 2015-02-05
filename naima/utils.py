@@ -11,7 +11,7 @@ import warnings
 from .extern.validator import validate_array, validate_scalar
 
 __all__ = ["generate_energy_edges", "sed_conversion",
-           "build_data_table"]
+           "build_data_table", "estimate_B"]
 
 # Input validation tools
 
@@ -436,4 +436,60 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
 
     return table
 
+def estimate_B(xray_table, vhe_table, photon_energy_density = 0.261*u.eV/u.cm**3):
+    """ Estimate magnetic field from synchrotron to Inverse Compton luminosity
+    ratio
+
+    Estimate the magnetic field from the ratio of X-ray to gamma-ray emission
+    according to:
+
+    .. math::
+
+        \\frac{L_\mathrm{xray}}{L_\gamma} = \\frac{u_\mathrm{B}}{u_\mathrm{ph}} =
+                \\frac{B^2}{ 8 \pi u_\mathrm{ph}}
+
+    where :math:`L_\mathrm{xray}` is the X-ray luminosity, :math:`L_\gamma` is
+    the gamma-ray luminosity, and :math:`u_\mathrm{ph}` is the seed photon field
+    energy density.
+
+    Note that this assumes that the ratio of observed fluxes is equal to the
+    ratio of bolometric synchrotron and IC luminosities. This assumption is safe
+    as long as the X-ray and gamma-ray emission contain the bulk of the
+    bolometric emission (i.e., the peak in the SED is in the X-ray and gamma-ray
+    observed bands). Even if the assumption does not hold, this is a good
+    starting point for the magnetic field when doing simultaneous X-ray and
+    gamma-ray spectral fits.
+
+    Parameters
+    ----------
+
+    xray_table : :class:`~astropy.table.Table`
+        Data table (see :ref:`dataformat` for details on the format) containing
+        the X-ray spectrum.
+    vhe_table : :class:`~astropy.table.Table`
+        Data table (see :ref:`dataformat` for details on the format) containing
+        the HE/VHE gamma-ray spectrum.
+
+    photon_energy_density : :class:`~astropy.units.Quantity` float, optional
+        Energy density of the seed photon field for IC emission. Defaults to
+        0.261 eV/cm3, the energy density of the CMB.
+
+    Returns
+    -------
+
+    B : :class:`~astropy.units.Quantity` float
+        Estimate of the magnetic flux density at the emitter.
+    """
+
+    xray = validate_data_table(xray_table, sed=False)
+    vhe = validate_data_table(vhe_table, sed=False)
+
+    xray_lum = trapz_loglog(xray['flux']*xray['energy'],xray['energy'])
+    vhe_lum = trapz_loglog(vhe['flux']*vhe['energy'],vhe['energy'])
+
+    uph=(photon_energy_density.to('erg/cm3')).value
+
+    B0=(np.sqrt((xray_lum/vhe_lum).decompose().value*8*np.pi*uph)*u.G).to('uG')
+
+    return B0
 
