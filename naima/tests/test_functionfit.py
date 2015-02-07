@@ -56,6 +56,17 @@ def cutoffexp(pars, data):
 
     return N * (x / x0) ** -gamma * np.exp(-(x / ecut) ** beta) * u.Unit('1/(cm2 s TeV)')
 
+def cutoffexp_sed(pars, data):
+    x = data['energy']
+    x0 = np.sqrt(x[0] * x[-1])
+    N = pars[0]
+    gamma = pars[1]
+    ecut = pars[2] * u.TeV
+    return N * (x / x0) ** -gamma * np.exp(-(x / ecut)) * u.Unit('erg/(cm2 s)')
+
+def cutoffexp_wrong(pars, data):
+    return data['energy'] * u.m
+
 # Prior definition
 
 def lnprior(pars):
@@ -89,6 +100,20 @@ def test_init():
 
     # test that the CL keyword has been correctly read
     assert sampler.data['cl'] == 0.99
+
+@pytest.mark.skipif('not HAS_EMCEE')
+def test_sed_conversion_in_lnprobmodel():
+    sampler, pos = get_sampler(
+        data_table=data_table, p0=p0, labels=labels, model=cutoffexp_sed,
+        prior=lnprior, nwalkers=10, nburn=2, threads=1)
+
+@pytest.mark.skipif('not HAS_EMCEE')
+def test_wrong_model_units():
+    # test exception raised when model and data spectra cannot be compared
+    with pytest.raises(u.UnitsError):
+        sampler, pos = get_sampler(
+            data_table=data_table, p0=p0, labels=labels, model=cutoffexp_wrong,
+            prior=lnprior, nwalkers=10, nburn=2, threads=1)
 
 @pytest.mark.skipif('not HAS_EMCEE or not HAS_SCIPY')
 def test_prefit():

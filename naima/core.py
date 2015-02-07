@@ -41,6 +41,14 @@ def normal_prior(value, mean, sigma):
 
 def lnprobmodel(model, data):
 
+    # Check if conversion is required
+    model_is_sed = model.unit.physical_type in ['power','flux']
+    data_is_sed = data['flux'].unit.physical_type in ['power','flux']
+
+    if model_is_sed != data_is_sed:
+        unit, sed_factor = sed_conversion(data['energy'], model.unit, data_is_sed)
+        model = (model * sed_factor).to(data['flux'].unit)
+
     ul = data['ul']
     notul = -ul
 
@@ -256,7 +264,13 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     else:
         spec = modelout
 
-    if spec.unit.physical_type != data['flux'].unit.physical_type:
+    # check whether both can be converted to same physical type through sed_conversion
+    try:
+        # If both can be converted to differential flux, they can be compared
+        # Otherwise, sed_conversion will raise a u.UnitsError
+        sed_conversion(data['energy'], spec.unit, False)
+        sed_conversion(data['energy'], data['flux'].unit, False)
+    except u.UnitsError:
         raise u.UnitsError('The physical type of the model and data units are not compatible,'
                 ' please modify your model or data so they match:\n'
                 ' Model units: {0} [{1}]\n Data units: {2} [{3}]\n'.format(
@@ -278,6 +292,7 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
             nunit, sedf = sed_conversion(data['energy'],spec.unit,False)
             currFlux = np.trapz(data['energy']*(spec*sedf).to(nunit), data['energy'])
+            nunit, sedf = sed_conversion(data['energy'],data['flux'].unit,False)
             dataFlux = np.trapz(data['energy']*(data['flux']*sedf).to(nunit), data['energy'])
             ratio = (dataFlux / currFlux)
             if labels[idxs[0]].startswith('log('):

@@ -9,6 +9,8 @@
 - Added a method to estimate magnetic field: `naima.estimate_B`.
 - Added the option to perform an optimization of the parameters before the MCMC
   run: see option ``prefit`` in `naima.get_sampler`.
+- Convert between SED and differential fluxes automatically if the model and
+  data physical types do not match.
 
 Bug Fixes
 ^^^^^^^^^
