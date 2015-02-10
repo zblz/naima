@@ -534,7 +534,7 @@ def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
     if e_unit is None:
         e_unit = data['energy'].unit
 
-    if confs is not None and n_samples is None:
+    if confs is not None:
         plot_CI(ax1, sampler,modelidx,sed=sed,confs=confs,e_unit=e_unit,
                 label=label, **kwargs)
     elif n_samples is not None:
