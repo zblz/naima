@@ -36,23 +36,32 @@ energy :math:`E_i` over :math:`N` spectral measurements. Taking the logarithm,
 
 Given that the MCMC procedure will sample the areas of the distribution with
 maximum value of the objective function, it is useful to define the objective
-function as the negative log-likelihood (NLL) disregarding constant factors:
+function as the log-likelihood disregarding constant factors:
 
 .. math::
-    \mathrm{NLL} =  \sum^N_{i=1} \frac{(S(\vec{p};E_i) - F_i)^2}{\sigma^2_i}.
+    \ln\mathcal{L} \propto  \sum^N_{i=1} \frac{(S(\vec{p};E_i) - F_i)^2}{\sigma^2_i}.
 
-The NLL function in this assumption can be related to the :math:`\chi^2`
-parameter as :math:`\chi^2=-2\mathrm{NLL}`, so that maximization of the NLL is
-equivalent to a minimization of :math:`\chi^2`.
+The :math:`\ln\mathcal{L}` function in this assumption can be related to the
+:math:`\chi^2` parameter as :math:`\chi^2=-2\ln\mathcal{L}`, so that
+maximization of the log-likelihood is equivalent to a minimization of
+:math:`\chi^2`.
+
+In addition to the likelihood from the observed spectral points, a prior
+likelihood factor should be considered for all parameters. This prior likelihood
+encodes our prior knowledge of the probability distribution of a given model
+parameter. If a given parameter is constrained by a previous measurement, it can
+be considered using a normal distribution (`naima.normal_prior`). If you need to
+constrain a parameter to be within a certain range, a uniform prior can be used
+(`naima.uniform_prior`).
     
-This NLL function is passed onto the `emcee.EnsembleSampler`, and the MCMC run
-is started. `emcee <http://dan.iel.fm/emcee/current/>`_ uses an affine-invariant
-MCMC sampler (`Goodman & Weare 2010
-<http://msp.org/camcos/2010/5-1/p04.xhtml>`_) that has the advantage of being
-able to sample complex parameter spaces without any tuning required. In
-addition, having multiple simultaneous *walkers* improves the efficiency of the
-sampling and reduces the number of computationally-expensive likelihood calls
-required.
+The combination of the prior and data likelihood functions is passed onto the
+`emcee.EnsembleSampler`, and the MCMC run is started. `emcee
+<http://dan.iel.fm/emcee/current/>`_ uses an affine-invariant MCMC sampler
+(`Goodman & Weare 2010 <http://msp.org/camcos/2010/5-1/p04.xhtml>`_) that has
+the advantage of being able to sample complex parameter spaces without any
+tuning required. In addition, having multiple simultaneous *walkers* improves
+the efficiency of the sampling and reduces the number of
+computationally-expensive likelihood calls required.
 
 The sampler works best by using as many samplers as possible, and starting them
 in a compact ball around the best fitting parameter values. After a *burn-in*
