@@ -1,4 +1,4 @@
-0.2 (unreleased)
+0.2 (2015-02-10)
 ----------------
 
 - Refactored sherpa models to use parent SherpaModelECPL class [#62]
