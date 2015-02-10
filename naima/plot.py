@@ -487,6 +487,11 @@ def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
     # Plot everything in serif to match math exponents
     plt.rc('font', family='serif')
 
+    if confs is None and n_samples is None:
+        # We actually only want to plot the data, so let's go there
+        return plot_data(sampler.data, xlabel=xlabel, ylabel=ylabel, sed=sed, figure=figure,
+                e_unit=e_unit, data_color=data_color, **kwargs)
+
     ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
     infostr += 'Maximum Likelihood values:\n'
