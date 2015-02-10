@@ -85,7 +85,7 @@ def cutoffexp(pars, data):
 
     # save flux model as tuple with energies and without
 
-    return flux, flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3), model4, model5
+    return flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3), model4, model5
 
 # Prior definition
 
@@ -168,15 +168,18 @@ def test_fit_data_units(sampler):
 
     plot_fit(sampler, modelidx=0, sed=None)
 
-
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_diagnostic_plots(sampler):
     # Diagnostic plots
     # try to plot all models, including those with wrong format/units
 
-    save_diagnostic_plots('test_function_1', sampler)
-    save_diagnostic_plots('test_function_2', sampler, sed=True)
+    blob_labels=['Model', 'Flux', 'Model', 'Particle Distribution', 'Broken PL',
+            'Wrong', 'Wrong', 'Wrong', 'Scalar', 'Scalar without units']
+
+    save_diagnostic_plots('test_function_1', sampler, blob_labels=blob_labels)
+    save_diagnostic_plots('test_function_2', sampler, sed=True, blob_labels=blob_labels[:4])
     save_diagnostic_plots(
         'test_function_3', sampler, sed=[True, True, False, ])
     save_diagnostic_plots('test_function_4', sampler, sed=False)
     save_diagnostic_plots('test_function_5', sampler, sed=True, pdf=True)
+

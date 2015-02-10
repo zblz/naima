@@ -104,8 +104,8 @@ that does precisely this with an Inverse Compton emission model::
         IC = InverseCompton(ECPL, seed_photon_fields=['CMB','FIR'])
 
         # The total enegy in electrons of model IC can be accessed through the
-        # attribute We
-        We = IC.We
+        # attribute We or obtained for a given range with compute_We
+        We = IC.compute_We(Eemin = 1*u.TeV)
 
         # We can also save the particle distribution between 100 MeV and 100 TeV
         electron_e = np.logspace(8, 14, 100) * u.eV
@@ -149,7 +149,8 @@ procedures of ``naima``: `~naima.plot_chain`, `~naima.plot_fit`, and
 generate a collection of plots that illustrate the results and the stability of
 the fitting procedure. These are `~naima.save_diagnostic_plots`::
 
-    naima.save_diagnostic_plots('CrabNebula_naima_fit', sampler)
+    naima.save_diagnostic_plots('CrabNebula_naima_fit', sampler,
+        blob_labels=['Spectrum', 'Electron energy distribution', '$W_e; E>1$ TeV'])
 
 and `~naima.save_results_table`::
 

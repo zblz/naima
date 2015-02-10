@@ -282,7 +282,8 @@ def calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True):
 
     return modelx, CI
 
-def plot_CI(ax, sampler, modelidx=0, sed=True,confs=[3, 1, 0.5],e_unit=u.eV,**kwargs):
+def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
+        label=None, **kwargs):
     """Plot confidence interval.
 
     Parameters
@@ -316,9 +317,15 @@ def plot_CI(ax, sampler, modelidx=0, sed=True,confs=[3, 1, 0.5],e_unit=u.eV,**kw
                 lw=0., color='{0}'.format(color),
                 alpha=0.6, zorder=-10)
 
-    # ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
+    ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
+    ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
+            color='r', lw=1.5, alpha=0.8)
 
-def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV, last_step=False):
+    if label is not None:
+        ax.set_ylabel('{0} [{1}]'.format(label,_latex_unit(f_unit)))
+
+def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
+        last_step=False, label=None):
     """Plot a number of samples from the sampler chain.
 
     Parameters
@@ -349,10 +356,11 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV, 
                 color='k', alpha=0.1, lw=1)
 
     ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
-
     ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
             color='r', lw=1.5, alpha=0.8)
 
+    if label is not None:
+        ax.set_ylabel('{0} [{1}]'.format(label,_latex_unit(f_unit)))
 
 def find_ML(sampler, modelidx):
     """
@@ -382,7 +390,7 @@ def find_ML(sampler, modelidx):
 def _latex_unit(unit):
     """ Hack to get a single line latex representation of a unit
 
-        Will be obsolete with format='latex_inline' in astropy 0.4.1
+        Will be obsolete with format='latex_inline' in astropy 1.0
     """
     l = unit.to_string('cds').split('.')
     out = ''
@@ -398,7 +406,7 @@ def _latex_unit(unit):
 
     return out[1:]
 
-def plot_blob(sampler, blobidx=0, label=None, last_step=False, **kwargs):
+def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kwargs):
     """
     Plot a metadata blob as a fit to spectral data or value distribution
 
@@ -424,15 +432,16 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, **kwargs):
 
     if modelx is None:
         # Blob is scalar, plot distribution
-        f = plot_distribution(model, label)
+        f = plot_distribution(model, label, figure=figure)
     else:
-        f = plot_fit(sampler,modelidx=blobidx,last_step=last_step,label=label,**kwargs)
+        f = plot_fit(sampler, modelidx=blobidx, last_step=last_step,
+                label=label, figure=figure,**kwargs)
 
     return f
 
-def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1, 0.5],
-        n_samples=None, sed=True, figure=None, residualCI=True, plotdata=None,
-        e_unit=None, data_color='r', **kwargs):
+def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
+        n_samples=100, confs=None, sed=True, figure=None, residualCI=True,
+        plotdata=None, e_unit=None, data_color='r', **kwargs):
     """
     Plot data with fit confidence regions.
 
@@ -452,13 +461,13 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
         Label for the ``y`` axis of the plot.
     sed : bool, optional
         Whether to plot SED or differential spectrum.
+    n_samples : int, optional
+        If not ``None``, number of sample models to plot. If ``None``,
+        confidence bands will be plotted instead of samples. Default is 100.
     confs : list, optional
         List of confidence levels (in sigma) to use for generating the
-        confidence intervals. Default is ``[3,1,0.5]``
-    n_samples : int, optional
-        If not ``None``, number of sample models to plot. ``n_samples=100`` is a
-        good starting point to see the behaviour of the model. Default is
-        ``None``: plot confidence bands instead of samples.
+        confidence intervals. Default is to plot sample models instead of
+        confidence bands.
     figure : `matplotlib.figure.Figure`, optional
         `matplotlib` figure to plot on. If omitted a new one will be generated.
     residualCI : bool, optional
@@ -495,7 +504,7 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
     plotresiduals = False
     if modelidx == 0 and plotdata is None:
         plotdata = True
-        if confs is not None:
+        if confs is not None or n_samples is not None:
             plotresiduals = True
     elif plotdata is None:
         plotdata = False
@@ -526,9 +535,11 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
         e_unit = data['energy'].unit
 
     if confs is not None and n_samples is None:
-        plot_CI(ax1, sampler,modelidx,sed=sed,confs=confs,e_unit=e_unit,**kwargs)
+        plot_CI(ax1, sampler,modelidx,sed=sed,confs=confs,e_unit=e_unit,
+                label=label, **kwargs)
     elif n_samples is not None:
-        plot_samples(ax1, sampler, modelidx, sed=sed, n_samples=n_samples, e_unit=e_unit)
+        plot_samples(ax1, sampler, modelidx, sed=sed, n_samples=n_samples,
+                e_unit=e_unit, label=label)
     else:
         residualCI = False
 
@@ -618,8 +629,8 @@ def plot_fit(sampler, modelidx=0,label=None,xlabel=None,ylabel=None,confs=[3, 1,
 
     return f
 
-def plot_data(input_data, xlabel=None,ylabel=None,
-        sed=True, figure=None, e_unit=None, data_color='r', **kwargs):
+def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
+        e_unit=None, data_color='r', **kwargs):
     """
     Plot spectral data.
 
@@ -761,7 +772,7 @@ def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
         ax1.set_ylabel(ylabel)
 
 
-def plot_distribution(samples, label):
+def plot_distribution(samples, label, figure=None):
 
     from scipy import stats
     import matplotlib.pyplot as plt
@@ -788,7 +799,10 @@ def plot_distribution(samples, label):
                   uncs=(_latex_float(quantiles[50] - quantiles[16]),
                         _latex_float(quantiles[84] - quantiles[50])), std=_latex_float(std), unit=unit)
 
-    f = plt.figure()
+    if figure is None:
+        f = plt.figure()
+    else:
+        f = figure
 
     f.text(0.1, 0.23, dist_props, ha='left', va='top')
 

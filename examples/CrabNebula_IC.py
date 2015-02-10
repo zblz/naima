@@ -72,7 +72,8 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    naima.save_diagnostic_plots('CrabNebula_IC',sampler,sed=True,last_step=False)
+    naima.save_diagnostic_plots('CrabNebula_IC',sampler,sed=True,last_step=False,
+            blob_labels=['Spectrum', 'Electron energy distribution', '$W_e (E_e>1\,\mathrm{TeV})$'])
     naima.save_results_table('CrabNebula_IC',sampler)
 
 

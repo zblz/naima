@@ -18,15 +18,17 @@ except ImportError:
 
 __all__ = ["save_diagnostic_plots", "save_results_table"]
 
-def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None, **kwargs):
+def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
+        blob_labels=None, **kwargs):
     """
     Generate diagnostic plots.
 
-    - A corner plot of sample density in the two dimensional parameter space of
-      all parameter pairs of the run: ``outname_corner.png`` (see `triangle.corner`).
     - A plot for each of the chain parameters showing walker progression, final
       sample distribution and several statistical measures of this distribution:
       ``outname_chain_parN.png`` (see `naima.plot_chain`).
+    - A corner plot of sample density in the two dimensional parameter space of
+      all parameter pairs of the run, with the Maximum Likelihood parameter
+      vector indicated in blue: ``outname_corner.png`` (see `triangle.corner`).
     - A plot for each of the models returned as blobs by the model function. The
       maximum likelihood model is shown, as well as the 1 and 3 sigma confidence
       level contours. The first model will be compared with observational data
@@ -43,6 +45,10 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
 
     modelidxs : iterable of integers, optional
         Model numbers to be plotted. Default: All returned in sampler.blobs
+
+    blob_labels : list of strings, optional
+        Label for each of the outputs of the model. They will be used as title
+        for the corresponding plot.
 
     pdf : bool, optional
         Whether to save plots to multipage pdf.
@@ -107,11 +113,20 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
     elif isinstance(sed, bool):
         sed = [sed for idx in modelidxs]
 
-    for modelidx, plot_sed in six.moves.zip(modelidxs, sed):
+    if blob_labels is None:
+        blob_labels = ['Model output {0}'.format(idx) for idx in modelidxs]
+    elif len(modelidxs)==1 and isinstance(blob_labels, str):
+        blob_labels = [blob_labels,]
+    elif len(blob_labels) < len(modelidxs):
+        # Add labels
+        n = len(blob_labels)
+        blob_labels += ['Model output {0}'.format(idx) for idx in modelidxs[n:]]
+
+    for modelidx, plot_sed, label in six.moves.zip(modelidxs, sed, blob_labels):
 
         try:
-            log.info('Plotting model output {0}...'.format(modelidx))
-            f = plot_blob(sampler, blobidx=modelidx, label='Model output {0}'.format(modelidx),
+            log.info('Plotting {0}...'.format(label))
+            f = plot_blob(sampler, blobidx=modelidx, label=label,
                           sed=plot_sed, n_samples=100, **kwargs)
             if pdf:
                 f.savefig(outpdf, format='pdf')

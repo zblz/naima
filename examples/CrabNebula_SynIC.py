@@ -94,7 +94,8 @@ if __name__=='__main__':
 
 ## Diagnostic plots
 
-    naima.save_diagnostic_plots('CrabNebula_SynIC',sampler,sed=True)
+    naima.save_diagnostic_plots('CrabNebula_SynIC', sampler, sed=True,
+            blob_labels=['Spectrum', '$W_e$($E_e>1$ GeV)'])
     naima.save_results_table('CrabNebula_SynIC',sampler)
 
 

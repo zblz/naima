@@ -11,6 +11,7 @@
   run: see option ``prefit`` in `naima.get_sampler`.
 - Convert between SED and differential fluxes automatically if the model and
   data physical types do not match.
+- Add blob_labels parameter to save_diagnostic_plots.
 
 Bug Fixes
 ^^^^^^^^^
@@ -19,6 +20,7 @@ Bug Fixes
 - Only complain about CL when there are ULs at a different CL.
 - Fix parsing of string upper limit columns in Python 3.
 - Use old energy unit when plotting a new data set onto a figure [#64]
+- Show ordinate units when plotting blobs without spectral data.
 
 API Changes
 ^^^^^^^^^^^

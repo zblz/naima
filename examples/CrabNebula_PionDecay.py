@@ -62,6 +62,7 @@ if __name__=='__main__':
     cPickle.dump(sampler,open('CrabNebula_proton_sampler.pickle','wb'))
 
     # Save plots and results
-    naima.save_diagnostic_plots('CrabNebula_proton',sampler,sed=True)
+    naima.save_diagnostic_plots('CrabNebula_proton', sampler, sed=True,
+            blob_labels=['Spectrum', 'Proton energy distribution', '$W_p (E_p>E_\mathrm{thr})$'])
     naima.save_results_table('CrabNebula_proton',sampler)
 
