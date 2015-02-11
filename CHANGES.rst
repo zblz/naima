@@ -4,6 +4,8 @@
 Bug Fixes
 ^^^^^^^^^
 
+- Fixed sed conversion of residuals [#69]
+
 0.2 (2015-02-10)
 ----------------
 

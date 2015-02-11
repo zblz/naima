@@ -439,9 +439,10 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kw
 
     return f
 
-def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
-        n_samples=100, confs=None, sed=True, figure=None, residualCI=True,
-        plotdata=None, e_unit=None, data_color='r', **kwargs):
+def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
+        confs=None, ML_info=True, figure=None, plotdata=None,
+        plotresiduals=None, e_unit=None, data_color='r', xlabel=None,
+        ylabel=None, **kwargs):
     """
     Plot data with fit confidence regions.
 
@@ -455,10 +456,6 @@ def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
         Model index to plot.
     label : str, optional
         Label for the title of the plot.
-    xlabel : str, optional
-        Label for the ``x`` axis of the plot.
-    ylabel : str, optional
-        Label for the ``y`` axis of the plot.
     sed : bool, optional
         Whether to plot SED or differential spectrum.
     n_samples : int, optional
@@ -468,29 +465,32 @@ def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
         List of confidence levels (in sigma) to use for generating the
         confidence intervals. Default is to plot sample models instead of
         confidence bands.
+    ML_info : bool, optional
+        Whether to plot information about the maximum likelihood parameters and
+        the standard deviation of their distributions. Default is True.
     figure : `matplotlib.figure.Figure`, optional
         `matplotlib` figure to plot on. If omitted a new one will be generated.
-    residualCI : bool, optional
-        Whether to plot the confidence interval bands in the residuals subplot.
     plotdata : bool, optional
         Wheter to plot data on top of model confidence intervals. Default is
         True if the physical types of the data and the model match.
+    plotresiduals : bool, optional
+        Wheter to plot the residuals with respect to the maximum likelihood model. Default is
+        True if ``plotdata`` is True and either ``confs`` or ``n_samples`` are set.
     e_unit : `~astropy.units.Unit`
         Units for the energy axis of the plot. The default is to use the units
         of the energy array of the observed data.
-    data_color : str
+    data_color : str, optional
         Matplotlib color for the data points.
+    xlabel : str, optional
+        Label for the ``x`` axis of the plot.
+    ylabel : str, optional
+        Label for the ``y`` axis of the plot.
 
     """
     import matplotlib.pyplot as plt
 
     # Plot everything in serif to match math exponents
     plt.rc('font', family='serif')
-
-    if confs is None and n_samples is None:
-        # We actually only want to plot the data, so let's go there
-        return plot_data(sampler.data, xlabel=xlabel, ylabel=ylabel, sed=sed, figure=figure,
-                e_unit=e_unit, data_color=data_color, **kwargs)
 
     ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
@@ -506,22 +506,18 @@ def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
     ul = data['ul']
     notul = -ul
 
-    plotresiduals = False
-    if modelidx == 0 and plotdata is None:
+    if len(model_ML[0]) == len(data['energy']) and plotdata is None:
         plotdata = True
-        if confs is not None or n_samples is not None:
-            plotresiduals = True
     elif plotdata is None:
         plotdata = False
 
-    if plotdata:
-        # Check that physical types of data and model match
-        model_pt = _get_model_pt(sampler, modelidx)
-        data_pt = data['flux'].unit.physical_type
-        if data_pt != model_pt:
-            log.info('Model physical type ({0}) and spectral data physical'
-                    ' type ({1}) do not match for blob {2}! Not plotting data.'.format(model_pt, data_pt, modelidx))
-            plotdata = False
+    if plotresiduals is None and plotdata and (confs is not None or n_samples):
+        plotresiduals = True
+
+    if confs is None and not n_samples and plotdata and not plotresiduals:
+        # We actually only want to plot the data, so let's go there
+        return plot_data(sampler.data, xlabel=xlabel, ylabel=ylabel, sed=sed, figure=figure,
+                e_unit=e_unit, data_color=data_color, **kwargs)
 
     if figure == None:
         f = plt.figure()
@@ -540,64 +536,25 @@ def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
         e_unit = data['energy'].unit
 
     if confs is not None:
-        plot_CI(ax1, sampler,modelidx,sed=sed,confs=confs,e_unit=e_unit,
+        plot_CI(ax1, sampler, modelidx, sed=sed, confs=confs, e_unit=e_unit,
                 label=label, **kwargs)
-    elif n_samples is not None:
+    elif n_samples:
         plot_samples(ax1, sampler, modelidx, sed=sed, n_samples=n_samples,
                 e_unit=e_unit, label=label)
-    else:
-        residualCI = False
 
+    xlaxis = ax1
     if plotdata:
-
         _plot_data_to_ax(data, ax1, e_unit=e_unit, sed=sed,
                 data_color=data_color, ylabel=ylabel)
-
         if plotresiduals:
-            if len(model_ML) != len(data['energy']):
-                from scipy.interpolate import interp1d
-                modelfunc = interp1d(model_ML[0].to(e_unit).value, model_ML[1].value)
-                difference = data['flux'][notul].value-modelfunc(data['energy'][notul])
-                difference *= data['flux'].unit
-            else:
-                difference = data['flux'][notul]-model_ML[1][notul]
-
-            dflux = np.mean(data['dflux'][:, notul], axis=0)
-            ax2.errorbar(data['energy'][notul].to(e_unit).value,
-                    (difference / dflux).decompose().value,
-                    yerr=(dflux / dflux).decompose().value,
-                    xerr=data['dene'][:, notul].to(e_unit).value,
-                    zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
-                    mec='w', mew=0, ms=6, color=data_color)
-            ax2.axhline(0, c='k', lw=2, ls='--')
-
-            from matplotlib.ticker import MaxNLocator
-            ax2.yaxis.set_major_locator(MaxNLocator(integer='True', prune='upper'))
-
-            ax2.set_ylabel(r'$\Delta\sigma$')
-
-            if len(model_ML) == len(data['energy']) and residualCI:
-                modelx, CI = calc_CI(sampler, modelidx=modelidx,
-                                     confs=confs, **kwargs)
-
-                for (ymin, ymax), conf in zip(CI, confs):
-                    if conf < 100:
-                        color = np.log(conf)/np.log(20)+0.4
-                        ax2.fill_between(modelx[notul].to(e_unit).value,
-                                ((ymax[notul]-model_ML[1][notul])
-                                 / dflux).decompose().value,
-                                ((ymin[notul]-model_ML[1][notul])
-                                 / dflux).decompose().value,
-                                lw=0., color='{0}'.format(color), alpha=0.6, zorder=-10)
-                # ax.plot(modelx,model_ML,c='k',lw=3,zorder=-5)
-
-    ax1.set_xscale('log')
-    ax1.set_yscale('log')
-    if plotdata and plotresiduals:
-        ax2.set_xscale('log')
-        for tl in ax1.get_xticklabels():
-            tl.set_visible(False)
+            _plot_residuals_to_ax(data, model_ML, ax2, e_unit=e_unit, sed=sed,
+                    data_color=data_color)
+            xlaxis = ax2
+            for tl in ax1.get_xticklabels():
+                tl.set_visible(False)
     else:
+        ax1.set_xscale('log')
+        ax1.set_yscale('log')
         if sed:
             ndecades = 10
         else:
@@ -613,17 +570,12 @@ def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
         xmax = np.max(model_ML[0][hi])
         ax1.set_xlim(right=10 ** np.ceil(np.log10(xmax.to(e_unit).value)))
 
-    if confs is not None:
+    if ML_info and (confs is not None or n_samples):
         ax1.text(0.05, 0.05, infostr, ha='left', va='bottom',
                 transform=ax1.transAxes, family='monospace')
 
     if label is not None:
         ax1.set_title(label)
-
-    if plotdata and plotresiduals:
-        xlaxis = ax2
-    else:
-        xlaxis = ax1
 
     if xlabel is None:
         xlaxis.set_xlabel('Energy [{0}]'.format(_latex_unit(e_unit)))
@@ -633,6 +585,119 @@ def plot_fit(sampler, modelidx=0, label=None, xlabel=None, ylabel=None,
     f.subplots_adjust(hspace=0)
 
     return f
+
+def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
+        ylabel=None):
+    """ Plots data errorbars and upper limits onto ax.
+    X label is left to plot_data and plot_fit because they depend on whether
+    residuals are plotted.
+    """
+
+    if e_unit is None:
+        e_unit = data['energy'].unit
+
+    def plot_ulims(ax, x, y, xerr):
+        """
+        Plot upper limits as arrows with cap at value of upper limit.
+
+        uplim behaviour has been fixed in matplotlib 1.4
+        """
+        ax.errorbar(x, y, xerr=xerr, ls='',
+                color=data_color, elinewidth=2, capsize=0)
+        import matplotlib
+        major, minor, bugfix = [int(v) for v in matplotlib.__version__.split('.')]
+        if major >= 1 and minor >= 4:
+            ax.errorbar(x, y, yerr=0.25*y, ls='', uplims=True,
+                    color=data_color, elinewidth=2, capsize=5, zorder=10)
+        else:
+            ax.errorbar(x, 0.75*y, yerr=0.25*y, ls='', lolims=True,
+                    color=data_color, elinewidth=2, capsize=5, zorder=10)
+
+    f_unit, sedf = sed_conversion(data['energy'], data['flux'].unit, sed)
+
+    ul = data['ul']
+    notul = -ul
+
+    # Hack to show y errors compatible with 0 in loglog plot
+    yerr = data['dflux'][:, notul]
+    y = data['flux'][notul].to(yerr.unit)
+    bad_err = np.where((y-yerr[0]) <= 0.)
+    yerr[0][bad_err] = y[bad_err]*(1.-1e-7)
+
+    ax1.errorbar(data['energy'][notul].to(e_unit).value,
+            (data['flux'][notul] * sedf[notul]).to(f_unit).value,
+            yerr=(yerr * sedf[notul]).to(f_unit).value,
+            xerr=(data['dene'][:, notul]).to(e_unit).value,
+            zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
+            mec='w', mew=0, ms=6, color=data_color)
+
+    if np.any(ul):
+        plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
+                (data['flux'][ul] * sedf[ul]).to(f_unit).value,
+                (data['dene'][:, ul]).to(e_unit).value)
+
+    ax1.set_xscale('log')
+    ax1.set_yscale('log')
+    xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['dene'][0]).to(e_unit).value))
+    xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['dene'][1]).to(e_unit).value))
+    ax1.set_xlim(xmin, xmax)
+    # avoid autoscaling to errorbars to 0
+    if np.any(data['dflux'][:, notul][0] >= data['flux'][notul]):
+        elo  = ((data['flux'][notul] * sedf[notul]).to(f_unit).value -
+                (data['dflux'][0][notul] * sedf[notul]).to(f_unit).value)
+        gooderr = np.where(data['dflux'][0][notul] < data['flux'][notul])
+        ymin = 10 ** np.floor(np.log10(np.min(elo[gooderr])))
+        ax1.set_ylim(bottom=ymin)
+
+    if ylabel is None:
+        if sed:
+            ax1.set_ylabel(r'$E^2\mathsf{{d}}N/\mathsf{{d}}E$'
+                ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
+        else:
+            ax1.set_ylabel(r'$\mathsf{{d}}N/\mathsf{{d}}E$'
+                    ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
+    else:
+        ax1.set_ylabel(ylabel)
+
+def _plot_residuals_to_ax(data, model_ML, ax, e_unit=u.eV, sed=True,
+        data_color='r'):
+    """Function to compute and plot residuals in units of the uncertainty"""
+
+    df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
+    ene = data['energy'].to(e_unit)
+    flux = (data['flux'] * dsedf).to(df_unit)
+    dflux = (data['dflux'] * dsedf).to(df_unit)
+
+    mf_unit, msedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
+    mene = model_ML[0].to(e_unit)
+    mflux = (model_ML[1] * msedf).to(mf_unit)
+
+    notul = -data['ul']
+
+    if len(mene) != len(ene):
+        print('test')
+        from scipy.interpolate import interp1d
+        modelfunc = interp1d(mene.value, mflux.value, bounds_error=False)
+        difference = flux[notul].value-modelfunc(ene[notul])
+        difference *= flux.unit
+    else:
+        difference = flux[notul]-mflux[notul]
+
+    dflux = np.mean(dflux[:, notul], axis=0)
+    ax.errorbar(ene[notul].value,
+            (difference / dflux).decompose().value,
+            yerr=(dflux / dflux).decompose().value,
+            xerr=data['dene'][:, notul].to(e_unit).value,
+            zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
+            mec='w', mew=0, ms=6, color=data_color)
+    ax.axhline(0, c='k', lw=2, ls='--')
+
+    from matplotlib.ticker import MaxNLocator
+    ax.yaxis.set_major_locator(MaxNLocator(integer='True', prune='upper'))
+
+    ax.set_ylabel(r'$\Delta\sigma$')
+    ax.set_xscale('log')
+
 
 def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
         e_unit=None, data_color='r', **kwargs):
@@ -711,77 +776,11 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
     return f
 
 
-def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
-        ylabel=None):
-    """ Plots data errorbars and upper limits onto ax.
-    X label is left to plot_data and plot_fit because they depend on whether
-    residuals are plotted.
-    """
-
-    if e_unit is None:
-        e_unit = data['energy'].unit
-
-    def plot_ulims(ax, x, y, xerr):
-        """
-        Plot upper limits as arrows with cap at value of upper limit.
-        """
-        ax.errorbar(x, y, xerr=xerr, ls='',
-                color=data_color, elinewidth=2, capsize=0)
-        ax.errorbar(x, 0.75 * y, yerr=0.25*y, ls='', lolims=True,
-                color=data_color, elinewidth=2, capsize=5, zorder=10)
-
-    f_unit, sedf = sed_conversion(data['energy'], data['flux'].unit, sed)
-
-    ul = data['ul']
-    notul = -ul
-
-    # Hack to show y errors compatible with 0 in loglog plot
-    yerr = data['dflux'][:, notul]
-    y = data['flux'][notul].to(yerr.unit)
-    bad_err = np.where((y-yerr[0]) <= 0.)
-    yerr[0][bad_err] = y[bad_err]*(1.-1e-7)
-
-    ax1.errorbar(data['energy'][notul].to(e_unit).value,
-            (data['flux'][notul] * sedf[notul]).to(f_unit).value,
-            yerr=(yerr * sedf[notul]).to(f_unit).value,
-            xerr=(data['dene'][:, notul]).to(e_unit).value,
-            zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
-            mec='w', mew=0, ms=6, color=data_color)
-
-    if np.any(ul):
-        plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
-                (data['flux'][ul] * sedf[ul]).to(f_unit).value,
-                (data['dene'][:, ul]).to(e_unit).value)
-
-    ax1.set_xscale('log')
-    ax1.set_yscale('log')
-    xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['dene'][0]).value))
-    xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['dene'][1]).value))
-    ax1.set_xlim(xmin, xmax)
-    # avoid autoscaling to errorbars to 0
-    if np.any(data['dflux'][:, notul][0] >= data['flux'][notul]):
-        elo  = ((data['flux'][notul] * sedf[notul]).to(f_unit).value -
-                (data['dflux'][0][notul] * sedf[notul]).to(f_unit).value)
-        gooderr = np.where(data['dflux'][0][notul] < data['flux'][notul])
-        ymin = 10 ** np.floor(np.log10(np.min(elo[gooderr])))
-        ax1.set_ylim(bottom=ymin)
-
-    if ylabel is None:
-        if sed:
-            ax1.set_ylabel(r'$E^2\mathsf{{d}}N/\mathsf{{d}}E$'
-                ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
-        else:
-            ax1.set_ylabel(r'$\mathsf{{d}}N/\mathsf{{d}}E$'
-                    ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
-    else:
-        ax1.set_ylabel(ylabel)
-
-
 def plot_distribution(samples, label, figure=None):
+    """ Plot a distribution and print statistics about it"""
 
     from scipy import stats
     import matplotlib.pyplot as plt
-
 
     quant = [16, 50, 84]
     quantiles = dict(six.moves.zip(quant, np.percentile(samples, quant)))
