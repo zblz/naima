@@ -218,10 +218,12 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
         Whether to attempt to guess the normalization (first) parameter of the
         model. Default is True.
     prefit : bool, optional
-        Whether to attempt to find the maximum likelihood parameters with
-        `scipy.optimize.minimize` and use them as starting point of the MCMC
-        run. The parameter values in `p0` will be used as starting points for
-        the minimization.
+        Whether to attempt to find the maximum likelihood parameters with a
+        Nelder-Mead algorithm (using `scipy.optimize.minimize`) and use them as
+        starting point of the MCMC run. The parameter values in `p0` will be
+        used as starting points for the minimization. Note that the initial
+        optimization is done without taking the prior function into accound to
+        avoid the possibility of infinite values in the objective function.
     data_sed : bool, optional
         When providing more than one data table, whether to convert them to SED
         format. If unset or None, all tables will be converted to the format of
