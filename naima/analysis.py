@@ -141,7 +141,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
 
 
 def save_results_table(outname, sampler, format='ascii.ecsv',
-        convert_log=True, last_step=True, include_blobs=False, **kwargs):
+        convert_log=True, last_step=True, include_blobs=True, **kwargs):
     """
     Save an ASCII table with the results stored in the `~emcee.EnsembleSampler`.
 
