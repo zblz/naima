@@ -63,12 +63,12 @@ if __name__=='__main__':
     from astropy.extern import six
     from six.moves import cPickle
     sampler.pool=None
-    cPickle.dump(sampler,open('CrabNebula_ecpl_sampler.pickle','wb'))
+    cPickle.dump(sampler,open('CrabNebula_ECPL_sampler.pickle','wb'))
 
 ## Diagnostic plots
-    naima.save_results_table('CrabNebula_ecpl',sampler,
+    naima.save_results_table('CrabNebula_ECPL',sampler,
             last_step=False)
-    naima.save_diagnostic_plots('CrabNebula_ecpl',sampler,
+    naima.save_diagnostic_plots('CrabNebula_ECPL',sampler,
             sed=True,last_step=False)
 
 

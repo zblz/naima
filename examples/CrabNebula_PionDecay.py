@@ -59,10 +59,10 @@ if __name__=='__main__':
     from astropy.extern import six
     from six.moves import cPickle
     sampler.pool=None
-    cPickle.dump(sampler,open('CrabNebula_proton_sampler.pickle','wb'))
+    cPickle.dump(sampler,open('CrabNebula_PionDecay_sampler.pickle','wb'))
 
     # Save plots and results
-    naima.save_diagnostic_plots('CrabNebula_proton', sampler, sed=True,
+    naima.save_diagnostic_plots('CrabNebula_PionDecay', sampler, sed=True,
             blob_labels=['Spectrum', 'Proton energy distribution', '$W_p (E_p>E_\mathrm{thr})$'])
-    naima.save_results_table('CrabNebula_proton',sampler)
+    naima.save_results_table('CrabNebula_PionDecay',sampler)
 
