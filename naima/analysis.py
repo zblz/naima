@@ -278,7 +278,7 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
                             blobl.append(walkerblob[idx])
                 if unit:
                     dist = np.array([b.value for b in blobl])
-                    metadata['blob{0}.unit'.format(idx)] = unit.to_string()
+                    metadata['blob{0}_unit'.format(idx)] = unit.to_string()
                 else:
                     dist = np.array(blobl)
 
