@@ -59,7 +59,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
     if pdf:
         from matplotlib import pyplot as plt
         plt.rc('pdf', fonttype=42)
-        log.info( 'Generating diagnostic plots in file '
+        log.info('Saving diagnostic plots in file '
                 '{0}_plots.pdf'.format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
         outpdf = PdfPages('{0}_plots.pdf'.format(outname))
@@ -140,8 +140,8 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
         outpdf.close()
 
 
-def save_results_table(outname, sampler, table_format='ascii.ecsv',
-        convert_log=True, last_step=True, **kwargs):
+def save_results_table(outname, sampler, format='ascii.ecsv',
+        convert_log=True, last_step=True, include_blobs=False, **kwargs):
     """
     Save an ASCII table with the results stored in the `~emcee.EnsembleSampler`.
 
@@ -157,7 +157,7 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
     sampler : `emcee.EnsembleSampler` instance
         Sampler instance from which chains, blobs and data are read.
 
-    table_format : str, optional
+    format : str, optional
         Format of the saved table. Must be a format string accepted by
         `astropy.table.Table.write`, see the `astropy unified file read/write
         interface documentation
@@ -175,6 +175,10 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
         Whether to only use the positions in the final step of the run (True,
         default) or the whole chain (False).
 
+    include_blobs : bool, optional
+        Whether to save the distribution properties of the scalar blobs in the
+        sampler. Default is True.
+
     Returns
     -------
 
@@ -182,25 +186,26 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
         Table with the results.
     """
 
-    if not hasattr(ascii,'ecsv') and table_format == 'ascii.ecsv':
-        table_format = 'ascii.ipac'
+    if not hasattr(ascii,'ecsv') and format == 'ascii.ecsv':
+        format = 'ascii.ipac'
         log.warning("ECSV format not available (only in astropy >= v1.0),"
-                " falling back to {0}...".format(table_format))
-    elif not HAS_PYYAML and table_format == 'ascii.ecsv':
-        table_format = 'ascii.ipac'
+                " falling back to {0}...".format(format))
+    elif not HAS_PYYAML and format == 'ascii.ecsv':
+        format = 'ascii.ipac'
         log.warning("PyYAML package is required for ECSV format,"
-                " falling back to {0}...".format(table_format))
-    elif table_format not in ['ascii.ecsv','ascii.ipac']:
+                " falling back to {0}...".format(format))
+    elif format not in ['ascii.ecsv','ascii.ipac']:
         log.warning('The chosen table format does not have an astropy'
                 ' writer that suppports metadata writing, no run info'
                 ' will be saved to the file!')
 
     file_extension = 'dat'
-    if table_format == 'ascii.ecsv':
+    if format == 'ascii.ecsv':
         file_extension = 'ecsv'
 
+    log.info('Saving results table in {0}_results.{1}'.format(outname,file_extension))
+
     labels = sampler.labels
-    maxlenlabel = max([len(l) for l in labels])
 
     if last_step == True:
         dists = sampler.chain[:,-1,:]
@@ -209,13 +214,13 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
 
     quant = [16, 50, 84]
     # Do we need more info on the distributions?
-    t=Table(names=['label','median','err_lo','err_hi'],
-            dtype=['S{0}'.format(maxlenlabel),'f8','f8','f8'])
+    t=Table(names=['label','median','unc_lo','unc_hi'],
+            dtype=['S72','f8','f8','f8'])
     t['label'].description   = 'Name of the parameter'
     t['median'].description  = 'Median of the posterior distribution function'
-    t['err_lo'].description = ('Difference between the median and the'
+    t['unc_lo'].description = ('Difference between the median and the'
                 ' {0}th percentile of the pdf, ~1sigma lower uncertainty'.format(quant[0]))
-    t['err_hi'].description = ('Difference between the {0}th percentile'
+    t['unc_hi'].description = ('Difference between the {0}th percentile'
                 ' and the median of the pdf, ~1sigma upper uncertainty'.format(quant[2]))
 
     metadata = {}
@@ -224,15 +229,6 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
     # And add all info stored in the sampler.run_info dict
     if hasattr(sampler,'run_info'):
         metadata.update(sampler.run_info)
-
-    if table_format == 'ascii.ipac':
-        # Only keywords are written to IPAC tables
-        t.meta['keywords'] = {}
-        for di in metadata.items():
-            t.meta['keywords'][di[0]]={'value':di[1]}
-    else:
-        # Save it directly in meta for readability in ECSV
-        t.meta.update(metadata)
 
     for p,label in enumerate(labels):
         dist = dists[:,p]
@@ -251,14 +247,56 @@ def save_results_table(outname, sampler, table_format='ascii.ecsv',
             elif ltype == 'log':
                 new_dist = np.exp(dist)
 
-            quant = [16, 50, 84]
             quantiles = dict(six.moves.zip(quant, np.percentile(new_dist, quant)))
             med = quantiles[50]
             lo,hi = med - quantiles[16], quantiles[84] - med
 
             t.add_row((nlabel, med, lo, hi))
 
+    if include_blobs:
+        nblobs = len(sampler.blobs[-1][0])
+        for idx in range(nblobs):
+            blob0 = sampler.blobs[-1][0][idx]
 
-    t.write('{0}_results.{1}'.format(outname,file_extension),format=table_format)
+            IS_SCALAR = False
+            if isinstance(blob0,u.Quantity):
+                if blob0.size == 1:
+                    IS_SCALAR = True
+                    unit = blob0.unit
+            elif np.isscalar(blob0):
+                IS_SCALAR = True
+                unit = None
+
+            if IS_SCALAR:
+                if last_step:
+                    blobl = [m[idx] for m in sampler.blobs[-1]]
+                else:
+                    nsteps = len(sampler.blobs)
+                    blobl = []
+                    for step in sampler.blobs:
+                        for walkerblob in step:
+                            blobl.append(walkerblob[idx])
+                if unit:
+                    dist = np.array([b.value for b in blobl])
+                    metadata['blob{0}.unit'.format(idx)] = unit.to_string()
+                else:
+                    dist = np.array(blobl)
+
+                quantiles = dict(six.moves.zip(quant, np.percentile(dist, quant)))
+                med = quantiles[50]
+                lo,hi = med - quantiles[16], quantiles[84] - med
+
+                t.add_row(('blob{0}'.format(idx), med, lo, hi))
+
+    if format == 'ascii.ipac':
+        # Only keywords are written to IPAC tables
+        t.meta['keywords'] = {}
+        for di in metadata.items():
+            t.meta['keywords'][di[0]]={'value':di[1]}
+    else:
+        # Save it directly in meta for readability in ECSV
+        t.meta.update(metadata)
+
+    t.write('{0}_results.{1}'.format(outname,file_extension),format=format)
 
     return t

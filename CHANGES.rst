@@ -1,10 +1,19 @@
 0.3 (unreleased)
 ----------------
 
+- Added an option to save the distribution properties of scalar blobs when
+  saving results table: option ``include_blobs`` of ``save_results_table``.
+
 Bug Fixes
 ^^^^^^^^^
 
 - Fixed sed conversion of residuals [#69]
+
+API Changes
+^^^^^^^^^^^
+
+- The name of the ``table_format`` parameter of ``save_results_table`` has been changed
+  to ``format`` for consistency with `astropy.io.ascii`.
 
 0.2 (2015-02-10)
 ----------------

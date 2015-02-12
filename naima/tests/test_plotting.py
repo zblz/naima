@@ -121,9 +121,10 @@ def sampler():
 def test_results_table(sampler):
     for last_step in [True, False]:
         for convert_log in [True,False]:
-            for table_format in ['ascii.ipac','ascii.ecsv','ascii']:
-                t1 = save_results_table('test_table', sampler, convert_log=convert_log,
-                        last_step=last_step, table_format=table_format)
+            for include_blobs in [True,False]:
+                for format in ['ascii.ipac','ascii.ecsv','ascii']:
+                    t1 = save_results_table('test_table', sampler, convert_log=convert_log,
+                            last_step=last_step, format=format, include_blobs=include_blobs)
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_chain_plots(sampler):
