@@ -155,6 +155,42 @@ class BaseElectron(BaseRadiative):
 
         return We
 
+    def set_We(self, We, Eemin=None, Eemax=None, amplitude_name=None):
+        """ Normalize particle distribution so that the total energy in electrons
+        between Eemin and Eemax is We
+
+        Parameters
+        ----------
+        We : :class:`~astropy.units.Quantity` float
+            Desired energy in electrons.
+
+        Eemin : :class:`~astropy.units.Quantity` float, optional
+            Minimum electron energy for energy content calculation.
+
+        Eemax : :class:`~astropy.units.Quantity` float, optional
+            Maximum electron energy for energy content calculation.
+
+        amplitude_name : str, optional
+            Name of the amplitude parameter of the particle distribution. It
+            must be accesible as an attribute of the distribution function.
+            Defaults to ``amplitude``.
+        """
+
+        We = validate_scalar('We', We, physical_type='energy')
+        oldWe = self.compute_We(Eemin=Eemin, Eemax=Eemax)
+
+        if amplitude_name is None:
+            try:
+                self.particle_distribution.amplitude *= (We / oldWe).decompose()
+            except AttributeError:
+                log.error('The particle distribution does not have an attribute'
+                        ' called amplitude to modify its normalization: you can set'
+                        ' the name with the amplitude_name parameter of set_We')
+        else:
+            oldampl=getattr(self.particle_distribution, amplitude_name)
+            setattr(self.particle_distribution, amplitude_name,
+                    oldampl * (We / oldWe).decompose())
+
 
 class Synchrotron(BaseElectron):
     """Synchrotron emission from an electron population.
@@ -692,7 +728,96 @@ class Bremsstrahlung(BaseElectron):
         return spec
 
 
-class PionDecay(BaseRadiative):
+class BaseProton(BaseRadiative):
+    """Implements compute_Wp at arbitrary energies
+    """
+
+    @property
+    def _Ep(self):
+        """ Proton energy array in GeV
+        """
+        return np.logspace(np.log10(self.Epmin.to('GeV').value),np.log10(self.Epmax.to('GeV').value),
+                self.nEpd * (np.log10(self.Epmax/self.Epmin)))
+
+    @property
+    def _J(self):
+        """ Particles per unit proton energy in particles per GeV
+        """
+        pd = self.particle_distribution(self._Ep * u.GeV)
+        return pd.to('1/GeV').value
+
+    @property
+    def Wp(self):
+        """Total energy in protons
+        """
+        Wp = trapz_loglog(self._Ep * self._J, self._Ep) * u.GeV
+        return Wp.to('erg')
+
+    def compute_Wp(self, Epmin=None, Epmax=None):
+        """ Total energy in protons between energies Epmin and Epmax
+
+        Parameters
+        ----------
+        Epmin : :class:`~astropy.units.Quantity` float, optional
+            Minimum proton energy for energy content calculation.
+
+        Epmax : :class:`~astropy.units.Quantity` float, optional
+            Maximum proton energy for energy content calculation.
+        """
+        if Epmin is None and Epmax is None:
+            Wp = self.Wp
+        else:
+            if Epmax is None:
+                Epmax = self.Epmax
+            if Epmin is None:
+                Epmin = self.Epmin
+
+            log10Epmin = np.log10(Epmin.to('GeV').value)
+            log10Epmax = np.log10(Epmax.to('GeV').value)
+            Ep = np.logspace(log10Epmin, log10Epmax,
+                    self.nEpd*(log10Epmax - log10Epmin)) * u.GeV
+            pdist = self.particle_distribution(Ep)
+            Wp = trapz_loglog(Ep * pdist, Ep).to('erg')
+
+        return Wp
+
+    def set_Wp(self, Wp, Epmin=None, Epmax=None, amplitude_name=None):
+        """ Normalize particle distribution so that the total energy in protons
+        between Epmin and Epmax is Wp
+
+        Parameters
+        ----------
+        Wp : :class:`~astropy.units.Quantity` float
+            Desired energy in protons.
+
+        Epmin : :class:`~astropy.units.Quantity` float, optional
+            Minimum proton energy for energy content calculation.
+
+        Epmax : :class:`~astropy.units.Quantity` float, optional
+            Maximum proton energy for energy content calculation.
+
+        amplitude_name : str, optional
+            Name of the amplitude parameter of the particle distribution. It
+            must be accesible as an attribute of the distribution function.
+            Defaults to ``amplitude``.
+        """
+
+        Wp = validate_scalar('Wp', Wp, physical_type='energy')
+        oldWp = self.compute_Wp(Epmin=Epmin, Epmax=Epmax)
+
+        if amplitude_name is None:
+            try:
+                self.particle_distribution.amplitude *= (Wp / oldWp).decompose()
+            except AttributeError:
+                log.error('The particle distribution does not have an attribute'
+                        ' called amplitude to modify its normalization: you can set'
+                        ' the name with the amplitude_name parameter of set_Wp')
+        else:
+            oldampl=getattr(self.particle_distribution, amplitude_name)
+            setattr(self.particle_distribution, amplitude_name,
+                    oldampl * (Wp / oldWp).decompose())
+
+class PionDecay(BaseProton):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
@@ -1060,27 +1185,6 @@ class PionDecay(BaseRadiative):
             epstotal[loE] = 1.9141
 
         return epstotal
-
-    @property
-    def _Ep(self):
-        """ Proton energy array in GeV
-        """
-        return np.logspace(np.log10(self.Epmin.to('GeV').value),np.log10(self.Epmax.to('GeV').value),
-                self.nEpd * (np.log10(self.Epmax/self.Epmin)))
-
-    @property
-    def _J(self):
-        """ Particles per unit proton energy in particles per GeV
-        """
-        pd = self.particle_distribution(self._Ep * u.GeV)
-        return pd.to('1/GeV').value
-
-    @property
-    def Wp(self):
-        """Total energy in protons
-        """
-        Wp = trapz_loglog(self._Ep * self._J, self._Ep) * u.GeV
-        return Wp.to('erg')
 
     def spectrum(self,photon_energy):
         """

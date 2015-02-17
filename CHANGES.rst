@@ -3,6 +3,9 @@
 
 - Added an option to save the distribution properties of scalar blobs when
   saving results table: option ``include_blobs`` of ``save_results_table``.
+- A new method for radiative classes allows to renormalize the particle
+  distributions to a given energy content in particles. See ``set_We`` and
+  ``set_Wp`` in leptonic and hadronic classes, respectively.
 
 Bug Fixes
 ^^^^^^^^^

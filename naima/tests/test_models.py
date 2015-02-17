@@ -91,7 +91,7 @@ def test_compute_We(particle_dists):
     """
     test sync calculation
     """
-    from ..models import Synchrotron
+    from ..models import Synchrotron, PionDecay
 
     ECPL,PL,BPL = particle_dists
 
@@ -104,6 +104,48 @@ def test_compute_We(particle_dists):
     sy.compute_We(Eemax=Eemax)
     sy.compute_We(Eemin=Eemin, Eemax=Eemax)
     assert sy.We == sy.compute_We(Eemin=sy.Eemin,Eemax=sy.Eemax)
+
+    pp = PionDecay(ECPL)
+    Epmax, Epmin = 10*u.GeV, 100*u.TeV
+    pp.compute_Wp()
+    pp.compute_Wp(Epmin=Epmin)
+    pp.compute_Wp(Epmax=Epmax)
+    pp.compute_Wp(Epmin=Epmin, Epmax=Epmax)
+
+
+@pytest.mark.skipif('not HAS_SCIPY')
+def test_set_We(particle_dists):
+    """
+    test sync calculation
+    """
+    from ..models import Synchrotron, PionDecay
+
+    ECPL,PL,BPL = particle_dists
+
+    sy = Synchrotron(ECPL,B=1*u.G, **electron_properties)
+    pp = PionDecay(ECPL)
+
+    W = 1e49 * u.erg
+
+    Eemax = 100*u.TeV
+    for Eemin in [1*u.GeV, 10*u.GeV, None]:
+        for Eemax in [100*u.TeV, None]:
+            sy.set_We(W, Eemin, Eemax)
+            assert_allclose(W, sy.compute_We(Eemin,Eemax))
+            sy.set_We(W, Eemin, Eemax,amplitude_name='amplitude')
+            assert_allclose(W, sy.compute_We(Eemin,Eemax))
+
+            pp.set_Wp(W, Eemin, Eemax)
+            assert_allclose(W, pp.compute_Wp(Eemin,Eemax))
+            pp.set_Wp(W, Eemin, Eemax,amplitude_name='amplitude')
+            assert_allclose(W, pp.compute_Wp(Eemin,Eemax))
+
+    with pytest.raises(AttributeError):
+        sy.set_We(W, amplitude_name='norm')
+
+    with pytest.raises(AttributeError):
+        pp.set_Wp(W, amplitude_name='norm')
+
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_bremsstrahlung_lum(particle_dists):
