@@ -11,6 +11,7 @@ Bug Fixes
 ^^^^^^^^^
 
 - Fixed sed conversion of residuals [#69]
+- Fixed ``plot_data`` so it can take lists of data_tables.
 
 API Changes
 ^^^^^^^^^^^

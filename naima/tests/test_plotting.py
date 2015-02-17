@@ -164,6 +164,13 @@ def test_plot_data(sampler):
     # try to break it
     f = plot_data(sampler, plotdata=False)
     f = plot_data(sampler, confs=[3, 1, 0.5])
+    # Only plot data tables
+    fname = get_pkg_data_filename('data/CrabNebula_Fake_Xray.dat')
+    data_table2 = ascii.read(fname)
+    data_list = [data_table2, data_table]
+    f = plot_data(data_table)
+    f = plot_data(data_table2)
+    f = plot_data(data_list)
     del f
 
 

@@ -732,15 +732,16 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
     # Plot everything in serif to match math exponents
     plt.rc('font', family='serif')
 
-    if isinstance(input_data, table.Table):
+    try:
         data = validate_data_table(input_data)
-    elif hasattr(input_data,'data'):
-        data = input_data.data
-    elif isinstance(input_data, dict) and 'energy' in input_data.keys():
-        data = input_data
-    else:
-        log.warning('input_data format not know, no plotting data!')
-        return None
+    except TypeError:
+        if hasattr(input_data,'data'):
+            data = input_data.data
+        elif isinstance(input_data, dict) and 'energy' in input_data.keys():
+            data = input_data
+        else:
+            log.warning('input_data format not know, no plotting data!')
+            return None
 
     if figure == None:
         f = plt.figure()
