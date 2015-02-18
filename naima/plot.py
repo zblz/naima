@@ -322,7 +322,7 @@ def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
             color='r', lw=1.5, alpha=0.8)
 
     if label is not None:
-        ax.set_ylabel('{0} [{1}]'.format(label,_latex_unit(f_unit)))
+        ax.set_ylabel('{0} [{1}]'.format(label,f_unit.to_string('latex_inline')))
 
 def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
         last_step=False, label=None):
@@ -360,7 +360,7 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
             color='r', lw=1.5, alpha=0.8)
 
     if label is not None:
-        ax.set_ylabel('{0} [{1}]'.format(label,_latex_unit(f_unit)))
+        ax.set_ylabel('{0} [{1}]'.format(label,f_unit.to_string('latex_inline')))
 
 def find_ML(sampler, modelidx):
     """
@@ -386,25 +386,6 @@ def find_ML(sampler, modelidx):
     ML = sampler.lnprobability[index]
 
     return ML, MLp, MLerr, (modelx, model_ML)
-
-def _latex_unit(unit):
-    """ Hack to get a single line latex representation of a unit
-
-        Will be obsolete with format='latex_inline' in astropy 1.0
-    """
-    l = unit.to_string('cds').split('.')
-    out = ''
-    for uni in l:
-        try:
-            int(uni[-1])
-            if uni[-2] == '-':
-                out += ' {0}$^{{{1}}}$'.format(uni[:-2], uni[-2:])
-            else:
-                out += ' {0}$^{1}$'.format(uni[:-1], uni[-1:])
-        except ValueError:
-            out += ' ' + uni
-
-    return out[1:]
 
 def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kwargs):
     """
@@ -578,7 +559,7 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
         ax1.set_title(label)
 
     if xlabel is None:
-        xlaxis.set_xlabel('Energy [{0}]'.format(_latex_unit(e_unit)))
+        xlaxis.set_xlabel('Energy [{0}]'.format(e_unit.to_string('latex_inline')))
     else:
         xlaxis.set_xlabel(xlabel)
 
@@ -652,10 +633,10 @@ def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
     if ylabel is None:
         if sed:
             ax1.set_ylabel(r'$E^2\mathsf{{d}}N/\mathsf{{d}}E$'
-                ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
+                ' [{0}]'.format(u.Unit(f_unit).to_string('latex_inline')))
         else:
             ax1.set_ylabel(r'$\mathsf{{d}}N/\mathsf{{d}}E$'
-                    ' [{0}]'.format(_latex_unit(u.Unit(f_unit))))
+                    ' [{0}]'.format(u.Unit(f_unit).to_string('latex_inline')))
     else:
         ax1.set_ylabel(ylabel)
 
@@ -769,7 +750,7 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
     if xlabel is not None:
         ax1.set_xlabel(xlabel)
     elif xlabel is None and ax1.get_xlabel() == '':
-        ax1.set_xlabel('Energy [{0}]'.format(_latex_unit(e_unit)))
+        ax1.set_xlabel('Energy [{0}]'.format(e_unit.to_string('latex_inline')))
 
     ax1.autoscale()
 
