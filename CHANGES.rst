@@ -6,6 +6,8 @@
 - A new method for radiative classes allows to renormalize the particle
   distributions to a given energy content in particles. See ``set_We`` and
   ``set_Wp`` in leptonic and hadronic classes, respectively.
+- The default FIR and NIR photon fields for `naima.InverseCompton` have been set
+  to the GALPROP values at a galactic radius of 6.5 kpc.
 
 Bug Fixes
 ^^^^^^^^^

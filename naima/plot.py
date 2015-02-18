@@ -675,7 +675,6 @@ def _plot_residuals_to_ax(data, model_ML, ax, e_unit=u.eV, sed=True,
     notul = -data['ul']
 
     if len(mene) != len(ene):
-        print('test')
         from scipy.interpolate import interp1d
         modelfunc = interp1d(mene.value, mflux.value, bounds_error=False)
         difference = flux[notul].value-modelfunc(ene[notul])

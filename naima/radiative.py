@@ -304,8 +304,10 @@ class InverseCompton(BaseElectron):
         Each of the items of the iterable can be:
 
         * A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
-          radiation fields with temperatures of 2.72 K, 70 K, and 5000 K, and
-          energy densities of 0.261, 0.5, and 1 eV/cm³ will be used
+          radiation fields with temperatures of 2.72 K, 30 K, and 3000 K, and
+          energy densities of 0.261, 0.5, and 1 eV/cm³ will be used (these are
+          the GALPROP values for a location at a distance of 6.5 kpc from the
+          galactic center).
 
         * A list of length three (isotropic source) or four (anisotropic source)
           composed of:
@@ -349,10 +351,10 @@ class InverseCompton(BaseElectron):
         """
 
         Tcmb = 2.72548 * u.K  # 0.00057 K
-        Tfir = 70 * u.K
-        ufir = 0.2 * u.eV / u.cm ** 3
-        Tnir = 5000 * u.K
-        unir = 0.2 * u.eV / u.cm ** 3
+        Tfir = 30 * u.K
+        ufir = 0.5 * u.eV / u.cm ** 3
+        Tnir = 3000 * u.K
+        unir = 1.0 * u.eV / u.cm ** 3
 
         # Allow for seed_photon_fields definitions of the type 'CMB-NIR-FIR' or 'CMB'
         if type(self.seed_photon_fields) != list:

@@ -176,24 +176,19 @@ def test_inverse_compton_lum(particle_dists):
 
     lum_ref = [0.00027822017772343816, 0.004821189282097695, 0.00012916583207749083]
 
-    We_ref = [5064124681.509977, 11551172186.500914, 926633862.864901]
-
-    Wes = []
     lums = []
     for pdist in particle_dists:
         ic = InverseCompton(pdist, **electron_properties)
-        Wes.append(ic.We.to('erg').value)
         lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
         assert(lic.unit == u.erg / u.s)
         lums.append(lic.value)
 
     assert_allclose(lums, lum_ref)
-    assert_allclose(Wes, We_ref)
 
     ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'])
 
     lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
-    assert_allclose(lic.value,0.00035803644460162635)
+    assert_allclose(lic.value,0.0005833030865998417)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_anisotropic_inverse_compton_lum(particle_dists):
