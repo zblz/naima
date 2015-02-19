@@ -4,7 +4,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 from astropy import log
-import astropy
 import astropy.units as u
 import warnings
 
@@ -55,7 +54,7 @@ def lnprobmodel(model, data):
     difference = model[notul] - data['flux'][notul]
 
     if data['dflux'].ndim > 1:
-# use different errors for model above or below data
+        # use different errors for model above or below data
         sign = difference > 0
         loerr, hierr = 1 * -sign, 1 * sign
         logprob = - difference ** 2 / (2. * (loerr * data['dflux'][0][notul] +

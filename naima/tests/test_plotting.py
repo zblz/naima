@@ -1,4 +1,3 @@
-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import numpy as np
 
@@ -161,9 +160,6 @@ def test_plot_data(sampler):
     f = plot_data(data, sed=True)
     data['energy'] = (data['energy']/1000).to('keV')
     f = plot_data(data, sed=True, figure=f)
-    # try to break it
-    f = plot_data(sampler, plotdata=False)
-    f = plot_data(sampler, confs=[3, 1, 0.5])
     # Only plot data tables
     fname = get_pkg_data_filename('data/CrabNebula_Fake_Xray.dat')
     data_table2 = ascii.read(fname)

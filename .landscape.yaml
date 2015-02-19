@@ -1,0 +1,8 @@
+ignore-paths:
+    - naima/conftest.py
+    - naima/__init__.py
+    - ez_setup.py
+    - naima/_astropy_init.py
+    - naima/extern
+    - ah_bootstrap.py
+    - examples

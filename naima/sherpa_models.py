@@ -6,7 +6,7 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 
-from sherpa.models.parameter import Parameter, tinyval
+from sherpa.models.parameter import Parameter
 from sherpa.models.model import ArithmeticModel, modelCacher1d
 
 __all__ = ['InverseCompton', 'Synchrotron', 'PionDecay', 'Bremsstrahlung']
@@ -14,7 +14,7 @@ __all__ = ['InverseCompton', 'Synchrotron', 'PionDecay', 'Bremsstrahlung']
 from . import models
 from .utils import trapz_loglog
 
-def _mergex(xlo,xhi,midpoints=False):
+def _mergex(xlo,xhi):
     """
     We are assuming that points are consecutive, so that xlo[n]=xhi[n-1]
     This is usually valid for fits from a single spectrum, but breaks for
@@ -24,11 +24,6 @@ def _mergex(xlo,xhi,midpoints=False):
     x=np.zeros(N+1)
     x[:N]=xlo.copy()
     x[-1]=xhi[-1]
-
-    #if midpoints:
-        #mid=(xlo+xhi)/2.
-        #x=np.concatenate((x,mid))
-        #x.sort()
 
     return x
 

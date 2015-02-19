@@ -5,10 +5,8 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 from astropy.table import Table
-from astropy.io import ascii
 from astropy import log
 from astropy.extern import six
-import warnings
 
 HAS_PYYAML = True
 try:
@@ -19,7 +17,7 @@ except ImportError:
 __all__ = ["save_diagnostic_plots", "save_results_table"]
 
 def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
-        blob_labels=None, **kwargs):
+        blob_labels=None):
     """
     Generate diagnostic plots.
 
@@ -70,7 +68,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
                                     sampler.labels):
         try:
             log.info('Plotting chain of parameter {0}...'.format(label))
-            f = plot_chain(sampler, par, **kwargs)
+            f = plot_chain(sampler, par)
             if pdf:
                 f.savefig(outpdf, format='pdf')
             else:
@@ -93,7 +91,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
         ML, MLp, MLvar, model_ML = find_ML(sampler, 0)
         f = corner(sampler.flatchain, labels=sampler.labels,
                    truths=MLp, quantiles=[0.16, 0.5, 0.84],
-                   verbose=False, **kwargs)
+                   verbose=False)
         if pdf:
             f.savefig(outpdf, format='pdf')
         else:
@@ -127,21 +125,21 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
         try:
             log.info('Plotting {0}...'.format(label))
             f = plot_blob(sampler, blobidx=modelidx, label=label,
-                          sed=plot_sed, n_samples=100, **kwargs)
+                          sed=plot_sed, n_samples=100)
             if pdf:
                 f.savefig(outpdf, format='pdf')
             else:
                 f.savefig('{0}_model{1}.png'.format(outname, modelidx))
             del f
         except Exception as e:
-            log.warning('plot_blob failed for model output {0}: {1}'.format(par,e))
+            log.warning('plot_blob failed for {0}: {1}'.format(label,e))
 
     if pdf:
         outpdf.close()
 
 
 def save_results_table(outname, sampler, format='ascii.ecsv',
-        convert_log=True, last_step=True, include_blobs=True, **kwargs):
+        convert_log=True, last_step=True, include_blobs=True):
     """
     Save an ASCII table with the results stored in the `~emcee.EnsembleSampler`.
 
@@ -203,7 +201,7 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
 
     labels = sampler.labels
 
-    if last_step == True:
+    if last_step:
         dists = sampler.chain[:,-1,:]
     else:
         dists = sampler.flatchain
@@ -267,7 +265,6 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
                 if last_step:
                     blobl = [m[idx] for m in sampler.blobs[-1]]
                 else:
-                    nsteps = len(sampler.blobs)
                     blobl = []
                     for step in sampler.blobs:
                         for walkerblob in step:

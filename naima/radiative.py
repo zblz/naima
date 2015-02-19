@@ -21,7 +21,7 @@ log.setLevel(logging.INFO)
 # Constants and units
 from astropy import units as u
 # import constant values from astropy.constants
-from astropy.constants import c, G, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p, M_sun, alpha
+from astropy.constants import c, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p, M_sun, alpha
 e = e.gauss
 
 mec2 = (m_e * c ** 2).cgs
@@ -985,7 +985,6 @@ class PionDecay(BaseProton):
         Geant 4.10.0 model for 2 GeV < Tp < 5 GeV
         """
         m_p = self._m_p
-        m_pi = self._m_pi
         Qp = (Tp - self._Tth) / m_p
         multip = -6e-3 + 0.237 * Qp - 0.023 * Qp**2
         return self._sigma_inel(Tp) * multip
@@ -995,7 +994,6 @@ class PionDecay(BaseProton):
         General expression for Tp > 5 GeV (Eq 7)
         """
         m_p = self._m_p
-        m_pi = self._m_pi
         csip = (Tp - 3.0) / m_p
         m1 = a[0] * csip ** a[3] * (1 + np.exp(-a[1] * csip ** a[4]))
         m2 = 1 - np.exp(-a[2] * csip ** 0.25)
@@ -1040,7 +1038,7 @@ class PionDecay(BaseProton):
 
         return b0, b1, b2, b3
 
-    def _calc_coll_props(self,Tp):
+    def _calc_EpimaxLAB(self,Tp):
         m_p = self._m_p
         m_pi = self._m_pi
         # Eq 10
@@ -1050,15 +1048,20 @@ class PionDecay(BaseProton):
         gCM = (Tp + 2 * m_p)/np.sqrt(s)
         betaCM = np.sqrt(1 - gCM ** -2)
         EpimaxLAB = gCM * (EpiCM + PpiCM * betaCM)
+
+        return EpimaxLAB
+
+    def _calc_Egmax(self,Tp):
+        m_pi = self._m_pi
+        EpimaxLAB = self._calc_EpimaxLAB(Tp)
         gpiLAB = EpimaxLAB / m_pi
         betapiLAB = np.sqrt(1 - gpiLAB ** -2)
         Egmax = (m_pi / 2) * gpiLAB * ( 1 + betapiLAB)
 
-        return Egmax, EpimaxLAB
+        return Egmax
 
     def _Amax(self,Tp):
         m_p = self._m_p
-        m_pi = self._m_pi
         loE = np.where(Tp<1.0)
         hiE = np.where(Tp>=1.0)
 
@@ -1066,7 +1069,7 @@ class PionDecay(BaseProton):
 
         b = self._b_params(Tp)
 
-        Egmax, EpimaxLAB = self._calc_coll_props(Tp)
+        EpimaxLAB = self._calc_EpimaxLAB(Tp)
         Amax[loE] = b[0] * self._sigma_pi(Tp[loE]) / EpimaxLAB[loE]
         thetap = Tp / m_p
         Amax[hiE] = (b[1] * thetap[hiE] ** -b[2] *
@@ -1077,10 +1080,9 @@ class PionDecay(BaseProton):
 
     def _F_func(self,Tp,Egamma,modelparams):
         lamb, alpha, beta, gamma = modelparams
-        m_p = self._m_p
         m_pi = self._m_pi
         # Eq 9
-        Egmax, EpimaxLAB = self._calc_coll_props(Tp)
+        Egmax = self._calc_Egmax(Tp)
         Yg = Egamma + m_pi ** 2 / (4 * Egamma)
         Ygmax = Egmax + m_pi ** 2 / (4 * Egmax)
         Xg = (Yg - m_pi)/(Ygmax - m_pi)
@@ -1466,11 +1468,9 @@ class LookupTable(object):
 def _calc_lut_pp(args): # pragma: no cover
     epr, eph, hiEmodel, nuc = args
     #print('Computing diffsigma for Egamma = {0}...'.format(eph))
-    from astropy import constants as const
-    from .radiative import PionDecay
     from .models import PowerLaw
     pl = PowerLaw(1/u.eV,1*u.TeV,0.0)
-    pp = PionDecayKafexhiu14(pl,hiEmodel=hiEmodel,nuclear_enhancement=nuc)
+    pp = PionDecay(pl,hiEmodel=hiEmodel,nuclear_enhancement=nuc)
 
     diffsigma = pp._diffsigma(epr.to('GeV').value, eph.to('GeV').value)
 

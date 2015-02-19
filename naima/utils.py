@@ -4,10 +4,10 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy as np
 import astropy.units as u
-from astropy.extern import six
-from astropy.table import Table
+from astropy.table import Table, Column
 from astropy import log
 import warnings
+import ast
 from .extern.validator import validate_array, validate_scalar
 
 __all__ = ["generate_energy_edges", "sed_conversion",
@@ -21,7 +21,7 @@ def validate_column(data_table, key, pt, domain='positive'):
         column = data_table[key]
         array = validate_array(key, u.Quantity(column, unit=column.unit),
                                physical_type=pt, domain=domain)
-    except KeyError as e:
+    except KeyError:
         raise TypeError(
             'Data table does not contain required column "{0}"'.format(key))
 
@@ -175,7 +175,7 @@ def _validate_single_data_table(data_table):
                 if ul != 'True' and ul != 'False':
                     strbool = False
             if strbool:
-                data['ul'] = np.array([eval(ul)
+                data['ul'] = np.array([ast.literal_eval(ul)
                                       for ul in ul_col], dtype=np.bool)
             else:
                 raise TypeError('UL column is in wrong format')
@@ -397,9 +397,6 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
     data : dict
         Data stored in a `dict`.
     """
-
-    from astropy.table import Table, Column
-
     table = Table()
 
     if cl is not None:
@@ -432,7 +429,7 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
         'Table generated with naima.build_data_table', ]
 
     # test table units, format, etc
-    data = validate_data_table(table)
+    validate_data_table(table)
 
     return table
 

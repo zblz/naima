@@ -30,9 +30,9 @@ def plot_chain(sampler, p=None, **kwargs):
     figure : `matplotlib.figure.Figure`
         Figure
     """
-    if p == None:
+    if p is None:
         npars = sampler.chain.shape[-1]
-        for pp, label in zip(six.moves.range(npars), sampler.labels):
+        for pp in six.moves.range(npars):
             _plot_chain_func(sampler, pp, **kwargs)
         fig = None
     else:
@@ -61,7 +61,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     from scipy import stats
     if len(chain.shape) > 2:
         traces = chain[:,:, p]
-        if last_step == True:
+        if last_step:
             # keep only last step
             dist = traces[:, -1]
         else:
@@ -111,19 +111,14 @@ def _plot_chain_func(sampler, p, last_step=False):
     ax2.axvspan(quantiles[16], quantiles[84], color='0.5', alpha=0.25,
                 label='68% CI')
     # ax2.legend()
-    [l.set_rotation(45) for l in ax2.get_xticklabels()]
-    #[l.set_rotation(45) for l in ax2.get_yticklabels()]
+    for l in ax2.get_xticklabels():
+        l.set_rotation(45)
     ax2.set_xlabel(xlabel)
     ax2.xaxis.set_label_coords(0.5, -0.1)
     ax2.set_title('posterior distribution')
     ax2.set_ylim(top=n.max() * 1.05)
 
     # Print distribution parameters on lower-left
-
-    mean, median, std = np.mean(dist), np.median(dist), np.std(dist)
-    xmode = np.linspace(mean-np.sqrt(3)*std, mean+np.sqrt(3)*std, 100)
-    mode = xmode[np.argmax(kde(xmode))]
-    median = np.median(dist)
 
     try:
         # EnsembleSample.get_autocorr_time was only added in the
@@ -138,15 +133,12 @@ def _plot_chain_func(sampler, p, last_step=False):
     else:
         clen = 'whole chain'
 
-    maxlen = np.max([len(ilabel) for ilabel in sampler.labels])
-    vartemplate = '{{2:>{0}}}: {{0:>8.3g}} +/- {{1:<8.3g}}\n'.format(maxlen)
-
     chain_props = 'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers, nsteps) + \
             'Autocorrelation time: {0}\n'.format(autocorr_message) +\
             'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
             'Distribution properties for the {clen}:\n \
     - median: ${median}$ \n \
-    - std: ${std}$ \n' .format(median=_latex_float(quantiles[50]), std=_latex_float(std), clen=clen) +\
+    - std: ${std}$ \n' .format(median=_latex_float(quantiles[50]), std=_latex_float(np.std(dist)), clen=clen) +\
 '     - Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n'
 
@@ -173,7 +165,7 @@ def _plot_chain_func(sampler, p, last_step=False):
 
         new_line = label_template.format(label=nlabel)
         new_line += ' = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
-                    label=nlabel, median=_latex_float(quantiles[50]),
+                    median=_latex_float(quantiles[50]),
                     uncs=(_latex_float(quantiles[50] - quantiles[16]),
                           _latex_float(quantiles[84] - quantiles[50])))
 
@@ -205,7 +197,6 @@ def _process_blob(sampler, modelidx,last_step=True):
         if last_step:
             model = u.Quantity([m[modelidx] for m in sampler.blobs[-1]])
         else:
-            nsteps = len(sampler.blobs)
             model = []
             for step in sampler.blobs:
                 for walkerblob in step:
@@ -225,14 +216,13 @@ def _process_blob(sampler, modelidx,last_step=True):
             model = u.Quantity(model)
     elif (isinstance(blob0, list) or isinstance(blob0, tuple)):
         if (len(blob0) == 2 and isinstance(blob0[0], u.Quantity)
-            and isinstance(blob0[1], u.Quantity)):
+                and isinstance(blob0[1], u.Quantity)):
             # Energy array for model is item 0 in blob, model flux is item 1
             modelx = blob0[0]
 
             if last_step:
                 model = u.Quantity([m[modelidx][1] for m in sampler.blobs[-1]])
             else:
-                nsteps = len(sampler.blobs)
                 model = []
                 for step in sampler.blobs:
                     for walkerblob in step:
@@ -273,7 +263,7 @@ def calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True):
         ymin, ymax = [], []
         for fr, y in ((fmin, ymin), (fmax, ymax)):
             nf = int((fr*nwalkers))
-            for i, x in enumerate(modelx):
+            for i in six.moves.range(len(modelx)):
                 ysort = np.sort(model[:, i])
                 y.append(ysort[nf])
 
@@ -484,8 +474,6 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
     # log.info(infostr)
 
     data = sampler.data
-    ul = data['ul']
-    notul = -ul
 
     if len(model_ML[0]) == len(data['energy']) and plotdata is None:
         plotdata = True
@@ -498,9 +486,9 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
     if confs is None and not n_samples and plotdata and not plotresiduals:
         # We actually only want to plot the data, so let's go there
         return plot_data(sampler.data, xlabel=xlabel, ylabel=ylabel, sed=sed, figure=figure,
-                e_unit=e_unit, data_color=data_color, **kwargs)
+                e_unit=e_unit, data_color=data_color)
 
-    if figure == None:
+    if figure is None:
         f = plt.figure()
     else:
         f = figure
@@ -680,7 +668,7 @@ def _plot_residuals_to_ax(data, model_ML, ax, e_unit=u.eV, sed=True,
 
 
 def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
-        e_unit=None, data_color='r', **kwargs):
+        e_unit=None, data_color='r'):
     """
     Plot spectral data.
 
@@ -723,7 +711,7 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
             log.warning('input_data format not know, no plotting data!')
             return None
 
-    if figure == None:
+    if figure is None:
         f = plt.figure()
     else:
         f = figure
@@ -800,7 +788,7 @@ def plot_distribution(samples, label, figure=None):
     if isinstance(samples, u.Quantity):
         samples_nounit = samples.value
     else:
-        samples_nunit = samples
+        samples_nounit = samples
 
     kde = stats.kde.gaussian_kde(samples_nounit)
     ax.plot(x, kde(x), c='k', label='KDE')
@@ -810,7 +798,8 @@ def plot_distribution(samples, label, figure=None):
     ax.axvspan(quantiles[16], quantiles[84], color='0.5', alpha=0.25,
                 label='68% CI')
     # ax.legend()
-    [l.set_rotation(45) for l in ax.get_xticklabels()]
+    for l in ax.get_xticklabels():
+        l.set_rotation(45)
     #[l.set_rotation(45) for l in ax.get_yticklabels()]
     if unit != '':
         xlabel += ' [{0}]'.format(unit)
