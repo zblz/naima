@@ -280,9 +280,10 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
                     data['flux'].unit, data['flux'].unit.physical_type))
 
     if guess:
-        normNames = ['norm', 'ampl', 'Norm', 'Ampl']
-        normNames += ['log(norm', 'log(ampl', 'log(Norm', 'log(Ampl']
-        normNames += ['log10(norm', 'log10(ampl', 'log10(Norm', 'log10(Ampl']
+        normNames = ['norm', 'Norm', 'ampl', 'Ampl', 'We', 'Wp' ]
+        normNameslog = ['log({0}'.format(name) for name in normNames]
+        normNameslog10 = ['log10({0}'.format(name) for name in normNames]
+        normNames += normNameslog + normNameslog10
         idxs = []
         for l in normNames:
             for l2 in labels:
