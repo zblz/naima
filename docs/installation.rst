@@ -28,14 +28,14 @@ Distribution <http://continuum.io/downloads>`_) or can be installed through
 Installation
 ------------
 
-Th lastest version can be installed through pip (You may need to use ``sudo`` if
-you want to install it system-wide, or the flag ``--user`` to install only for
-the current user)::
+The lastest stable version can be installed through pip (You may need to use
+``sudo`` if you want to install it system-wide, or the flag ``--user`` to
+install only for the current user)::
 
     pip install naima
 
-To install from the latest development source (recommended until a stable
-version is released), install ``naima`` from the `github repository`_ through pip::
+To install from the latest development source, install ``naima`` from the
+`github repository`_ through pip::
 
     pip install git+http://github.com/zblz/naima.git#egg=naima
 

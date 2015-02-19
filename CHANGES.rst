@@ -1,4 +1,4 @@
-0.3 (unreleased)
+0.3 (2015-02-19)
 ----------------
 
 - Added an option to save the distribution properties of scalar blobs when
