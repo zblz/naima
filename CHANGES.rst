@@ -8,6 +8,7 @@
   ``set_Wp`` in leptonic and hadronic classes, respectively.
 - The default FIR and NIR photon fields for `naima.InverseCompton` have been set
   to the GALPROP values at a galactic radius of 6.5 kpc.
+- Require astropy >= 1.0.
 
 Bug Fixes
 ^^^^^^^^^

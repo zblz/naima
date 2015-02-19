@@ -11,7 +11,7 @@ packages to be installed:
 
 * `Scipy <http://www.scipy.org>`_
 
-* `Astropy 0.4 or later <http://www.astropy.org>`_
+* `Astropy 1.0 or later <http://www.astropy.org>`_
 
 * `Matplotlib <http://www.matplotlib.org>`_
 

@@ -186,11 +186,7 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
         Table with the results.
     """
 
-    if not hasattr(ascii,'ecsv') and format == 'ascii.ecsv':
-        format = 'ascii.ipac'
-        log.warning("ECSV format not available (only in astropy >= v1.0),"
-                " falling back to {0}...".format(format))
-    elif not HAS_PYYAML and format == 'ascii.ecsv':
+    if not HAS_PYYAML and format == 'ascii.ecsv':
         format = 'ascii.ipac'
         log.warning("PyYAML package is required for ECSV format,"
                 " falling back to {0}...".format(format))
