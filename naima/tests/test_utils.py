@@ -37,9 +37,6 @@ def test_concatenation():
         validate_data_table([dt0,data_table],sed=sed)
         validate_data_table([data_table,dt0],sed=sed)
         validate_data_table([dt0,dt0],sed=sed)
-    dt0.meta['keywords']['cl']['value']=0.5
-    with pytest.raises(TypeError):
-        validate_data_table([dt0,data_table])
 
 def test_validate_data_types():
     data_table2 = data_table.copy()
@@ -88,7 +85,7 @@ def test_validate_cl():
     # remove cl
     data_table2.meta['keywords'].pop('cl')
     data = validate_data_table(data_table2)
-    assert data['cl'] == 0.9
+    assert np.all(data['cl'] == 0.9)
 
 def test_build_data_table():
     ene = np.logspace(-2,2,20) * u.TeV

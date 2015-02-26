@@ -4,8 +4,9 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy as np
 import astropy.units as u
-from astropy.table import Table, Column
+from astropy.table import Table, QTable, Column
 from astropy import log
+from astropy.extern import six
 import warnings
 import ast
 from .extern.validator import validate_array, validate_scalar
@@ -41,15 +42,25 @@ def validate_data_table(data_table, sed=None):
         Whether to convert the fluxes to SED. If unset, all data tables are
         converted to the format of the first data table.
     """
-    if isinstance(data_table,Table):
+    if isinstance(data_table,Table) or isinstance(data_table,QTable):
         data_table = [data_table,]
 
     try:
         for dt in data_table:
-            if not isinstance(dt,Table):
+            if not isinstance(dt,Table) and not isinstance(dt,QTable):
                 raise TypeError("An object passed as data_table is not an astropy Table!")
     except TypeError:
         raise TypeError("Argument passed to validate_data_table is not a table and not a list")
+
+    def dt_sed_conversion(dt, sed):
+        f_unit, sedf = sed_conversion(dt['energy'], dt['flux'].unit, sed)
+        flux = (dt['flux']*sedf).to(f_unit)
+        dflux_lo = (dt['dflux_lo']*sedf).to(f_unit)
+        dflux_hi = (dt['dflux_hi']*sedf).to(f_unit)
+        for col,newval in six.moves.zip(['flux','dflux_lo','dflux_hi'],[flux,dflux_lo,dflux_hi]):
+            dt.remove_column(col)
+            dt[col] = newval
+        return dt
 
     data_list = []
     for dt in data_table:
@@ -58,72 +69,29 @@ def validate_data_table(data_table, sed=None):
 
     # concatenate input data tables
     data_new = data_list[0].copy()
-    e_unit = data_new['energy'].unit
-    de_unit = data_new['dene'].unit
     f_pt = data_new['flux'].unit.physical_type
-    first_is_sed = f_pt in ['flux','power']
-
-    f_unit = data_new['flux'].unit
-    df_unit = data_new['dflux'].unit
     if sed is None:
-        sed = first_is_sed
-    elif sed != first_is_sed:
-        f_unit, sedf = sed_conversion(data_new['energy'], f_unit, sed)
-        df_unit = f_unit
-        data_new['flux'] = (data_new['flux']*sedf).to(f_unit)
-        data_new['dflux'] = (data_new['dflux']*sedf).to(df_unit)
+        sed = f_pt in ['flux','power']
+
+    data_new = dt_sed_conversion(data_new, sed)
 
     for dt in data_list[1:]:
-        # ugly but could not find better way to preserve units through concatenate
-        data_new['energy'] = u.Quantity(
-                np.concatenate((data_new['energy'], dt['energy'].to(e_unit))).value,
-                unit = e_unit )
-        data_new['dene'] = u.Quantity(
-                np.concatenate((data_new['dene'], dt['dene'].to(de_unit)),axis=1).value,
-                unit = de_unit )
-
         nf_pt = dt['flux'].unit.physical_type
         if (('flux' in nf_pt and 'power' in f_pt) or
                 ('power' in nf_pt and 'flux' in f_pt)):
             raise TypeError('The physical types of the data tables could not be '
                     'matched: Some are in flux and others in luminosity units')
 
-        # Manage conversion from differential flux to SED and viceversa
-        if dt['flux'].unit.physical_type == f_unit.physical_type:
-            flux = dt['flux'].to(f_unit)
-            dflux = dt['dflux'].to(f_unit)
-        elif sed and 'differential' in nf_pt:
-            flux = (dt['flux'] * dt['energy']**2).to(f_unit)
-            dflux = (dt['dflux'] * dt['energy']**2).to(f_unit)
-        elif not sed and nf_pt in ['power','flux']:
-            flux = (dt['flux'] / dt['energy']**2).to(f_unit)
-            dflux = (dt['dflux'] / dt['energy']**2).to(f_unit)
-        else:
-            raise TypeError('The physical types of the data tables could not be matched.')
+        dt = dt_sed_conversion(dt, sed)
 
-
-        data_new['flux'] = u.Quantity(
-                np.concatenate((data_new['flux'], flux.to(f_unit))).value,
-                unit = f_unit )
-        data_new['dflux'] = u.Quantity(
-                np.concatenate((data_new['dflux'], dflux.to(df_unit)),axis=1).value,
-                unit = df_unit )
-
-        # check that there are upper limits at the CL previously set, else set the new CL
-        if data_new['cl'] != dt['cl'] and np.sum(data_new['ul']) > 0:
-            raise TypeError('Upper limits are at different confidence levels.')
-        else:
-            data_new['cl'] = dt['cl']
-
-        data_new['ul'] = np.concatenate((data_new['ul'], dt['ul']))
+        for row in dt:
+            data_new.add_row(row)
 
     return data_new
 
-
-
 def _validate_single_data_table(data_table):
 
-    data = {}
+    data = QTable()
 
     flux_types = ['flux', 'differential flux', 'power', 'differential power']
 
@@ -134,34 +102,38 @@ def _validate_single_data_table(data_table):
     # Flux uncertainties
     if 'flux_error' in data_table.keys():
         dflux = validate_column(data_table, 'flux_error', flux_types)
-        data['dflux'] = u.Quantity((dflux, dflux))
+        data['dflux_lo'] = dflux
+        data['dflux_hi'] = dflux
     elif 'flux_error_lo' in data_table.keys() and 'flux_error_hi' in data_table.keys():
-        data['dflux'] = u.Quantity((
-            validate_column(data_table, 'flux_error_lo', flux_types),
-            validate_column(data_table, 'flux_error_hi', flux_types)))
+        data['dflux_lo'] = validate_column(data_table, 'flux_error_lo', flux_types)
+        data['dflux_hi'] = validate_column(data_table, 'flux_error_hi', flux_types)
     else:
         raise TypeError('Data table does not contain required column'
-                        ' "flux_error" or columns "flux_error_lo" and "flux_error_hi"')
+                        ' "flux_error" or columns "flux_error_lo"'
+                        ' and "flux_error_hi"')
 
     # Energy bin edges
     if 'energy_width' in data_table.keys():
         energy_width = validate_column(data_table, 'energy_width', 'energy')
-        data['dene'] = u.Quantity((energy_width / 2., energy_width / 2.))
+        data['dene_lo'] = energy_width / 2.
+        data['dene_hi'] = energy_width / 2.
     elif 'energy_error' in data_table.keys():
         energy_error = validate_column(data_table, 'energy_error', 'energy')
-        data['dene'] = u.Quantity((energy_error, energy_error))
+        data['dene_lo'] = energy_error
+        data['dene_hi'] = energy_error
     elif ('energy_error_lo' in data_table.keys() and
             'energy_error_hi' in data_table.keys()):
         energy_error_lo = validate_column(data_table, 'energy_error_lo', 'energy')
+        data['dene_lo'] = energy_error_lo
         energy_error_hi = validate_column(data_table, 'energy_error_hi', 'energy')
-        data['dene'] = u.Quantity((energy_error_lo, energy_error_hi))
+        data['dene_hi'] = energy_error_hi
     elif 'energy_lo' in data_table.keys() and 'energy_hi' in data_table.keys():
         energy_lo = validate_column(data_table, 'energy_lo', 'energy')
+        data['dene_lo'] = (data['energy'] - energy_lo)
         energy_hi = validate_column(data_table, 'energy_hi', 'energy')
-        data['dene'] = u.Quantity(
-            (data['energy'] - energy_lo, energy_hi - data['energy']))
+        data['dene_hi'] = (energy_hi - data['energy'])
     else:
-        data['dene'] = generate_energy_edges(data['energy'])
+        data['dene_lo'], data['dene_hi'] = generate_energy_edges(data['energy'])
 
     # Upper limit flags
     if 'ul' in data_table.keys():
@@ -175,8 +147,7 @@ def _validate_single_data_table(data_table):
                 if ul != 'True' and ul != 'False':
                     strbool = False
             if strbool:
-                data['ul'] = np.array([ast.literal_eval(ul)
-                                      for ul in ul_col], dtype=np.bool)
+                data['ul'] = np.array([ast.literal_eval(ul) for ul in ul_col], dtype=np.bool)
             else:
                 raise TypeError('UL column is in wrong format')
         else:
@@ -191,11 +162,11 @@ def _validate_single_data_table(data_table):
     if 'keywords' in data_table.meta.keys():
         if 'cl' in data_table.meta['keywords'].keys():
             HAS_CL = True
-            data['cl'] = validate_scalar(
-                'cl', data_table.meta['keywords']['cl']['value'])
+            CL = validate_scalar('cl', data_table.meta['keywords']['cl']['value'])
+            data['cl'] = [CL,]*len(data)
 
     if not HAS_CL:
-        data['cl'] = 0.9
+        data['cl'] = [0.9,]*len(data)
         if np.sum(data['ul']) > 0:
             log.warning('"cl" keyword not provided in input data table, upper limits'
                         ' will be assumed to be at 90% confidence level')
@@ -345,9 +316,9 @@ def generate_energy_edges(ene):
 
     Returns
     -------
-    edge_array : `astropy.units.Quantity` array instance of shape ``(2,len(ene))``
-        Array of energy edge pairs corresponding to each given energy of the
-        input array.
+    energy_err_lo, energy_error_hi : `astropy.units.Quantity` arrays
+        Arrays of low and high energy edges corresponding to each given energy
+        of the input array.
     """
     midene = np.sqrt((ene[1:] * ene[:-1]))
     elo, ehi = np.zeros(len(ene)) * ene.unit, np.zeros(len(ene)) * ene.unit
@@ -355,7 +326,7 @@ def generate_energy_edges(ene):
     ehi[:-1] = midene - ene[:-1]
     elo[0] = ene[0] * ( 1 - ene[0] / (ene[0] + ehi[0]))
     ehi[-1] = elo[-1]
-    return np.array((elo, ehi)) * ene.unit
+    return elo, ehi
 
 
 def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
@@ -394,36 +365,36 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
 
     Returns
     -------
-    data : dict
-        Data stored in a `dict`.
+    data : :class:`astropy.table.QTable`
+        Data stored in an astropy Table.
     """
-    table = Table()
+    table = QTable()
 
     if cl is not None:
         cl = validate_scalar('cl', cl)
         table.meta['keywords'] = {'cl': {'value': cl}}
 
-    table.add_column(Column(name='energy', data=energy))
+    table['energy'] = energy
 
     if energy_width is not None:
-        table.add_column(Column(name='energy_width', data=energy_width))
+        table['energy_width'] = energy_width
     elif energy_lo is not None and energy_hi is not None:
-        table.add_column(Column(name='energy_lo', data=energy_lo))
-        table.add_column(Column(name='energy_hi', data=energy_hi))
+        table['energy_lo'] = energy_lo
+        table['energy_hi'] = energy_hi
 
-    table.add_column(Column(name='flux', data=flux))
+    table['flux'] = flux
 
     if flux_error is not None:
-        table.add_column(Column(name='flux_error', data=flux_error))
+        table['flux_error'] = flux_error
     elif flux_error_lo is not None and flux_error_hi is not None:
-        table.add_column(Column(name='flux_error_lo', data=flux_error_lo))
-        table.add_column(Column(name='flux_error_hi', data=flux_error_hi))
+        table['flux_error_lo'] = flux_error_lo
+        table['flux_error_hi'] = flux_error_hi
     else:
         raise TypeError('Flux error not provided!')
 
     if ul is not None:
         ul = np.array(ul, dtype=np.int)
-        table.add_column(Column(name='ul', data=ul))
+        table['ul'] = ul
 
     table.meta['comments'] = [
         'Table generated with naima.build_data_table', ]

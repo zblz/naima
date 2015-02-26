@@ -99,7 +99,7 @@ def test_init():
         prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
 
     # test that the CL keyword has been correctly read
-    assert sampler.data['cl'] == 0.99
+    assert np.all(sampler.data['cl'] == 0.99)
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_sed_conversion_in_lnprobmodel():

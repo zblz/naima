@@ -1,6 +1,9 @@
 0.4 (unreleased)
 ----------------
 
+- Uses QTable instead of Table wherever possible, and internal data is a QTable
+  instead of a dict.
+
 
 0.3 (2015-02-19)
 ----------------

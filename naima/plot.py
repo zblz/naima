@@ -588,33 +588,35 @@ def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
     notul = -ul
 
     # Hack to show y errors compatible with 0 in loglog plot
-    yerr = data['dflux'][:, notul]
-    y = data['flux'][notul].to(yerr.unit)
-    bad_err = np.where((y-yerr[0]) <= 0.)
-    yerr[0][bad_err] = y[bad_err]*(1.-1e-7)
+    yerr_lo = data['dflux_lo'][notul]
+    y = data['flux'][notul].to(yerr_lo.unit)
+    bad_err = np.where((y-yerr_lo) <= 0.)
+    yerr_lo[bad_err] = y[bad_err]*(1.-1e-7)
+    yerr = u.Quantity((yerr_lo, data['dflux_hi'][notul]))
+    xerr = u.Quantity((data['dene_lo'], data['dene_hi']))
 
     ax1.errorbar(data['energy'][notul].to(e_unit).value,
             (data['flux'][notul] * sedf[notul]).to(f_unit).value,
             yerr=(yerr * sedf[notul]).to(f_unit).value,
-            xerr=(data['dene'][:, notul]).to(e_unit).value,
+            xerr=xerr[:,notul].to(e_unit).value,
             zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
             mec='w', mew=0, ms=6, color=data_color)
 
     if np.any(ul):
         plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
                 (data['flux'][ul] * sedf[ul]).to(f_unit).value,
-                (data['dene'][:, ul]).to(e_unit).value)
+                (xerr[:, ul]).to(e_unit).value)
 
     ax1.set_xscale('log')
     ax1.set_yscale('log')
-    xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['dene'][0]).to(e_unit).value))
-    xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['dene'][1]).to(e_unit).value))
+    xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['dene_lo']).to(e_unit).value))
+    xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['dene_hi']).to(e_unit).value))
     ax1.set_xlim(xmin, xmax)
     # avoid autoscaling to errorbars to 0
-    if np.any(data['dflux'][:, notul][0] >= data['flux'][notul]):
+    if np.any(data['dflux_lo'][notul] >= data['flux'][notul]):
         elo  = ((data['flux'][notul] * sedf[notul]).to(f_unit).value -
-                (data['dflux'][0][notul] * sedf[notul]).to(f_unit).value)
-        gooderr = np.where(data['dflux'][0][notul] < data['flux'][notul])
+                (data['dflux_lo'][notul] * sedf[notul]).to(f_unit).value)
+        gooderr = np.where(data['dflux_lo'][notul] < data['flux'][notul])
         ymin = 10 ** np.floor(np.log10(np.min(elo[gooderr])))
         ax1.set_ylim(bottom=ymin)
 
@@ -632,16 +634,17 @@ def _plot_residuals_to_ax(data, model_ML, ax, e_unit=u.eV, sed=True,
         data_color='r'):
     """Function to compute and plot residuals in units of the uncertainty"""
 
+    notul = -data['ul']
     df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
     ene = data['energy'].to(e_unit)
+    xerr = u.Quantity((data['dene_lo'], data['dene_hi']))
     flux = (data['flux'] * dsedf).to(df_unit)
-    dflux = (data['dflux'] * dsedf).to(df_unit)
+    dflux = (data['dflux_lo'] + data['dflux_hi'])/2.
+    dflux = (dflux * dsedf).to(df_unit)[notul]
 
     mf_unit, msedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
     mene = model_ML[0].to(e_unit)
     mflux = (model_ML[1] * msedf).to(mf_unit)
-
-    notul = -data['ul']
 
     if len(mene) != len(ene):
         from scipy.interpolate import interp1d
@@ -651,11 +654,10 @@ def _plot_residuals_to_ax(data, model_ML, ax, e_unit=u.eV, sed=True,
     else:
         difference = flux[notul]-mflux[notul]
 
-    dflux = np.mean(dflux[:, notul], axis=0)
     ax.errorbar(ene[notul].value,
             (difference / dflux).decompose().value,
             yerr=(dflux / dflux).decompose().value,
-            xerr=data['dene'][:, notul].to(e_unit).value,
+            xerr=xerr[:, notul].to(e_unit).value,
             zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
             mec='w', mew=0, ms=6, color=data_color)
     ax.axhline(0, c='k', lw=2, ls='--')

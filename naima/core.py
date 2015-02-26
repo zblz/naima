@@ -53,21 +53,18 @@ def lnprobmodel(model, data):
 
     difference = model[notul] - data['flux'][notul]
 
-    if data['dflux'].ndim > 1:
-        # use different errors for model above or below data
-        sign = difference > 0
-        loerr, hierr = 1 * -sign, 1 * sign
-        logprob = - difference ** 2 / (2. * (loerr * data['dflux'][0][notul] +
-                                             hierr * data['dflux'][1][notul]) ** 2)
-    else:
-        logprob = - difference ** 2 / (2. * data['dflux'][notul] ** 2)
+    # use different errors for model above or below data
+    sign = difference > 0
+    loerr, hierr = 1 * -sign, 1 * sign
+    logprob = - difference ** 2 / (2. * (loerr * data['dflux_lo'][notul] +
+                                         hierr * data['dflux_hi'][notul]) ** 2)
 
     totallogprob = np.sum(logprob)
 
     if np.sum(ul) > 0:
         # deal with upper limits at CL set by data['cl']
         violated_uls = np.sum(model[ul] > data['flux'][ul])
-        totallogprob += violated_uls * np.log(1. - data['cl'])
+        totallogprob += violated_uls * np.log(1. - data['cl'][violated_uls])
 
     return totallogprob
 
