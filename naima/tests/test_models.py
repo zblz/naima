@@ -58,7 +58,7 @@ def test_synchrotron_lum(particle_dists):
 
         Wes.append(sy.We.to('erg').value)
 
-        lsy = trapz_loglog(sy.spectrum(energy) * energy, energy).to('erg/s')
+        lsy = trapz_loglog(sy.flux(energy,0) * energy, energy).to('erg/s')
         assert(lsy.unit == u.erg / u.s)
         lsys.append(lsy.value)
 
@@ -67,7 +67,7 @@ def test_synchrotron_lum(particle_dists):
 
     sy = Synchrotron(ECPL,B=1*u.G, **electron_properties)
 
-    lsy = trapz_loglog(sy.spectrum(energy) * energy, energy).to('erg/s')
+    lsy = trapz_loglog(sy.flux(energy,0) * energy, energy).to('erg/s')
     assert(lsy.unit == u.erg / u.s)
     assert_allclose(lsy.value, 31374135.447829477)
 
@@ -160,7 +160,7 @@ def test_bremsstrahlung_lum(particle_dists):
     energy2 = np.logspace(8,14,100) * u.eV
 
     brems = Bremsstrahlung(ECPL, n0 = 1 * u.cm**-3, Eemin = m_e*c**2)
-    lbrems = trapz_loglog(brems.spectrum(energy2) * energy2, energy2).to('erg/s')
+    lbrems = trapz_loglog(brems.flux(energy2,0) * energy2, energy2).to('erg/s')
 
     lum_ref = 2.3064095039069847e-05
     assert_allclose(lbrems, lum_ref)
@@ -179,7 +179,7 @@ def test_inverse_compton_lum(particle_dists):
     lums = []
     for pdist in particle_dists:
         ic = InverseCompton(pdist, **electron_properties)
-        lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
+        lic = trapz_loglog(ic.flux(energy,0) * energy, energy).to('erg/s')
         assert(lic.unit == u.erg / u.s)
         lums.append(lic.value)
 
@@ -187,7 +187,7 @@ def test_inverse_compton_lum(particle_dists):
 
     ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'])
 
-    lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
+    lic = trapz_loglog(ic.flux(energy,0) * energy, energy).to('erg/s')
     assert_allclose(lic.value,0.0005833030865998417)
 
 @pytest.mark.skipif('not HAS_SCIPY')
@@ -208,7 +208,7 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
         ic = InverseCompton(PL,
                 seed_photon_fields=[['Star',20000*u.K, 0.1*u.erg/u.cm**3, angle],],
                 **electron_properties)
-        lic = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s')
+        lic = trapz_loglog(ic.flux(energy,0) * energy, energy).to('erg/s')
         assert(lic.unit == u.erg / u.s)
         lums.append(lic.value)
 
@@ -229,7 +229,7 @@ def test_flux_sed(particle_dists):
 
     ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'], **electron_properties)
 
-    luminosity = trapz_loglog(ic.spectrum(energy) * energy, energy).to('erg/s').value
+    luminosity = trapz_loglog(ic.flux(energy,0) * energy, energy).to('erg/s').value
 
     int_flux1 = trapz_loglog(ic.flux(energy,d1) * energy, energy).to('erg/(s cm2)').value
     int_flux2 = trapz_loglog(ic.flux(energy,d2) * energy, energy).to('erg/(s cm2)').value
@@ -242,7 +242,7 @@ def test_flux_sed(particle_dists):
 
     # check SED
     sed1 = ic.sed(energy,d1).to('erg/(s cm2)').value
-    sed0 = (ic.spectrum(energy) * energy ** 2).to('erg/s').value
+    sed0 = (ic.flux(energy,0) * energy ** 2).to('erg/s').value
 
     assert_allclose(sed1,sed0/(4*np.pi*(d1.to('cm').value)**2))
 
@@ -291,11 +291,11 @@ def test_pion_decay(particle_dists):
     for pdist in particle_dists:
         pp = PionDecay(pdist,useLUT=True, **proton_properties)
         Wps.append(pp.Wp.to('erg').value)
-        lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
+        lpp = trapz_loglog(pp.flux(energy,0) * energy, energy).to('erg/s')
         assert(lpp.unit == u.erg / u.s)
         lpps_LUT.append(lpp.value)
         pp.useLUT=False
-        lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
+        lpp = trapz_loglog(pp.flux(energy,0) * energy, energy).to('erg/s')
         lpps_noLUT.append(lpp.value)
 
     assert_allclose(lpps_LUT, lum_ref_LUT)
@@ -304,7 +304,7 @@ def test_pion_decay(particle_dists):
 
     # test LUT not found
     pp = PionDecay(PL,useLUT=True,hiEmodel='Geant4', **proton_properties)
-    pp.spectrum(energy)
+    pp.flux(energy,0)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_pion_decay_no_nuc_enh(particle_dists):
@@ -323,7 +323,7 @@ def test_pion_decay_no_nuc_enh(particle_dists):
     energy = np.logspace(9, 13, 20) * u.eV
     pp = PionDecay(ECPL,nuclear_enhancement=False, useLUT=False, **proton_properties)
     Wp = pp.Wp.to('erg').value
-    lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
+    lpp = trapz_loglog(pp.flux(energy,0) * energy, energy).to('erg/s')
     assert(lpp.unit == u.erg / u.s)
 
     assert_allclose(lpp.value, lum_ref[0])
@@ -348,7 +348,7 @@ def test_pion_decay_kelner(particle_dists):
     energy = np.logspace(9, 13, 20) * u.eV
     pp = PionDecay(ECPL, **proton_properties)
     Wp = pp.Wp.to('erg').value
-    lpp = trapz_loglog(pp.spectrum(energy) * energy, energy).to('erg/s')
+    lpp = trapz_loglog(pp.flux(energy,0) * energy, energy).to('erg/s')
     assert(lpp.unit == u.erg / u.s)
 
     assert_allclose(lpp.value, lum_ref[0])

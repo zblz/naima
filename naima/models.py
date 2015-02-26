@@ -6,6 +6,7 @@ import numpy as np
 import astropy.units as u
 from .extern.validator import validate_scalar, validate_array, validate_physical_type
 from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
+from .model_utils import memoize
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw',
@@ -53,6 +54,9 @@ class PowerLaw(object):
     """
 
     param_names = ['amplitude', 'e_0', 'alpha']
+    _memoize = True
+    _cache = {}
+    _queue = []
 
     def __init__(self, amplitude, e_0, alpha):
         self.amplitude = amplitude
@@ -66,6 +70,7 @@ class PowerLaw(object):
         xx = e / e_0
         return amplitude * xx ** (-alpha)
 
+    @memoize
     def __call__(self,e):
         """One dimensional power law model function"""
 
@@ -106,6 +111,9 @@ class ExponentialCutoffPowerLaw(object):
     """
 
     param_names = ['amplitude', 'e_0', 'alpha', 'e_cutoff', 'beta']
+    _memoize = True
+    _cache = {}
+    _queue = []
 
     def __init__(self, amplitude, e_0, alpha, e_cutoff, beta=1.0):
         self.amplitude = amplitude
@@ -121,6 +129,7 @@ class ExponentialCutoffPowerLaw(object):
         xx = e / e_0
         return amplitude * xx ** (-alpha) * np.exp(-(e / e_cutoff) ** beta)
 
+    @memoize
     def __call__(self,e):
         """One dimensional power law with an exponential cutoff model function"""
 
@@ -167,6 +176,9 @@ class BrokenPowerLaw(object):
     """
 
     param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2']
+    _memoize = True
+    _cache = {}
+    _queue = []
 
     def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2):
         self.amplitude = amplitude
@@ -182,6 +194,7 @@ class BrokenPowerLaw(object):
         alpha = np.where(e < e_break, alpha_1, alpha_2)
         return amplitude * K * (e / e_0) ** -alpha
 
+    @memoize
     def __call__(self,e):
         """One dimensional power law model function"""
 
@@ -235,6 +248,9 @@ class ExponentialCutoffBrokenPowerLaw(object):
     """
 
     param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2']
+    _memoize = True
+    _cache = {}
+    _queue = []
 
     def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0):
         self.amplitude = amplitude
@@ -253,6 +269,7 @@ class ExponentialCutoffBrokenPowerLaw(object):
         ee2 = e / e_cutoff
         return amplitude * K * (e / e_0) ** -alpha * np.exp(- (ee2 ** beta))
 
+    @memoize
     def __call__(self,e):
         """One dimensional power law model function"""
 
@@ -291,6 +308,9 @@ class LogParabola(object):
     """
 
     param_names = ['amplitude', 'e_0', 'alpha', 'beta']
+    _memoize = True
+    _cache = {}
+    _queue = []
 
     def __init__(self, amplitude, e_0, alpha, beta):
         self.amplitude = amplitude
@@ -306,6 +326,7 @@ class LogParabola(object):
         eeponent = -alpha - beta * np.log(ee)
         return amplitude * ee ** eeponent
 
+    @memoize
     def __call__(self,e):
         """One dimensional power law model function"""
 

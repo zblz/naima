@@ -6,8 +6,10 @@ import numpy as np
 from .extern.validator import validate_scalar, validate_array, validate_physical_type
 
 from .utils import trapz_loglog
+from .model_utils import memoize
 
-__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung', 'PionDecayKelner06']
+__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
+           'PionDecayKelner06']
 
 from astropy.extern import six
 import os
@@ -52,6 +54,7 @@ class BaseRadiative(object):
     spectrum method which returns the intrinsic differential spectrum.
     """
 
+    @memoize
     def flux(self, photon_energy, distance=1*u.kpc):
         """Differential flux at a given distance from the source.
 
@@ -65,7 +68,7 @@ class BaseRadiative(object):
             luminosity will be returned. Default is 1 kpc.
         """
 
-        spec = self.spectrum(photon_energy)
+        spec = self._spectrum(photon_energy)
 
         if distance != 0:
             distance = validate_scalar('distance', distance, physical_type='length')
@@ -103,6 +106,12 @@ class BaseRadiative(object):
 class BaseElectron(BaseRadiative):
     """Implements gam and nelec properties in addition to the BaseRadiative methods
     """
+
+    def __init__(self):
+        self.param_names = ['Eemin', 'Eemax', 'nEed']
+        self._memoize = True
+        self._cache = {}
+        self._queue = []
 
     @property
     def _gam(self):
@@ -223,7 +232,9 @@ class Synchrotron(BaseElectron):
         Number of points per decade in energy for the electron energy and
         distribution arrays. Default is 100.
     """
+
     def __init__(self, particle_distribution, B=3.24e-6*u.G, **kwargs):
+        super(Synchrotron, self).__init__()
         self.particle_distribution = particle_distribution
         # check that the particle distribution returns particles per unit energy
         P = self.particle_distribution(1*u.TeV)
@@ -232,9 +243,10 @@ class Synchrotron(BaseElectron):
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
         self.nEed = 100
+        self.param_names += ['B',]
         self.__dict__.update(**kwargs)
 
-    def spectrum(self, photon_energy):
+    def _spectrum(self, photon_energy):
         """Compute intrinsic synchrotron differential spectrum for energies in ``photon_energy``
 
         Compute synchrotron for random magnetic field according to approximation
@@ -337,12 +349,15 @@ class InverseCompton(BaseElectron):
     """
 
     def __init__(self, particle_distribution, seed_photon_fields=['CMB',], **kwargs):
+        super(InverseCompton, self).__init__()
         self.particle_distribution = particle_distribution
         self.seed_photon_fields = seed_photon_fields
         self._process_input_seed()
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
         self.nEed = 100
+        self.param_names += ['seed_photon_fields',
+                'seeduf', 'seedT', 'seedisotropic', 'seedtheta']
         self.__dict__.update(**kwargs)
 
     def _process_input_seed(self):
@@ -516,7 +531,7 @@ class InverseCompton(BaseElectron):
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
 
-    def spectrum(self,photon_energy):
+    def _spectrum(self,photon_energy):
         """Compute differential IC spectrum for energies in ``photon_energy``.
 
         Compute IC spectrum using IC cross-section for isotropic interaction
@@ -570,6 +585,7 @@ class Bremsstrahlung(BaseElectron):
     """
 
     def __init__(self, particle_distribution, n0 = 1 / u.cm**3, **kwargs):
+        super(Bremsstrahlung, self).__init__()
         self.particle_distribution = particle_distribution
         self.n0 = n0
         self.Eemin = 100 * u.MeV
@@ -582,6 +598,7 @@ class Bremsstrahlung(BaseElectron):
         X = Y/N
         self.weight_ee = np.sum(Z*X)
         self.weight_ep = np.sum(Z**2*X)
+        self.param_names += ['n0', 'weight_ee', 'weight_ep']
         self.__dict__.update(**kwargs)
 
     @staticmethod
@@ -713,7 +730,7 @@ class Bremsstrahlung(BaseElectron):
                                      self._gam, axis=0).to(u.cm**2 / Eph.unit)
         return emiss
 
-    def spectrum(self,photon_energy):
+    def _spectrum(self,photon_energy):
         """Compute differential bremsstrahlung spectrum for energies in ``photon_energy``.
 
         Parameters
@@ -733,6 +750,12 @@ class Bremsstrahlung(BaseElectron):
 class BaseProton(BaseRadiative):
     """Implements compute_Wp at arbitrary energies
     """
+
+    def __init__(self):
+        self.param_names = ['Epmin', 'Epmax', 'nEpd']
+        self._memoize = True
+        self._cache = {}
+        self._queue = []
 
     @property
     def _Ep(self):
@@ -877,6 +900,7 @@ class PionDecay(BaseProton):
 
     def __init__(self, particle_distribution, nh = 1.0 / u.cm**3,
             nuclear_enhancement = True, **kwargs):
+        super(PionDecay, self).__init__()
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
         self.nuclear_enhancement = nuclear_enhancement
@@ -885,6 +909,7 @@ class PionDecay(BaseProton):
         self.Epmin = (self._m_p + self._Tth + 1e-4) * u.GeV # Threshold energy ~1.22 GeV
         self.Epmax = 10 * u.PeV # 10 PeV
         self.nEpd = 100
+        self.param_names += ['nh', 'nuclear_enhancement', 'useLUT', 'hiEmodel']
         self.__dict__.update(**kwargs)
 
 
@@ -1190,7 +1215,7 @@ class PionDecay(BaseProton):
 
         return epstotal
 
-    def spectrum(self,photon_energy):
+    def _spectrum(self,photon_energy):
         """
         Compute differential spectrum from pp interactions using the parametrization of
         Kafexhiu, E., Aharonian, F., Taylor, A.~M., and Vila, G.~S.\ 2014,
@@ -1252,10 +1277,6 @@ class PionDecayKelner06(BaseRadiative):
     nh : `~astropy.units.Quantity`
         Number density of the target protons. Default is :math:`1 cm^{-3}`.
 
-    useLUT : bool
-        Use precomputed lookup tables for the differential cross section.
-        Default is False.
-
     Other parameters
     ----------------
     Etrans : `~astropy.units.Quantity`
@@ -1270,9 +1291,18 @@ class PionDecayKelner06(BaseRadiative):
 
     """
 
-    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3, **kwargs):
+    # This class doesn't inherit from BaseProton
+    param_names = ['nh','Etrans']
+    _memoize = True
+    _cache = {}
+    _queue = []
+
+    def __init__(self, particle_distribution, nh = 1.0 / u.cm**3,
+            Etrans=0.1*u.TeV, **kwargs):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
+        self.Etrans = validate_scalar('Etrans', Etrans,
+                    domain='positive', physical_type='energy')
 
         self.__dict__.update(**kwargs)
 
@@ -1395,7 +1425,7 @@ class PionDecayKelner06(BaseRadiative):
 
         return (Wp * u.TeV).to('erg')
 
-    def spectrum(self,photon_energy):
+    def _spectrum(self,photon_energy):
         """
         Compute differential spectrum from pp interactions using Eq.71 and Eq.58 of
         Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
@@ -1408,14 +1438,6 @@ class PionDecayKelner06(BaseRadiative):
         """
 
         outspecene = _validate_ene(photon_energy)
-
-        if not hasattr(self, 'Etrans'):
-            # Energy at which we change from delta functional to accurate
-            # calculation
-            self.Etrans = 0.1 * u.TeV
-        else:
-            validate_scalar('Etrans', self.Etrans,
-                    domain='positive', physical_type='energy')
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
