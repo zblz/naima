@@ -1,8 +1,6 @@
 0.4 (unreleased)
 ----------------
 
-- Uses QTable instead of Table wherever possible, and internal data is a QTable
-  instead of a dict.
 - All models have a cache of length 10 so that the output is not computed when
   the parameters have not changed. It can be turned off through the ``_memoize``
   attribute of the models.

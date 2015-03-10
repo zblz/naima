@@ -54,12 +54,9 @@ def validate_data_table(data_table, sed=None):
 
     def dt_sed_conversion(dt, sed):
         f_unit, sedf = sed_conversion(dt['energy'], dt['flux'].unit, sed)
-        flux = (dt['flux']*sedf).to(f_unit)
-        dflux_lo = (dt['dflux_lo']*sedf).to(f_unit)
-        dflux_hi = (dt['dflux_hi']*sedf).to(f_unit)
-        for col,newval in six.moves.zip(['flux','dflux_lo','dflux_hi'],[flux,dflux_lo,dflux_hi]):
-            dt.remove_column(col)
-            dt[col] = newval
+        dt['flux'] = (dt['flux']*sedf).to(f_unit)
+        dt['dflux_lo'] = (dt['dflux_lo']*sedf).to(f_unit)
+        dt['dflux_hi'] = (dt['dflux_hi']*sedf).to(f_unit)
         return dt
 
     data_list = []
@@ -84,14 +81,16 @@ def validate_data_table(data_table, sed=None):
 
         dt = dt_sed_conversion(dt, sed)
 
-        for row in dt:
-            data_new.add_row(row)
+        for col in ['energy','dene_lo','dene_hi','flux','dflux_lo','dflux_hi']:
+            # Ugly hack to concatenate Quantities
+            unit = data_new[col].unit
+            data_new[col] = np.concatenate((data_new[col], dt[col].to(unit))).value * unit
 
     return data_new
 
 def _validate_single_data_table(data_table):
 
-    data = QTable()
+    data = {}
 
     flux_types = ['flux', 'differential flux', 'power', 'differential power']
 
@@ -163,10 +162,10 @@ def _validate_single_data_table(data_table):
         if 'cl' in data_table.meta['keywords'].keys():
             HAS_CL = True
             CL = validate_scalar('cl', data_table.meta['keywords']['cl']['value'])
-            data['cl'] = [CL,]*len(data)
+            data['cl'] = CL * np.ones(len(data))
 
     if not HAS_CL:
-        data['cl'] = [0.9,]*len(data)
+        data['cl'] = 0.9 * np.ones(len(data))
         if np.sum(data['ul']) > 0:
             log.warning('"cl" keyword not provided in input data table, upper limits'
                         ' will be assumed to be at 90% confidence level')
