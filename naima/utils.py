@@ -166,10 +166,10 @@ def _validate_single_data_table(data_table):
         if 'cl' in data_table.meta['keywords'].keys():
             HAS_CL = True
             CL = validate_scalar('cl', data_table.meta['keywords']['cl']['value'])
-            data['cl'] = CL * np.ones(len(data))
+            data['cl'] = CL * np.ones(len(data['energy']))
 
     if not HAS_CL:
-        data['cl'] = 0.9 * np.ones(len(data))
+        data['cl'] = 0.9 * np.ones(len(data['energy']))
         if np.sum(data['ul']) > 0:
             log.warning('"cl" keyword not provided in input data table, upper limits'
                         ' will be assumed to be at 90% confidence level')

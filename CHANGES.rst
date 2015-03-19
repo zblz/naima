@@ -4,7 +4,7 @@
 - All models have a cache of length 10 so that the output is not computed when
   the parameters have not changed. It can be turned off through the ``_memoize``
   attribute of the models.
-
+- Fixed concatenation of UL and CL in ``validate_data_table``.
 
 0.3 (2015-02-19)
 ----------------
