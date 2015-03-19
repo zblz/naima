@@ -86,6 +86,10 @@ def validate_data_table(data_table, sed=None):
             unit = data_new[col].unit
             data_new[col] = np.concatenate((data_new[col], dt[col].to(unit))).value * unit
 
+        for col in ['ul','cl']:
+            # concatenate non-quantity arrays
+            data_new[col] = np.concatenate((data_new[col], dt[col]))
+
     return data_new
 
 def _validate_single_data_table(data_table):
