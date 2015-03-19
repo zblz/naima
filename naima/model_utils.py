@@ -8,9 +8,12 @@ import hashlib
 def memoize(func):
     """ Cache decorator for functions inside model classes """
     def model(cls, energy, *args, **kwargs):
-        memoize = cls._memoize
-        cache = cls._cache
-        queue = cls._queue
+        try:
+            memoize = cls._memoize
+            cache = cls._cache
+            queue = cls._queue
+        except AttributeError:
+            memoize = False
 
         if memoize:
             data = [str(energy),
