@@ -122,7 +122,7 @@ selected though the `seed_photon_fields` parameter of the
 list of items, each of which can be either:
 
     * A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
-      radiation fields with temperatures of 2.72 K, 70 K, and 5000 K, and
+      radiation fields with temperatures of 2.72 K, 30 K, and 3000 K, and
       energy densities of 0.261, 0.5, and 1 eV/cm³ will be used, or
 
     * A list of length three (isotropic source) or four (anisotropic source)
