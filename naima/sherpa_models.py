@@ -97,9 +97,9 @@ class InverseCompton(SherpaModelECPL):
     `naima.models.ExponentialCutoffPowerLaw` documentation.
     """
     def __init__(self,name='IC'):
-        self.TFIR = Parameter(name , 'TFIR' , 70   , min=0 , frozen=True , units='K')
+        self.TFIR = Parameter(name , 'TFIR' , 30   , min=0 , frozen=True , units='K')
         self.uFIR = Parameter(name , 'uFIR' , 0.0  , min=0 , frozen=True , units='eV/cm3') # , 0.2eV/cm3 typical in outer disk
-        self.TNIR = Parameter(name , 'TNIR' , 3800 , min=0 , frozen=True , units='K')
+        self.TNIR = Parameter(name , 'TNIR' , 3000 , min=0 , frozen=True , units='K')
         self.uNIR = Parameter(name , 'uNIR' , 0.0  , min=0 , frozen=True , units='eV/cm3') # , 0.2eV/cm3 typical in outer disk
         # add ECPL params
         super(InverseCompton,self).__init__(name=name)
