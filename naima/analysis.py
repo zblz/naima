@@ -8,6 +8,8 @@ from astropy.table import Table
 from astropy import log
 from astropy.extern import six
 
+from .plot import find_ML
+
 HAS_PYYAML = True
 try:
     import yaml
@@ -220,6 +222,11 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
     metadata = {}
     # Start with info from the distributions used for storing the results
     metadata['n_samples']= dists.shape[0]
+    # save ML parameter vector and best/median loglikelihood
+    ML, MLp, MLerr, _ = find_ML(sampler, None)
+    metadata['ML_pars'] = [float(p) for p in MLp]
+    metadata['MaxLogLikelihood'] = float(ML)
+
     # And add all info stored in the sampler.run_info dict
     if hasattr(sampler,'run_info'):
         metadata.update(sampler.run_info)

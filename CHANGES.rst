@@ -1,6 +1,9 @@
 0.5 (unreleased)
 ----------------
 
+- ``save_results_table`` now saves the maximum log likelihood and ML parameters
+  of the sample.
+
 
 0.4 (2015-03-19)
 ----------------

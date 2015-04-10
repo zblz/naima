@@ -359,15 +359,18 @@ def find_ML(sampler, modelidx):
     """
     index = np.unravel_index(np.argmax(sampler.lnprobability), sampler.lnprobability.shape)
     MLp = sampler.chain[index]
-    blob = sampler.blobs[index[1]][index[0]][modelidx]
-    if isinstance(blob, u.Quantity):
-        modelx = sampler.data['energy'].copy()
-        model_ML = blob.copy()
-    elif len(blob) == 2:
-        modelx = blob[0].copy()
-        model_ML = blob[1].copy()
+    if modelidx is not None:
+        blob = sampler.blobs[index[1]][index[0]][modelidx]
+        if isinstance(blob, u.Quantity):
+            modelx = sampler.data['energy'].copy()
+            model_ML = blob.copy()
+        elif len(blob) == 2:
+            modelx = blob[0].copy()
+            model_ML = blob[1].copy()
+        else:
+            raise TypeError('Model {0} has wrong blob format'.format(modelidx))
     else:
-        raise TypeError('Model {0} has wrong blob format'.format(modelidx))
+        modelx, model_ML = None, None
 
     MLerr = []
     for dist in sampler.flatchain.T:

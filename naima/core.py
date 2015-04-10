@@ -364,6 +364,8 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     else:
         pos = p0
 
+    sampler.run_info['p0_burn_median'] = [float(p) for p in np.median(pos,axis=0)]
+
     return sampler, pos
 
 
@@ -397,7 +399,6 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
         sampler, pos = get_sampler(**kwargs)
 
     sampler.run_info['n_run'] = nrun
-    sampler.run_info['p0_run_median'] = [float(p) for p in np.median(pos,axis=0)]
 
     print('\nWalker burn in finished, running {0} steps...'.format(nrun))
     sampler.reset()
