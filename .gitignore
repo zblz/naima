@@ -50,3 +50,4 @@ distribute-*.tar.gz
 docs/_generated/
 docs/api/
 
+.idea
