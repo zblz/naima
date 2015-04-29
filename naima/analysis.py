@@ -19,7 +19,7 @@ except ImportError:
 __all__ = ["save_diagnostic_plots", "save_results_table"]
 
 def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
-        blob_labels=None):
+        blob_labels=None, last_step=False):
     """
     Generate diagnostic plots.
 
@@ -70,7 +70,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
                                     sampler.labels):
         try:
             log.info('Plotting chain of parameter {0}...'.format(label))
-            f = plot_chain(sampler, par)
+            f = plot_chain(sampler, par, last_step=last_step)
             if pdf:
                 f.savefig(outpdf, format='pdf')
             else:
@@ -127,7 +127,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
         try:
             log.info('Plotting {0}...'.format(label))
             f = plot_blob(sampler, blobidx=modelidx, label=label,
-                          sed=plot_sed, n_samples=100)
+                          sed=plot_sed, n_samples=100, last_step=True)
             if pdf:
                 f.savefig(outpdf, format='pdf')
             else:

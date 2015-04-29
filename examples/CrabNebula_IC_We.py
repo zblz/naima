@@ -41,15 +41,15 @@ def ElectronIC(pars,data):
 ## Prior definition
 
 def lnprior(pars):
-	"""
-	Return probability of parameter values according to prior knowledge.
-	Parameter limits should be done here through uniform prior ditributions
-	"""
+    """
+    Return probability of parameter values according to prior knowledge.
+    Parameter limits should be done here through uniform prior ditributions
+    """
 
-	logprob = naima.uniform_prior(pars[0],0.,np.inf) \
+    logprob = naima.uniform_prior(pars[0],0.,np.inf) \
                 + naima.uniform_prior(pars[1],-1,5)
 
-	return logprob
+    return logprob
 
 if __name__=='__main__':
 
