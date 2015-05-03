@@ -3,6 +3,8 @@
 
 - ``save_results_table`` now saves the maximum log likelihood and ML parameters
   of the sample.
+- Update ``astropy_helpers`` to 1.0.2 and require astropy >= 1.0.2 to ensure
+  pickleable Tables.
 
 
 0.4 (2015-03-19)
