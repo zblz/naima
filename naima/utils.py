@@ -67,8 +67,8 @@ def validate_data_table(data_table, sed=None):
         return ndt
 
     data_list = []
-    for dt in data_table:
-        dt_val = _validate_single_data_table(dt)
+    for i,dt in enumerate(data_table):
+        dt_val = _validate_single_data_table(dt, group=i)
         data_list.append(dt_val)
 
     # concatenate input data tables
@@ -93,7 +93,7 @@ def validate_data_table(data_table, sed=None):
 
     return data_new
 
-def _validate_single_data_table(data_table):
+def _validate_single_data_table(data_table, group=0):
 
     data = QTable()
 
@@ -174,6 +174,8 @@ def _validate_single_data_table(data_table):
         if np.sum(data['ul']) > 0:
             log.warning('"cl" keyword not provided in input data table, upper limits'
                         ' will be assumed to be at 90% confidence level')
+
+    data['group'] = group * np.ones(len(data['energy']))
 
     return data
 

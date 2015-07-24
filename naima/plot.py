@@ -12,6 +12,18 @@ from .utils import sed_conversion, validate_data_table
 
 __all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob"]
 
+marker_cycle = ['o','s','d','p','*']
+# from seaborn: sns.color_palette('dark',6)
+color_cycle = [
+    (0.5490196078431373  , 0.03529411764705882 , 0.0)                 ,
+    (0.0                 , 0.10980392156862745 , 0.4980392156862745)  ,
+    (0.00392156862745098 , 0.4588235294117647  , 0.09019607843137255) ,
+    (0.4627450980392157  , 0.0                 , 0.6313725490196078)  ,
+    (0.7215686274509804  , 0.5254901960784314  , 0.0431372549019608)  ,
+    (0.0                 , 0.38823529411764707 , 0.4549019607843137)
+]
+
+
 
 def plot_chain(sampler, p=None, **kwargs):
     """Generate a diagnostic plot of the sampler chains.
@@ -83,11 +95,17 @@ def _plot_chain_func(sampler, p, last_step=False):
 
 # plot five percent of the traces darker
 
-    colors = np.where(np.arange(nwalkers)/float(nwalkers) > 0.95, '#550000', '0.5')
+    if nwalkers < 60:
+        thresh = 1 - 3. / nwalkers
+    else:
+        thresh = 0.95
+    red = np.arange(nwalkers)/float(nwalkers) >= thresh
 
     ax1.set_rasterization_zorder(1)
-    for t, c in zip(traces, colors):  # range(nwalkers):
-        ax1.plot(t, c=c, lw=1, alpha=0.9, zorder=0)
+    for t in traces[-red]:  # range(nwalkers):
+        ax1.plot(t, c='0.1', lw=1.0, alpha=0.25, zorder=0)
+    for t in traces[red]:
+        ax1.plot(t, c='#880000', lw=1.5, alpha=0.75, zorder=0)
     ax1.set_xlabel('step number')
     #[l.set_rotation(45) for l in ax1.get_yticklabels()]
     ax1.set_ylabel(label)
@@ -415,7 +433,7 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kw
 
 def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
         confs=None, ML_info=True, figure=None, plotdata=None,
-        plotresiduals=None, e_unit=None, data_color='r', xlabel=None,
+        plotresiduals=None, e_unit=None, xlabel=None,
         ylabel=None, **kwargs):
     """
     Plot data with fit confidence regions.
@@ -453,8 +471,6 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
     e_unit : `~astropy.units.Unit`
         Units for the energy axis of the plot. The default is to use the units
         of the energy array of the observed data.
-    data_color : str, optional
-        Matplotlib color for the data points.
     xlabel : str, optional
         Label for the ``x`` axis of the plot.
     ylabel : str, optional
@@ -489,7 +505,7 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
     if confs is None and not n_samples and plotdata and not plotresiduals:
         # We actually only want to plot the data, so let's go there
         return plot_data(sampler.data, xlabel=xlabel, ylabel=ylabel, sed=sed, figure=figure,
-                e_unit=e_unit, data_color=data_color)
+                e_unit=e_unit)
 
     if figure is None:
         f = plt.figure()
@@ -517,10 +533,9 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
     xlaxis = ax1
     if plotdata:
         _plot_data_to_ax(data, ax1, e_unit=e_unit, sed=sed,
-                data_color=data_color, ylabel=ylabel)
+                ylabel=ylabel)
         if plotresiduals:
-            _plot_residuals_to_ax(data, model_ML, ax2, e_unit=e_unit, sed=sed,
-                    data_color=data_color)
+            _plot_residuals_to_ax(data, model_ML, ax2, e_unit=e_unit, sed=sed)
             xlaxis = ax2
             for tl in ax1.get_xticklabels():
                 tl.set_visible(False)
@@ -558,57 +573,65 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
 
     return f
 
-def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
-        ylabel=None):
+def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None):
     """ Plots data errorbars and upper limits onto ax.
     X label is left to plot_data and plot_fit because they depend on whether
     residuals are plotted.
     """
 
     if e_unit is None:
-        e_unit = data['energy'].unit
+        e_unit = data_all['energy'].unit
 
-    def plot_ulims(ax, x, y, xerr):
+    def plot_ulims(ax, x, y, xerr, color):
         """
         Plot upper limits as arrows with cap at value of upper limit.
 
         uplim behaviour has been fixed in matplotlib 1.4
         """
         ax.errorbar(x, y, xerr=xerr, ls='',
-                color=data_color, elinewidth=2, capsize=0)
+                color=color, elinewidth=2, capsize=0)
         import matplotlib
         major, minor, bugfix = [int(v) for v in matplotlib.__version__.split('.')]
         if major >= 1 and minor >= 4:
             ax.errorbar(x, y, yerr=0.25*y, ls='', uplims=True,
-                    color=data_color, elinewidth=2, capsize=5, zorder=10)
+                    color=color, elinewidth=2, capsize=5, zorder=10)
         else:
             ax.errorbar(x, 0.75*y, yerr=0.25*y, ls='', lolims=True,
-                    color=data_color, elinewidth=2, capsize=5, zorder=10)
+                    color=color, elinewidth=2, capsize=5, zorder=10)
 
-    f_unit, sedf = sed_conversion(data['energy'], data['flux'].unit, sed)
+    f_unit, sedf = sed_conversion(data_all['energy'], data_all['flux'].unit, sed)
 
-    ul = data['ul']
-    notul = -ul
+    groups = np.unique(data_all['group'])
 
-    # Hack to show y errors compatible with 0 in loglog plot
-    yerr_lo = data['flux_error_lo'][notul]
-    y = data['flux'][notul].to(yerr_lo.unit)
-    bad_err = np.where((y-yerr_lo) <= 0.)
-    yerr_lo[bad_err] = y[bad_err]*(1.-1e-7)
-    yerr = u.Quantity((yerr_lo, data['flux_error_hi'][notul]))
-    xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))
+    for g in groups:
+        data = data_all[np.where(data['group']==g)]
 
-    ax1.errorbar(data['energy'][notul].to(e_unit).value,
-            (data['flux'][notul] * sedf[notul]).to(f_unit).value,
-            yerr=(yerr * sedf[notul]).to(f_unit).value,
-            xerr=xerr[:,notul].to(e_unit).value,
-            zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
-            mec='w', mew=0, ms=6, color=data_color)
+        # wrap around color and marker cycles
+        color = color_cycle[int(g) % len(color_cycle)]
+        marker = marker_cycle[int(g) % len(marker_cycle)]
 
-    if np.any(ul):
-        plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
-                (data['flux'][ul] * sedf[ul]).to(f_unit).value,
-                (xerr[:, ul]).to(e_unit).value)
+        ul = data['ul']
+        notul = -ul
+
+        # Hack to show y errors compatible with 0 in loglog plot
+        yerr_lo = data['dflux_lo'][notul]
+        y = data['flux'][notul].to(yerr_lo.unit)
+        bad_err = np.where((y-yerr_lo) <= 0.)
+        yerr_lo[bad_err] = y[bad_err]*(1.-1e-7)
+        yerr = u.Quantity((yerr_lo, data['dflux_hi'][notul]))
+        xerr = u.Quantity((data['dene_lo'], data['dene_hi']))
+
+        ax1.errorbar(data['energy'][notul].to(e_unit).value,
+                (data['flux'][notul] * sedf[notul]).to(f_unit).value,
+                yerr=(yerr * sedf[notul]).to(f_unit).value,
+                xerr=xerr[:,notul].to(e_unit).value,
+                zorder=100, marker=marker, ls='', elinewidth=2,
+                capsize=0, mec='w', mew=0, ms=6, color=color)
+
+        if np.any(ul):
+            plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
+                    (data['flux'][ul] * sedf[ul]).to(f_unit).value,
+                    (xerr[:, ul]).to(e_unit).value, color)
 
     ax1.set_xscale('log')
     ax1.set_yscale('log')
@@ -633,10 +656,45 @@ def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
     else:
         ax1.set_ylabel(ylabel)
 
-def _plot_residuals_to_ax(data, model_ML, ax, e_unit=u.eV, sed=True,
-        data_color='r'):
+def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
     """Function to compute and plot residuals in units of the uncertainty"""
+    groups = np.unique(data_all['group'])
 
+    for g in groups:
+        data = data_all[np.where(data['group']==g)]
+
+        # wrap around color and marker cycles
+        color = color_cycle[int(g) % len(color_cycle)]
+        marker = marker_cycle[int(g) % len(marker_cycle)]
+
+        notul = -data['ul']
+        df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
+        ene = data['energy'].to(e_unit)
+        xerr = u.Quantity((data['dene_lo'], data['dene_hi']))
+        flux = (data['flux'] * dsedf).to(df_unit)
+        dflux = (data['dflux_lo'] + data['dflux_hi'])/2.
+        dflux = (dflux * dsedf).to(df_unit)[notul]
+
+        mf_unit, msedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
+        mene = model_ML[0].to(e_unit)
+        mflux = (model_ML[1] * msedf).to(mf_unit)
+
+        if len(mene) != len(ene):
+            from scipy.interpolate import interp1d
+            modelfunc = interp1d(mene.value, mflux.value, bounds_error=False)
+            difference = flux[notul].value-modelfunc(ene[notul])
+            difference *= flux.unit
+        else:
+            difference = flux[notul]-mflux[notul]
+
+        ax.errorbar(ene[notul].value,
+                (difference / dflux).decompose().value,
+                yerr=(dflux / dflux).decompose().value,
+                xerr=xerr[:, notul].to(e_unit).value,
+                zorder=100, marker=marker, ls='', elinewidth=2, capsize=0,
+                mec='w', mew=0, ms=6, color=color)
+
+<<<<<<< HEAD
     notul = -data['ul']
     df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
     ene = data['energy'].to(e_unit)
@@ -663,10 +721,13 @@ def _plot_residuals_to_ax(data, model_ML, ax, e_unit=u.eV, sed=True,
             xerr=xerr[:, notul].to(e_unit).value,
             zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
             mec='w', mew=0, ms=6, color=data_color)
+=======
+>>>>>>> set color and marker by group
     ax.axhline(0, c='k', lw=2, ls='--')
 
     from matplotlib.ticker import MaxNLocator
-    ax.yaxis.set_major_locator(MaxNLocator(integer='True', prune='upper'))
+    ax.yaxis.set_major_locator(MaxNLocator(5, integer='True', prune='upper',
+        symmetric=True))
 
     ax.set_ylabel(r'$\Delta\sigma$')
     ax.set_xscale('log')
