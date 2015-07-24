@@ -327,7 +327,7 @@ def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
 
     ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
     ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
-            color='r', lw=1.5, alpha=0.8)
+            color='k', lw=2, alpha=0.8)
 
     if label is not None:
         ax.set_ylabel('{0} [{1}]'.format(label,f_unit.to_string('latex_inline')))
@@ -365,7 +365,7 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
 
     ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
     ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
-            color='r', lw=1.5, alpha=0.8)
+            color='k', lw=2, alpha=0.8)
 
     if label is not None:
         ax.set_ylabel('{0} [{1}]'.format(label,f_unit.to_string('latex_inline')))
@@ -539,6 +539,9 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
             xlaxis = ax2
             for tl in ax1.get_xticklabels():
                 tl.set_visible(False)
+        xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['energy_error_lo']).to(e_unit).value))
+        xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['energy_error_hi']).to(e_unit).value))
+        ax1.set_xlim(xmin, xmax)
     else:
         ax1.set_xscale('log')
         ax1.set_yscale('log')
@@ -601,6 +604,9 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None):
 
     f_unit, sedf = sed_conversion(data_all['energy'], data_all['flux'].unit, sed)
 
+    if 'group' not in data_all.keys():
+        data_all['group'] = np.zeros(len(data_all))
+
     groups = np.unique(data_all['group'])
 
     for g in groups:
@@ -614,19 +620,19 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None):
         notul = -ul
 
         # Hack to show y errors compatible with 0 in loglog plot
-        yerr_lo = data['dflux_lo'][notul]
+        yerr_lo = data['flux_error_lo'][notul]
         y = data['flux'][notul].to(yerr_lo.unit)
         bad_err = np.where((y-yerr_lo) <= 0.)
         yerr_lo[bad_err] = y[bad_err]*(1.-1e-7)
-        yerr = u.Quantity((yerr_lo, data['dflux_hi'][notul]))
-        xerr = u.Quantity((data['dene_lo'], data['dene_hi']))
+        yerr = u.Quantity((yerr_lo, data['flux_error_hi'][notul]))
+        xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))
 
         ax1.errorbar(data['energy'][notul].to(e_unit).value,
                 (data['flux'][notul] * sedf[notul]).to(f_unit).value,
                 yerr=(yerr * sedf[notul]).to(f_unit).value,
                 xerr=xerr[:,notul].to(e_unit).value,
-                zorder=100, marker=marker, ls='', elinewidth=2,
-                capsize=0, mec='w', mew=0, ms=6, color=color)
+                zorder=100, marker=marker, ls='', elinewidth=2, capsize=0,
+                mec=color, mew=0.1, ms=6, color=color)
 
         if np.any(ul):
             plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
@@ -658,6 +664,9 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None):
 
 def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
     """Function to compute and plot residuals in units of the uncertainty"""
+    if 'group' not in data_all.keys():
+        data_all['group'] = np.zeros(len(data_all))
+
     groups = np.unique(data_all['group'])
 
     for g in groups:
@@ -670,9 +679,9 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
         notul = -data['ul']
         df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
         ene = data['energy'].to(e_unit)
-        xerr = u.Quantity((data['dene_lo'], data['dene_hi']))
+        xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))
         flux = (data['flux'] * dsedf).to(df_unit)
-        dflux = (data['dflux_lo'] + data['dflux_hi'])/2.
+        dflux = (data['flux_error_lo'] + data['flux_error_hi'])/2.
         dflux = (dflux * dsedf).to(df_unit)[notul]
 
         mf_unit, msedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
@@ -692,37 +701,8 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
                 yerr=(dflux / dflux).decompose().value,
                 xerr=xerr[:, notul].to(e_unit).value,
                 zorder=100, marker=marker, ls='', elinewidth=2, capsize=0,
-                mec='w', mew=0, ms=6, color=color)
+                mec=color, mew=0.1, ms=6, color=color)
 
-<<<<<<< HEAD
-    notul = -data['ul']
-    df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
-    ene = data['energy'].to(e_unit)
-    xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))
-    flux = (data['flux'] * dsedf).to(df_unit)
-    dflux = (data['flux_error_lo'] + data['flux_error_hi'])/2.
-    dflux = (dflux * dsedf).to(df_unit)[notul]
-
-    mf_unit, msedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
-    mene = model_ML[0].to(e_unit)
-    mflux = (model_ML[1] * msedf).to(mf_unit)
-
-    if len(mene) != len(ene):
-        from scipy.interpolate import interp1d
-        modelfunc = interp1d(mene.value, mflux.value, bounds_error=False)
-        difference = flux[notul].value-modelfunc(ene[notul])
-        difference *= flux.unit
-    else:
-        difference = flux[notul]-mflux[notul]
-
-    ax.errorbar(ene[notul].value,
-            (difference / dflux).decompose().value,
-            yerr=(dflux / dflux).decompose().value,
-            xerr=xerr[:, notul].to(e_unit).value,
-            zorder=100, marker='o', ls='', elinewidth=2, capsize=0,
-            mec='w', mew=0, ms=6, color=data_color)
-=======
->>>>>>> set color and marker by group
     ax.axhline(0, c='k', lw=2, ls='--')
 
     from matplotlib.ticker import MaxNLocator
