@@ -56,8 +56,8 @@ def lnprobmodel(model, data):
     # use different errors for model above or below data
     sign = difference > 0
     loerr, hierr = 1 * -sign, 1 * sign
-    logprob = - difference ** 2 / (2. * (loerr * data['dflux_lo'][notul] +
-                                         hierr * data['dflux_hi'][notul]) ** 2)
+    logprob = - difference ** 2 / (2. * (loerr * data['flux_error_lo'][notul] +
+                                         hierr * data['flux_error_hi'][notul]) ** 2)
 
     totallogprob = np.sum(logprob)
 

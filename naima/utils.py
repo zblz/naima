@@ -54,10 +54,17 @@ def validate_data_table(data_table, sed=None):
 
     def dt_sed_conversion(dt, sed):
         f_unit, sedf = sed_conversion(dt['energy'], dt['flux'].unit, sed)
-        dt['flux'] = (dt['flux']*sedf).to(f_unit)
-        dt['dflux_lo'] = (dt['dflux_lo']*sedf).to(f_unit)
-        dt['dflux_hi'] = (dt['dflux_hi']*sedf).to(f_unit)
-        return dt
+        # roundtrip to Table to change the units
+        t = Table(dt)
+        for col in ['flux','flux_error_lo','flux_error_hi']:
+            t[col].unit = f_unit
+        ndt = QTable(t)
+
+        ndt['flux'] = (dt['flux']*sedf).to(f_unit)
+        ndt['flux_error_lo'] = (dt['flux_error_lo']*sedf).to(f_unit)
+        ndt['flux_error_hi'] = (dt['flux_error_hi']*sedf).to(f_unit)
+
+        return ndt
 
     data_list = []
     for dt in data_table:
@@ -81,20 +88,14 @@ def validate_data_table(data_table, sed=None):
 
         dt = dt_sed_conversion(dt, sed)
 
-        for col in ['energy','dene_lo','dene_hi','flux','dflux_lo','dflux_hi']:
-            # Ugly hack to concatenate Quantities
-            unit = data_new[col].unit
-            data_new[col] = np.concatenate((data_new[col], dt[col].to(unit))).value * unit
-
-        for col in ['ul','cl']:
-            # concatenate non-quantity arrays
-            data_new[col] = np.concatenate((data_new[col], dt[col]))
+        for row in dt:
+            data_new.add_row(row)
 
     return data_new
 
 def _validate_single_data_table(data_table):
 
-    data = {}
+    data = QTable()
 
     flux_types = ['flux', 'differential flux', 'power', 'differential power']
 
@@ -105,11 +106,11 @@ def _validate_single_data_table(data_table):
     # Flux uncertainties
     if 'flux_error' in data_table.keys():
         dflux = validate_column(data_table, 'flux_error', flux_types)
-        data['dflux_lo'] = dflux
-        data['dflux_hi'] = dflux
+        data['flux_error_lo'] = dflux
+        data['flux_error_hi'] = dflux
     elif 'flux_error_lo' in data_table.keys() and 'flux_error_hi' in data_table.keys():
-        data['dflux_lo'] = validate_column(data_table, 'flux_error_lo', flux_types)
-        data['dflux_hi'] = validate_column(data_table, 'flux_error_hi', flux_types)
+        data['flux_error_lo'] = validate_column(data_table, 'flux_error_lo', flux_types)
+        data['flux_error_hi'] = validate_column(data_table, 'flux_error_hi', flux_types)
     else:
         raise TypeError('Data table does not contain required column'
                         ' "flux_error" or columns "flux_error_lo"'
@@ -118,25 +119,25 @@ def _validate_single_data_table(data_table):
     # Energy bin edges
     if 'energy_width' in data_table.keys():
         energy_width = validate_column(data_table, 'energy_width', 'energy')
-        data['dene_lo'] = energy_width / 2.
-        data['dene_hi'] = energy_width / 2.
+        data['energy_error_lo'] = energy_width / 2.
+        data['energy_error_hi'] = energy_width / 2.
     elif 'energy_error' in data_table.keys():
         energy_error = validate_column(data_table, 'energy_error', 'energy')
-        data['dene_lo'] = energy_error
-        data['dene_hi'] = energy_error
+        data['energy_error_lo'] = energy_error
+        data['energy_error_hi'] = energy_error
     elif ('energy_error_lo' in data_table.keys() and
             'energy_error_hi' in data_table.keys()):
         energy_error_lo = validate_column(data_table, 'energy_error_lo', 'energy')
-        data['dene_lo'] = energy_error_lo
+        data['energy_error_lo'] = energy_error_lo
         energy_error_hi = validate_column(data_table, 'energy_error_hi', 'energy')
-        data['dene_hi'] = energy_error_hi
+        data['energy_error_hi'] = energy_error_hi
     elif 'energy_lo' in data_table.keys() and 'energy_hi' in data_table.keys():
         energy_lo = validate_column(data_table, 'energy_lo', 'energy')
-        data['dene_lo'] = (data['energy'] - energy_lo)
+        data['energy_error_lo'] = (data['energy'] - energy_lo)
         energy_hi = validate_column(data_table, 'energy_hi', 'energy')
-        data['dene_hi'] = (energy_hi - data['energy'])
+        data['energy_error_hi'] = (energy_hi - data['energy'])
     else:
-        data['dene_lo'], data['dene_hi'] = generate_energy_edges(data['energy'])
+        data['energy_error_lo'], data['energy_error_hi'] = generate_energy_edges(data['energy'])
 
     # Upper limit flags
     if 'ul' in data_table.keys():
@@ -166,10 +167,10 @@ def _validate_single_data_table(data_table):
         if 'cl' in data_table.meta['keywords'].keys():
             HAS_CL = True
             CL = validate_scalar('cl', data_table.meta['keywords']['cl']['value'])
-            data['cl'] = CL * np.ones(len(data['energy']))
+            data['cl'] = [CL,] *len(data['energy'])
 
     if not HAS_CL:
-        data['cl'] = 0.9 * np.ones(len(data['energy']))
+        data['cl'] = [0.9,] * len(data['energy'])
         if np.sum(data['ul']) > 0:
             log.warning('"cl" keyword not provided in input data table, upper limits'
                         ' will be assumed to be at 90% confidence level')

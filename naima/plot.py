@@ -591,12 +591,12 @@ def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
     notul = -ul
 
     # Hack to show y errors compatible with 0 in loglog plot
-    yerr_lo = data['dflux_lo'][notul]
+    yerr_lo = data['flux_error_lo'][notul]
     y = data['flux'][notul].to(yerr_lo.unit)
     bad_err = np.where((y-yerr_lo) <= 0.)
     yerr_lo[bad_err] = y[bad_err]*(1.-1e-7)
-    yerr = u.Quantity((yerr_lo, data['dflux_hi'][notul]))
-    xerr = u.Quantity((data['dene_lo'], data['dene_hi']))
+    yerr = u.Quantity((yerr_lo, data['flux_error_hi'][notul]))
+    xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))
 
     ax1.errorbar(data['energy'][notul].to(e_unit).value,
             (data['flux'][notul] * sedf[notul]).to(f_unit).value,
@@ -612,14 +612,14 @@ def _plot_data_to_ax(data, ax1, e_unit=None, sed=True, data_color='r',
 
     ax1.set_xscale('log')
     ax1.set_yscale('log')
-    xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['dene_lo']).to(e_unit).value))
-    xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['dene_hi']).to(e_unit).value))
+    xmin = 10 ** np.floor(np.log10(np.min(data['energy'] - data['energy_error_lo']).to(e_unit).value))
+    xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['energy_error_hi']).to(e_unit).value))
     ax1.set_xlim(xmin, xmax)
     # avoid autoscaling to errorbars to 0
-    if np.any(data['dflux_lo'][notul] >= data['flux'][notul]):
+    if np.any(data['flux_error_lo'][notul] >= data['flux'][notul]):
         elo  = ((data['flux'][notul] * sedf[notul]).to(f_unit).value -
-                (data['dflux_lo'][notul] * sedf[notul]).to(f_unit).value)
-        gooderr = np.where(data['dflux_lo'][notul] < data['flux'][notul])
+                (data['flux_error_lo'][notul] * sedf[notul]).to(f_unit).value)
+        gooderr = np.where(data['flux_error_lo'][notul] < data['flux'][notul])
         ymin = 10 ** np.floor(np.log10(np.min(elo[gooderr])))
         ax1.set_ylim(bottom=ymin)
 
@@ -640,9 +640,9 @@ def _plot_residuals_to_ax(data, model_ML, ax, e_unit=u.eV, sed=True,
     notul = -data['ul']
     df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
     ene = data['energy'].to(e_unit)
-    xerr = u.Quantity((data['dene_lo'], data['dene_hi']))
+    xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))
     flux = (data['flux'] * dsedf).to(df_unit)
-    dflux = (data['dflux_lo'] + data['dflux_hi'])/2.
+    dflux = (data['flux_error_lo'] + data['flux_error_hi'])/2.
     dflux = (dflux * dsedf).to(df_unit)[notul]
 
     mf_unit, msedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
