@@ -6,6 +6,8 @@
 - Update ``astropy_helpers`` to 1.0.2 and require astropy >= 1.0.2 to ensure
   pickleable Tables.
 - Internal data is a QTable instead of a dict.
+- When multiple input spectra are used, they are now plotted with different
+  colors and markers.
 
 
 0.4 (2015-03-19)
