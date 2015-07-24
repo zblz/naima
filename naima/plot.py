@@ -734,7 +734,7 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
 
 
 def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
-        e_unit=None, data_color='r'):
+        e_unit=None):
     """
     Plot spectral data.
 
@@ -757,8 +757,6 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
         `matplotlib` figure to plot on. If omitted a new one will be generated.
     e_unit : `astropy.unit.Unit`, optional
         Units for energy axis. Defaults to those of the data.
-    data_color : str
-        Matplotlib color for the data points.
     """
 
     import matplotlib.pyplot as plt
@@ -798,8 +796,7 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
     elif e_unit is None:
         e_unit = data['energy'].unit
 
-    _plot_data_to_ax(data, ax1, e_unit=e_unit, sed=sed, data_color=data_color,
-            ylabel=ylabel)
+    _plot_data_to_ax(data, ax1, e_unit=e_unit, sed=sed, ylabel=ylabel)
 
     if xlabel is not None:
         ax1.set_xlabel(xlabel)
