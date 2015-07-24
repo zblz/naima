@@ -604,7 +604,7 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None):
     groups = np.unique(data_all['group'])
 
     for g in groups:
-        data = data_all[np.where(data['group']==g)]
+        data = data_all[np.where(data_all['group']==g)]
 
         # wrap around color and marker cycles
         color = color_cycle[int(g) % len(color_cycle)]
@@ -661,7 +661,7 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
     groups = np.unique(data_all['group'])
 
     for g in groups:
-        data = data_all[np.where(data['group']==g)]
+        data = data_all[np.where(data_all['group']==g)]
 
         # wrap around color and marker cycles
         color = color_cycle[int(g) % len(color_cycle)]
