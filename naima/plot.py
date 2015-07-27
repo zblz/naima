@@ -105,7 +105,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     for t in traces[-red]:  # range(nwalkers):
         ax1.plot(t, c='0.1', lw=1.0, alpha=0.25, zorder=0)
     for t in traces[red]:
-        ax1.plot(t, c='#880000', lw=1.5, alpha=0.75, zorder=0)
+        ax1.plot(t, c=color_cycle[0], lw=1.5, alpha=0.75, zorder=0)
     ax1.set_xlabel('step number')
     #[l.set_rotation(45) for l in ax1.get_yticklabels()]
     ax1.set_ylabel(label)
@@ -115,7 +115,8 @@ def _plot_chain_func(sampler, p, last_step=False):
     # nbins=25 if last_step else 100
     nbins = min(max(25, int(len(dist)/100.)), 100)
     xlabel = label
-    n, x, patch = ax2.hist(dist, nbins, histtype='stepfilled', color='#CC0000', lw=0, normed=1)
+    n, x, patch = ax2.hist(dist, nbins, histtype='stepfilled',
+            color=color_cycle[0], lw=0, normed=1)
     kde = stats.kde.gaussian_kde(dist)
     ax2.plot(x, kde(x), c='k', label='KDE')
     # for m,ls,lab in zip([np.mean(dist),np.median(dist)],('--','-.'),('mean: {0:.4g}','median: {0:.4g}')):
@@ -827,7 +828,8 @@ def plot_distribution(samples, label, figure=None):
 
     histnbins = min(max(25, int(len(samples)/100.)), 100)
     xlabel = label
-    n, x, patch = ax.hist(samples, histnbins, histtype='stepfilled', color='#CC0000', lw=0, normed=1)
+    n, x, patch = ax.hist(samples, histnbins, histtype='stepfilled',
+            color=color_cycle[0], lw=0, normed=1)
     if isinstance(samples, u.Quantity):
         samples_nounit = samples.value
     else:
