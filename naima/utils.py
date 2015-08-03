@@ -67,8 +67,8 @@ def validate_data_table(data_table, sed=None):
         return ndt
 
     data_list = []
-    for i,dt in enumerate(data_table):
-        dt_val = _validate_single_data_table(dt, group=i)
+    for group,dt in enumerate(data_table):
+        dt_val = _validate_single_data_table(dt, group=group)
         data_list.append(dt_val)
 
     # concatenate input data tables
@@ -175,7 +175,7 @@ def _validate_single_data_table(data_table, group=0):
             log.warning('"cl" keyword not provided in input data table, upper limits'
                         ' will be assumed to be at 90% confidence level')
 
-    data['group'] = group * np.ones(len(data['energy']))
+    data['group'] = [group,] * len(data['energy'])
 
     return data
 
