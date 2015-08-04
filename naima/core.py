@@ -355,6 +355,8 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     sampler.data_table = data_table
     sampler.data = data
     sampler.labels = labels
+    # Add model function to sampler
+    sampler.modelfn = model
     # Add run_info dict
     sampler.run_info = {'n_walkers':nwalkers,
                         'n_burn': nburn,

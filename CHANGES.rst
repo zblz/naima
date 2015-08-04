@@ -10,7 +10,9 @@
   colors and markers.
 - Now doing the prefit with a minimizer that allows for relative tolerance
   termination: in general prefit will be faster.
-
+- Add ``e_range`` and ``e_npoints`` parameters to ``plot_fit`` to allow
+  computing the model samples for a wider energy range that the observed
+  spectrum (or at energies between data sets, such as X-ray and gamma-ray)
 
 0.4 (2015-03-19)
 ----------------

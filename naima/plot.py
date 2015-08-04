@@ -9,6 +9,7 @@ from astropy import log
 from astropy import table
 
 from .utils import sed_conversion, validate_data_table
+from .extern.validator import validate_array
 
 __all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob", 
         "plot_corner"]
@@ -113,7 +114,6 @@ def _plot_chain_func(sampler, p, last_step=False):
     ax1.yaxis.set_label_coords(-0.15, 0.5)
     ax1.set_title('Walker traces')
 
-    # nbins=25 if last_step else 100
     nbins = min(max(25, int(len(dist)/100.)), 100)
     xlabel = label
     n, x, patch = ax2.hist(dist, nbins, histtype='stepfilled',
@@ -197,28 +197,39 @@ def _plot_chain_func(sampler, p, last_step=False):
 
     return f
 
-def _process_blob(sampler, modelidx,last_step=True):
+def _process_blob(sampler, modelidx, last_step=True, energy=None):
     """
     Process binary blob in sampler. If blob in position modelidx is:
 
-    - a Quantity array of len(blob[i])=len(data['energy']: use blob as model, data['energy'] as modelx
+    - a Quantity array of len(blob[i])=len(data['energy']: use blob as model,
+      data['energy'] as modelx
     - a tuple: use first item as modelx, second as model
     - a Quantity scalar: return array of scalars
     """
 
-    blob0 = sampler.blobs[-1][0][modelidx]
+    # Allow process blob to be used by _calc_samples and _calc_ML by sending
+    # only blobs, not full sampler
+    if hasattr(sampler,'blobs'):
+        blob0 = sampler.blobs[-1][0][modelidx]
+        blobs = sampler.blobs
+        energy = sampler.data['energy']
+    else:
+        blobs = [sampler,]
+        blob0 = sampler[0][modelidx]
+        last_step = True
+
     if isinstance(blob0, u.Quantity):
-        if blob0.size == sampler.data['energy'].size:
+        if blob0.size == energy.size:
             # Energy array for blob is not provided, use data['energy']
-            modelx = sampler.data['energy']
+            modelx = energy
         elif blob0.size == 1:
             modelx = None
 
         if last_step:
-            model = u.Quantity([m[modelidx] for m in sampler.blobs[-1]])
+            model = u.Quantity([m[modelidx] for m in blobs[-1]])
         else:
             model = []
-            for step in sampler.blobs:
+            for step in blobs:
                 for walkerblob in step:
                     model.append(walkerblob[modelidx])
             model = u.Quantity(model)
@@ -226,11 +237,10 @@ def _process_blob(sampler, modelidx,last_step=True):
         modelx = None
 
         if last_step:
-            model = u.Quantity([m[modelidx] for m in sampler.blobs[-1]])
+            model = u.Quantity([m[modelidx] for m in blobs[-1]])
         else:
-            nsteps = len(sampler.blobs)
             model = []
-            for step in sampler.blobs:
+            for step in blobs:
                 for walkerblob in step:
                     model.append(walkerblob[modelidx])
             model = u.Quantity(model)
@@ -241,10 +251,10 @@ def _process_blob(sampler, modelidx,last_step=True):
             modelx = blob0[0]
 
             if last_step:
-                model = u.Quantity([m[modelidx][1] for m in sampler.blobs[-1]])
+                model = u.Quantity([m[modelidx][1] for m in blobs[-1]])
             else:
                 model = []
-                for step in sampler.blobs:
+                for step in blobs:
                     for walkerblob in step:
                         model.append(walkerblob[modelidx][1])
                 model = u.Quantity(model)
@@ -268,12 +278,81 @@ def _get_model_pt(sampler, modelidx):
 
     return pt
 
-def calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True):
+def _read_or_calc_samples(sampler, modelidx=0, n_samples=100, last_step=True,
+        e_range=None, e_npoints=100):
+    """Get samples from blob or compute them from chain and sampler.modelfn
+    """
+
+    if not e_range:
+        # return the results saved in blobs
+        modelx, model = _process_blob(sampler, modelidx, last_step=last_step)
+    else:
+        # prepare bogus data for calculation
+        e_range = validate_array('e_range', u.Quantity(e_range),
+                physical_type='energy')
+        e_unit = e_range.unit
+        data = {'energy': np.logspace(np.log10(e_range[0].value),
+            np.log10(e_range[1].value), e_npoints) * e_unit}
+        # init pool and select parameters
+        chain = sampler.chain[-1] if last_step else sampler.flatchain
+        pars = chain[np.random.randint(len(chain), size=n_samples)]
+        #from multiprocessing import Pool
+        #p = Pool()
+        #blobs = p.map(sampler.modelfn, [[p,data] for p in pars])
+        blobs = []
+        for p in pars:
+            modelout = sampler.modelfn(p,data)
+            if isinstance(modelout, np.ndarray):
+                blobs.append([modelout,])
+            else:
+                blobs.append(modelout)
+        modelx, model = _process_blob(blobs, modelidx=modelidx,
+                energy=data['energy'])
+
+    return modelx, model
+
+def _calc_ML(sampler, modelidx=0, e_range=None, e_npoints=100):
+    """Get ML model from blob or compute them from chain and sampler.modelfn
+    """
+
+    ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
+
+    if e_range is not None:
+        # prepare bogus data for calculation
+        e_range = validate_array('e_range', u.Quantity(e_range),
+                physical_type='energy')
+        e_unit = e_range.unit
+        data = {'energy': np.logspace(np.log10(e_range[0].value),
+            np.log10(e_range[1].value), e_npoints) * e_unit}
+        modelout = sampler.modelfn(MLp, data)
+
+        if isinstance(modelout, np.ndarray):
+            blob = modelout
+        else:
+            blob = modelout[modelidx]
+
+        if isinstance(blob, u.Quantity):
+            modelx = data['energy'].copy()
+            model_ML = blob.copy()
+        elif len(blob) == 2:
+            modelx = blob[0].copy()
+            model_ML = blob[1].copy()
+        else:
+            raise TypeError('Model {0} has wrong blob format'.format(modelidx))
+
+        ML_model = (modelx, model_ML)
+
+    return ML, MLp, MLerr, ML_model
+
+
+def _calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True, e_range=None,
+        e_npoints=100):
     """Calculate confidence interval.
     """
     from scipy import stats
 
-    modelx, model = _process_blob(sampler, modelidx, last_step=last_step)
+    modelx, model = _read_or_calc_samples(sampler, modelidx,
+            last_step=last_step, e_range=e_range, e_npoints=e_npoints)
 
     nwalkers = len(model)-1
     CI = []
@@ -293,7 +372,7 @@ def calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True):
     return modelx, CI
 
 def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
-        label=None, **kwargs):
+        label=None, e_range=None, e_npoints=100):
     """Plot confidence interval.
 
     Parameters
@@ -315,7 +394,8 @@ def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
         Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
     """
 
-    modelx, CI = calc_CI(sampler, modelidx=modelidx,confs=confs,**kwargs)
+    modelx, CI = _calc_CI(sampler, modelidx=modelidx, confs=confs,
+            e_range=e_range, e_npoints=e_npoints)
     # pick first confidence interval curve for units
     f_unit, sedf = sed_conversion(modelx, CI[0][0].unit, sed)
 
@@ -327,7 +407,8 @@ def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
                 lw=0., color='{0}'.format(color),
                 alpha=0.6, zorder=-10)
 
-    ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
+    ML, MLp, MLerr, ML_model = _calc_ML(sampler, modelidx, e_range=e_range,
+            e_npoints=e_npoints)
     ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
             color='k', lw=2, alpha=0.8)
 
@@ -335,7 +416,7 @@ def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
         ax.set_ylabel('{0} [{1}]'.format(label,f_unit.to_string('latex_inline')))
 
 def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
-        last_step=False, label=None):
+        last_step=False, label=None, e_range=None, e_npoints=100):
     """Plot a number of samples from the sampler chain.
 
     Parameters
@@ -357,15 +438,17 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
         Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
     """
 
-    modelx, model = _process_blob(sampler, modelidx, last_step=last_step)
-    # pick first confidence interval curve for units
+    modelx, model = _read_or_calc_samples(sampler, modelidx,
+            last_step=last_step, e_range=e_range, e_npoints=e_npoints)
+    # pick first model sample for units
     f_unit, sedf = sed_conversion(modelx, model[0].unit, sed)
 
     for my in model[np.random.randint(len(model), size=n_samples)]:
         ax.plot(modelx.to(e_unit).value, (my * sedf).to(f_unit).value,
                 color='k', alpha=0.1, lw=1)
 
-    ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
+    ML, MLp, MLerr, ML_model = _calc_ML(sampler, modelidx, e_range=e_range,
+            e_npoints=e_npoints)
     ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
             color='k', lw=2, alpha=0.8)
 
@@ -437,8 +520,8 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kw
 
 def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
         confs=None, ML_info=True, figure=None, plotdata=None,
-        plotresiduals=None, e_unit=None, xlabel=None,
-        ylabel=None, **kwargs):
+        plotresiduals=None, e_unit=None, e_range=None, e_npoints=100,
+        xlabel=None, ylabel=None, **kwargs):
     """
     Plot data with fit confidence regions.
 
@@ -472,9 +555,16 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
     plotresiduals : bool, optional
         Wheter to plot the residuals with respect to the maximum likelihood model. Default is
         True if ``plotdata`` is True and either ``confs`` or ``n_samples`` are set.
-    e_unit : `~astropy.units.Unit`
+    e_unit : `~astropy.units.Unit`, optional
         Units for the energy axis of the plot. The default is to use the units
         of the energy array of the observed data.
+    e_range : list of `~astropy.units.Quantity`, length 2, optional
+        Limits in energy for the computation of the model samples and ML model.
+        Note that setting this parameter will mean that the samples for the
+        model are recomputed and depending on the model speed might be quite
+        slow.
+    e_npoints : int, optional
+        How many points to compute for the model samples and ML model if `e_range` is set.
     xlabel : str, optional
         Label for the ``x`` axis of the plot.
     ylabel : str, optional
@@ -529,10 +619,10 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
 
     if confs is not None:
         plot_CI(ax1, sampler, modelidx, sed=sed, confs=confs, e_unit=e_unit,
-                label=label, **kwargs)
+                label=label, e_range=e_range, e_npoints=e_npoints)
     elif n_samples:
         plot_samples(ax1, sampler, modelidx, sed=sed, n_samples=n_samples,
-                e_unit=e_unit, label=label)
+                e_unit=e_unit, label=label, e_range=e_range, e_npoints=e_npoints)
 
     xlaxis = ax1
     if plotdata:
