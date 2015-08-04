@@ -330,16 +330,16 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
                 log.info('   Maximum number of function evaluations reached!')
             log.info('   Initial parameters: {0}'.format(p0))
             if result['status']==1:
-                log.info('   New parameters : {0}'.format(result['x']))
+                log.info('      New parameters : {0}'.format(result['x']))
             else:
                 log.info('   New ML parameters : {0}'.format(result['x']))
+                P0_IS_ML = True
             if -result['fun'] == ll_prior:
                 log.info('           lnprob(p0): {0:.3f}'.format(-result['fun']))
             else:
                 log.info('flat prior lnprob(p0): {0:.3f}'.format(-result['fun']))
                 log.info('full prior lnprob(p0): {0:.3f}'.format(ll_prior))
             p0 = result['x']
-            P0_IS_ML = True
         elif np.isinf(ll_prior):
             log.warning('Maximum Likelihood procedure converged on a parameter'
                     ' vector forbidden by prior,'
