@@ -266,18 +266,6 @@ def _process_blob(sampler, modelidx, last_step=True, energy=None):
 
     return modelx, model
 
-
-def _get_model_pt(sampler, modelidx):
-    blob0 = sampler.blobs[-1][0][modelidx]
-    if isinstance(blob0, u.Quantity):
-        pt = blob0.unit.physical_type
-    elif len(blob0) == 2:
-        pt = blob0[1].unit.physical_type
-    else:
-        raise TypeError('Model {0} has wrong blob format'.format(modelidx))
-
-    return pt
-
 def _read_or_calc_samples(sampler, modelidx=0, n_samples=100, last_step=True,
         e_range=None, e_npoints=100):
     """Get samples from blob or compute them from chain and sampler.modelfn
@@ -296,9 +284,6 @@ def _read_or_calc_samples(sampler, modelidx=0, n_samples=100, last_step=True,
         # init pool and select parameters
         chain = sampler.chain[-1] if last_step else sampler.flatchain
         pars = chain[np.random.randint(len(chain), size=n_samples)]
-        #from multiprocessing import Pool
-        #p = Pool()
-        #blobs = p.map(sampler.modelfn, [[p,data] for p in pars])
         blobs = []
         for p in pars:
             modelout = sampler.modelfn(p,data)
@@ -372,7 +357,7 @@ def _calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True, e_range=None,
     return modelx, CI
 
 def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
-        label=None, e_range=None, e_npoints=100):
+        label=None, e_range=None, e_npoints=100, last_step=True):
     """Plot confidence interval.
 
     Parameters
@@ -387,15 +372,17 @@ def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
         Whether to plot SED or differential spectrum. If `None`, the units of
         the observed spectrum will be used.
     confs : list, optional
-        List of confidence levels (in sigma) to use for generating the confidence intervals. Default is `[3,1,0.5]`
+        List of confidence levels (in sigma) to use for generating the
+        confidence intervals. Default is `[3,1,0.5]`
     e_unit : :class:`~astropy.units.Unit` or str parseable to unit
         Unit in which to plot energy axis.
     last_step : bool, optional
-        Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
+        Whether to only use the positions in the final step of the run (True,
+        default) or the whole chain (False).
     """
 
     modelx, CI = _calc_CI(sampler, modelidx=modelidx, confs=confs,
-            e_range=e_range, e_npoints=e_npoints)
+            e_range=e_range, e_npoints=e_npoints, last_step=last_step)
     # pick first confidence interval curve for units
     f_unit, sedf = sed_conversion(modelx, CI[0][0].unit, sed)
 
@@ -435,7 +422,8 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
     e_unit : :class:`~astropy.units.Unit` or str parseable to unit
         Unit in which to plot energy axis.
     last_step : bool, optional
-        Whether to only use the positions in the final step of the run (True, default) or the whole chain (False).
+        Whether to only use the positions in the final step of the run (True,
+        default) or the whole chain (False).
     """
 
     modelx, model = _read_or_calc_samples(sampler, modelidx,
@@ -518,14 +506,12 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kw
 
     return f
 
-def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
-        confs=None, ML_info=True, figure=None, plotdata=None,
+def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
+        n_samples=100, confs=None, ML_info=True, figure=None, plotdata=None,
         plotresiduals=None, e_unit=None, e_range=None, e_npoints=100,
-        xlabel=None, ylabel=None, **kwargs):
+        xlabel=None, ylabel=None):
     """
     Plot data with fit confidence regions.
-
-    Additional ``kwargs`` are passed to `plot_CI`.
 
     Parameters
     ----------
@@ -537,6 +523,9 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
         Label for the title of the plot.
     sed : bool, optional
         Whether to plot SED or differential spectrum.
+    last_step : bool, optional
+        Whether to use only the samples of the last step in the run when showing
+        either the model samples or the confidence intervals.
     n_samples : int, optional
         If not ``None``, number of sample models to plot. If ``None``,
         confidence bands will be plotted instead of samples. Default is 100.
@@ -619,10 +608,12 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, n_samples=100,
 
     if confs is not None:
         plot_CI(ax1, sampler, modelidx, sed=sed, confs=confs, e_unit=e_unit,
-                label=label, e_range=e_range, e_npoints=e_npoints)
+                label=label, e_range=e_range, e_npoints=e_npoints,
+                last_step=last_step)
     elif n_samples:
         plot_samples(ax1, sampler, modelidx, sed=sed, n_samples=n_samples,
-                e_unit=e_unit, label=label, e_range=e_range, e_npoints=e_npoints)
+                e_unit=e_unit, label=label, e_range=e_range,
+                e_npoints=e_npoints, last_step=last_step)
 
     xlaxis = ax1
     if plotdata:
@@ -811,9 +802,6 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
         e_unit=None):
     """
     Plot spectral data.
-
-    Additional ``kwargs`` are passed to `plot_fit`, except ``confs`` and
-    ``plotdata``.
 
     Parameters
     ----------

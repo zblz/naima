@@ -144,10 +144,12 @@ def test_fit_plots(sampler):
             for last_step in [True, False]:
                 for confs in [[1,3,5], None]:
                     for n_samples in [100, None]:
-                        f = plot_fit(sampler, modelidx=idx, sed=sed,
-                                     last_step=last_step, plotdata=True,
-                                     confs=confs, n_samples=n_samples)
-                        del f
+                        for e_range in [[1*u.GeV,100*u.TeV],None]:
+                            f = plot_fit(sampler, modelidx=idx, sed=sed,
+                                         last_step=last_step, plotdata=True,
+                                         confs=confs, n_samples=n_samples,
+                                         e_range=e_range)
+                            del f
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')

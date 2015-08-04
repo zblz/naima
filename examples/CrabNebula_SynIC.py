@@ -33,20 +33,20 @@ def ElectronSynIC(pars,data):
     # Data contains the merged X-ray and VHE spectrum:
     # Select xray and vhe bands and only compute Sync and IC for these bands,
     # respectively
-    #model = np.zeros_like(data['flux'])
+    model = np.zeros_like(data['flux'])
 
-    #xray_idx = np.where(data['energy'] < 1*u.MeV)
-    #model[xray_idx] = SYN.flux(data['energy'][xray_idx],
-                               #2.0*u.kpc).to(data['flux'].unit)
+    xray_idx = np.where(data['energy'] < 1*u.MeV)
+    model[xray_idx] = SYN.flux(data['energy'][xray_idx],
+                               2.0*u.kpc).to(data['flux'].unit)
 
-    #vhe_idx = np.where(data['energy'] >= 1*u.MeV)
-    #model[vhe_idx] = IC.flux(data['energy'][vhe_idx],
-                             #2.0*u.kpc).to(data['flux'].unit)
+    vhe_idx = np.where(data['energy'] >= 1*u.MeV)
+    model[vhe_idx] = IC.flux(data['energy'][vhe_idx],
+                             2.0*u.kpc).to(data['flux'].unit)
 
     # An alternative, slower approach, is to compute both models for all the
     # energy range:
-    model = (IC.flux(data,distance=2.0*u.kpc).to(data['flux'].unit) +
-             SYN.flux(data,distance=2.0*u.kpc).to(data['flux'].unit))
+    # model = (IC.flux(data,distance=2.0*u.kpc).to(data['flux'].unit) +
+    #          SYN.flux(data,distance=2.0*u.kpc).to(data['flux'].unit))
 
     # The first array returned will be compared to the observed spectrum for
     # fitting. All subsequent objects will be stores in the sampler metadata
