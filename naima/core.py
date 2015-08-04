@@ -310,29 +310,25 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
     P0_IS_ML = False
     if prefit:
-        try:
-            import scipy.optimize as op
-            flat_prior = lambda *args: 0.0
-            nll = lambda *args: -lnprob(*args)[0]
-            log.info('Attempting to find Maximum Likelihood parameters...')
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                result = op.minimize(nll, p0, args=(data, model, flat_prior),
-                        method='Nelder-Mead',options={'maxfev':500})
-            if result['success'] or result['status']==1:
-                # also keep result if we have reached maxiter, it is likely
-                # better than p0
-                log.info('   Initial parameters: {0}'.format(p0))
-                log.info('   New ML parameters : {0}'.format(result['x']))
-                log.info('   lnprob(p0): {0:.3f}'.format(-result['fun']))
-                p0 = result['x']
-                P0_IS_ML = True
-            else:
-                log.warning('Maximum Likelihood procedure failed to converge,'
-                        ' using original parameters for MCMC')
-        except ImportError:
-            log.warning('Scipy is required for the prefit, using '
-                        'original parameters for MCMC.')
+        from .minimize import minimize
+        flat_prior = lambda *args: 0.0
+        nll = lambda *args: -lnprob(*args)[0]
+        log.info('Attempting to find Maximum Likelihood parameters...')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            result = minimize(nll, p0, args=(data, model, flat_prior),
+                    method='Nelder-Mead',options={'maxfev':500,'xtol':1e-2,'ftol':1e-2})
+        if result['success'] or result['status']==1:
+            # also keep result if we have reached maxiter, it is likely
+            # better than p0
+            log.info('   Initial parameters: {0}'.format(p0))
+            log.info('   New ML parameters : {0}'.format(result['x']))
+            log.info('   lnprob(p0): {0:.3f}'.format(-result['fun']))
+            p0 = result['x']
+            P0_IS_ML = True
+        else:
+            log.warning('Maximum Likelihood procedure failed to converge,'
+                    ' using original parameters for MCMC')
 
     ndim = len(p0)
 

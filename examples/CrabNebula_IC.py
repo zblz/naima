@@ -13,6 +13,7 @@ data=ascii.read('CrabNebula_HESS_2006_ipac.dat')
 from naima.models import InverseCompton, ExponentialCutoffPowerLaw
 
 def ElectronIC(pars,data):
+    print(pars)
 
     # Match parameters to ECPL properties, and give them the appropriate units
     amplitude = pars[0] / u.eV
