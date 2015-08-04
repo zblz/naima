@@ -8,6 +8,8 @@
 - Internal data is a QTable instead of a dict.
 - When multiple input spectra are used, they are now plotted with different
   colors and markers.
+- Now doing the prefit with a minimizer that allows for relative tolerance
+  termination: in general prefit will be faster.
 
 
 0.4 (2015-03-19)

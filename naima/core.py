@@ -215,11 +215,12 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
         model. Default is True.
     prefit : bool, optional
         Whether to attempt to find the maximum likelihood parameters with a
-        Nelder-Mead algorithm (using `scipy.optimize.minimize`) and use them as
-        starting point of the MCMC run. The parameter values in `p0` will be
-        used as starting points for the minimization. Note that the initial
-        optimization is done without taking the prior function into accound to
-        avoid the possibility of infinite values in the objective function.
+        Nelder-Mead algorithm and use them as starting point of the MCMC run.
+        The parameter values in `p0` will be used as starting points for the
+        minimization. Note that the initial optimization is done without taking
+        the prior function into account to avoid the possibility of infinite
+        values in the objective function. If the best-fit parameter vector
+        without prior is forbidden by the prior given, it will be discarded.
     data_sed : bool, optional
         When providing more than one data table, whether to convert them to SED
         format. If unset or None, all tables will be converted to the format of
@@ -310,33 +311,44 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
 
     P0_IS_ML = False
     if prefit:
-        try:
-            import scipy.optimize as op
-            flat_prior = lambda *args: 0.0
-            nll = lambda *args: -lnprob(*args)[0]
-            log.info('Attempting to find Maximum Likelihood parameters...')
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                result = op.minimize(nll, p0, args=(data, model, flat_prior),
-                        method='Nelder-Mead',options={'maxfev':500})
-            if result['success'] or result['status']==1:
-                # also keep result if we have reached maxiter, it is likely
-                # better than p0
-                log.info('   Initial parameters: {0}'.format(p0))
-                log.info('   New ML parameters : {0}'.format(result['x']))
-                log.info('   lnprob(p0): {0:.3f}'.format(-result['fun']))
-                p0 = result['x']
-                P0_IS_ML = True
+        from .extern.minimize import minimize
+        #from scipy.optimize import minimize
+        flat_prior = lambda *args: 0.0
+        nll = lambda *args: -lnprob(*args)[0]
+        log.info('Attempting to find Maximum Likelihood parameters...')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            result = minimize(nll, p0, args=(data, model, flat_prior),
+                    method='Nelder-Mead',options={'maxfev':500, 'xtol':1e-1,
+                        'ftol':1e-3})
+            ll_prior = lnprob(result['x'], data, model, prior)[0]
+
+        if (result['success'] or result['status']==1) and not np.isinf(ll_prior):
+            # also keep result if we have reached maxiter, it is likely
+            # better than p0
+            if result['status']==1:
+                log.info('   Maximum number of function evaluations reached!')
+            log.info('   Initial parameters: {0}'.format(p0))
+            if result['status']==1:
+                log.info('      New parameters : {0}'.format(result['x']))
             else:
-                log.warning('Maximum Likelihood procedure failed to converge,'
-                        ' using original parameters for MCMC')
-        except ImportError:
-            log.warning('Scipy is required for the prefit, using '
-                        'original parameters for MCMC.')
+                log.info('   New ML parameters : {0}'.format(result['x']))
+                P0_IS_ML = True
+            if -result['fun'] == ll_prior:
+                log.info('           lnprob(p0): {0:.3f}'.format(-result['fun']))
+            else:
+                log.info('flat prior lnprob(p0): {0:.3f}'.format(-result['fun']))
+                log.info('full prior lnprob(p0): {0:.3f}'.format(ll_prior))
+            p0 = result['x']
+        elif np.isinf(ll_prior):
+            log.warning('Maximum Likelihood procedure converged on a parameter'
+                    ' vector forbidden by prior,'
+                    ' using original parameters for MCMC')
+        else:
+            log.warning('Maximum Likelihood procedure failed to converge,'
+                    ' using original parameters for MCMC')
 
-    ndim = len(p0)
-
-    sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob,
+    sampler = emcee.EnsembleSampler(nwalkers, len(p0), lnprob,
                                     args=[data, model, prior], threads=threads)
 
     # Add data and parameters properties to sampler
