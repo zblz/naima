@@ -78,7 +78,14 @@ if __name__=='__main__':
             #blob_labels=['Spectrum', 'Electron energy distribution', '$W_e (E_e>1\,\mathrm{TeV})$'])
     #naima.save_results_table('CrabNebula_IC',sampler)
 
-    e_range = [sampler.data['energy'][0]/5, sampler.data['energy'][-1]*5]
+    print('Plotting chains...')
+    f = naima.plot_chain(sampler, 1)
+    f.savefig('CrabNebula_IC_chain_index.png')
+    f = naima.plot_chain(sampler, 2)
+    f.savefig('CrabNebula_IC_chain_cutoff.png')
+
+    #e_range = [sampler.data['energy'][0]/5, sampler.data['energy'][-1]*5]
+    e_range = [100*u.GeV, 100*u.TeV]
 
     # with samples
     print('Plotting samples...')
@@ -108,4 +115,16 @@ if __name__=='__main__':
     f.tight_layout()
     f.subplots_adjust(hspace=0)
     f.savefig('CrabNebula_IC_model_confs_erange.png')
+
+    print('Plotting corner...')
+    f = naima.plot_corner(sampler)
+    f.savefig('CrabNebula_IC_corner.png')
+
+    print('Plotting blobs...')
+    f = naima.plot_blob(sampler, 1, ML_info=False, label='Electron energy distribution',
+            xlabel=r'Electron energy [$\mathrm{TeV}$]')
+    f.tight_layout()
+    f.savefig('CrabNebula_IC_pdist.png')
+    f = naima.plot_blob(sampler, 2, label=r'$W_e(E_e>1\,\mathrm{TeV})$')
+    f.savefig('CrabNebula_IC_We.png')
 

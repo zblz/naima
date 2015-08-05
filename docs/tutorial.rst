@@ -32,20 +32,22 @@ respectively.
 
 Building the model function from one of the functional forms is easy. In the
 following example, the three model parameters in the ``pars`` array are the
-amplitude, the spectral index, and the cutoff energy::
+amplitude, the spectral index, and the cutoff energy. We first add the necessary
+units for the radiative model and then compute and return the model flux for the
+energies contained in the data table::
 
-    from naima.models import ExponentialCutoffPowerLaw
+    from naima.models import ExponentialCutoffPowerLaw, InverseCompton
     import astropy.units as u
 
     def model(pars, data):
-        amplitude = pars[0] * (1 / (u.cm**2 * u.s * u.TeV))
+        amplitude = pars[0] / u.eV
         alpha = pars[1]
         e_cutoff = (10**pars[2]) * u.TeV
-        e_0 = 1 * u.TeV
 
-        ECPL = ExponentialCutoffPowerLaw(amplitude, e_0, alpha, e_cutoff)
+        ECPL = ExponentialCutoffPowerLaw(amplitude, 10*u.TeV, alpha, e_cutoff)
+        IC = InverseCompton(ECPL, seed_photon_fields=['CMB'])
 
-        return ECPL(data)
+        return IC.flux(data, distance=2.0*u.kpc)
 
 In addition, we must build a function to return the prior function, i.e., a
 function that encodes any previous knowledge you have about the parameters, such
@@ -53,14 +55,123 @@ as previous measurements or physically acceptable ranges. Two simple priors
 functions are included with ``naima``: `~naima.normal_prior` and `~naima.uniform_prior`.
 `~naima.uniform_prior` can be used to set parameter limits. Following the example
 above, we might want to limit the amplitude to be positive,
-and the spectral index to be between 0.5 and 3.5::
+and the spectral index to be between -1 and 5::
 
     from naima import uniform_prior
 
     def lnprior(pars):
         lnprior = uniform_prior(pars[0], 0., np.inf) \
-                + uniform_prior(pars[1], 0.5, 3.5)
+                + uniform_prior(pars[1], -1, 5)
         return lnprior
+
+
+Sampling the posterior distribution function
+--------------------------------------------
+
+Before starting the MCMC run, we must provide the procedure with initial
+estimates of the parameters and their names::
+
+    p0 = np.array((1e36, 2.3, 1.1))
+    labels = ['amplitude', 'alpha', 'log10(e_cutoff)']
+
+All the objects above can then be provided to `~naima.run_sampler`, the main
+fitting function in ``naima``::
+
+    sampler, pos = naima.run_sampler(data_table = data, p0=p0, label=labels,
+                    model=model_function, prior=lnprior,
+                    nwalkers=128, nburn=50, nrun=10, threads=4)
+
+The ``nwalkers`` parameter specifies how many *walkers* will be used in the
+sampling procedure, ``nburn`` specifies how many steps to be run as *burn-in*,
+and ``nrun`` specifies how many steps to run after the *burn-in* and save these
+samples in the sampler object. For details on these parameters, see the
+`documentation of the emcee package <http://dan.iel.fm/emcee/current/>`_.
+
+
+.. _plotting:
+
+Plotting and saving the results of the run
+------------------------------------------
+
+The results stored in the sampler object can be analysed through the plotting
+procedures of ``naima``: `~naima.plot_chain`, `~naima.plot_fit`, and
+`~naima.plot_data`. In addition, two convenience functions can be used to
+generate a collection of plots that illustrate the results and the stability of
+the fitting procedure. These are `~naima.save_diagnostic_plots`::
+
+    naima.save_diagnostic_plots('CrabNebula_naima_fit', sampler,
+        blob_labels=['Spectrum', 'Electron energy distribution',
+        '$W_e; E>1$ TeV'])
+
+and `~naima.save_results_table`::
+
+    naima.save_results_table('CrabNebula_naima_fit', sampler)
+
+
+Plotting functions: chains
+++++++++++++++++++++++++++
+
+The function `~naima.plot_chain` will show information about the MCMC chain for
+a given parameter. It shows the parameter value with respect to the step number
+of the chain, which can be used to assess the stability of the chain, a plot of
+the posterior distribution, and several statistics of the posterior
+distribution. One of these is the median and 16th and 84th percentiles of the
+distribution, which can be reported as the inferred marginalised value of the
+parameter and associated :math:`1\sigma` uncertainty. For the electron index
+(parameter 1), `~naima.plot_chain` shows:
+
+.. image:: _static/CrabNebula_IC_chain_index.png
+
+For parameters that have been sampled in logarithmic space  and their parameter
+label includes ``log10`` or ``log``, `~naima.plot_chain` will also compute the
+value and percentiles in linear space:
+
+.. image:: _static/CrabNebula_IC_chain_cutoff.png
+
+The relationship between the samples of the different parameters can be seen
+though a `corner plot <https://github.com/dfm/triangle.py>`_ with
+`~naima.plot_corner` which is a wrapper around `triangle.corner`. The maximum
+likelihood parameter vector can be indicated with cross:
+
+.. image:: _static/CrabNebula_IC_corner.png
+
+
+Plotting functions: fit
++++++++++++++++++++++++
+
+The plot function `~naima.plot_fit` allows for several ways to represent the
+results of the MCMC fitting. By default, it will show the Maximum Likelihood
+model with a black line, and 100 samples from the posterior distribution in
+gray:
+
+.. image:: _static/CrabNebula_IC_model_samples.png
+
+The 100 samples are taken from the blobs stored in the sampler, so they only
+contain the model values at the observed flux points. If you want to show the
+samples and ML model for a wider energy range (or between energy bands like
+X-ray and gamma-ray) you can use the ``e_range`` parameter. Note that the model
+will be recomputed ``n_samples`` times (by default 100) when ``plot_fit`` is
+called, so this may significantly slow the plot speed if the model function
+calls are expensive. Setting ``e_range=[100*u.GeV, 100*u.TeV]``, we obtain the
+following plot:
+
+.. image:: _static/CrabNebula_IC_model_samples_erange.png
+
+The spread of the parameters in the posterior distribution can also be
+visualized as confidence bands. Using the ``confs`` parameter of ``plot_fit``, a
+confidence band will be computed for each of the confidence levels (in sigma)
+given in ``confs``. Setting ``confs=[3,1]``, the confidence bands at
+:math:`1\sigma` and :math:`3\sigma` are plotted. Note that no samples are shown
+if the ``confs`` parameter is set:
+
+.. image:: _static/CrabNebula_IC_model_confs.png
+
+As for the plot showing the samples, the enrgy range for the confidence bands
+can be set through the ``e_range`` parameter. The number of samples needed will
+be computed so that the highest confidence level given can be constrained. This
+results in 740 samples for a :math:`3\sigma` confidence level:
+
+.. image:: _static/CrabNebula_IC_model_confs_erange.png
 
 
 .. _blobs:
@@ -101,57 +212,31 @@ that does precisely this with an Inverse Compton emission model::
         e_0 = 10 * u.TeV
 
         ECPL = ExponentialCutoffPowerLaw(amplitude, e_0, alpha, e_cutoff)
-        IC = InverseCompton(ECPL, seed_photon_fields=['CMB','FIR'])
+        IC = InverseCompton(ECPL, seed_photon_fields=['CMB'])
 
         # The total enegy in electrons of model IC can be accessed through the
         # attribute We or obtained for a given range with compute_We
         We = IC.compute_We(Eemin = 1*u.TeV)
 
         # We can also save the particle distribution between 100 MeV and 100 TeV
-        electron_e = np.logspace(8, 14, 100) * u.eV
+        electron_e = np.logspace(11, 15, 100) * u.eV
         electron_dist = ECPL(electron_e)
 
         # The first object returned must be the model photon spectrum, and
         # subsequent objects will be stored as metadata blobs
         return IC(data), (electron_e, electron_dist), We
 
-Sampling the posterior distribution function
---------------------------------------------
 
-Before starting the MCMC run, we must provide the procedure with initial
-estimates of the parameters and their names::
+The additional quantities we have stored can the be accesed in the
+`sampler.blobs` list. The function `~naima.plot_blob` allows to plot them and
+extract distribution properties. For the blobs that are a tuple or have the same
+length as ``data['energy']``, they will be plotted as spectra:
 
-    p0 = np.array((1e36, 2.3, 1.1))
-    labels = ['amplitude', 'alpha', 'log10(e_cutoff)']
+.. image:: _static/CrabNebula_IC_pdist.png
 
-All the objects above can then be provided to `~naima.run_sampler`, the main
-fitting function in ``naima``::
+and for the ones that are a scalar value, such as the total energy in electrons that
+we returned as the third object, a histogram and distribution properties will be
+plotted:
 
-    sampler, pos = naima.run_sampler(data_table = data, p0=p0, label=labels,
-                    model=model_function, prior=lnprior,
-                    nwalkers=128, nburn=50, nrun=10, threads=4)
+.. image:: _static/CrabNebula_IC_We.png
 
-The ``nwalkers`` parameter specifies how many *walkers* will be used in the
-sampling procedure, ``nburn`` specifies how many steps to be run as *burn-in*,
-and ``nrun`` specifies how many steps to run after the *burn-in* and save these
-samples in the sampler object. For details on these parameters, see the
-`documentation of the emcee package <http://dan.iel.fm/emcee/current/>`_.
-
-
-.. _plotting:
-
-Plotting and saving the results of the run
-------------------------------------------
-
-The results stored in the sampler object can be analysed through the plotting
-procedures of ``naima``: `~naima.plot_chain`, `~naima.plot_fit`, and
-`~naima.plot_data`. In addition, two convenience functions can be used to
-generate a collection of plots that illustrate the results and the stability of
-the fitting procedure. These are `~naima.save_diagnostic_plots`::
-
-    naima.save_diagnostic_plots('CrabNebula_naima_fit', sampler,
-        blob_labels=['Spectrum', 'Electron energy distribution', '$W_e; E>1$ TeV'])
-
-and `~naima.save_results_table`::
-
-    naima.save_results_table('CrabNebula_naima_fit', sampler)
