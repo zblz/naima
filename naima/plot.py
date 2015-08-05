@@ -476,7 +476,7 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
     # pick first model sample for units
     f_unit, sedf = sed_conversion(modelx, model[0].unit, sed)
 
-    sample_alpha = min(10/n_samples, 0.5)
+    sample_alpha = min(5./n_samples, 0.5)
     for my in model[np.random.randint(len(model), size=n_samples)]:
         ax.plot(modelx.to(e_unit).value, (my * sedf).to(f_unit).value,
                 color='0.1', alpha=sample_alpha, lw=1.0)
