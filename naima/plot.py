@@ -25,6 +25,19 @@ color_cycle = [
     (0.0                 , 0.38823529411764707 , 0.4549019607843137)
 ]
 
+# use sans math font, lines wider than axes
+# Hopefully won't need this for matplotlib 2.0
+rcParams = {
+        'mathtext.rm' : 'sans',
+        'mathtext.it' : 'sans:italic',
+        'mathtext.bf' : 'sans:bold',
+        'mathtext.sf' : 'sans',
+        'mathtext.cal' : 'sans:italic',
+        'mathtext.fontset' : 'custom',
+        'axes.linewidth' : 0.7,
+        'lines.linewidth' : 1.7,
+        'lines.antialiased' : True,
+        }
 
 
 def plot_chain(sampler, p=None, **kwargs):
@@ -69,8 +82,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     label = sampler.labels[p]
 
     import matplotlib.pyplot as plt
-    # Plot everything in serif to match math exponents
-    plt.rc('font', family='serif')
+    plt.rcParams.update(rcParams)
 
     from scipy import stats
     if len(chain.shape) > 2:
@@ -129,7 +141,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     ax2.axvline(quantiles[50], ls='--', color='k', alpha=0.5, lw=2,
                 label='50% quantile')
     ax2.axvspan(quantiles[16], quantiles[84], color='0.5', alpha=0.25,
-                label='68% CI')
+                label='68% CI', lw=0)
     # ax2.legend()
     for l in ax2.get_xticklabels():
         l.set_rotation(45)
@@ -157,10 +169,12 @@ def _plot_chain_func(sampler, p, last_step=False):
             'Autocorrelation time: {0}\n'.format(autocorr_message) +\
             'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
             'Distribution properties for the {clen}:\n \
-    - median: ${median}$ \n \
-    - std: ${std}$ \n' .format(median=_latex_float(quantiles[50]), std=_latex_float(np.std(dist)), clen=clen) +\
-'     - Median with uncertainties based on \n \
-      the 16th and 84th percentiles ($\sim$1$\sigma$):\n'
+    $-$ median: ${median}$ \n \
+    $-$ std: ${std}$ \n \
+    $-$ median with uncertainties based on \n \
+      the 16th and 84th percentiles ($\sim$1$\sigma$):\n'.format(
+              median=_latex_float(quantiles[50]),
+              std=_latex_float(np.std(dist)), clen=clen)
 
     info_line = ' '*10 + '{label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
             label=label, median=_latex_float(quantiles[50]),
@@ -197,7 +211,7 @@ def _plot_chain_func(sampler, p, last_step=False):
 
     return f
 
-def _process_blob(sampler, modelidx, last_step=True, energy=None):
+def _process_blob(sampler, modelidx, last_step=False, energy=None):
     """
     Process binary blob in sampler. If blob in position modelidx is:
 
@@ -266,7 +280,7 @@ def _process_blob(sampler, modelidx, last_step=True, energy=None):
 
     return modelx, model
 
-def _read_or_calc_samples(sampler, modelidx=0, n_samples=100, last_step=True,
+def _read_or_calc_samples(sampler, modelidx=0, n_samples=100, last_step=False,
         e_range=None, e_npoints=100):
     """Get samples from blob or compute them from chain and sampler.modelfn
     """
@@ -334,14 +348,40 @@ def _calc_ML(sampler, modelidx=0, e_range=None, e_npoints=100):
     return ML, MLp, MLerr, ML_model
 
 
-def _calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True, e_range=None,
+def _calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=False, e_range=None,
         e_npoints=100):
     """Calculate confidence interval.
     """
     from scipy import stats
 
+    # If we are computing the samples for the confidence intervals, we need at
+    # least one sample to constrain the highest confidence band
+    # 1 sigma -> 6 samples
+    # 2 sigma -> 43 samples
+    # 3 sigma -> 740 samples
+    # 4 sigma -> 31574 samples
+    # 5 sigma -> 3488555 samples
+    # We limit it to 1000 samples and warn that it might not be enough
+    if e_range:
+        maxconf = np.max(confs)
+        minsamples = min(100, int(1 / stats.norm.cdf(-maxconf) + 1))
+        if minsamples > 1000:
+            log.warning('In order to sample the confidence band for {0} sigma,'
+                    ' {1} new samples need to be computed, but we are limiting'
+                    ' it to 1000 samples, so the confidence band might not be'
+                    ' well constrained.'
+                    ' Consider reducing the maximum'
+                    ' confidence significance or using the samples stored in'
+                    ' the sampler by setting e_range'
+                    ' to None'.format(maxconf,minsamples))
+            minsamples = 1000
+    else:
+        minsamples=None
+
+
     modelx, model = _read_or_calc_samples(sampler, modelidx,
-            last_step=last_step, e_range=e_range, e_npoints=e_npoints)
+            last_step=last_step, e_range=e_range, e_npoints=e_npoints,
+            n_samples=minsamples)
 
     nwalkers = len(model)-1
     CI = []
@@ -361,7 +401,7 @@ def _calc_CI(sampler, modelidx=0,confs=[3, 1],last_step=True, e_range=None,
     return modelx, CI
 
 def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
-        label=None, e_range=None, e_npoints=100, last_step=True):
+        label=None, e_range=None, e_npoints=100, last_step=False):
     """Plot confidence interval.
 
     Parameters
@@ -384,6 +424,7 @@ def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
         Whether to only use the positions in the final step of the run (True,
         default) or the whole chain (False).
     """
+    confs.sort(reverse=True)
 
     modelx, CI = _calc_CI(sampler, modelidx=modelidx, confs=confs,
             e_range=e_range, e_npoints=e_npoints, last_step=last_step)
@@ -395,7 +436,7 @@ def plot_CI(ax, sampler, modelidx=0, sed=True, confs=[3, 1, 0.5], e_unit=u.eV,
         ax.fill_between(modelx.to(e_unit).value,
                 (ymax * sedf).to(f_unit).value,
                 (ymin * sedf).to(f_unit).value,
-                lw=0., color='{0}'.format(color),
+                lw=0.001, color='{0}'.format(color),
                 alpha=0.6, zorder=-10)
 
     ML, MLp, MLerr, ML_model = _calc_ML(sampler, modelidx, e_range=e_range,
@@ -435,9 +476,10 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
     # pick first model sample for units
     f_unit, sedf = sed_conversion(modelx, model[0].unit, sed)
 
+    sample_alpha = min(10/n_samples, 0.5)
     for my in model[np.random.randint(len(model), size=n_samples)]:
         ax.plot(modelx.to(e_unit).value, (my * sedf).to(f_unit).value,
-                color='k', alpha=0.1, lw=1)
+                color='0.1', alpha=sample_alpha, lw=1.0)
 
     ML, MLp, MLerr, ML_model = _calc_ML(sampler, modelidx, e_range=e_range,
             e_npoints=e_npoints)
@@ -565,9 +607,7 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
 
     """
     import matplotlib.pyplot as plt
-
-    # Plot everything in serif to match math exponents
-    plt.rc('font', family='serif')
+    plt.rcParams.update(rcParams)
 
     ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
@@ -743,10 +783,10 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None):
 
     if ylabel is None:
         if sed:
-            ax1.set_ylabel(r'$E^2\mathsf{{d}}N/\mathsf{{d}}E$'
+            ax1.set_ylabel(r'$E^2\mathrm{{d}}N/\mathrm{{d}}E$'
                 ' [{0}]'.format(u.Unit(f_unit).to_string('latex_inline')))
         else:
-            ax1.set_ylabel(r'$\mathsf{{d}}N/\mathsf{{d}}E$'
+            ax1.set_ylabel(r'$\mathrm{{d}}N/\mathrm{{d}}E$'
                     ' [{0}]'.format(u.Unit(f_unit).to_string('latex_inline')))
     else:
         ax1.set_ylabel(ylabel)
@@ -826,9 +866,7 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
     """
 
     import matplotlib.pyplot as plt
-
-    # Plot everything in serif to match math exponents
-    plt.rc('font', family='serif')
+    plt.rcParams.update(rcParams)
 
     try:
         data = validate_data_table(input_data)
@@ -867,7 +905,8 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
     if xlabel is not None:
         ax1.set_xlabel(xlabel)
     elif xlabel is None and ax1.get_xlabel() == '':
-        ax1.set_xlabel('Energy [{0}]'.format(e_unit.to_string('latex_inline')))
+        ax1.set_xlabel(r'$\mathrm{Energy}$'+
+                ' [{0}]'.format(e_unit.to_string('latex_inline')))
 
     ax1.autoscale()
 
@@ -879,6 +918,7 @@ def plot_distribution(samples, label, figure=None):
 
     from scipy import stats
     import matplotlib.pyplot as plt
+    plt.rcParams.update(rcParams)
 
     quant = [16, 50, 84]
     quantiles = dict(six.moves.zip(quant, np.percentile(samples, quant)))
