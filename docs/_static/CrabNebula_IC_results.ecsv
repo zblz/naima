@@ -1,0 +1,27 @@
+# %ECSV 0.9
+# ---
+# datatype:
+# - {name: label, datatype: string, description: Name of the parameter}
+# - {name: median, datatype: float64, description: Median of the posterior distribution
+#     function}
+# - {name: unc_lo, datatype: float64, description: 'Difference between the median and
+#     the 16th percentile of the pdf, ~1sigma lower uncertainty'}
+# - {name: unc_hi, datatype: float64, description: 'Difference between the 84th percentile
+#     and the median of the pdf, ~1sigma upper uncertainty'}
+# meta: !!omap
+# - {n_run: 100}
+# - ML_pars: [2.4194717016192883e+33, 3.342722927130273, 1.6514886842140784]
+# - {n_samples: 128}
+# - {guess: true}
+# - p0: [2.407705737709464e+33, 3.345717180666753, 1.657336343429555]
+# - {n_burn: 100}
+# - p0_burn_median: [2.4114956681680485e+33, 3.3424453865721144, 1.654114216495775]
+# - {blob2_unit: erg}
+# - {n_walkers: 128}
+# - {MaxLogLikelihood: -9.500579142540797}
+label median unc_lo unc_hi
+norm 2.39613099002e+33 9.80034490997e+31 1.04271766106e+32
+index 3.35281734958 0.0930801977259 0.0888544820814
+log10(cutoff) 1.66572834192 0.0805979573419 0.0905822203253
+cutoff 46.3157118732 7.8449679503 10.7438341866
+blob2 6.05086037205e+48 8.50753105103e+47 8.08813002377e+47

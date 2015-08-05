@@ -76,7 +76,21 @@ if __name__=='__main__':
 
     #naima.save_diagnostic_plots('CrabNebula_IC',sampler,sed=True,last_step=False, pdf=True,
             #blob_labels=['Spectrum', 'Electron energy distribution', '$W_e (E_e>1\,\mathrm{TeV})$'])
-    #naima.save_results_table('CrabNebula_IC',sampler)
+    naima.save_results_table('CrabNebula_IC',sampler)
+    from astropy.io import ascii
+    results = ascii.read('CrabNebula_IC_results.ecsv')
+    results.remove_row(-1) # remove blob2
+    for col in ['median','unc_lo','unc_hi']:
+        results[col].format = '.3g'
+
+    with open('CrabNebula_IC_results_table.txt','w') as f:
+        info = []
+        for key in ['n_walkers','n_run','p0','ML_pars','MaxLogLikelihood']:
+            info.append('{0:<18}: {1}\n'.format(key,str(results.meta[key])))
+        f.writelines(info)
+        f.write('\n')
+        f.write('------------- ------- ------- --------\n')
+        results.write(f,format='ascii.fixed_width_two_line')
 
     print('Plotting chains...')
     f = naima.plot_chain(sampler, 1)

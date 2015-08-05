@@ -72,7 +72,7 @@ Before starting the MCMC run, we must provide the procedure with initial
 estimates of the parameters and their names::
 
     p0 = np.array((1e36, 2.3, 1.1))
-    labels = ['amplitude', 'alpha', 'log10(e_cutoff)']
+    labels = ['norm', 'index', 'log10(cutoff)']
 
 All the objects above can then be provided to `~naima.run_sampler`, the main
 fitting function in ``naima``::
@@ -90,8 +90,8 @@ samples in the sampler object. For details on these parameters, see the
 
 .. _plotting:
 
-Plotting and saving the results of the run
-------------------------------------------
+Inspecting and analysing results of the run
+-------------------------------------------
 
 The results stored in the sampler object can be analysed through the plotting
 procedures of ``naima``: `~naima.plot_chain`, `~naima.plot_fit`, and
@@ -99,14 +99,27 @@ procedures of ``naima``: `~naima.plot_chain`, `~naima.plot_fit`, and
 generate a collection of plots that illustrate the results and the stability of
 the fitting procedure. These are `~naima.save_diagnostic_plots`::
 
-    naima.save_diagnostic_plots('CrabNebula_naima_fit', sampler,
+    naima.save_diagnostic_plots('CrabNebula_IC', sampler,
         blob_labels=['Spectrum', 'Electron energy distribution',
-        '$W_e; E>1$ TeV'])
+        '$W_e (E_e>1$ TeV)'])
 
 and `~naima.save_results_table`::
 
     naima.save_results_table('CrabNebula_naima_fit', sampler)
 
+The saved table will include information in the metadata about the run such as
+the number of walkers ``n_walkers`` and steps ``n_run`` sampled, the initial
+parameter vectori ``p0``, the parameter vector with the maximum likelihood
+``ML_pars`` and the maximum value of the negative log-likelihood
+``MaxLogLikelihood``. The table itself shows the median and upper and lower
+uncertainties (50th, 84th, and 16th percentiles of the posterior distribution)
+for the parameters sampled: 
+
+.. literalinclude:: _static/CrabNebula_IC_results_table.txt
+
+The table is saved by default in `ECSV format
+<https://github.com/astropy/astropy-APEs/blob/master/APE6.rst>`_ which can be
+easily accesed with the `astropy.io.ascii` module.
 
 Plotting functions: chains
 ++++++++++++++++++++++++++
