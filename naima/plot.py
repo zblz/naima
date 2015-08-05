@@ -103,9 +103,9 @@ def _plot_chain_func(sampler, p, last_step=False):
 
     ax1.set_rasterization_zorder(1)
     for t in traces[-red]:  # range(nwalkers):
-        ax1.plot(t, c='0.1', lw=1.0, alpha=0.25, zorder=0)
+        ax1.plot(t, color='0.1', lw=1.0, alpha=0.25, zorder=0)
     for t in traces[red]:
-        ax1.plot(t, c=color_cycle[0], lw=1.5, alpha=0.75, zorder=0)
+        ax1.plot(t, color=color_cycle[0], lw=1.5, alpha=0.75, zorder=0)
     ax1.set_xlabel('step number')
     #[l.set_rotation(45) for l in ax1.get_yticklabels()]
     ax1.set_ylabel(label)
@@ -118,14 +118,14 @@ def _plot_chain_func(sampler, p, last_step=False):
     n, x, patch = ax2.hist(dist, nbins, histtype='stepfilled',
             color=color_cycle[0], lw=0, normed=1)
     kde = stats.kde.gaussian_kde(dist)
-    ax2.plot(x, kde(x), c='k', label='KDE')
+    ax2.plot(x, kde(x), color='k', label='KDE')
     # for m,ls,lab in zip([np.mean(dist),np.median(dist)],('--','-.'),('mean: {0:.4g}','median: {0:.4g}')):
-        # ax2.axvline(m,ls=ls,c='k',alpha=0.5,lw=2,label=lab.format(m))
+        # ax2.axvline(m,ls=ls,color='k',alpha=0.5,lw=2,label=lab.format(m))
     quant = [16, 50, 84]
     xquant = np.percentile(dist, quant)
     quantiles = dict(six.moves.zip(quant, xquant))
 
-    ax2.axvline(quantiles[50], ls='--', c='k', alpha=0.5, lw=2,
+    ax2.axvline(quantiles[50], ls='--', color='k', alpha=0.5, lw=2,
                 label='50% quantile')
     ax2.axvspan(quantiles[16], quantiles[84], color='0.5', alpha=0.25,
                 label='68% CI')
@@ -704,7 +704,7 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
                 zorder=100, marker=marker, ls='', elinewidth=2, capsize=0,
                 mec=color, mew=0.1, ms=6, color=color)
 
-    ax.axhline(0, c='k', lw=2, ls='--')
+    ax.axhline(0, color='k', lw=2, ls='--')
 
     from matplotlib.ticker import MaxNLocator
     ax.yaxis.set_major_locator(MaxNLocator(5, integer='True', prune='upper',
@@ -836,9 +836,9 @@ def plot_distribution(samples, label, figure=None):
         samples_nounit = samples
 
     kde = stats.kde.gaussian_kde(samples_nounit)
-    ax.plot(x, kde(x), c='k', label='KDE')
+    ax.plot(x, kde(x), color='k', label='KDE')
 
-    ax.axvline(quantiles[50], ls='--', c='k', alpha=0.5, lw=2,
+    ax.axvline(quantiles[50], ls='--', color='k', alpha=0.5, lw=2,
                 label='50% quantile')
     ax.axvspan(quantiles[16], quantiles[84], color='0.5', alpha=0.25,
                 label='68% CI')
