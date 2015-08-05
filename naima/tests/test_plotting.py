@@ -142,7 +142,7 @@ def test_fit_plots(sampler):
     for idx in range(4):
         for sed in [True, False]:
             for last_step in [True, False]:
-                for confs in [[1,3,5], None]:
+                for confs in [[1,2], None]:
                     for n_samples in [100, None]:
                         for e_range in [[1*u.GeV,100*u.TeV],None]:
                             f = plot_fit(sampler, modelidx=idx, sed=sed,
