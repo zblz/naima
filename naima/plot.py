@@ -279,8 +279,10 @@ def _read_or_calc_samples(sampler, modelidx=0, n_samples=100, last_step=True,
         e_range = validate_array('e_range', u.Quantity(e_range),
                 physical_type='energy')
         e_unit = e_range.unit
-        data = {'energy': np.logspace(np.log10(e_range[0].value),
-            np.log10(e_range[1].value), e_npoints) * e_unit}
+        energy = np.logspace(np.log10(e_range[0].value),
+                np.log10(e_range[1].value), e_npoints) * e_unit
+        data = {'energy': energy,
+                'flux': np.zeros(energy.shape) * sampler.data['flux'].unit}
         # init pool and select parameters
         chain = sampler.chain[-1] if last_step else sampler.flatchain
         pars = chain[np.random.randint(len(chain), size=n_samples)]
@@ -307,8 +309,10 @@ def _calc_ML(sampler, modelidx=0, e_range=None, e_npoints=100):
         e_range = validate_array('e_range', u.Quantity(e_range),
                 physical_type='energy')
         e_unit = e_range.unit
-        data = {'energy': np.logspace(np.log10(e_range[0].value),
-            np.log10(e_range[1].value), e_npoints) * e_unit}
+        energy = np.logspace(np.log10(e_range[0].value),
+                np.log10(e_range[1].value), e_npoints) * e_unit
+        data = {'energy': energy,
+                'flux': np.zeros(energy.shape) * sampler.data['flux'].unit}
         modelout = sampler.modelfn(MLp, data)
 
         if isinstance(modelout, np.ndarray):
