@@ -71,7 +71,7 @@ Sampling the posterior distribution function
 Before starting the MCMC run, we must provide the procedure with initial
 estimates of the parameters and their names::
 
-    p0 = np.array((1e36, 2.3, 1.1))
+    p0 = np.array((1e33, 3.0, np.log10(30)))
     labels = ['norm', 'index', 'log10(cutoff)']
 
 All the objects above can then be provided to `~naima.run_sampler`, the main
