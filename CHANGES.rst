@@ -13,6 +13,8 @@
 - Add ``e_range`` and ``e_npoints`` parameters to ``plot_fit`` to allow
   computing the model samples for a wider energy range that the observed
   spectrum (or at energies between data sets, such as X-ray and gamma-ray)
+- Added ``plot_corner`` as a thin wrapper around ``triangle.corner`` with ML
+  parameter plotting.
 
 0.4 (2015-03-19)
 ----------------
