@@ -10,7 +10,8 @@ from astropy import table
 
 from .utils import sed_conversion, validate_data_table
 
-__all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob"]
+__all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob", 
+        "plot_corner"]
 
 marker_cycle = ['o','s','d','p','*']
 # from seaborn: sns.color_palette('dark',6)
@@ -422,6 +423,8 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kw
     """
 
     modelx, model = _process_blob(sampler, blobidx, last_step)
+    if label is None:
+        label = 'Model output {0}'.format(blobidx)
 
     if modelx is None:
         # Blob is scalar, plot distribution
@@ -808,26 +811,28 @@ def plot_distribution(samples, label, figure=None):
         std = std.value
 
     dist_props = '{label} distribution properties:\n \
-    - median: ${median}$ {unit}, std: ${std}$ {unit}\n \
-    - Median with uncertainties based on \n \
+    $-$ median: ${median}$ {unit}, std: ${std}$ {unit}\n \
+    $-$ Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n\
           {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$ {unit}'.format(
                   label=label, median=_latex_float(quantiles[50]),
                   uncs=(_latex_float(quantiles[50] - quantiles[16]),
-                        _latex_float(quantiles[84] - quantiles[50])), std=_latex_float(std), unit=unit)
+                        _latex_float(quantiles[84] - quantiles[50])),
+                  std=_latex_float(std), unit=unit)
 
     if figure is None:
         f = plt.figure()
     else:
         f = figure
 
-    f.text(0.1, 0.23, dist_props, ha='left', va='top')
 
     ax = f.add_subplot(111)
-    f.subplots_adjust(bottom=0.35)
+    f.subplots_adjust(bottom=0.40, top=0.93, left=0.06, right=0.95)
+
+    f.text(0.2, 0.27, dist_props, ha='left', va='top')
 
     histnbins = min(max(25, int(len(samples)/100.)), 100)
-    xlabel = label
+    xlabel = '' if label is None else label
     n, x, patch = ax.hist(samples, histnbins, histtype='stepfilled',
             color=color_cycle[0], lw=0, normed=1)
     if isinstance(samples, u.Quantity):
@@ -852,5 +857,45 @@ def plot_distribution(samples, label, figure=None):
     ax.xaxis.set_label_coords(0.5, -0.1)
     ax.set_title('posterior distribution of {0}'.format(label))
     ax.set_ylim(top=n.max() * 1.05)
+
+    return f
+
+def plot_corner(sampler, show_ML=True):
+    """
+    A plot that summarizes the parameter samples by showing them as individual
+    histograms and 2D histograms against each other. The maximum likelihood
+    parameter vector is indicated by a cross.
+
+    This function is a thin wrapper around `triangle.corner`, found at
+    https://github.com/dfm/triangle.py.
+
+    Parameters
+    ----------
+    sampler : `emcee.EnsembleSampler`
+        Sampler with a stored chain.
+    show_ML : bool, optional
+        Whether to show the maximum likelihood parameter vector as a cross on
+        the 2D histograms.
+    """
+    import matplotlib.pyplot as plt
+    plt.rcParams.update(rcParams)
+    oldlw = plt.rcParams['lines.linewidth']
+    plt.rcParams['lines.linewidth'] = 0.7
+    try:
+        from triangle import corner
+
+        if show_ML:
+            _, MLp, _, _ = find_ML(sampler, 0)
+        else:
+            MLp = None
+
+        f = corner(sampler.flatchain, labels=sampler.labels,
+                   truths=MLp, quantiles=[0.16, 0.5, 0.84],
+                   verbose=False, truth_color=color_cycle[0])
+    except ImportError:
+        log.warning('triangle_plot not installed, corner plot not available')
+        f = None
+
+    plt.rcParams['lines.linewidth'] = oldlw
 
     return f

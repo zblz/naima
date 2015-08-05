@@ -54,7 +54,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
         Whether to save plots to multipage pdf.
     """
 
-    from .plot import plot_chain, plot_blob
+    from .plot import plot_chain, plot_blob, plot_corner
 
     if pdf:
         from matplotlib import pyplot as plt
@@ -84,23 +84,15 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
 
     # Corner plot
 
-    try:
-        from triangle import corner
-        from .plot import find_ML
+    log.info('Plotting corner plot...')
 
-        log.info('Plotting corner plot...')
-
-        ML, MLp, MLvar, model_ML = find_ML(sampler, 0)
-        f = corner(sampler.flatchain, labels=sampler.labels,
-                   truths=MLp, quantiles=[0.16, 0.5, 0.84],
-                   verbose=False)
+    f = plot_corner(sampler)
+    if f is not None:
         if pdf:
             f.savefig(outpdf, format='pdf')
         else:
             f.savefig('{0}_corner.png'.format(outname))
         del f
-    except ImportError:
-        log.warning('triangle_plot not installed, corner plot not available')
 
     # Fit
 
