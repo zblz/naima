@@ -1,4 +1,4 @@
-0.5 (unreleased)
+0.5 (2015-08-05)
 ----------------
 
 - ``save_results_table`` now saves the maximum log likelihood and ML parameters
