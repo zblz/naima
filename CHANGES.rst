@@ -1,6 +1,11 @@
 0.6 (unreleased)
 ----------------
 
+Bug Fixes
+^^^^^^^^^
+
+- ``save_diagnostic_plots`` now turns matplotlib interactivity off, so the plots
+  are only saved and not shown.
 
 0.5 (2015-08-05)
 ----------------

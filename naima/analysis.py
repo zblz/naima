@@ -55,9 +55,12 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
     """
 
     from .plot import plot_chain, plot_blob, plot_corner
+    from matplotlib import pyplot as plt
+    # This function should never be interactive
+    old_interactive = plt.rcParams['interactive']
+    plt.rcParams['interactive'] = False
 
     if pdf:
-        from matplotlib import pyplot as plt
         plt.rc('pdf', fonttype=42)
         log.info('Saving diagnostic plots in file '
                 '{0}_plots.pdf'.format(outname))
@@ -130,6 +133,9 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
 
     if pdf:
         outpdf.close()
+
+    #set interactive back to original
+    plt.rcParams['interactive'] = old_interactive
 
 
 def save_results_table(outname, sampler, format='ascii.ecsv',
