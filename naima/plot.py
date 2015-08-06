@@ -478,12 +478,12 @@ def plot_samples(ax, sampler, modelidx=0, sed=True, n_samples=100, e_unit=u.eV,
 
     sample_alpha = min(5./n_samples, 0.5)
     for my in model[np.random.randint(len(model), size=n_samples)]:
-        ax.plot(modelx.to(e_unit).value, (my * sedf).to(f_unit).value,
+        ax.loglog(modelx.to(e_unit).value, (my * sedf).to(f_unit).value,
                 color='0.1', alpha=sample_alpha, lw=1.0)
 
     ML, MLp, MLerr, ML_model = _calc_ML(sampler, modelidx, e_range=e_range,
             e_npoints=e_npoints)
-    ax.plot(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
+    ax.loglog(ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
             color='k', lw=2, alpha=0.8)
 
     if label is not None:
