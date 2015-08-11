@@ -128,7 +128,7 @@ def _plot_chain_func(sampler, p, last_step=False):
 
     nbins = min(max(25, int(len(dist)/100.)), 100)
     xlabel = label
-    n, x, patch = ax2.hist(dist, nbins, histtype='stepfilled',
+    n, x, _ = ax2.hist(dist, nbins, histtype='stepfilled',
             color=color_cycle[0], lw=0, normed=1)
     kde = stats.kde.gaussian_kde(dist)
     ax2.plot(x, kde(x), color='k', label='KDE')
@@ -553,7 +553,7 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kw
     return f
 
 def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
-        n_samples=100, confs=None, ML_info=True, figure=None, plotdata=None,
+        n_samples=100, confs=None, ML_info=False, figure=None, plotdata=None,
         plotresiduals=None, e_unit=None, e_range=None, e_npoints=100,
         xlabel=None, ylabel=None):
     """
@@ -689,6 +689,13 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
         xmax = np.max(model_ML[0][hi])
         ax1.set_xlim(right=10 ** np.ceil(np.log10(xmax.to(e_unit).value)))
 
+    if e_range:
+        # ensure that xmin/xmax contains e_range
+        xmin, xmax, ymin, ymax = ax1.axis()
+        xmin = min(xmin,e_range[0].to(e_unit).value)
+        xmax = max(xmax,e_range[1].to(e_unit).value)
+        ax1.set_xlim(xmin,xmax)
+
     if ML_info and (confs is not None or n_samples):
         ax1.text(0.05, 0.05, infostr, ha='left', va='bottom',
                 transform=ax1.transAxes, family='monospace')
@@ -722,9 +729,11 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None):
         """
         ax.errorbar(x, y, xerr=xerr, ls='',
                 color=color, elinewidth=2, capsize=0)
+
+        from distutils.version import LooseVersion
         import matplotlib
-        major, minor, bugfix = [int(v) for v in matplotlib.__version__.split('.')]
-        if major >= 1 and minor >= 4:
+        mpl_version = LooseVersion(matplotlib.__version__)
+        if mpl_version >= LooseVersion('1.4.0'):
             ax.errorbar(x, y, yerr=0.25*y, ls='', uplims=True,
                     color=color, elinewidth=2, capsize=5, zorder=10)
         else:
@@ -955,7 +964,7 @@ def plot_distribution(samples, label, figure=None):
 
     histnbins = min(max(25, int(len(samples)/100.)), 100)
     xlabel = '' if label is None else label
-    n, x, patch = ax.hist(samples, histnbins, histtype='stepfilled',
+    n, x, _ = ax.hist(samples, histnbins, histtype='stepfilled',
             color=color_cycle[0], lw=0, normed=1)
     if isinstance(samples, u.Quantity):
         samples_nounit = samples.value
@@ -968,7 +977,7 @@ def plot_distribution(samples, label, figure=None):
     ax.axvline(quantiles[50], ls='--', color='k', alpha=0.5, lw=2,
                 label='50% quantile')
     ax.axvspan(quantiles[16], quantiles[84], color='0.5', alpha=0.25,
-                label='68% CI')
+                label='68% CI', lw=0)
     # ax.legend()
     for l in ax.get_xticklabels():
         l.set_rotation(45)
@@ -976,7 +985,6 @@ def plot_distribution(samples, label, figure=None):
     if unit != '':
         xlabel += ' [{0}]'.format(unit)
     ax.set_xlabel(xlabel)
-    ax.xaxis.set_label_coords(0.5, -0.1)
     ax.set_title('posterior distribution of {0}'.format(label))
     ax.set_ylim(top=n.max() * 1.05)
 
