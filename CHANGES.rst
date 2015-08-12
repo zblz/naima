@@ -1,6 +1,11 @@
 0.6 (unreleased)
 ----------------
 
+- Medians and associated errors are now shown with a precision corresponding to
+  a single significant digit in the errors (except when the leading digit is 1,
+  when two significant digits are shown). Note that they are still saved with
+  full precision to the result tables.
+
 Bug Fixes
 ^^^^^^^^^
 

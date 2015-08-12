@@ -77,6 +77,49 @@ def _latex_float(f, format=".3g"):
     else:
         return float_str
 
+def round2(x,n):
+    y = round(x,n)
+    if n<1:
+        y = str(int(y))
+    else:
+        # preserve trailing zeroes
+        y = ('{{0:.{0}f}}'.format(n)).format(x)
+    return y
+
+def _latex_value_error(val, elo, ehi=0, tol=0.25):
+        order = int(np.log10(val))
+        if order > 2 or order < -2:
+            val/=10**order
+            elo/=10**order
+            ehi/=10**order
+        else:
+            order = 0
+        nlo = -int(np.floor(np.log10(elo)))
+        if elo*10**nlo < 2: nlo+=1
+        if ehi:
+            #elo = round(elo,nlo)
+            nhi = -int(np.floor(np.log10(ehi)))
+            if ehi*10**nhi < 2: nhi+=1
+            #ehi = round(ehi,nhi)
+            if np.abs(elo-ehi)/((elo+ehi)/2.) > tol:
+                n = max(nlo,nhi)
+                string = '{0}^{{+{1}}}_{{-{2}}}'.format(
+                        *[round2(x,nn) for x,nn in zip([val,ehi,elo],[n,nhi,nlo])])
+            else:
+                e = (elo+ehi)/2.
+                n = -int(np.floor(np.log10(e)))
+                if e*10**n < 2: n += 1
+                string = '{0} \pm {1}'.format(
+                        *[round2(x,n) for x in [val,e]])
+        else:
+                string = '{0} \pm {1}'.format(
+                        *[round2(x,nlo) for x in [val,elo]])
+        if order != 0:
+            string = '(' + string + r')\times10^{{{0}}}'.format(order)
+
+        return '$' + string + '$'
+
+
 def _plot_chain_func(sampler, p, last_step=False):
     chain = sampler.chain
     label = sampler.labels[p]
@@ -169,17 +212,15 @@ def _plot_chain_func(sampler, p, last_step=False):
             'Autocorrelation time: {0}\n'.format(autocorr_message) +\
             'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
             'Distribution properties for the {clen}:\n \
-    $-$ median: ${median}$ \n \
-    $-$ std: ${std}$ \n \
+    $-$ median: ${median}$, std: ${std}$ \n \
     $-$ median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n'.format(
               median=_latex_float(quantiles[50]),
               std=_latex_float(np.std(dist)), clen=clen)
 
-    info_line = ' '*10 + '{label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
-            label=label, median=_latex_float(quantiles[50]),
-            uncs=(_latex_float(quantiles[50] - quantiles[16]),
-                      _latex_float(quantiles[84] - quantiles[50])))
+    info_line = ' '*10 + label + ' = ' + _latex_value_error(quantiles[50],
+                quantiles[50] - quantiles[16],
+                quantiles[84] - quantiles[50])
 
     chain_props += info_line
 
@@ -198,10 +239,9 @@ def _plot_chain_func(sampler, p, last_step=False):
         label_template = '\n'+' '*10+'{{label:>{0}}}'.format(len(label))
 
         new_line = label_template.format(label=nlabel)
-        new_line += ' = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$'.format(
-                    median=_latex_float(quantiles[50]),
-                    uncs=(_latex_float(quantiles[50] - quantiles[16]),
-                          _latex_float(quantiles[84] - quantiles[50])))
+        new_line += ' = ' + _latex_value_error(quantiles[50],
+                quantiles[50] - quantiles[16],
+                quantiles[84] - quantiles[50])
 
         chain_props += new_line
         info_line += new_line
@@ -945,11 +985,15 @@ def plot_distribution(samples, label, figure=None):
     $-$ median: ${median}$ {unit}, std: ${std}$ {unit}\n \
     $-$ Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n\
-          {label} = ${{{median}}}^{{+{uncs[1]}}}_{{-{uncs[0]}}}$ {unit}'.format(
+          {label} = {value_error} {unit}'.format(
                   label=label, median=_latex_float(quantiles[50]),
-                  uncs=(_latex_float(quantiles[50] - quantiles[16]),
-                        _latex_float(quantiles[84] - quantiles[50])),
-                  std=_latex_float(std), unit=unit)
+                  std=_latex_float(std),
+                  value_error = _latex_value_error(quantiles[50],
+                      quantiles[50] - quantiles[16],
+                      quantiles[84] - quantiles[50]),
+                  unit=unit)
+
+
 
     if figure is None:
         f = plt.figure()
