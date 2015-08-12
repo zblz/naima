@@ -7,18 +7,27 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Button, Slider, CheckButtons
-
 from .core import lnprobmodel
 from .plot import color_cycle, plot_data, _plot_data_to_ax
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
 
+def _process_model(model):
+    if ((isinstance(model, tuple) or isinstance(model, list))
+            and not isinstance(model,np.ndarray)):
+        return model[0]
+    else:
+        return model
+
+
 class ModelWidget(object):
     def __init__(self, modelfn, p0, data=None, e_range=None,
             labels=None, sed=True, auto_update=True, e_npoints=100):
 
+        import matplotlib.pyplot as plt
+        from matplotlib.widgets import Button, Slider, CheckButtons
+
+        self.pars = p0
         npars = len(p0)
         if labels is None:
             labels = ['par{0}'.format(i) for i in range(npars)]
@@ -58,15 +67,16 @@ class ModelWidget(object):
 
         self.data_for_model = {'energy': energy,
                 'flux': flux}
-        model = modelfn(p0, self.data_for_model)[0]
+        model = _process_model(self.modelfn(p0, self.data_for_model))
 
         if self.hasdata:
             if not np.all(self.data_for_model['energy'] == self.data['energy']):
                 # this will be sloooow, maybe interpolate already computed model?
-                model_for_lnprob = self.modelfn(self.pars, self.data)[0]
+                model_for_lnprob = _process_model(
+                        self.modelfn(self.pars, self.data))
             else:
-                model_for_lbrob = model
-            lnprob = lnprobmodel(model, self.data)
+                model_for_lnprob = model
+            lnprob = lnprobmodel(model_for_lnprob, self.data)
             self.lnprobtxt = modelax.text(0.05, 0.05, r'', ha='left', va='bottom',
                     transform=modelax.transAxes, size=20)
             self.lnprobtxt.set_text(r'$\ln\mathcal{{L}} = {0:.1f}$'.format(lnprob))
@@ -84,8 +94,8 @@ class ModelWidget(object):
                 modelax.set_ylabel(r'$E^2 dN/dE [{0}]$'.format(unit))
             else:
                 modelax.set_ylabel(r'$dN/dE [{0}]$'.format(unit))
-            modelax.set_xlim(self.data['energy'][0].value/3,
-                    self.data['energy'][-1].value*3)
+            modelax.set_xlim(energy[0].value/3,
+                    energy[-1].value*3)
 
         self.line, = modelax.loglog(energy,
                 (model*self.sedf).to(self.f_unit), lw=2,
@@ -149,6 +159,7 @@ class ModelWidget(object):
         plt.show()
 
     def close_fig(self,event):
+        import matplotlib.pyplot as plt
         plt.close(self.fig)
 
     def update_autoupdate(self,label):
@@ -160,12 +171,12 @@ class ModelWidget(object):
 
     def update(self,event):
         self.pars = [slider.val for slider in self.parsliders]
-        model = self.modelfn(self.pars, self.data_for_model)[0]
+        model = _process_model(self.modelfn(self.pars, self.data_for_model))
         self.line.set_ydata((model*self.sedf).to(self.f_unit))
         if self.hasdata:
             if not np.all(self.data_for_model['energy'] == self.data['energy']):
                 # this will be sloooow, maybe interpolate already computed model?
-                model = self.modelfn(self.pars, self.data)[0]
+                model = _process_model(self.modelfn(self.pars, self.data))
             lnprob = lnprobmodel(model, self.data)
             self.lnprobtxt.set_text(r'$\ln\mathcal{{L}} = {0:.1f}$'.format(lnprob))
         self.fig.canvas.draw_idle()
