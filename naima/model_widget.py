@@ -10,6 +10,7 @@ from astropy import log
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, Slider, CheckButtons
 
+from .core import lnprobmodel
 from .plot import color_cycle, plot_data, _plot_data_to_ax
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
@@ -24,7 +25,7 @@ class ModelWidget(object):
         elif len(labels) < npars:
             labels += ['par{0}'.format(i) for i in range(len(labels),npars)]
 
-        hasdata = data is not None
+        self.hasdata = data is not None
 
         self.modelfn = modelfn
 
@@ -39,28 +40,43 @@ class ModelWidget(object):
                     np.log10(e_range[1].value), e_npoints) * e_unit
         else:
             energy = np.logspace(-4,2,e_npoints)*u.TeV
+            e_unit = u.TeV
+
         if sed:
             flux = np.zeros(e_npoints) * u.Unit('erg/(cm2 s)')
         else:
             flux = np.zeros(e_npoints) * u.Unit('1/(TeV cm2 s)')
 
-
-        if hasdata:
-            data = validate_data_table(data)
-            _plot_data_to_ax(data, modelax, sed=sed, e_unit=e_unit)
+        self.data = None
+        if self.hasdata:
+            self.data = validate_data_table(data)
+            e_unit = self.data['energy'].unit
+            _plot_data_to_ax(self.data, modelax, sed=sed, e_unit=e_unit)
             if not e_range:
-                energy = data['energy']
-                flux = data['flux']
+                energy = self.data['energy']
+                flux = self.data['flux']
 
         self.data_for_model = {'energy': energy,
                 'flux': flux}
         model = modelfn(p0, self.data_for_model)[0]
 
+        if self.hasdata:
+            if not np.all(self.data_for_model['energy'] == self.data['energy']):
+                # this will be sloooow, maybe interpolate already computed model?
+                model_for_lnprob = self.modelfn(self.pars, self.data)[0]
+            else:
+                model_for_lbrob = model
+            lnprob = lnprobmodel(model, self.data)
+            self.lnprobtxt = modelax.text(0.05, 0.05, r'', ha='left', va='bottom',
+                    transform=modelax.transAxes, size=20)
+            self.lnprobtxt.set_text(r'$\ln\mathcal{{L}} = {0:.1f}$'.format(lnprob))
+
+
         self.f_unit, self.sedf = sed_conversion(energy, model.unit, sed)
-        if hasdata:
+        if self.hasdata:
             modelax.set_xlim(
-                    (data['energy'][0] - data['energy_error_lo'][0]).to(e_unit).value / 3,
-                    (data['energy'][-1] + data['energy_error_hi'][-1]).to(e_unit).value * 3)
+                    (self.data['energy'][0] - self.data['energy_error_lo'][0]).to(e_unit).value / 3,
+                    (self.data['energy'][-1] + self.data['energy_error_hi'][-1]).to(e_unit).value * 3)
         else:
             # plot_data_to_ax has not set ylabel
             unit = self.f_unit.to_string('latex_inline')
@@ -68,8 +84,8 @@ class ModelWidget(object):
                 modelax.set_ylabel(r'$E^2 dN/dE [{0}]$'.format(unit))
             else:
                 modelax.set_ylabel(r'$dN/dE [{0}]$'.format(unit))
-            modelax.set_xlim(data['energy'][0].value/3,
-                    data['energy'][-1].value*3)
+            modelax.set_xlim(self.data['energy'][0].value/3,
+                    self.data['energy'][-1].value*3)
 
         self.line, = modelax.loglog(energy,
                 (model*self.sedf).to(self.f_unit), lw=2,
@@ -97,28 +113,43 @@ class ModelWidget(object):
                     pmin, pmax = 0, 5
                 else:
                     pmin, pmax = -5, 0
+            elif 'norm' in label or 'amplitude' in label:
+                # norm without log, it will not be pretty because sliders are
+                # only linear
+                pmin, pmax = valinit / 100, valinit * 100
 
             slider = Slider(parax, label, pmin, pmax,
-                valinit=valinit, valfmt='%g',closedmin=False, closedmax=False)
+                valinit=valinit, valfmt='%g')
             slider.on_changed(self.update_if_auto)
             self.parsliders.append(slider)
 
+
+
         updateax = plt.subplot2grid((2*npars+1,4),(npars+1,3),colspan=1,
-                rowspan=min(int(npars/2),2))
+                rowspan=min(int(npars/3),1))
         update_button = Button(updateax, 'Update model')
         update_button.on_clicked(self.update)
 
         autoupdateax = plt.subplot2grid((2*npars+1,4),
-                (npars+1+min(int(npars/2),2),3),colspan=1,
-                rowspan=min(int(npars/2),2))
+                (npars+1+min(int(npars/3),1),3),colspan=1,
+                rowspan=min(int(npars/3),1))
         auto_update_check = CheckButtons(autoupdateax,
                 ('Auto update',), (auto_update,))
         auto_update_check.on_clicked(self.update_autoupdate)
         self.autoupdate = auto_update
 
+        closeax = plt.subplot2grid((2*npars+1,4),
+                (npars+2+min(int(npars/3),1),3),colspan=1,
+                rowspan=min(int(npars/3),1))
+        close_button = Button(closeax, 'Close window')
+        close_button.on_clicked(self.close_fig)
+
         self.fig.subplots_adjust(top=0.98,right=0.98,bottom=0.02,hspace=0.2)
 
         plt.show()
+
+    def close_fig(self,event):
+        plt.close(self.fig)
 
     def update_autoupdate(self,label):
         self.autoupdate = not self.autoupdate
@@ -131,6 +162,12 @@ class ModelWidget(object):
         self.pars = [slider.val for slider in self.parsliders]
         model = self.modelfn(self.pars, self.data_for_model)[0]
         self.line.set_ydata((model*self.sedf).to(self.f_unit))
+        if self.hasdata:
+            if not np.all(self.data_for_model['energy'] == self.data['energy']):
+                # this will be sloooow, maybe interpolate already computed model?
+                model = self.modelfn(self.pars, self.data)[0]
+            lnprob = lnprobmodel(model, self.data)
+            self.lnprobtxt.set_text(r'$\ln\mathcal{{L}} = {0:.1f}$'.format(lnprob))
         self.fig.canvas.draw_idle()
 
 
