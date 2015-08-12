@@ -87,7 +87,7 @@ def round2(x,n):
     return y
 
 def _latex_value_error(val, elo, ehi=0, tol=0.25):
-        order = int(np.log10(val))
+        order = int(np.log10(abs(val)))
         if order > 2 or order < -2:
             val/=10**order
             elo/=10**order
