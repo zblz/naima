@@ -316,6 +316,7 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
         flat_prior = lambda *args: 0.0
         nll = lambda *args: -lnprob(*args)[0]
         log.info('Attempting to find Maximum Likelihood parameters...')
+        log.info('   Initial parameters: {0}'.format(p0))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             result = minimize(nll, p0, args=(data, model, flat_prior),
@@ -328,7 +329,6 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
             # better than p0
             if result['status']==1:
                 log.info('   Maximum number of function evaluations reached!')
-            log.info('   Initial parameters: {0}'.format(p0))
             if result['status']==1:
                 log.info('      New parameters : {0}'.format(result['x']))
             else:
