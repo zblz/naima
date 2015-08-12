@@ -47,7 +47,7 @@ class ModelWidget(object):
 
         if hasdata:
             data = validate_data_table(data)
-            _plot_data_to_ax(data, modelax, sed=sed)
+            _plot_data_to_ax(data, modelax, sed=sed, e_unit=e_unit)
             if not e_range:
                 energy = data['energy']
                 flux = data['flux']
@@ -59,8 +59,8 @@ class ModelWidget(object):
         self.f_unit, self.sedf = sed_conversion(energy, model.unit, sed)
         if hasdata:
             modelax.set_xlim(
-                    (data['energy'][0] - data['energy_error_lo'][0]).value / 3,
-                    (data['energy'][-1] + data['energy_error_hi'][-1]).value * 3)
+                    (data['energy'][0] - data['energy_error_lo'][0]).to(e_unit).value / 3,
+                    (data['energy'][-1] + data['energy_error_hi'][-1]).to(e_unit).value * 3)
         else:
             # plot_data_to_ax has not set ylabel
             unit = self.f_unit.to_string('latex_inline')
@@ -87,15 +87,16 @@ class ModelWidget(object):
             # Attempt to estimate reasonable parameter ranges from label
             pmin, pmax = valinit/10, valinit*3
             if 'log' in label:
-                pmin = valinit - 2
-                pmax = valinit + 2
+                span = 2
+                if 'norm' in label or 'amplitude' in label:
+                    # give more range for normalization parameters
+                    span *= 2
+                pmin, pmax = valinit - span, valinit + span
             elif ('index' in label) or ('alpha' in label):
                 if valinit > 0.:
-                    pmin = -2
-                    pmax = 5
+                    pmin, pmax = 0, 5
                 else:
-                    pmin = -5
-                    pmax = 2
+                    pmin, pmax = -5, 0
 
             slider = Slider(parax, label, pmin, pmax,
                 valinit=valinit, valfmt='%g',closedmin=False, closedmax=False)
