@@ -8,26 +8,21 @@ fit a variety of data from spatial morphology to forward-folding spectral
 analysis. It is part of the Chandra analysis software pacakage (`CIAO
 <http://cxc.cfa.harvard.edu/ciao/>`_), but it can be easily installed standalone
 by using the `Anaconda Python <http://continuum.io/downloads>`_ distribution.
-Once you have a Python 2.7 Anaconda environment setup, the `standalone Python
-version of sherpa <http://cxc.cfa.harvard.edu/contrib/sherpa47b/>`_ is installed
-as follows::
+Once you have a Python 2.7 Anaconda environment set up, the `standalone Python
+version of sherpa <http://cxc.cfa.harvard.edu/contrib/sherpa/>`_ can be
+installed along with ``naima`` as follows::
 
     $ export PATH=PATH_TO_ANACONDA/bin:$PATH
-    $ conda config --add channels https://conda.binstar.org/cxc
-    $ conda install sherpa
+    $ conda config --add channels sherpa --add channels astropy
+    $ conda install sherpa naima
 
 where ``PATH_TO_ANACONDA`` is the path where you have installed Anaconda. 
 
-
 ``naima`` provides wrappers for the :ref:`radiative` to make it easier to use
-them in a sherpa session.  Note that you will also have to install ``naima`` in
-the Anaconda environment::
-
-    $ pip install naima
-
-The models available for use in sherpa are the four radiative models available
-in ``naima`` (see :ref:`radiative`) with a `~naima.models.PowerLaw` or
-`~naima.models.ExponentialCutoffPowerLaw` particle distribution:
+them in a sherpa session. The models available for use in sherpa are the four
+radiative models available in ``naima`` (see :ref:`radiative`) with a
+`~naima.models.PowerLaw` or `~naima.models.ExponentialCutoffPowerLaw` particle
+distribution:
 
     - `naima.sherpa_models.InverseCompton`: wrapper of `~naima.models.InverseCompton`
     - `naima.sherpa_models.Synchrotron`: wrapper of `~naima.models.Synchrotron`

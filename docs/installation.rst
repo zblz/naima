@@ -11,7 +11,7 @@ packages to be installed:
 
 * `Scipy <http://www.scipy.org>`_
 
-* `Astropy <http://www.astropy.org>`_
+* `Astropy`_
 
 * `Matplotlib <http://www.matplotlib.org>`_
 
@@ -31,7 +31,7 @@ Installing naima
 Anaconda python distribution
 ++++++++++++++++++++++++++++
 
-The [Anaconda python distribution](http://continuum.io/downloads) allows to
+The `Anaconda python distribution <http://continuum.io/downloads>`_ allows to
 easily set up a fully working scientific Python distribution in any Linux or Mac
 machine, even without root access. Once Anaconda is set up, ``naima`` and all of
 its dependencies can be installed in an Anaconda distribution through the
@@ -49,9 +49,9 @@ or only ``naima``::
 
     $ conda update naima
 
-Note that if you want to use the `sherpamod`_ you have to use a Python 2 version
-of Anaconda, as sherpa is not yet compatible with Python 3. Otherwise, all
-dependencies are available in both Python 2 and 3.
+Note that if you want to use the :ref:`sherpamod` you have to use a Python 2
+version of Anaconda, as sherpa is not yet compatible with Python 3. Otherwise,
+all dependencies are available in both Python 2 and 3.
 
 Using pip
 +++++++++
