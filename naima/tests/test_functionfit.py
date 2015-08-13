@@ -20,6 +20,13 @@ try:
 except ImportError:
     HAS_SCIPY = False
 
+try:
+    import matplotlib
+    matplotlib.use('Agg')
+    HAS_MATPLOTLIB = True
+except:
+    HAS_MATPLOTLIB = False
+
 from astropy.io import ascii
 
 # Read data
@@ -124,6 +131,12 @@ def test_prefit():
     sampler, pos = get_sampler(
         data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
         prior=lnprior, nwalkers=10, nburn=5, threads=1, prefit=True)
+
+@pytest.mark.skipif('not HAS_EMCEE or not HAS_SCIPY or not HAS_MATPLOTLIB')
+def test_interactive():
+    sampler, pos = get_sampler(
+        data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
+        prior=lnprior, nwalkers=10, nburn=5, threads=1, interactive=True)
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_init_symmetric_dflux():
