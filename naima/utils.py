@@ -175,8 +175,10 @@ def _validate_single_data_table(data_table, group=0):
             log.warning('"cl" keyword not provided in input data table, upper limits'
                         ' will be assumed to be at 90% confidence level')
 
-    if 'group' not in data.colnames:
+    if 'group' in data_table.colnames:
         # avoid overwriting groups
+        data['group'] = data_table['group']
+    else:
         data['group'] = [group,] * len(data['energy'])
 
     return data
