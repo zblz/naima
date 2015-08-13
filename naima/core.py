@@ -357,6 +357,7 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None, nwalkers=500,
     P0_IS_ML = False
     if interactive:
         try:
+            log.info('Launching interactive model fitter, close window when finished')
             from .model_fitter import InteractiveModelFitter
             import matplotlib.pyplot as plt
             iprev = plt.rcParams['interactive']

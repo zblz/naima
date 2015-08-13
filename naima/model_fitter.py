@@ -8,7 +8,7 @@ from astropy.extern import six
 from astropy import log
 
 from .core import lnprobmodel, _prefit
-from .plot import color_cycle, plot_data, _plot_data_to_ax
+from .plot import color_cycle, _plot_data_to_ax
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
 
@@ -40,7 +40,7 @@ class InteractiveModelFitter(object):
         self.modelfn = modelfn
 
         self.fig = plt.figure()
-        modelax = plt.subplot2grid((2*npars+1,4),(0,0),rowspan=npars,colspan=4)
+        modelax = plt.subplot2grid((10,4),(0,0),rowspan=4,colspan=4)
 
         if e_range:
             e_range = validate_array('e_range', u.Quantity(e_range),
@@ -78,6 +78,8 @@ class InteractiveModelFitter(object):
             else:
                 model_for_lnprob = model
             lnprob = lnprobmodel(model_for_lnprob, self.data)
+            if isinstance(lnprob,u.Quantity):
+                lnprob = lnprob.decompose().value
             self.lnprobtxt = modelax.text(0.05, 0.05, r'', ha='left', va='bottom',
                     transform=modelax.transAxes, size=20)
             self.lnprobtxt.set_text(r'$\ln\mathcal{{L}} = {0:.1f}$'.format(lnprob))
@@ -108,8 +110,9 @@ class InteractiveModelFitter(object):
 
         paraxes = []
         for n in range(npars):
-            paraxes.append(plt.subplot2grid((2*npars+1,4),(1+npars+n,0),colspan=2))
+            paraxes.append(plt.subplot2grid((2*npars,10),(npars+n,0),colspan=7))
         self.parsliders = []
+        slider_props = {'facecolor': color_cycle[-1], 'alpha': 0.5}
         for label,parax,valinit in six.moves.zip(labels, paraxes, p0):
             # Attempt to estimate reasonable parameter ranges from label
             pmin, pmax = valinit/10, valinit*3
@@ -130,28 +133,26 @@ class InteractiveModelFitter(object):
                 pmin, pmax = valinit / 100, valinit * 100
 
             slider = Slider(parax, label, pmin, pmax,
-                valinit=valinit, valfmt='%g')
+                valinit=valinit, valfmt='%.4g', **slider_props)
             slider.on_changed(self.update_if_auto)
             self.parsliders.append(slider)
 
-
-
-        updateax = plt.subplot2grid((9,4),(5,3), colspan=1, rowspan=1)
-        update_button = Button(updateax, 'Update model')
-        update_button.on_clicked(self.update)
-
-        autoupdateax = plt.subplot2grid((9,4),(6,3), colspan=1, rowspan=1)
+        autoupdateax = plt.subplot2grid((8,4),(4,3), colspan=1, rowspan=1)
         auto_update_check = CheckButtons(autoupdateax,
                 ('Auto update',), (auto_update,))
         auto_update_check.on_clicked(self.update_autoupdate)
         self.autoupdate = auto_update
 
+        updateax = plt.subplot2grid((8,4),(5,3), colspan=1, rowspan=1)
+        update_button = Button(updateax, 'Update model')
+        update_button.on_clicked(self.update)
+
         if self.hasdata:
-            fitax = plt.subplot2grid((9,4),(7,3), colspan=1, rowspan=1)
+            fitax = plt.subplot2grid((8,4),(6,3), colspan=1, rowspan=1)
             fit_button = Button(fitax, 'Do Nelder-Mead fit')
             fit_button.on_clicked(self.do_fit)
 
-        closeax = plt.subplot2grid((9,4),(8,3), colspan=1, rowspan=1)
+        closeax = plt.subplot2grid((8,4),(7,3), colspan=1, rowspan=1)
         close_button = Button(closeax, 'Close window')
         close_button.on_clicked(self.close_fig)
 
@@ -177,16 +178,21 @@ class InteractiveModelFitter(object):
                 # this will be sloooow, maybe interpolate already computed model?
                 model = _process_model(self.modelfn(self.pars, self.data))
             lnprob = lnprobmodel(model, self.data)
+            if isinstance(lnprob,u.Quantity):
+                lnprob = lnprob.decompose().value
             self.lnprobtxt.set_text(r'$\ln\mathcal{{L}} = {0:.1f}$'.format(lnprob))
         self.fig.canvas.draw_idle()
 
     def do_fit(self,event):
         self.pars = [slider.val for slider in self.parsliders]
         self.pars, P0_IS_ML = _prefit(self.pars, self.data, self.modelfn, None)
+        autoupdate = self.autoupdate
+        self.autoupdate = False
         if P0_IS_ML:
             for slider, val in zip(self.parsliders, self.pars):
                 slider.set_val(val)
             self.update('after_fit')
+        self.autoupdate = autoupdate
         self.P0_IS_ML = P0_IS_ML
 
     def close_fig(self,event):
