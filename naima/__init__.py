@@ -18,6 +18,7 @@ from .core import *
 from .plot import *
 from .utils import *
 from .analysis import *
+from .model_fitter import *
 
 from . import models
 
