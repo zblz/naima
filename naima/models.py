@@ -247,7 +247,8 @@ class ExponentialCutoffBrokenPowerLaw(object):
 
     """
 
-    param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2']
+    param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2',
+            'e_cutoff', 'beta']
     _memoize = True
     _cache = {}
     _queue = []
