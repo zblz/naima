@@ -20,7 +20,7 @@ D., Hogg, D.W., Lang, D., & Goodman, J. 2013, PASP, 125, 306
 
 The measurements and uncertainties in the provided spectrum are assumed to be
 correct, Gaussian, and independent (note that this is unlikely to be the case,
-see `Avoiding the Gaussian error assumption`_ on how this might be tackled in
+see `Overcoming the Gaussian error assumption`_ on how this might be tackled in
 the future).  Under this assumption, the likelihood of observed data given the
 spectral model :math:`S(\vec{p};E)`, for a parameter vector :math:`\vec{p}`, is
 
