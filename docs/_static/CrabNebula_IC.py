@@ -64,7 +64,7 @@ if __name__=='__main__':
         sampler = cPickle.load(open(samplerf,'rb'))
     else:
     ## Read data
-        data=ascii.read('CrabNebula_HESS_2006_ipac.dat')
+        data=ascii.read('../../examples/CrabNebula_HESS_2006_ipac.dat')
     # Run sampler
         sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels, model=ElectronIC,
                 prior=lnprior, nwalkers=128, nburn=100, nrun=100, threads=4, prefit=True)

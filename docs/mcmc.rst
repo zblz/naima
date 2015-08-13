@@ -1,6 +1,6 @@
 .. _MCMC:
 
-Markov Chain Monte Carlo fitting
+Spectral model fitting with MCMC
 ================================
 
 ``naima`` can derive the best-fit and uncertainty distributions of spectral
@@ -73,8 +73,8 @@ with the model spectrum, and any metadata blobs provided by the model function
 compare them to the input spectrum: see :ref:`plotting`.
 
 
-Avoiding the Gaussian error assumption
---------------------------------------
+Overcoming the Gaussian error assumption
+----------------------------------------
 
 ``naima`` provides an alternative to MCMC fitting by providing wrappers around
 the radiative models that can be used in `sherpa`_. This package allows to take

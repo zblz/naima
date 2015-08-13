@@ -28,7 +28,7 @@ Distribution <http://continuum.io/downloads>`_) or can be installed through
 Installation
 ------------
 
-The lastest stable version can be installed through pip (You may need to use
+The latest stable version can be installed through pip (You may need to use
 ``sudo`` if you want to install it system-wide, or the flag ``--user`` to
 install only for the current user)::
 

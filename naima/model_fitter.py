@@ -12,6 +12,8 @@ from .plot import color_cycle, _plot_data_to_ax
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
 
+__all__ = ['InteractiveModelFitter']
+
 def _process_model(model):
     if ((isinstance(model, tuple) or isinstance(model, list))
             and not isinstance(model,np.ndarray)):
@@ -21,8 +23,41 @@ def _process_model(model):
 
 
 class InteractiveModelFitter(object):
-    def __init__(self, modelfn, p0, data=None, e_range=None,
-            labels=None, sed=True, auto_update=True, e_npoints=100):
+    """
+    Interactive model fitter using matplotlib widgets
+
+
+    Parameters
+    ----------
+    modelfn : function
+        A function that takes a vector in the parameter space and the data
+        table, and returns the expected fluxes at the energies in the
+        spectrum.
+    p0 : array
+        Initial position vector.
+    data : `~astropy.table.Table` or list of `~astropy.table.Table`
+        Table or tables with observed spectra. Must follow the format described
+        in `naima.run_sampler`.
+    e_range : list of `~astropy.units.Quantity`, length 2, optional
+        Limits in energy for the computation of the model.
+        Note that setting this parameter will mean that the model output is
+        computed twice when `data` is provided: once for display using
+        `e_range` and once for computation of the log-probability using the
+        energy values of the spectra.
+    e_npoints : int, optional
+        How many points to compute for the model if `e_range` is set. Default is
+        100.
+    labels : iterable of strings, optional
+        Labels for the parameters included in the position vector ``p0``. If not
+        provided ``['par1','par2', ... ,'parN']`` will be used.
+    sed : bool, optional
+        Whether to plot SED or differential spectrum.
+    auto_update : bool, optional
+        Whether to update the model plot when parameter sliders are changed.
+        Default is True and can also be changed through the GUI.
+    """
+    def __init__(self, modelfn, p0, data=None, e_range=None, e_npoints=100,
+            labels=None, sed=True, auto_update=True):
 
         import matplotlib.pyplot as plt
         from matplotlib.widgets import Button, Slider, CheckButtons

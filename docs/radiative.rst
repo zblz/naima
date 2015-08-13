@@ -134,7 +134,7 @@ list of items, each of which can be either:
         3. Its photon field energy density as a
            :class:`~astropy.units.Quantity` float instance. If the photon
            field energy density if set to 0, its blackbody energy density
-           will be computed through the Stefan-Boltzman law.
+           will be computed through the Stefan-Boltzmann law.
         4. Optional: The angle between the seed photon direction and the scattered
            photon direction as a :class:`~astropy.units.Quantity` float
            instance. If this is provided, the anisotropic IC differential
