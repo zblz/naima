@@ -15,7 +15,7 @@ except:
     HAS_MATPLOTLIB = False
 
 from ..models import ExponentialCutoffPowerLaw
-from ..model_widget import ModelWidget
+from ..model_fitter import InteractiveModelFitter
 
 # Read data
 fname = get_pkg_data_filename('data/CrabNebula_HESS_ipac.dat')
@@ -39,30 +39,30 @@ def test_modelwidget_inputs():
     for dt in [data, None]:
         for er in [e_range, None]:
             for model in [modelfn, modelfn2]:
-                mw = ModelWidget(model, p0, labels=labels,
+                imf = InteractiveModelFitter(model, p0, labels=labels,
                         data=dt, e_range=er)
-                mw.update('test')
+                imf.update('test')
 
     for labs in [labels, labels[:2], None]:
-        mw = ModelWidget(model, p0, labels=labs)
+        imf = InteractiveModelFitter(model, p0, labels=labs)
     for sed in [True, False]:
         for dt in [data, None]:
-            mw = ModelWidget(model, p0, data=dt, labels=labels, sed=sed)
+            imf = InteractiveModelFitter(model, p0, data=dt, labels=labels, sed=sed)
     p0[1] = -2.7
-    mw = ModelWidget(model, p0, labels=labels)
+    imf = InteractiveModelFitter(model, p0, labels=labels)
     labels[0] = 'norm'
-    mw = ModelWidget(model, p0, labels=labels)
+    imf = InteractiveModelFitter(model, p0, labels=labels)
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
 def test_modelwidget_funcs():
-    mw = ModelWidget(modelfn, p0, data=data, labels=labels, auto_update=False)
-    assert mw.autoupdate is False
-    mw.update_autoupdate('test')
-    assert mw.autoupdate is True
-    mw.parsliders[0].val *= 2
-    mw.update_if_auto('test')
-    mw.close_fig('test')
+    imf = InteractiveModelFitter(modelfn, p0, data=data, labels=labels, auto_update=False)
+    assert imf.autoupdate is False
+    imf.update_autoupdate('test')
+    assert imf.autoupdate is True
+    imf.parsliders[0].val *= 2
+    imf.update_if_auto('test')
+    imf.close_fig('test')
 
-    mw = ModelWidget(modelfn, p0, labels=labels, auto_update=False)
-    mw.update('test')
+    imf = InteractiveModelFitter(modelfn, p0, labels=labels, auto_update=False)
+    imf.update('test')
 

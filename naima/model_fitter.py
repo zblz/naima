@@ -7,7 +7,7 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 
-from .core import lnprobmodel
+from .core import lnprobmodel, _prefit
 from .plot import color_cycle, plot_data, _plot_data_to_ax
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
@@ -20,7 +20,7 @@ def _process_model(model):
         return model
 
 
-class ModelWidget(object):
+class InteractiveModelFitter(object):
     def __init__(self, modelfn, p0, data=None, e_range=None,
             labels=None, sed=True, auto_update=True, e_npoints=100):
 
@@ -28,6 +28,7 @@ class ModelWidget(object):
         from matplotlib.widgets import Button, Slider, CheckButtons
 
         self.pars = p0
+        self.P0_IS_ML = False
         npars = len(p0)
         if labels is None:
             labels = ['par{0}'.format(i) for i in range(npars)]
@@ -135,32 +136,28 @@ class ModelWidget(object):
 
 
 
-        updateax = plt.subplot2grid((2*npars+1,4),(npars+1,3),colspan=1,
-                rowspan=min(int(npars/3),1))
+        updateax = plt.subplot2grid((9,4),(5,3), colspan=1, rowspan=1)
         update_button = Button(updateax, 'Update model')
         update_button.on_clicked(self.update)
 
-        autoupdateax = plt.subplot2grid((2*npars+1,4),
-                (npars+1+min(int(npars/3),1),3),colspan=1,
-                rowspan=min(int(npars/3),1))
+        autoupdateax = plt.subplot2grid((9,4),(6,3), colspan=1, rowspan=1)
         auto_update_check = CheckButtons(autoupdateax,
                 ('Auto update',), (auto_update,))
         auto_update_check.on_clicked(self.update_autoupdate)
         self.autoupdate = auto_update
 
-        closeax = plt.subplot2grid((2*npars+1,4),
-                (npars+2+min(int(npars/3),1),3),colspan=1,
-                rowspan=min(int(npars/3),1))
+        if self.hasdata:
+            fitax = plt.subplot2grid((9,4),(7,3), colspan=1, rowspan=1)
+            fit_button = Button(fitax, 'Do Nelder-Mead fit')
+            fit_button.on_clicked(self.do_fit)
+
+        closeax = plt.subplot2grid((9,4),(8,3), colspan=1, rowspan=1)
         close_button = Button(closeax, 'Close window')
         close_button.on_clicked(self.close_fig)
 
         self.fig.subplots_adjust(top=0.98,right=0.98,bottom=0.02,hspace=0.2)
 
         plt.show()
-
-    def close_fig(self,event):
-        import matplotlib.pyplot as plt
-        plt.close(self.fig)
 
     def update_autoupdate(self,label):
         self.autoupdate = not self.autoupdate
@@ -170,6 +167,8 @@ class ModelWidget(object):
             self.update(val)
 
     def update(self,event):
+        # If we update, values have changed and P0 is not ML anymore
+        self.P0_IS_ML = False
         self.pars = [slider.val for slider in self.parsliders]
         model = _process_model(self.modelfn(self.pars, self.data_for_model))
         self.line.set_ydata((model*self.sedf).to(self.f_unit))
@@ -180,5 +179,18 @@ class ModelWidget(object):
             lnprob = lnprobmodel(model, self.data)
             self.lnprobtxt.set_text(r'$\ln\mathcal{{L}} = {0:.1f}$'.format(lnprob))
         self.fig.canvas.draw_idle()
+
+    def do_fit(self,event):
+        self.pars = [slider.val for slider in self.parsliders]
+        self.pars, P0_IS_ML = _prefit(self.pars, self.data, self.modelfn, None)
+        if P0_IS_ML:
+            for slider, val in zip(self.parsliders, self.pars):
+                slider.set_val(val)
+            self.update('after_fit')
+        self.P0_IS_ML = P0_IS_ML
+
+    def close_fig(self,event):
+        import matplotlib.pyplot as plt
+        plt.close(self.fig)
 
 

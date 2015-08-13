@@ -136,10 +136,51 @@ def _run_mcmc(sampler, pos, nrun):
                 np.average(out[1]), np.max(out[1])))
     return sampler, out[0]
 
+def _prefit(p0, data, model, prior):
+        P0_IS_ML = False
+        from .extern.minimize import minimize
+        flat_prior = lambda *args: 0.0
+        if prior is None:
+            prior = flat_prior
+        nll = lambda *args: -lnprob(*args)[0]
+        log.info('Finding Maximum Likelihood parameters through Nelder-Mead fitting...')
+        log.info('   Initial parameters: {0}'.format(p0))
+        log.info('   Initial lnprob(p0): {0:.3f}'.format(-nll(p0, data, model, prior)))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            result = minimize(nll, p0, args=(data, model, flat_prior),
+                    method='Nelder-Mead',options={'maxfev':500, 'xtol':1e-1,
+                        'ftol':1e-3})
+            ll_prior = lnprob(result['x'], data, model, prior)[0]
 
-def get_sampler(data_table=None, p0=None, model=None, prior=None,
-                nwalkers=500, nburn=100,
-                guess=True, prefit=False, labels=None, threads=4, data_sed=None):
+        if (result['success'] or result['status']==1) and not np.isinf(ll_prior):
+            # also keep result if we have reached maxiter, it is likely
+            # better than p0
+            if result['status']==1:
+                log.info('   Maximum number of function evaluations reached!')
+            if result['status']==1:
+                log.info('      New parameters : {0}'.format(result['x']))
+            else:
+                log.info('   New ML parameters : {0}'.format(result['x']))
+                P0_IS_ML = True
+            if -result['fun'] == ll_prior:
+                log.info('   Maximum lnprob(p0): {0:.3f}'.format(-result['fun']))
+            else:
+                log.info('flat prior lnprob(p0): {0:.3f}'.format(-result['fun']))
+                log.info('full prior lnprob(p0): {0:.3f}'.format(ll_prior))
+            p0 = result['x']
+        elif np.isinf(ll_prior):
+            log.warning('Maximum Likelihood procedure converged on a parameter'
+                    ' vector forbidden by prior,'
+                    ' using original parameters for MCMC')
+        else:
+            log.warning('Maximum Likelihood procedure failed to converge,'
+                    ' using original parameters for MCMC')
+        return p0, P0_IS_ML
+
+def get_sampler(data_table=None, p0=None, model=None, prior=None, nwalkers=500,
+        nburn=100, guess=True, interactive=False, prefit=False, labels=None,
+        threads=4, data_sed=None):
     """Generate a new MCMC sampler.
 
     Parameters
@@ -213,6 +254,10 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
     guess : bool, optional
         Whether to attempt to guess the normalization (first) parameter of the
         model. Default is True.
+    interactive : bool, optional
+        Whether to launch the interactive fitting window to set the initial
+        values for the prefitting or the MCMC run. Requires matplotlib. Default
+        is False.
     prefit : bool, optional
         Whether to attempt to find the maximum likelihood parameters with a
         Nelder-Mead algorithm and use them as starting point of the MCMC run.
@@ -310,43 +355,24 @@ def get_sampler(data_table=None, p0=None, model=None, prior=None,
                     ' not applying normalization guess.'.format(','.join(normNames)))
 
     P0_IS_ML = False
-    if prefit:
-        from .extern.minimize import minimize
-        #from scipy.optimize import minimize
-        flat_prior = lambda *args: 0.0
-        nll = lambda *args: -lnprob(*args)[0]
-        log.info('Attempting to find Maximum Likelihood parameters...')
-        log.info('   Initial parameters: {0}'.format(p0))
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            result = minimize(nll, p0, args=(data, model, flat_prior),
-                    method='Nelder-Mead',options={'maxfev':500, 'xtol':1e-1,
-                        'ftol':1e-3})
-            ll_prior = lnprob(result['x'], data, model, prior)[0]
+    if interactive:
+        try:
+            from .model_fitter import InteractiveModelFitter
+            import matplotlib.pyplot as plt
+            iprev = plt.rcParams['interactive']
+            plt.rcParams['interactive'] = False
+            imf = InteractiveModelFitter(model, p0, data, labels=labels, sed=True)
+            p0 = imf.pars
+            P0_IS_ML = imf.P0_IS_ML
+            plt.rcParams['interactive'] = iprev
+        except ImportError as e:
+            log.warning('Interactive fitting is not available because'
+                    ' matplotlib is not installed: {0}'.format(e))
 
-        if (result['success'] or result['status']==1) and not np.isinf(ll_prior):
-            # also keep result if we have reached maxiter, it is likely
-            # better than p0
-            if result['status']==1:
-                log.info('   Maximum number of function evaluations reached!')
-            if result['status']==1:
-                log.info('      New parameters : {0}'.format(result['x']))
-            else:
-                log.info('   New ML parameters : {0}'.format(result['x']))
-                P0_IS_ML = True
-            if -result['fun'] == ll_prior:
-                log.info('           lnprob(p0): {0:.3f}'.format(-result['fun']))
-            else:
-                log.info('flat prior lnprob(p0): {0:.3f}'.format(-result['fun']))
-                log.info('full prior lnprob(p0): {0:.3f}'.format(ll_prior))
-            p0 = result['x']
-        elif np.isinf(ll_prior):
-            log.warning('Maximum Likelihood procedure converged on a parameter'
-                    ' vector forbidden by prior,'
-                    ' using original parameters for MCMC')
-        else:
-            log.warning('Maximum Likelihood procedure failed to converge,'
-                    ' using original parameters for MCMC')
+    # If we already did the prefit call in ModelWidget (and didn't modify the
+    # parameters afterwards), avoid doing it here
+    if prefit and not P0_IS_ML:
+        p0, P0_IS_ML = _prefit(p0, data, model, prior)
 
     sampler = emcee.EnsembleSampler(nwalkers, len(p0), lnprob,
                                     args=[data, model, prior], threads=threads)
