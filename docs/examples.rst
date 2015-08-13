@@ -1,11 +1,17 @@
 Examples
 ========
 
+- `Minimal radiative model`_
 - `Fitting a function`_
 - `Fitting IC emission from an electron distribution`_
 - `Fitting Synchrotron and IC emission from an electron distribution`_
 - `Fitting pp emission from a proton distribution`_
 
+Minimal radiative model
+-----------------------
+
+.. literalinclude:: ../examples/CrabNebula_IC_minimal.py
+    :language: python
 
 Fitting a function
 ------------------

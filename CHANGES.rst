@@ -5,12 +5,17 @@
   a single significant digit in the errors (except when the leading digit is 1,
   when two significant digits are shown). Note that they are still saved with
   full precision to the result tables.
+- There is a new GUI tool for interactive model fitting:
+  ``InteractiveModelFitter``, which can be accessed directly or through the
+  ``interactive`` argument of ``get_sampler`` prior to a sampling run.
 
 Bug Fixes
 ^^^^^^^^^
 
 - ``save_diagnostic_plots`` now turns matplotlib interactivity off, so the plots
   are only saved and not shown.
+- The ``group`` column is now preserved if a data table is validated more than
+  once.
 
 0.5 (2015-08-05)
 ----------------

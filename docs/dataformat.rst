@@ -57,7 +57,7 @@ be in the same format, as `naima` will concatenate them as appropriate. If some
 of the tables are in differential flux and some others in energy flux, they will
 all be converted to the format of the first table in the list. However, this can
 be controlled with the ``data_sed`` argument of `get_sampler`, which will
-control wether all data tables are converted to an SED (``data_sed=True``) or
+control whether all data tables are converted to an SED (``data_sed=True``) or
 to differential fluxes (``data_sed=False``).
 
 

@@ -9,12 +9,12 @@ unit system used in ``naima``.
 Building the model and prior functions
 --------------------------------------
 
-The model function is be the function that will be called to compare with the
+The model function is the function that will be called to compare with the
 observed spectrum. It must take two parameters: an array of the free parameters
 of the model, and the data table.
 
-``naima`` includes several models in the `naima.models` module that make it easier
-to fit common functional forms for spectra (`~naima.models.PowerLaw`,
+``naima`` includes several models in the `naima.models` module that make it
+easier to fit common functional forms for spectra (`~naima.models.PowerLaw`,
 `~naima.models.ExponentialCutoffPowerLaw`, `~naima.models.BrokenPowerLaw`, and
 `~naima.models.LogParabola`), as well as several radiative models
 (`~naima.models.InverseCompton`, `~naima.models.Synchrotron`,
@@ -25,16 +25,11 @@ obtain the flux of the model at the values of the energy array. If they are
 called with a data table as argument, the energy values from the ``energy``
 column will be used.
 
-The model function to be used for fitting must take two arguments: 1) an array
-of the free parameters, and 2) a data object which will include the energy and
-flux of the observed spectrum in ``data['energy']`` and ``data['flux']``,
-respectively.
-
-Building the model function from one of the functional forms is easy. In the
+Building the model function from one of the radiative models is easy. In the
 following example, the three model parameters in the ``pars`` array are the
-amplitude, the spectral index, and the cutoff energy. We first add the necessary
-units for the radiative model and then compute and return the model flux for the
-energies contained in the data table::
+amplitude, the spectral index, and the logarith or the cutoff energy. We first
+add the necessary units for the radiative model and then compute and return the
+model flux for the energies contained in the data table::
 
     from naima.models import ExponentialCutoffPowerLaw, InverseCompton
     import astropy.units as u
@@ -52,10 +47,10 @@ energies contained in the data table::
 In addition, we must build a function to return the prior function, i.e., a
 function that encodes any previous knowledge you have about the parameters, such
 as previous measurements or physically acceptable ranges. Two simple priors
-functions are included with ``naima``: `~naima.normal_prior` and `~naima.uniform_prior`.
-`~naima.uniform_prior` can be used to set parameter limits. Following the example
-above, we might want to limit the amplitude to be positive,
-and the spectral index to be between -1 and 5::
+functions are included with ``naima``: `~naima.normal_prior` and
+`~naima.uniform_prior`.  `~naima.uniform_prior` can be used to set parameter
+limits. Following the example above, we might want to limit the amplitude to be
+positive, and the spectral index to be between -1 and 5::
 
     from naima import uniform_prior
 
@@ -64,15 +59,58 @@ and the spectral index to be between -1 and 5::
                 + uniform_prior(pars[1], -1, 5)
         return lnprior
 
-
-Sampling the posterior distribution function
---------------------------------------------
+Selecting a starting point for the sampling
+-------------------------------------------
 
 Before starting the MCMC run, we must provide the procedure with initial
 estimates of the parameters and their names::
 
     p0 = np.array((1e33, 3.0, np.log10(30)))
     labels = ['norm', 'index', 'log10(cutoff)']
+
+This example is relatively simple, but for more complicated models (in
+particular those with more than one emission channel, such as Synchrotron and
+Inverse Compton) it may be difficult to provide an adequate initial parameter
+vector without comparing it visually with the spectra. For these models, an
+initial parameter vector far from the maximum likelihood vector may mean that
+during the minimization or sampling process the algorithm gets stuck in a local
+maximum.
+
+In order to make an adequate estimation easier, ``naima`` provides a tool to
+interactively see the output of the model and compare it with the observed data
+while changing the parameter values. This tool can be accessed in two ways: the
+first is setting `interactive=True` in the options of `~naima.get_sampler` or
+`~naima.run_sampler` (see below in `sampling`_ for details on these functions).
+This will launch an interactive `matplotlib` window in which the parameters can
+be changed and the resulting model compared to the observed spectra. With each
+change, the log probability of the model given the observed spectra is computed.
+In addition, a Nelder-Mead fit can be launched from a button in the window to
+find the maximum likelihood parameter vector. Once you are happy that the
+current model is a good approximation to the observed spectrum, closing the
+window (whether through the window manager or the `Close window` button) will
+use the current parameter vector as a starting point for the sampling procedure.
+
+The alternative way of accessing the interactive fitter is to access it directly
+through the class `naima.InteractiveModelFitter` from an interactive Python
+interpreter.
+The parameter vector shown in the interactive window can be accessed through the
+``imf.pars`` attribute, and then copied to a new ``p0`` variable to be used in
+the sampling::
+
+    >> imf = InteractiveModelFitter(model, p0, data=data, labels=labels)
+    >> # interactive fitting done
+    >> p0 = imf.pars
+    
+Note that the ``data`` argument can be omitted and an energy range specified through the
+``e_range`` argument to inspect the behaviour of the model independently of the
+data::
+
+    >> imf = InteractiveModelFitter(model, p0, e_range=[1*u.GeV, 100*u.TeV])
+
+.. _sampling:
+
+Sampling the posterior distribution function
+--------------------------------------------
 
 All the objects above can then be provided to `~naima.run_sampler`, the main
 fitting function in ``naima``::
@@ -179,7 +217,7 @@ if the ``confs`` parameter is set:
 
 .. image:: _static/CrabNebula_IC_model_confs.png
 
-As for the plot showing the samples, the enrgy range for the confidence bands
+As for the plot showing the samples, the energy range for the confidence bands
 can be set through the ``e_range`` parameter. The number of samples needed will
 be computed so that the highest confidence level given can be constrained. This
 results in 740 samples for a :math:`3\sigma` confidence level:

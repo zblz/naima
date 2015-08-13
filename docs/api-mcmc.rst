@@ -1,11 +1,13 @@
-MCMC
-====
+Spectral model fitting
+======================
 
 .. currentmodule:: naima
 
 - MCMC sampling
     - `naima.get_sampler`
     - `naima.run_sampler`
+- Interactive model fitting
+    - `naima.InteractiveModelFitter`
 - Priors
     - `naima.normal_prior`
     - `naima.uniform_prior`
@@ -22,6 +24,7 @@ API
 
 .. autofunction:: get_sampler
 .. autofunction:: run_sampler
+.. autoclass:: InteractiveModelFitter
 .. autofunction:: normal_prior
 .. autofunction:: uniform_prior
 .. autofunction:: plot_chain
