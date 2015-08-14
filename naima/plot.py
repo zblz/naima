@@ -11,7 +11,7 @@ from astropy import table
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
 
-__all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob", 
+__all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob",
         "plot_corner"]
 
 marker_cycle = ['o','s','d','p','*']
@@ -547,8 +547,9 @@ def find_ML(sampler, modelidx):
         else:
             raise TypeError('Model {0} has wrong blob format'.format(modelidx))
     elif modelidx is not None and hasattr(sampler, 'modelfn'):
-        modelx, model_ML = _process_blob([sampler.modelfn(MLp, sampler.data),], modelidx,
+        blob = _process_blob([sampler.modelfn(MLp, sampler.data),], modelidx,
                 energy=sampler.data['energy'])
+        modelx, model_ML = blob[0], blob[1][0]
     else:
         modelx, model_ML = None, None
 
@@ -663,6 +664,9 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
     # log.info(infostr)
 
     data = sampler.data
+
+    if e_range is None and not hasattr(sampler, 'blobs'):
+        e_range = data['energy'][[0,-1]] * np.array((1./3., 3.))
 
     if len(model_ML[0]) == len(data['energy']) and plotdata is None:
         plotdata = True
@@ -850,12 +854,21 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
 
     groups = np.unique(data_all['group'])
 
-    for g in groups:
-        data = data_all[np.where(data_all['group']==g)]
+    MLf_unit, MLsedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
+    MLene = model_ML[0].to(e_unit)
+    MLflux = (model_ML[1] * MLsedf).to(MLf_unit)
 
-        # wrap around color and marker cycles
-        color = color_cycle[int(g) % len(color_cycle)]
-        marker = marker_cycle[int(g) % len(marker_cycle)]
+    interp = False
+    if (data_all['energy'].size != MLene.size or
+            not np.allclose(data_all['energy'], MLene)):
+        interp = True
+        from scipy.interpolate import interp1d
+        modelfunc = interp1d(MLene.value, MLflux.value, bounds_error=False)
+
+    for g in groups:
+        groupidx = np.where(data_all['group']==g)
+
+        data = data_all[groupidx]
 
         notul = -data['ul']
         df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
@@ -865,17 +878,14 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
         dflux = (data['flux_error_lo'] + data['flux_error_hi'])/2.
         dflux = (dflux * dsedf).to(df_unit)[notul]
 
-        mf_unit, msedf = sed_conversion(model_ML[0], model_ML[1].unit, sed)
-        mene = model_ML[0].to(e_unit)
-        mflux = (model_ML[1] * msedf).to(mf_unit)
-
-        if len(mene) != len(ene):
-            from scipy.interpolate import interp1d
-            modelfunc = interp1d(mene.value, mflux.value, bounds_error=False)
-            difference = flux[notul].value-modelfunc(ene[notul])
-            difference *= flux.unit
+        if interp:
+            difference = flux[notul] - modelfunc(ene[notul]) * flux.unit
         else:
-            difference = flux[notul]-mflux[notul]
+            difference = flux[notul] - MLflux[groupidx][notul]
+
+        # wrap around color and marker cycles
+        color = color_cycle[int(g) % len(color_cycle)]
+        marker = marker_cycle[int(g) % len(marker_cycle)]
 
         ax.errorbar(ene[notul].value,
                 (difference / dflux).decompose().value,
