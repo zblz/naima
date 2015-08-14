@@ -22,6 +22,7 @@ except:
 from ..analysis import save_chain, read_chain
 from ..plot import plot_data, plot_fit, plot_chain
 from ..model_fitter import InteractiveModelFitter
+from ..utils import validate_data_table
 
 from .test_plotting import sampler
 
@@ -38,13 +39,20 @@ def test_roundtrip(sampler):
     for key in sampler.run_info.keys():
         assert np.all(sampler.run_info[key] == nresult.run_info[key])
 
+    for i in range(len(sampler.labels)):
+        assert sampler.labels[i] == nresult.labels[i]
+
+    for col in sampler.data.colnames:
+        assert np.allclose(sampler.data[col], nresult.data[col])
+        assert str(sampler.data[col].unit) == str(nresult.data[col].unit)
+    validate_data_table(nresult.data)
+
     assert np.allclose(sampler.acceptance_fraction, nresult.acceptance_fraction)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_fit(sampler):
-    nresult = read_chain('test_chain.h5', data=sampler.data,
-            modelfn=sampler.modelfn, labels=sampler.labels)
+    nresult = read_chain('test_chain.h5', modelfn=sampler.modelfn)
 
     f = plot_data(nresult)
     f = plot_fit(nresult, 0)
@@ -53,16 +61,14 @@ def test_plot_fit(sampler):
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_chain(sampler):
-    nresult = read_chain('test_chain.h5', data=sampler.data,
-            modelfn=sampler.modelfn, labels=sampler.labels)
+    nresult = read_chain('test_chain.h5', modelfn=sampler.modelfn)
 
     for i in range(nresult.chain.shape[2]):
         f = plot_chain(nresult, i)
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_imf(sampler):
-    nresult = read_chain('test_chain.h5', data=sampler.data,
-            modelfn=sampler.modelfn, labels=sampler.labels)
+    nresult = read_chain('test_chain.h5', modelfn=sampler.modelfn)
 
     imf = InteractiveModelFitter(nresult.modelfn, nresult.chain[-1][-1],
             nresult.data)

@@ -4,9 +4,12 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy as np
 import astropy.units as u
-from astropy.table import Table
+from astropy.table import Table, QTable
 from astropy import log
 from astropy.extern import six
+from astropy.utils.exceptions import AstropyUserWarning
+import warnings
+import h5py
 
 from .plot import find_ML
 
@@ -16,11 +19,6 @@ try:
 except ImportError:
     HAS_PYYAML = False
 
-HAS_H5PY = True
-try:
-    import h5py
-except ImportError:
-    HAS_H5PY = False
 
 __all__ = ["save_diagnostic_plots", "save_results_table", "save_chain",
            "read_chain"]
@@ -318,12 +316,23 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
 
 def save_chain(outname, sampler, compression=True):
     """
-    Function to save the sampler chain to a hdf5 file
-    """
+    Function to save the sampler chain and run information to a hdf5 file.
 
-    if not HAS_H5PY:
-        log.warning('h5py is required to save the chain as a hdf5, aborting save')
-        raise ImportError
+    The data table and parameter labels stored in the sampler will also be saved
+    to the hdf5 file.
+
+    Parameters
+    ----------
+    outname : str
+        Filename root for hdf5 file. '_chain.h5' will be appended to the root.
+
+    sampler : `emcee.EnsembleSampler` instance
+        Sampler instance for which chain and run information is saved.
+
+    compression : bool, optional
+        Whether gzip compression is applied to the dataset on write. Default is
+        True.
+    """
 
     f = h5py.File(outname + '_chain.h5', 'w')
     group = f.create_group('sampler')
@@ -331,6 +340,25 @@ def save_chain(outname, sampler, compression=True):
             compression=compression)
     lnprobability = group.create_dataset('lnprobability',
             data=sampler.lnprobability, compression=compression)
+
+    if hasattr(sampler, 'data'):
+        data = group.create_dataset('data',
+                data=Table(sampler.data).as_array(),compression=compression)
+
+        for col in sampler.data.colnames:
+            f['sampler/data'].attrs[col+'unit'] = str(sampler.data[col].unit)
+
+        for key in sampler.data.meta:
+            val = sampler.data.meta[key]
+            try:
+                data.attrs[key] = val
+            except TypeError:
+                try:
+                    data.attrs[key] = str(val)
+                except:
+                    warnings.warn("Attribute `{0}` of type {1} of the data table"
+                            " of the sampler cannot be written to HDF5 files"
+                            "- skipping".format(key,type(val)), AstropyUserWarning)
 
     # add all run info to group attributes
     if hasattr(sampler, 'run_info'):
@@ -342,7 +370,13 @@ def save_chain(outname, sampler, compression=True):
                 group.attrs[key] = str(val)
 
     # add other sampler info to the attrs
-    group.attrs['acceptance_fraction'] = sampler.acceptance_fraction
+    for attr in ['acceptance_fraction',]:
+        group.attrs[attr] = getattr(sampler, attr)
+
+    # add labels as individual attrs (there might be a better way)
+    for i,label in enumerate(sampler.labels):
+        group.attrs['label{0}'.format(i)] = label
+
 
     f.close()
 
@@ -360,17 +394,26 @@ class _result(object):
         return self.lnprobability.flatten()
 
 
-def read_chain(chainf, modelfn=None, labels=None, data=None):
+def read_chain(chainf, modelfn=None):
+    """
+    Read chain from a hdf5 saved with `save_chain`.
 
-    if not HAS_H5PY:
-        log.warning('h5py is required to save the chain as a hdf5, aborting save')
-        raise ImportError
+    This function will also read the labels and data table stored in the
+    original sampler. If you want to use the result object with `plot_fit`, you
+    must provide the model function with the `modelfn` argument given that
+    functions cannot be serialized in hdf5 files.
+
+    Parameters
+    ----------
+    chainf : str
+        Filename of the hdf5 containing the chain array at 'sampler/chain'
+    modelfn : function, optional
+        Model function to be attached to the returned sampler
+    """
 
     # initialize empty sampler class to return
     result = _result()
     result.modelfn = modelfn
-    result.labels = labels
-    result.data = data
     result.run_info = {}
 
     f = h5py.File(chainf, 'r')
@@ -378,5 +421,15 @@ def read_chain(chainf, modelfn=None, labels=None, data=None):
     result.lnprobability = np.array(f['sampler/lnprobability'])
     result.run_info = dict(f['sampler'].attrs)
     result.acceptance_fraction = f['sampler'].attrs['acceptance_fraction']
+    result.labels = []
+    for i in range(result.chain.shape[2]):
+        result.labels.append(f['sampler'].attrs['label{0}'.format(i)])
+
+    data = Table(np.array(f['sampler/data']))
+    data.meta.update(f['sampler/data'].attrs)
+    for col in data.colnames:
+        if f['sampler/data'].attrs[col+'unit'] != 'None':
+            data[col].unit = f['sampler/data'].attrs[col+'unit']
+    result.data = QTable(data)
 
     return result
