@@ -22,7 +22,8 @@ try:
 except ImportError:
     HAS_H5PY = False
 
-__all__ = ["save_diagnostic_plots", "save_results_table", "save_chain"]
+__all__ = ["save_diagnostic_plots", "save_results_table", "save_chain",
+           "read_chain"]
 
 def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
         blob_labels=None, last_step=False):
@@ -346,10 +347,17 @@ def save_chain(outname, sampler, compression=True):
     f.close()
 
 class _result(object):
+    """
+    Minimal emcee.EnsembleSampler like container for chain results
+    """
     @property
     def flatchain(self):
         s = self.chain.shape
         return self.chain.reshape(s[0] * s[1], s[2])
+
+    @property
+    def flatlnprobability(self):
+        return self.lnprobability.flatten()
 
 
 def read_chain(chainf, modelfn=None, labels=None, data=None):
