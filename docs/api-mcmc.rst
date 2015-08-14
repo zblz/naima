@@ -8,9 +8,9 @@ Spectral model fitting
     - `naima.run_sampler`
 - Interactive model fitting
     - `naima.InteractiveModelFitter`
-- Priors
-    - `naima.normal_prior`
-    - `naima.uniform_prior`
+- Saving and retrieving the parameter chain of a run
+    - `naima.save_chain`
+    - `naima.read_chain`
 - Plotting and analysis
     - `naima.plot_chain`
     - `naima.plot_corner`
@@ -18,6 +18,9 @@ Spectral model fitting
     - `naima.plot_blob`
     - `naima.save_diagnostic_plots`
     - `naima.save_results_table`
+- Priors
+    - `naima.normal_prior`
+    - `naima.uniform_prior`
     
 API
 ---
@@ -25,8 +28,8 @@ API
 .. autofunction:: get_sampler
 .. autofunction:: run_sampler
 .. autoclass:: InteractiveModelFitter
-.. autofunction:: normal_prior
-.. autofunction:: uniform_prior
+.. autofunction:: save_chain
+.. autofunction:: read_chain
 .. autofunction:: plot_chain
 .. autofunction:: plot_corner
 .. autofunction:: plot_fit
@@ -34,4 +37,5 @@ API
 .. autofunction:: plot_blob
 .. autofunction:: save_diagnostic_plots
 .. autofunction:: save_results_table
-
+.. autofunction:: normal_prior
+.. autofunction:: uniform_prior
