@@ -71,38 +71,43 @@ class InteractiveModelFitter(object):
             labels += ['par{0}'.format(i) for i in range(len(labels),npars)]
 
         self.hasdata = data is not None
+        self.data = None
+        if self.hasdata:
+            self.data = validate_data_table(data, sed=sed)
 
         self.modelfn = modelfn
-
         self.fig = plt.figure()
         modelax = plt.subplot2grid((10,4),(0,0),rowspan=4,colspan=4)
 
         if e_range:
             e_range = validate_array('e_range', u.Quantity(e_range),
                     physical_type='energy')
-            e_unit = e_range.unit
             energy = np.logspace(np.log10(e_range[0].value),
-                    np.log10(e_range[1].value), e_npoints) * e_unit
+                    np.log10(e_range[1].value), e_npoints) * e_range.unit
+            if self.hasdata:
+                energy = energy.to(self.data['energy'].unit)
+            else:
+                e_unit = e_range.unit
         else:
             energy = np.logspace(-4,2,e_npoints)*u.TeV
             e_unit = u.TeV
 
+        # Bogus flux array to send to model if not using data
         if sed:
             flux = np.zeros(e_npoints) * u.Unit('erg/(cm2 s)')
         else:
             flux = np.zeros(e_npoints) * u.Unit('1/(TeV cm2 s)')
 
-        self.data = None
         if self.hasdata:
-            self.data = validate_data_table(data)
             e_unit = self.data['energy'].unit
             _plot_data_to_ax(self.data, modelax, sed=sed, e_unit=e_unit)
             if not e_range:
+                # use data for model
                 energy = self.data['energy']
                 flux = self.data['flux']
 
-        self.data_for_model = {'energy': energy,
-                'flux': flux}
+        self.data_for_model = {'energy': energy, 'flux': flux}
+
         model = _process_model(self.modelfn(p0, self.data_for_model))
 
         if self.hasdata:
@@ -121,21 +126,23 @@ class InteractiveModelFitter(object):
 
 
         self.f_unit, self.sedf = sed_conversion(energy, model.unit, sed)
+
         if self.hasdata:
-            modelax.set_xlim(
-                    (self.data['energy'][0] - self.data['energy_error_lo'][0]).to(e_unit).value / 3,
-                    (self.data['energy'][-1] + self.data['energy_error_hi'][-1]).to(e_unit).value * 3)
+            datamin = (self.data['energy'][0] - self.data['energy_error_lo'][0]).to(e_unit).value / 3
+            datamax = (self.data['energy'][-1] + self.data['energy_error_hi'][-1]).to(e_unit).value * 3
+            xmin = min(datamin, energy[0].to(e_unit).value)
+            xmax = max(datamin, energy[-1].to(e_unit).value)
+            modelax.set_xlim(xmin, xmax)
         else:
             # plot_data_to_ax has not set ylabel
             unit = self.f_unit.to_string('latex_inline')
             if sed:
-                modelax.set_ylabel(r'$E^2 dN/dE [{0}]$'.format(unit))
+                modelax.set_ylabel(r'$E^2 dN/dE$ [{0}]'.format(unit))
             else:
-                modelax.set_ylabel(r'$dN/dE [{0}]$'.format(unit))
-            modelax.set_xlim(energy[0].value/3,
-                    energy[-1].value*3)
+                modelax.set_ylabel(r'$dN/dE$ [{0}]'.format(unit))
+            modelax.set_xlim(energy[0].value, energy[-1].value)
 
-        self.line, = modelax.loglog(energy,
+        self.line, = modelax.loglog(energy.to(e_unit),
                 (model*self.sedf).to(self.f_unit), lw=2,
                 c='k', zorder=10)
 
