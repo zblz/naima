@@ -63,12 +63,6 @@ matrix:
         - python: 3.4
           env: SETUP_CMD='test'
 
-        # Try without optional dependencies
-        - python: 2.7
-          env: SETUP_CMD='test' OPTIONAL_DEPS=false
-        - python: 3.4
-          env: SETUP_CMD='test' OPTIONAL_DEPS=false
-
         # Try older numpy versions
         - python: 2.7
           env: NUMPY_VERSION=1.8 SETUP_CMD='test'
@@ -95,8 +89,8 @@ install:
     - source activate test
 
     # CORE DEPENDENCIES
-    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2 pyyaml; fi
-    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytest-xdist; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2 pyyaml scipy matplotlib h5py; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytest-xdist emcee triangle_plot; fi
 
     # ASTROPY
     - if [[ $SETUP_CMD != egg_info ]] && [[ $ASTROPY_VERSION == development ]]; then $PIP_INSTALL git+http://github.com/astropy/astropy.git#egg=astropy; fi
@@ -107,10 +101,10 @@ install:
     # conda for packages available through conda, or pip for any other
     # packages. You should leave the `numpy=$NUMPY_VERSION` in the `conda` 
     # install since this ensures Numpy does not get automatically upgraded.
-    - if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy matplotlib ; fi
-    - if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL emcee triangle_plot; fi
+    #- if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy matplotlib ; fi
+    #- if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL emcee triangle_plot; fi
     # Add sherpa conda repository for Python 2.7, numpy 1.8
-    - if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]] && [[ $TRAVIS_PYTHON_VERSION == 2.7 ]] && [[ $NUMPY_VERSION == 1.8 ]]; then conda config --add channels https://conda.binstar.org/cxc ; $CONDA_INSTALL sherpa; fi
+    - if [[ $SETUP_CMD != egg_info ]] && [[ $TRAVIS_PYTHON_VERSION == 2.7 ]] && [[ $NUMPY_VERSION == 1.8 ]]; then conda config --add channels sherpa ; $CONDA_INSTALL sherpa; fi
 
     # DOCUMENTATION DEPENDENCIES
     # build_sphinx needs sphinx and matplotlib (for plot_directive). Note that
