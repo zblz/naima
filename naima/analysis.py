@@ -340,6 +340,43 @@ def save_chain(outname, sampler, compression=True):
     lnprobability = group.create_dataset('lnprobability',
             data=sampler.lnprobability, compression=compression)
 
+    # blobs
+    blob = sampler.blobs[-1][0]
+    for idx,item in enumerate(blob):
+        if isinstance(item, u.Quantity):
+            # scalar or array quantity
+            units = [item.unit.to_string(),]
+        elif isinstance(item, float):
+            units = ['',]
+        elif isinstance(item, tuple) or isinstance(item, list):
+            arearrs = np.all([isinstance(x,np.ndarray) for x in item])
+            if arearrs:
+                units = []
+                for x in item:
+                    if isinstance(x,u.Quantity):
+                        units.append(x.unit.to_string())
+                    else:
+                        units.append('')
+        else:
+            log.warning('blob number {0} has unknown format and cannot be saved in HDF5 file')
+            continue
+
+        # traverse blobs list. This will probably be slow
+        blob = []
+        for step in sampler.blobs:
+            for walkerblob in step:
+                blob.append(walkerblob[idx])
+        blob = u.Quantity(blob).value
+
+        blobdataset = group.create_dataset('blob{0}'.format(idx), data=blob,
+                compression=compression)
+        if len(units) > 1:
+            for j,unit in enumerate(units):
+                blobdataset.attrs['unit{0}'.format(j)] = unit
+        else:
+            blobdataset.attrs['unit'] = units[0]
+
+
     if hasattr(sampler, 'data'):
         data = group.create_dataset('data',
                 data=Table(sampler.data).as_array(),compression=compression)
@@ -424,8 +461,10 @@ def read_chain(chainf, modelfn=None):
     result.run_info = {}
 
     f = h5py.File(chainf, 'r')
+    # chain and lnprobability
     result.chain = np.array(f['sampler/chain'])
     result.lnprobability = np.array(f['sampler/lnprobability'])
+
     result.run_info = dict(f['sampler'].attrs)
     result.acceptance_fraction = f['sampler'].attrs['acceptance_fraction']
     result.labels = []
