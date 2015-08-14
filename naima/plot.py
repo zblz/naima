@@ -536,7 +536,7 @@ def find_ML(sampler, modelidx):
     """
     index = np.unravel_index(np.argmax(sampler.lnprobability), sampler.lnprobability.shape)
     MLp = sampler.chain[index]
-    if modelidx is not None:
+    if modelidx is not None and hasattr(sampler, 'blobs'):
         blob = sampler.blobs[index[1]][index[0]][modelidx]
         if isinstance(blob, u.Quantity):
             modelx = sampler.data['energy'].copy()
@@ -546,6 +546,9 @@ def find_ML(sampler, modelidx):
             model_ML = blob[1].copy()
         else:
             raise TypeError('Model {0} has wrong blob format'.format(modelidx))
+    elif modelidx is not None and hasattr(sampler, 'modelfn'):
+        modelx, model_ML = _process_blob([sampler.modelfn(MLp, sampler.data),], modelidx,
+                energy=sampler.data['energy'])
     else:
         modelx, model_ML = None, None
 

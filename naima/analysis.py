@@ -16,7 +16,13 @@ try:
 except ImportError:
     HAS_PYYAML = False
 
-__all__ = ["save_diagnostic_plots", "save_results_table"]
+HAS_H5PY = True
+try:
+    import h5py
+except ImportError:
+    HAS_H5PY = False
+
+__all__ = ["save_diagnostic_plots", "save_results_table", "save_chain"]
 
 def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
         blob_labels=None, last_step=False):
@@ -307,3 +313,62 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
     t.write('{0}_results.{1}'.format(outname,file_extension),format=format)
 
     return t
+
+
+def save_chain(outname, sampler, compression=True):
+    """
+    Function to save the sampler chain to a hdf5 file
+    """
+
+    if not HAS_H5PY:
+        log.warning('h5py is required to save the chain as a hdf5, aborting save')
+        raise ImportError
+
+    f = h5py.File(outname + '_chain.h5', 'w')
+    group = f.create_group('sampler')
+    chain = group.create_dataset('chain', data=sampler.chain,
+            compression=compression)
+    lnprobability = group.create_dataset('lnprobability',
+            data=sampler.lnprobability, compression=compression)
+
+    # add all run info to group attributes
+    if hasattr(sampler, 'run_info'):
+        for key in sampler.run_info.keys():
+            val = sampler.run_info[key]
+            try:
+                group.attrs[key] = val
+            except TypeError:
+                group.attrs[key] = str(val)
+
+    # add other sampler info to the attrs
+    group.attrs['acceptance_fraction'] = sampler.acceptance_fraction
+
+    f.close()
+
+class _result(object):
+    @property
+    def flatchain(self):
+        s = self.chain.shape
+        return self.chain.reshape(s[0] * s[1], s[2])
+
+
+def read_chain(chainf, modelfn=None, labels=None, data=None):
+
+    if not HAS_H5PY:
+        log.warning('h5py is required to save the chain as a hdf5, aborting save')
+        raise ImportError
+
+    # initialize empty sampler class to return
+    result = _result()
+    result.modelfn = modelfn
+    result.labels = labels
+    result.data = data
+    result.run_info = {}
+
+    f = h5py.File(chainf, 'r')
+    result.chain = np.array(f['sampler/chain'])
+    result.lnprobability = np.array(f['sampler/lnprobability'])
+    result.run_info = dict(f['sampler'].attrs)
+    result.acceptance_fraction = f['sampler'].attrs['acceptance_fraction']
+
+    return result
