@@ -9,6 +9,7 @@ from astropy import log
 from astropy.extern import six
 from astropy.utils.exceptions import AstropyUserWarning
 import warnings
+import h5py
 
 from .plot import find_ML
 
@@ -17,13 +18,6 @@ try:
     HAS_PYYAML = True
 except ImportError:
     HAS_PYYAML = False
-
-try:
-    import h5py
-    HAS_H5PY = True
-except ImportError:
-    HAS_H5PY = False
-
 
 __all__ = ["save_diagnostic_plots", "save_results_table", "save_chain",
            "read_chain"]
@@ -339,9 +333,6 @@ def save_chain(outname, sampler, compression=True):
         True.
     """
 
-    if not HAS_H5PY:
-        raise ImportError('h5py is required to save and read parameter chains')
-
     f = h5py.File(outname + '_chain.h5', 'w')
     group = f.create_group('sampler')
     chain = group.create_dataset('chain', data=sampler.chain,
@@ -426,9 +417,6 @@ def read_chain(chainf, modelfn=None):
         `~naima.plot_fit`, `~naima.plot_chain`, and `~naima.plot_corner` for
         analysis as you would do with a `emcee.EnsembleSampler` instance.
     """
-
-    if not HAS_H5PY:
-        raise ImportError('h5py is required to save and read parameter chains')
 
     # initialize empty sampler class to return
     result = _result()
