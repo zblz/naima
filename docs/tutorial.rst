@@ -231,33 +231,33 @@ results in 740 samples for a :math:`3\sigma` confidence level:
 Saving and retrieving the results of the sampling run
 -----------------------------------------------------
 
-The parameter chain resulting from the sampling procedure can be saved with
-`naima.save_chain`. This function will save the results of the run to an HDF5
-file that can be archived and analysed after the fact. The sampler properties
-saved to the HDF5 file are:
+The parameter chain and metadata blobs resulting from the sampling procedure can
+be saved with `naima.save_run`. This function will save the results of the run
+to an HDF5 file that can be archived and analysed after the fact. The sampler
+properties saved to the HDF5 file are:
 
 - parameter vector chain: ``sampler.chain``
 - log-probability for all the parameter vectors in the chain:
   ``sampler.lnprobability``
 - parameter labels: ``sampler.labels``
 - data table: ``sampler.data``
+- metadata blobs: ``sampler.blobs``
 
-Note that, at the moment, the information stored in the metadata blobs
-(including the spectral model computed for each of the parameter vectors) is not
-stored in the file. 
+Note that only metadata blobs that can be converted into a numpy array will be
+stored. Blobs consisting of other classes, or with different lengths within the
+same blob, will raise a warning and be discarded on the `naima.save_run` call.
 
-The saved sampler can be retrieved with the `naima.read_chain` function, which
+The saved sampler can be retrieved with the `naima.read_run` function, which
 will return an `~emcee.EnsembleSampler`-like object. However, the model function
 cannot be saved in the HDF5 file, so a model function has to be provided at read
 time. This function will be used to compute the model output from the parameter
 vectors in the chain. Without a model function, the sampler read from the HDF5
-file can be passed onto `~naima.plot_chain`, `~naima.plot_corner`, and
-`~naima.plot_data` for analysis.  If a model function is provided to
-`naima.read_chain`, the resulting sampler can also be used with
-`~naima.plot_fit`, and the model realizations will be computed from the
-parameter vectors in the chain. Because of this, `~naima.plot_fit` will be
-slower than when reading the model realizations from the metadata blobs.
-
+file can be passed onto `~naima.plot_chain`, `~naima.plot_corner`,
+`~naima.plot_fit`, and `~naima.plot_data` for analysis.  If a model function is
+provided to `naima.read_run`, the resulting sampler can also be used with
+`~naima.plot_fit` when setting the ``e_range`` parameter, which requires the
+model function to be accesible in the ``modelfn`` attribute of the sampler
+object provided.
 
 .. _blobs:
 

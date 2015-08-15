@@ -10,6 +10,7 @@ from astropy.extern import six
 from astropy.utils.exceptions import AstropyUserWarning
 import warnings
 import h5py
+import os
 
 from .plot import find_ML
 
@@ -19,8 +20,8 @@ try:
 except ImportError:
     HAS_PYYAML = False
 
-__all__ = ["save_diagnostic_plots", "save_results_table", "save_chain",
-           "read_chain"]
+__all__ = ["save_diagnostic_plots", "save_results_table", "save_run",
+           "read_run"]
 
 def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
         blob_labels=None, last_step=False):
@@ -313,17 +314,19 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
     return t
 
 
-def save_chain(outname, sampler, compression=True):
+def save_run(filename, sampler, compression=True, clobber=False):
     """
-    Function to save the sampler chain and run information to a hdf5 file.
+    Save the sampler chain, data table, parameter labels, metadata blobs, and
+    run information to a hdf5 file.
 
     The data table and parameter labels stored in the sampler will also be saved
     to the hdf5 file.
 
     Parameters
     ----------
-    outname : str
-        Filename root for hdf5 file. '_chain.h5' will be appended to the root.
+    filename : str
+        Filename for hdf5 file. If the filename extension is not 'h5' or 'hdf5',
+        the suffix '_chain.h5' will be appended to the filename.
 
     sampler : `emcee.EnsembleSampler` instance
         Sampler instance for which chain and run information is saved.
@@ -331,9 +334,19 @@ def save_chain(outname, sampler, compression=True):
     compression : bool, optional
         Whether gzip compression is applied to the dataset on write. Default is
         True.
+
+    clobber : bool, optional
+        Whether to overwrite the output filename if it exists.
     """
 
-    f = h5py.File(outname + '_chain.h5', 'w')
+    if filename.split('.')[-1] not in ['h5','hdf5']:
+        filename += '_chain.h5'
+
+    if os.path.exists(filename) and not clobber:
+        log.warning('Not writing file because file exists and clobber is False')
+        return
+
+    f = h5py.File(filename, 'w')
     group = f.create_group('sampler')
     chain = group.create_dataset('chain', data=sampler.chain,
             compression=compression)
@@ -361,7 +374,8 @@ def save_chain(outname, sampler, compression=True):
             log.warning('blob number {0} has unknown format and cannot be saved in HDF5 file')
             continue
 
-        # traverse blobs list. This will probably be slow
+        # traverse blobs list. This will probably be slow and there should be a
+        # better way
         blob = []
         for step in sampler.blobs:
             for walkerblob in step:
@@ -430,19 +444,21 @@ class _result(object):
         return self.lnprobability.flatten()
 
 
-def read_chain(chainf, modelfn=None):
+def read_run(filename, modelfn=None):
     """
-    Read chain from a hdf5 saved with `save_chain`.
+    Read chain from a hdf5 saved with `save_run`.
 
-    This function will also read the labels and data table stored in the
-    original sampler. If you want to use the result object with `plot_fit`, you
-    must provide the model function with the `modelfn` argument given that
-    functions cannot be serialized in hdf5 files.
+    This function will also read the labels, data table, and metadata blobs
+    stored in the original sampler. If you want to use the result object with
+    `plot_fit` and setting the ``e_range`` parameter, you must provide the model
+    function with the `modelfn` argument given that functions cannot be
+    serialized in hdf5 files.
 
     Parameters
     ----------
-    chainf : str
-        Filename of the hdf5 containing the chain array at 'sampler/chain'
+    filename : str
+        Filename of the hdf5 containing the chain, lnprobability, and blob arrays in the group 'sampler'
+
     modelfn : function, optional
         Model function to be attached to the returned sampler
 
@@ -460,7 +476,7 @@ def read_chain(chainf, modelfn=None):
     result.modelfn = modelfn
     result.run_info = {}
 
-    f = h5py.File(chainf, 'r')
+    f = h5py.File(filename, 'r')
     # chain and lnprobability
     result.chain = np.array(f['sampler/chain'])
     result.lnprobability = np.array(f['sampler/lnprobability'])
@@ -491,7 +507,7 @@ def read_chain(chainf, modelfn=None):
     for step in range(shape[1]):
         steplist = []
         for walker in range(shape[0]):
-            n = step * walker
+            n = step * shape[0] + walker
             walkerblob = []
             for j in range(len(blobs)):
                 if blobrank[j] <= 1:

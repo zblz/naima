@@ -6,6 +6,7 @@ from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 from astropy.extern import six
 from astropy.io import ascii
+import os
 
 try:
     import matplotlib
@@ -20,7 +21,7 @@ try:
 except:
     HAS_EMCEE = False
 
-from ..analysis import save_chain, read_chain
+from ..analysis import save_run, read_run
 from ..plot import plot_data, plot_fit, plot_chain
 from ..model_fitter import InteractiveModelFitter
 from ..utils import validate_data_table
@@ -68,8 +69,9 @@ def sampler():
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_roundtrip(sampler):
-    save_chain('test', sampler)
-    nresult = read_chain('test_chain.h5')
+    save_run('test_chain.h5', sampler, clobber=True)
+    assert os.path.exists('test_chain.h5')
+    nresult = read_run('test_chain.h5')
 
     assert np.allclose(sampler.chain, nresult.chain)
     assert np.allclose(sampler.flatchain, nresult.flatchain)
@@ -86,7 +88,8 @@ def test_roundtrip(sampler):
                 assert b0[m].unit == b1[m].unit
                 assert np.allclose(b0[m],b1[m])
         else:
-            assert b0.unit == b1.unit
+            if isinstance(b0, u.Quantity):
+                assert b0.unit == b1.unit
             assert np.allclose(b0,b1)
 
     for key in sampler.run_info.keys():
@@ -105,7 +108,7 @@ def test_roundtrip(sampler):
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_fit(sampler):
-    nresult = read_chain('test_chain.h5', modelfn=sampler.modelfn)
+    nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
 
     f = plot_data(nresult)
     f = plot_fit(nresult, 0)
@@ -114,14 +117,14 @@ def test_plot_fit(sampler):
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_chain(sampler):
-    nresult = read_chain('test_chain.h5', modelfn=sampler.modelfn)
+    nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
 
     for i in range(nresult.chain.shape[2]):
         f = plot_chain(nresult, i)
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_imf(sampler):
-    nresult = read_chain('test_chain.h5', modelfn=sampler.modelfn)
+    nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
 
     imf = InteractiveModelFitter(nresult.modelfn, nresult.chain[-1][-1],
             nresult.data)

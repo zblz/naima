@@ -9,8 +9,8 @@ Spectral model fitting
 - Interactive model fitting
     - `naima.InteractiveModelFitter`
 - Saving and retrieving the parameter chain of a run
-    - `naima.save_chain`
-    - `naima.read_chain`
+    - `naima.save_run`
+    - `naima.read_run`
 - Plotting and analysis
     - `naima.plot_chain`
     - `naima.plot_corner`
@@ -28,8 +28,8 @@ API
 .. autofunction:: get_sampler
 .. autofunction:: run_sampler
 .. autoclass:: InteractiveModelFitter
-.. autofunction:: save_chain
-.. autofunction:: read_chain
+.. autofunction:: save_run
+.. autofunction:: read_run
 .. autofunction:: plot_chain
 .. autofunction:: plot_corner
 .. autofunction:: plot_fit
