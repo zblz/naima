@@ -5,6 +5,7 @@ import astropy.units as u
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 from astropy.extern import six
+from astropy.io import ascii
 
 try:
     import matplotlib
@@ -23,8 +24,47 @@ from ..analysis import save_chain, read_chain
 from ..plot import plot_data, plot_fit, plot_chain
 from ..model_fitter import InteractiveModelFitter
 from ..utils import validate_data_table
+from ..core import run_sampler, uniform_prior
+from ..models import ExponentialCutoffPowerLaw
 
-from .test_plotting import sampler
+fname = get_pkg_data_filename('data/CrabNebula_HESS_ipac.dat')
+data_table = ascii.read(fname)
+
+def cutoffexp(pars, data):
+    x = data['energy'].copy()
+    ECPL = ExponentialCutoffPowerLaw(np.exp(pars[0])*u.Unit('1/(cm2 s TeV)'),
+            1*u.TeV, pars[1], 10**pars[2]*u.TeV)
+    flux = ECPL(x)
+
+    # save a particle energy distribution
+    ene = np.logspace(np.log10(x[0].value) - 1,
+                      np.log10(x[-1].value) + 1, 100) * x.unit
+    ECPL.amplitude = np.exp(pars[0])*u.Unit('1/(TeV)')
+    model_part = ECPL(ene)
+
+    # add a scalar value to test plot_distribution
+    model4 = np.trapz(flux*x,x).to('erg/(cm2 s)')
+    # and without units
+    model5 = model4.value
+
+    return flux, (ene, model_part), model4, model5
+
+# Prior definition
+def lnprior(pars):
+    logprob = uniform_prior(pars[1], -1, 5)
+    return logprob
+
+# Set initial parameters
+p0=np.array((np.log(1.8e-12),2.4,np.log10(15.0),))
+labels=['log(norm)','index','log10(cutoff)']
+
+# Run sampler
+@pytest.fixture
+def sampler():
+    sampler, pos = run_sampler(
+        data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
+        prior=lnprior, nwalkers=10, nburn=2, nrun=4, threads=1)
+    return sampler
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_roundtrip(sampler):
@@ -35,6 +75,19 @@ def test_roundtrip(sampler):
     assert np.allclose(sampler.flatchain, nresult.flatchain)
     assert np.allclose(sampler.lnprobability, nresult.lnprobability)
     assert np.allclose(sampler.flatlnprobability, nresult.flatlnprobability)
+
+    nwalkers, nsteps = sampler.chain.shape[:2]
+    j, k = int(nsteps/2), int(nwalkers/2)
+    for l in range(len(sampler.blobs[j][k])):
+        b0 = sampler.blobs[j][k][l]
+        b1 = nresult.blobs[j][k][l]
+        if isinstance(b0, tuple) or isinstance(b0, list):
+            for m in range(len(b0)):
+                assert b0[m].unit == b1[m].unit
+                assert np.allclose(b0[m],b1[m])
+        else:
+            assert b0.unit == b1.unit
+            assert np.allclose(b0,b1)
 
     for key in sampler.run_info.keys():
         assert np.all(sampler.run_info[key] == nresult.run_info[key])

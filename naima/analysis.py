@@ -465,12 +465,54 @@ def read_chain(chainf, modelfn=None):
     result.chain = np.array(f['sampler/chain'])
     result.lnprobability = np.array(f['sampler/lnprobability'])
 
+    # blobs
+    result.blobs = []
+    shape = result.chain.shape[:2]
+    blobs = []
+    blobrank = []
+    for i in range(100):
+        # first read each of the blobs and convert to Quantities
+        try:
+            ds = f['sampler/blob{0}'.format(i)]
+            rank = np.rank(ds[0])
+            blobrank.append(rank)
+            if rank <= 1:
+                blobs.append(u.Quantity(ds.value, unit=ds.attrs['unit']))
+            else:
+                blob = []
+                for j in range(np.rank(ds[0])):
+                    blob.append(u.Quantity(ds.value[:,j,:],
+                        unit=ds.attrs['unit{0}'.format(j)]))
+                blobs.append(blob)
+        except KeyError:
+            break
+
+    # Now organize in an awful list of lists of arrays
+    for step in range(shape[1]):
+        steplist = []
+        for walker in range(shape[0]):
+            n = step * walker
+            walkerblob = []
+            for j in range(len(blobs)):
+                if blobrank[j] <= 1:
+                    walkerblob.append(blobs[j][n])
+                else:
+                    blob = []
+                    for k in range(blobrank[j]):
+                        blob.append(blobs[j][k][n])
+                    walkerblob.append(blob)
+            steplist.append(walkerblob)
+        result.blobs.append(steplist)
+
+    # run info
     result.run_info = dict(f['sampler'].attrs)
     result.acceptance_fraction = f['sampler'].attrs['acceptance_fraction']
+    # labels
     result.labels = []
     for i in range(result.chain.shape[2]):
         result.labels.append(f['sampler'].attrs['label{0}'.format(i)])
 
+    # data
     data = Table(np.array(f['sampler/data']))
     data.meta.update(f['sampler/data'].attrs)
     for col in data.colnames:
