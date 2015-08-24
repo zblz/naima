@@ -122,7 +122,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
         try:
             log.info('Plotting {0}...'.format(label))
             f = plot_blob(sampler, blobidx=modelidx, label=label,
-                          sed=plot_sed, n_samples=100, last_step=True)
+                          sed=plot_sed, n_samples=100, last_step=last_step)
             if pdf:
                 f.savefig(outpdf, format='pdf')
             else:
@@ -139,7 +139,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
 
 
 def save_results_table(outname, sampler, format='ascii.ecsv',
-        convert_log=True, last_step=True, include_blobs=True):
+        convert_log=True, last_step=False, include_blobs=True):
     """
     Save an ASCII table with the results stored in the `~emcee.EnsembleSampler`.
 
