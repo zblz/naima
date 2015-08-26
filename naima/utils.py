@@ -213,11 +213,6 @@ def sed_conversion(energy, model_unit, sed):
         elif 'energy' in model_pt:
             # particle energy distributions
             f_unit = u.erg
-
-    elif sed is None:
-        # Use original units
-        f_unit = model_unit
-        sedf = ones
     else:
         # Differential spectrum
         f_unit = u.Unit('1/(s TeV)')

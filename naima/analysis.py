@@ -18,7 +18,7 @@ except ImportError:
 
 __all__ = ["save_diagnostic_plots", "save_results_table"]
 
-def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
+def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
         blob_labels=None, last_step=False):
     """
     Generate diagnostic plots.
@@ -103,9 +103,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=None,
         nmodels = len(sampler.blobs[-1][0])
         modelidxs = list(six.moves.range(nmodels))
 
-    if sed is None:
-        sed = [None for idx in modelidxs]
-    elif isinstance(sed, bool):
+    if isinstance(sed, bool):
         sed = [sed for idx in modelidxs]
 
     if blob_labels is None:
@@ -229,6 +227,7 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
     if hasattr(sampler,'run_info'):
         metadata.update(sampler.run_info)
 
+
     for p,label in enumerate(labels):
         dist = dists[:,p]
         xquant = np.percentile(dist, quant)
@@ -292,6 +291,16 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
         for di in metadata.items():
             t.meta['keywords'][di[0]]={'value':di[1]}
     else:
+        if format == 'ascii.ecsv':
+            # there can be no numpy arrays in the metadata (YAML doesn't like them)
+            for di in list(metadata.items()):
+                if type(di[1]).__module__ == np.__name__:
+                    try:
+                        # convert arrays
+                        metadata[di[0]] = [np.asscalar(a) for a in di[1]]
+                    except TypeError:
+                        # convert scalars
+                        metadata[di[0]] = np.asscalar(di[1])
         # Save it directly in meta for readability in ECSV
         t.meta.update(metadata)
 
