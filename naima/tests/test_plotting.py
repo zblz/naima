@@ -118,6 +118,8 @@ def sampler():
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_results_table(sampler):
+    # set one keyword to a numpy array to try an break ecsv
+    sampler.run_info['test'] = np.random.randn(3)
     for last_step in [True, False]:
         for convert_log in [True,False]:
             for include_blobs in [True,False]:
