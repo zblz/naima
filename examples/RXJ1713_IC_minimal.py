@@ -46,7 +46,7 @@ if __name__=='__main__':
         sampler = naima.read_run('RXJ1713_IC_run.hdf5')
 
 ## Save diagnostic plots and results table
-    #naima.save_diagnostic_plots('RXJ1713_IC',sampler,sed=False)
+    naima.save_diagnostic_plots('RXJ1713_IC',sampler,sed=False)
     naima.save_results_table('RXJ1713_IC',sampler)
 
 
