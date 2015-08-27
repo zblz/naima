@@ -546,15 +546,88 @@ class InverseCompton(BaseElectron):
         """
         outspecene = _validate_ene(photon_energy)
 
-        self.specic = np.zeros(len(outspecene)) * u.Unit('1/(s eV)')
+        self.specic = []
 
         for seed in self.seed_photon_fields:
             # Call actual computation, detached to allow changes in subclasses
-            self.specic += self._calc_specic(seed,outspecene).to('1/(s eV)')
+            self.specic.append(self._calc_specic(seed,outspecene).to('1/(s eV)'))
 
-        self.specic = self.specic.to('1/(s eV)')
+        return np.sum(u.Quantity(self.specic), axis=0)
 
-        return self.specic
+    def flux_per_seed(self, photon_energy, seed=0, distance=1*u.kpc):
+        """Differential flux at a given distance from the source from a single
+        seed photon field
+
+        Parameters
+        ----------
+        photon_energy : :class:`~astropy.units.Quantity` float or array
+            Photon energy array.
+
+        seed : int or str
+            Number or name of seed photon field for which the IC onctribution is
+            required. Defaults to the first seed photon field defined.
+
+        distance : :class:`~astropy.units.Quantity` float, optional
+            Distance to the source. If set to 0, the intrinsic luminosity will
+            be returned. Default is 1 kpc.
+        """
+
+        photon_energy = _validate_ene(photon_energy)
+        _ = self.flux(photon_energy)
+
+        if not isinstance(seed, int):
+            if seed not in self.seed_photon_fields:
+                raise ArgumentError('Provided seed photon field name is not in'
+                        ' the definition of the InverseCompton instance')
+            else:
+                seed = self.seed_photon_fields.index(seed)
+        elif seed > len(self.seed_photon_fields):
+                raise ArgumentError('Provided seed photon field number is larger'
+                        ' than the number of seed photon fields defined in the'
+                        ' InverseCompton instance')
+
+        spec = self.specic[seed]
+
+        if distance != 0:
+            distance = validate_scalar('distance', distance, physical_type='length')
+            spec /= 4 * np.pi * distance.to('cm') ** 2
+            out_unit = '1/(s cm2 eV)'
+        else:
+            out_unit = '1/(s eV)'
+
+        return spec.to(out_unit)
+
+    def sed_per_seed(self, photon_energy, seed=0, distance=1*u.kpc):
+        """Spectral energy distribution at a given distance from the source from
+        a single seed photon field
+
+        Parameters
+        ----------
+        photon_energy : :class:`~astropy.units.Quantity` float or array
+            Photon energy array.
+
+        seed : int or str
+            Number or name of seed photon field for which the IC onctribution is
+            required. Defaults to the first seed photon field defined.
+
+        distance : :class:`~astropy.units.Quantity` float, optional
+            Distance to the source. If set to 0, the intrinsic luminosity will
+            be returned. Default is 1 kpc.
+        """
+        if distance !=0:
+            out_unit = 'erg/(cm2 s)'
+        else:
+            out_unit = 'erg/s'
+
+        photon_energy = _validate_ene(photon_energy)
+
+        sed = (self.flux_per_seed(photon_energy, seed=seed, distance=distance)
+                * photon_energy ** 2.).to(out_unit)
+
+        return sed
+
+
+
 
 
 class Bremsstrahlung(BaseElectron):
