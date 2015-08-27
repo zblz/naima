@@ -10,7 +10,6 @@
 |energy|energy_edge_lo|energy_edge_hi|           flux|     flux_error|  ul|
 |double|        double|        double|         double|         double|long|
 |   TeV|           TeV|           TeV|1 / (cm2 s TeV)|1 / (cm2 s TeV)|    |
-|  null|          null|          null|           null|           null|null|
    0.33            0.3           0.37        2.29e-10         3.2e-11    0 
     0.4           0.37           0.44        1.25e-10         1.6e-11    0 
    0.49           0.44           0.54        9.46e-11           9e-12    0 

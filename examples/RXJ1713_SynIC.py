@@ -8,8 +8,9 @@ import naima
 
 ## Read data
 
-soft_xray = ascii.read('RXJ1713_Suzaku-XIS.dat')[::10]
-#hard_xray = ascii.read('RXJ1713_Suzaku-HXD.dat')
+# We only consider every fifth X-ray spectral point to speed-up calculations for this example
+# DO NOT do this for a final analysis!
+soft_xray = ascii.read('RXJ1713_Suzaku-XIS.dat')[::5]
 vhe = ascii.read('RXJ1713_HESS_spectrum_2007.dat')
 
 ## Model definition
@@ -61,16 +62,17 @@ if __name__=='__main__':
 ## Set initial parameters and labels
 
     # Estimate initial magnetic field and get value in uG
-    B0 = naima.estimate_B(soft_xray, vhe).to('uG').value
+    B0 = 2 * naima.estimate_B(soft_xray, vhe).to('uG').value
 
-    p0=np.array((33,3.3,np.log10(48.0),B0))
+    p0=np.array((33,2.5,np.log10(48.0),B0))
     labels=['log10(norm)','index','log10(cutoff)','B']
 
 ## Run sampler
 
     sampler,pos = naima.run_sampler(data_table=[soft_xray, vhe],
             p0=p0, labels=labels, model=ElectronSynIC, prior=lnprior,
-            nwalkers=32, nburn=100, nrun=20, threads=4, prefit=True, interactive=True)
+            nwalkers=32, nburn=100, nrun=20, threads=4, prefit=True,
+            interactive=True)
 
 ## Save run results to HDF5 file (can be read later with naima.read_run)
     naima.save_run('RXJ1713_SynIC', sampler)

@@ -22,28 +22,22 @@ def ElectronIC(pars,data):
     return IC.flux(data, distance=1.0*u.kpc)
 
 def lnprior(pars):
-    """
-    force a positive amplitude
-    """
+    # Limit amplitude to positive domain
     logprob = naima.uniform_prior(pars[0],0.,np.inf)
     return logprob
 
 if __name__=='__main__':
 
-    import sys
-    if 'plot' not in sys.argv:
-    ## Set initial parameters and labels
-        p0=np.array((1e30,3.0,np.log10(30),))
-        labels=['norm','index','log10(cutoff)']
+## Set initial parameters and labels
+    p0=np.array((1e30,3.0,np.log10(30),))
+    labels=['norm','index','log10(cutoff)']
 
-    ## Run sampler
-        sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
-                model=ElectronIC, prior=lnprior, nwalkers=32, nburn=100, nrun=20,
-                threads=4, prefit=True, interactive=True)
-    ## Save run results
-        naima.save_run('RXJ1713_IC_run.hdf5', sampler)
-    else:
-        sampler = naima.read_run('RXJ1713_IC_run.hdf5')
+## Run sampler
+    sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
+            model=ElectronIC, prior=lnprior, nwalkers=32, nburn=100, nrun=20,
+            threads=4, prefit=True, interactive=True)
+## Save run results
+    naima.save_run('RXJ1713_IC_run.hdf5', sampler)
 
 ## Save diagnostic plots and results table
     naima.save_diagnostic_plots('RXJ1713_IC',sampler,sed=False)
