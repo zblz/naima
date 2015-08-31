@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-naima requires Python 2.6, 2.7, 3.2, 3.3, or 3.4, and the following
+naima requires Python 2.7, 3.2, 3.3, or 3.4, and the following
 packages to be installed:
 
 * `Numpy <http://www.numpy.org>`_
@@ -16,6 +16,8 @@ packages to be installed:
 * `Matplotlib <http://www.matplotlib.org>`_
 
 * `emcee <http://dan.iel.fm/emcee>`_
+
+* `h5py <http://www.h5py.org>`_
 
 The package `triangle_plot <https://github.com/dfm/triangle.py>`_ is also
 very useful to inspect the result of the MCMC run through a corner plot.
@@ -65,7 +67,34 @@ may need to use ``sudo`` if you want to install it system-wide, or the flag
 Note that installing with pip means that all non-installed dependencies will be
 downloaded as source and built in your machine. For pure Python packages such as
 ``naima`` or ``emcee`` that is not a problem, but if Numpy or matplotlib are
-installed this way the build can take quite a long time.
+installed this way the build can take quite a long time. You can bypass this
+problem by installing these libraries through your systemwide package manager:
+see below for how to do this for different systems.
+
+apt-get (Debian based)
+~~~~~~~~~~~~~~~~~~~~~~
+
+For Debian-based systems (including Ubuntu), this can be done for Python 2.7
+environments with::
+
+    $ sudo apt-get install python-matplotlib python-scipy python-astropy python-h5py
+    $ pip install naima
+
+for Python 3 environments, the name of the packages should be::
+
+    $ sudo apt-get install python3-matplotlib python-scipy python-astropy python-h5py
+    $ pip3 install naima
+
+Macports
+~~~~~~~~
+
+Macports can be used on Mac systems to install most dependencies::
+
+    $ export PY=py34 # change to py27 for Python 2.7
+    $ sudo port install $PY-pip $PY-scipy $PY-matplotlib $PY-emcee $PY-h5py \
+        $PY-astropy
+    $ pip install --user naima
+
 
 Installing the development version
 ++++++++++++++++++++++++++++++++++

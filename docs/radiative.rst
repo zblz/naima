@@ -56,30 +56,24 @@ These spectra can then be analysed or plotted:
     ECPL = naima.models.ExponentialCutoffPowerLaw(1e36*u.Unit('1/eV'),
             1*u.TeV, 2.1, 13*u.TeV)
 
-    IC_CMB = naima.models.InverseCompton(ECPL, seed_photon_fields=['CMB'])
-    IC_FIR = naima.models.InverseCompton(ECPL, seed_photon_fields=['FIR'])
-    IC_NIR = naima.models.InverseCompton(ECPL, seed_photon_fields=['NIR'])
-    IC_CMB.particle_distribution.index = 1.8
+    IC = naima.models.InverseCompton(ECPL, seed_photon_fields=['CMB', 'FIR', 'NIR'])
+    IC.particle_distribution.index = 1.8
     SYN = naima.models.Synchrotron(ECPL, B=100*u.uG)
 
     # Compute SEDs
     spectrum_energy = np.logspace(-1,14,1000)*u.eV
-    sed_IC_CMB = IC_CMB.sed(spectrum_energy, distance=1.5*u.kpc)
-    sed_IC_FIR = IC_FIR.sed(spectrum_energy, distance=1.5*u.kpc)
-    sed_IC_NIR = IC_NIR.sed(spectrum_energy, distance=1.5*u.kpc)
-    sed_IC_tot = sed_IC_CMB + sed_IC_FIR + sed_IC_NIR
+    sed_IC = IC.sed(spectrum_energy, distance=1.5*u.kpc)
     sed_SYN = SYN.sed(spectrum_energy, distance=1.5*u.kpc)
 
     # Plot
-    plt.figure(figsize=(8,4))
-    plt.rc('font', family='serif')
-    plt.loglog(spectrum_energy,sed_IC_CMB,lw=1,
-            ls='-',label='IC (CMB)',c='0.25')
-    plt.loglog(spectrum_energy,sed_IC_FIR,lw=1,
-            ls='--',label='IC (FIR)',c='0.25')
-    plt.loglog(spectrum_energy,sed_IC_NIR,lw=1,
-            ls=':',label='IC (NIR)',c='0.25')
-    plt.loglog(spectrum_energy,sed_IC_tot,lw=2,
+    plt.figure(figsize=(8,5))
+    plt.rc('font', family='sans')
+    plt.rc('mathtext', fontset='custom')
+    for seed, ls in zip(['CMB', 'FIR', 'NIR'], ['-','--',':']):
+        sed = IC.sed(spectrum_energy, seed=seed, distance=1.5*u.kpc)
+        plt.loglog(spectrum_energy,sed,lw=1,
+                ls=ls,label='IC ({0})'.format(seed),c='0.25')
+    plt.loglog(spectrum_energy,sed_IC,lw=2,
             label='IC (total)',c='r')
     plt.loglog(spectrum_energy,sed_SYN,lw=2,label='Sync',c='b')
     plt.xlabel('Photon energy [{0}]'.format(
@@ -139,6 +133,12 @@ list of items, each of which can be either:
            photon direction as a :class:`~astropy.units.Quantity` float
            instance. If this is provided, the anisotropic IC differential
            cross-section will be used.
+
+Once initialized, the `~naima.models.InverseCompton` instance will store these
+values in the `seed_photon_field` dictionary, which contains a dictionary for
+each photon field with the following keys: ``T``, ``u``, ``isotropic``, and
+``theta``, standing for temperature, energy density, whether it is isotropic or
+not, and interaction angle for anisotropic fields, respectively.
 
 .. _SY:
 

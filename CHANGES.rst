@@ -10,6 +10,9 @@
   ``interactive`` argument of ``get_sampler`` prior to a sampling run.
 - Sampling run results can be saved and retrieved for later analysis or archival
   with the new functions `naima.save_run` and `naima.read_run`.
+- The individual contributions to the total Inverse Compton spectrum of the
+  different seed photon fields can now be accessed through the ``flux_per_seed``
+  and ``sed_per_seed`` functions.
 
 Bug Fixes
 ^^^^^^^^^
