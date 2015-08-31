@@ -17,7 +17,6 @@ addons:
             - dvipng
 
 python:
-    - 2.6
     - 2.7
     - 3.3
     - 3.4
@@ -31,7 +30,6 @@ env:
         - ASTROPY_VERSION=stable
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
-        - OPTIONAL_DEPS=true
     matrix:
         - SETUP_CMD='egg_info'
 
@@ -54,8 +52,6 @@ matrix:
           env: ASTROPY_VERSION=development SETUP_CMD='test'
 
         # Try all python versions with the latest numpy
-        - python: 2.6
-          env: SETUP_CMD='test'
         - python: 2.7
           env: SETUP_CMD='test'
         - python: 3.3
@@ -96,13 +92,6 @@ install:
     - if [[ $SETUP_CMD != egg_info ]] && [[ $ASTROPY_VERSION == development ]]; then $PIP_INSTALL git+http://github.com/astropy/astropy.git#egg=astropy; fi
     - if [[ $SETUP_CMD != egg_info ]] && [[ $ASTROPY_VERSION == stable ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION astropy; fi
 
-    # OPTIONAL DEPENDENCIES
-    # Here you can add any dependencies your package may have. You can use
-    # conda for packages available through conda, or pip for any other
-    # packages. You should leave the `numpy=$NUMPY_VERSION` in the `conda` 
-    # install since this ensures Numpy does not get automatically upgraded.
-    #- if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy matplotlib ; fi
-    #- if $OPTIONAL_DEPS && [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL emcee triangle_plot; fi
     # Add sherpa conda repository for Python 2.7, numpy 1.8
     - if [[ $SETUP_CMD != egg_info ]] && [[ $TRAVIS_PYTHON_VERSION == 2.7 ]] && [[ $NUMPY_VERSION == 1.8 ]]; then conda config --add channels sherpa ; $CONDA_INSTALL sherpa; fi
 
