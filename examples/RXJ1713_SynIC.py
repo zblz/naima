@@ -11,7 +11,7 @@ import naima
 # We only consider every fifth X-ray spectral point to speed-up calculations for this example
 # DO NOT do this for a final analysis!
 soft_xray = ascii.read('RXJ1713_Suzaku-XIS.dat')[::5]
-vhe = ascii.read('RXJ1713_HESS_spectrum_2007.dat')
+vhe = ascii.read('RXJ1713_HESS_2007.dat')
 
 ## Model definition
 
@@ -72,7 +72,7 @@ if __name__=='__main__':
     sampler,pos = naima.run_sampler(data_table=[soft_xray, vhe],
             p0=p0, labels=labels, model=ElectronSynIC, prior=lnprior,
             nwalkers=32, nburn=100, nrun=20, threads=4, prefit=True,
-            interactive=True)
+            interactive=False)
 
 ## Save run results to HDF5 file (can be read later with naima.read_run)
     naima.save_run('RXJ1713_SynIC', sampler)

@@ -7,7 +7,7 @@ from naima.models import InverseCompton, ExponentialCutoffPowerLaw
 
 ## Read data
 
-data=ascii.read('RXJ1713_HESS_spectrum_2007.dat')
+data=ascii.read('RXJ1713_HESS_2007.dat')
 
 def ElectronIC(pars,data):
     """
@@ -35,7 +35,7 @@ if __name__=='__main__':
 ## Run sampler
     sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
             model=ElectronIC, prior=lnprior, nwalkers=32, nburn=100, nrun=20,
-            threads=4, prefit=True, interactive=True)
+            threads=4, prefit=True, interactive=False)
 ## Save run results
     naima.save_run('RXJ1713_IC_run.hdf5', sampler)
 

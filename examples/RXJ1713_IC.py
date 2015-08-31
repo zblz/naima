@@ -6,7 +6,7 @@ from astropy.io import ascii
 
 ## Read data
 
-data=ascii.read('RXJ1713_HESS_spectrum_2007.dat')
+data=ascii.read('RXJ1713_HESS_2007.dat')
 
 ## Model definition
 
@@ -71,9 +71,9 @@ if __name__=='__main__':
     naima.save_run('RXJ1713_IC_run.hdf5', sampler)
 
 ## Diagnostic plots with labels for the metadata blobs
-    naima.save_diagnostic_plots('CrabNebula_IC', sampler, sed=True, last_step=False,
+    naima.save_diagnostic_plots('RXJ1713_IC', sampler, sed=True, last_step=False,
             blob_labels=['Spectrum', 'Electron energy distribution',
                          '$W_e (E_e>1\, \mathrm{TeV})$'])
-    naima.save_results_table('CrabNebula_IC', sampler)
+    naima.save_results_table('RXJ1713_IC', sampler)
 
 
