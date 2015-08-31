@@ -12,6 +12,7 @@ __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'PionDecayKelner06']
 
 from astropy.extern import six
+from collections import OrderedDict
 import os
 from astropy.utils.data import get_pkg_data_filename
 import warnings
@@ -351,16 +352,14 @@ class InverseCompton(BaseElectron):
     def __init__(self, particle_distribution, seed_photon_fields=['CMB',], **kwargs):
         super(InverseCompton, self).__init__()
         self.particle_distribution = particle_distribution
-        self.seed_photon_fields = seed_photon_fields
-        self._process_input_seed()
+        self._process_input_seed(seed_photon_fields)
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
         self.nEed = 100
-        self.param_names += ['seed_photon_fields',
-                'seeduf', 'seedT', 'seedisotropic', 'seedtheta']
+        self.param_names += ['seed_photon_fields',]
         self.__dict__.update(**kwargs)
 
-    def _process_input_seed(self):
+    def _process_input_seed(self, seed_photon_fields):
         """
         take input list of seed_photon_fields and fix them into usable format
         """
@@ -372,27 +371,27 @@ class InverseCompton(BaseElectron):
         unir = 1.0 * u.eV / u.cm ** 3
 
         # Allow for seed_photon_fields definitions of the type 'CMB-NIR-FIR' or 'CMB'
-        if type(self.seed_photon_fields) != list:
-            self.seed_photon_fields = self.seed_photon_fields.split('-')
+        if type(seed_photon_fields) != list:
+            seed_photon_fields = seed_photon_fields.split('-')
 
-        self.seeduf = {}
-        self.seedT = {}
-        self.seedisotropic = {}
-        self.seedtheta = {}
-        for idx, inseed in enumerate(self.seed_photon_fields):
+        self.seed_photon_fields = OrderedDict()
+
+        for idx, inseed in enumerate(seed_photon_fields):
+            seed = {}
             if isinstance(inseed, six.string_types):
+                name = inseed
                 if inseed == 'CMB':
-                    self.seedT[inseed] = Tcmb
-                    self.seeduf[inseed] = 1.0
-                    self.seedisotropic[inseed] = True
+                    seed['T'] = Tcmb
+                    seed['u'] = ar * Tcmb ** 4
+                    seed['isotropic'] = True
                 elif inseed == 'FIR':
-                    self.seedT[inseed] = Tfir
-                    self.seeduf[inseed] = (ufir / (ar * Tfir ** 4)).decompose()
-                    self.seedisotropic[inseed] = True
+                    seed['T'] = Tfir
+                    seed['u'] = ufir
+                    seed['isotropic'] = True
                 elif inseed == 'NIR':
-                    self.seedT[inseed] = Tnir
-                    self.seeduf[inseed] = (unir / (ar * Tnir ** 4)).decompose()
-                    self.seedisotropic[inseed] = True
+                    seed['T'] = Tnir
+                    seed['u'] = unir
+                    seed['isotropic'] = True
                 else:
                     log.warning('Will not use seed {0} because it is not '
                                 'CMB, FIR or NIR'.format(inseed))
@@ -402,28 +401,28 @@ class InverseCompton(BaseElectron):
 
                 if isotropic:
                     name, T, uu = inseed
-                    self.seedisotropic[name] = True
+                    seed['isotropic'] = True
                 else:
                     name, T, uu, theta = inseed
-                    self.seedisotropic[name] = False
-                    self.seedtheta[name] = validate_scalar('{0}-theta'.format(name),
+                    seed['isotropic'] = False
+                    seed['theta'] = validate_scalar('{0}-theta'.format(name),
                             theta, physical_type='angle')
 
                 validate_scalar('{0}-T'.format(name), T, domain='positive',
                                 physical_type='temperature')
-                self.seed_photon_fields[idx] = name
-                self.seedT[name] = T
+                seed['T'] = T
                 if uu == 0:
-                    self.seeduf[name] = 1.0
+                    seed['u'] = ar * T ** 4
                 else:
                     # pressure has same physical type as energy density
                     validate_scalar('{0}-u'.format(name), uu,
                             domain='positive', physical_type='pressure')
-                    self.seeduf[name] = (uu / (ar * T ** 4)).decompose()
+                    seed['u'] = uu
             else:
-                log.warning(
-                    'Unable to process seed photon field: {0}'.format(inseed))
-                raise TypeError
+                raise TypeError('Unable to process seed photon'
+                        ' field: {0}'.format(inseed))
+
+            self.seed_photon_fields[name] = seed
 
     @staticmethod
     def _iso_ic_on_planck(electron_energy, soft_photon_temperature, gamma_energy):
@@ -514,17 +513,17 @@ class InverseCompton(BaseElectron):
         log.debug(
             '_calc_specic: Computing IC on {0} seed photons...'.format(seed))
 
-        uf = self.seeduf[seed]
-        T = self.seedT[seed]
+        T = self.seed_photon_fields[seed]['T']
+        uf = (self.seed_photon_fields[seed]['u'] / (ar * T ** 4)).decompose()
 
         Eph = (outspecene / mec2).decompose().value
         # Catch numpy RuntimeWarnings of overflowing exp (which are then discarded anyway)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            if self.seedisotropic[seed]:
+            if self.seed_photon_fields[seed]['isotropic']:
                 gamint = self._iso_ic_on_planck(self._gam, T.to('K').value, Eph)
             else:
-                theta = self.seedtheta[seed].to('rad').value
+                theta = self.seed_photon_fields[seed]['theta'].to('rad').value
                 gamint = self._ani_ic_on_planck(self._gam, T.to('K').value, Eph, theta)
             lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
         lum *= u.Unit('1/s')
@@ -554,7 +553,7 @@ class InverseCompton(BaseElectron):
 
         return np.sum(u.Quantity(self.specic), axis=0)
 
-    def flux_per_seed(self, photon_energy, seed=0, distance=1*u.kpc):
+    def flux(self, photon_energy, distance=1*u.kpc, seed=None):
         """Differential flux at a given distance from the source from a single
         seed photon field
 
@@ -563,71 +562,72 @@ class InverseCompton(BaseElectron):
         photon_energy : :class:`~astropy.units.Quantity` float or array
             Photon energy array.
 
-        seed : int or str
-            Number or name of seed photon field for which the IC onctribution is
-            required. Defaults to the first seed photon field defined.
-
         distance : :class:`~astropy.units.Quantity` float, optional
             Distance to the source. If set to 0, the intrinsic luminosity will
             be returned. Default is 1 kpc.
+
+        seed : int, str or None
+            Number or name of seed photon field for which the IC contribution is
+            required. If set to None it will return the sum of all contributions
+            (default).
         """
+        model = super(InverseCompton, self).flux(photon_energy, distance=distance)
 
-        photon_energy = _validate_ene(photon_energy)
-        _ = self.flux(photon_energy)
+        if seed is not None:
+            # Test seed argument
+            if not isinstance(seed, int):
+                if seed not in self.seed_photon_fields:
+                    raise ValueError('Provided seed photon field name is not in'
+                            ' the definition of the InverseCompton instance')
+                else:
+                    seed = list(self.seed_photon_fields.keys()).index(seed)
+            elif seed > len(self.seed_photon_fields):
+                    raise ValueError('Provided seed photon field number is larger'
+                            ' than the number of seed photon fields defined in the'
+                            ' InverseCompton instance')
 
-        if not isinstance(seed, int):
-            if seed not in self.seed_photon_fields:
-                raise ArgumentError('Provided seed photon field name is not in'
-                        ' the definition of the InverseCompton instance')
+
+            if distance != 0:
+                distance = validate_scalar('distance', distance, physical_type='length')
+                dfac = 4 * np.pi * distance.to('cm') ** 2
+                out_unit = '1/(s cm2 eV)'
             else:
-                seed = self.seed_photon_fields.index(seed)
-        elif seed > len(self.seed_photon_fields):
-                raise ArgumentError('Provided seed photon field number is larger'
-                        ' than the number of seed photon fields defined in the'
-                        ' InverseCompton instance')
+                dfac = 1
+                out_unit = '1/(s eV)'
 
-        spec = self.specic[seed]
+            model = (self.specic[seed] / dfac).to(out_unit)
 
-        if distance != 0:
-            distance = validate_scalar('distance', distance, physical_type='length')
-            spec /= 4 * np.pi * distance.to('cm') ** 2
-            out_unit = '1/(s cm2 eV)'
-        else:
-            out_unit = '1/(s eV)'
+        return model
 
-        return spec.to(out_unit)
-
-    def sed_per_seed(self, photon_energy, seed=0, distance=1*u.kpc):
-        """Spectral energy distribution at a given distance from the source from
-        a single seed photon field
+    def sed(self, photon_energy, distance=1*u.kpc, seed=None):
+        """Spectral energy distribution at a given distance from the source
 
         Parameters
         ----------
         photon_energy : :class:`~astropy.units.Quantity` float or array
             Photon energy array.
 
-        seed : int or str
-            Number or name of seed photon field for which the IC onctribution is
-            required. Defaults to the first seed photon field defined.
-
         distance : :class:`~astropy.units.Quantity` float, optional
             Distance to the source. If set to 0, the intrinsic luminosity will
             be returned. Default is 1 kpc.
+
+        seed : int, str or None
+            Number or name of seed photon field for which the IC contribution is
+            required. If set to None it will return the sum of all contributions
+            (default).
         """
-        if distance !=0:
-            out_unit = 'erg/(cm2 s)'
-        else:
-            out_unit = 'erg/s'
+        sed = super(InverseCompton, self).sed(photon_energy, distance=distance)
 
-        photon_energy = _validate_ene(photon_energy)
+        if seed is not None:
+            if distance !=0:
+                out_unit = 'erg/(cm2 s)'
+            else:
+                out_unit = 'erg/s'
 
-        sed = (self.flux_per_seed(photon_energy, seed=seed, distance=distance)
-                * photon_energy ** 2.).to(out_unit)
+            sed = (self.flux(photon_energy, distance=distance, seed=seed)
+                    * photon_energy ** 2.).to(out_unit)
 
         return sed
-
-
-
 
 
 class Bremsstrahlung(BaseElectron):

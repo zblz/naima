@@ -267,6 +267,35 @@ def test_ic_seed_input(particle_dists):
 
 
 @pytest.mark.skipif('not HAS_SCIPY')
+def test_ic_seed_fluxes(particle_dists):
+    """
+    test per seed flux computation
+    """
+    from ..models import InverseCompton
+
+    _,PL,_ = particle_dists
+
+    ic = InverseCompton(PL, seed_photon_fields=['CMB',
+                        ['test', 5000 * u.K, 0],
+                        ['test2', 5000 * u.K, 10 * u.eV / u.cm**3],
+                        ['test3', 5000 * u.K, 10 * u.eV / u.cm**3, 90 * u.deg],
+                        ],)
+
+    ene = np.logspace(-3, 0, 5) * u.TeV
+
+    for idx, name in enumerate(['CMB', 'test', 'test2', 'test3',]):
+        icname = ic.sed(ene, seed=name)
+        icnumber = ic.sed(ene, seed=idx)
+        assert_allclose(icname, icnumber)
+
+    with pytest.raises(ValueError):
+        _ = ic.sed(ene, seed='FIR')
+
+    with pytest.raises(ValueError):
+        _ = ic.sed(ene, seed=10)
+
+
+@pytest.mark.skipif('not HAS_SCIPY')
 def test_pion_decay(particle_dists):
     """
     test ProtonOZM

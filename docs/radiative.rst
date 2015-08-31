@@ -70,7 +70,7 @@ These spectra can then be analysed or plotted:
     plt.rc('font', family='sans')
     plt.rc('mathtext', fontset='custom')
     for seed, ls in zip(['CMB', 'FIR', 'NIR'], ['-','--',':']):
-        sed = IC.sed_per_seed(spectrum_energy, seed=seed, distance=1.5*u.kpc)
+        sed = IC.sed(spectrum_energy, seed=seed, distance=1.5*u.kpc)
         plt.loglog(spectrum_energy,sed,lw=1,
                 ls=ls,label='IC ({0})'.format(seed),c='0.25')
     plt.loglog(spectrum_energy,sed_IC,lw=2,
@@ -133,6 +133,12 @@ list of items, each of which can be either:
            photon direction as a :class:`~astropy.units.Quantity` float
            instance. If this is provided, the anisotropic IC differential
            cross-section will be used.
+
+Once initialized, the `~naima.models.InverseCompton` instance will store these
+values in the `seed_photon_field` dictionary, which contains a dictionary for
+each photon field with the following keys: ``T``, ``u``, ``isotropic``, and
+``theta``, standing for temperature, energy density, whether it is isotropic or
+not, and interaction angle for anisotropic fields, respectively.
 
 .. _SY:
 
