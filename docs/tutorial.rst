@@ -131,6 +131,7 @@ samples in the sampler object. For details on these parameters, see the
 Inspecting and analysing results of the run
 -------------------------------------------
 
+
 The results stored in the sampler object can be analysed through the plotting
 procedures of ``naima``: `~naima.plot_chain`, `~naima.plot_fit`, and
 `~naima.plot_data`. In addition, two convenience functions can be used to
@@ -225,6 +226,39 @@ results in 740 samples for a :math:`3\sigma` confidence level:
 .. image:: _static/CrabNebula_IC_model_confs_erange.png
 
 
+.. _saving:
+
+Saving and retrieving the results of the sampling run
+-----------------------------------------------------
+
+The parameter chain and metadata blobs resulting from the sampling procedure can
+be saved with `naima.save_run`. This function will save the results of the run
+to an HDF5 file that can be archived and analysed after the fact. The sampler
+properties saved to the HDF5 file are:
+
+- parameter vector chain: ``sampler.chain``
+- log-probability for all the parameter vectors in the chain:
+  ``sampler.lnprobability``
+- parameter labels: ``sampler.labels``
+- data table: ``sampler.data``
+- metadata blobs: ``sampler.blobs``
+
+Note that only metadata blobs that can be converted into a numpy array will be
+stored. Blobs consisting of other classes, or with different lengths within the
+same blob, will raise a warning and be discarded on the `naima.save_run` call.
+
+The saved sampler can be retrieved with the `naima.read_run` function, which
+will return an `~emcee.EnsembleSampler`-like object. However, the model function
+cannot be saved in the HDF5 file, so a model function has to be provided at read
+time. This function will be used to compute the model output from the parameter
+vectors in the chain. Without a model function, the sampler read from the HDF5
+file can be passed onto `~naima.plot_chain`, `~naima.plot_corner`,
+`~naima.plot_fit`, and `~naima.plot_data` for analysis.  If a model function is
+provided to `naima.read_run`, the resulting sampler can also be used with
+`~naima.plot_fit` when setting the ``e_range`` parameter, which requires the
+model function to be accesible in the ``modelfn`` attribute of the sampler
+object provided.
+
 .. _blobs:
 
 Saving additional information --- Metadata blobs
@@ -290,4 +324,5 @@ we returned as the third object, a histogram and distribution properties will be
 plotted:
 
 .. image:: _static/CrabNebula_IC_We.png
+
 

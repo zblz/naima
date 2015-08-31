@@ -43,7 +43,7 @@ and everything except the ``cl`` keyword from tables in the
 naima can then be read with the `astropy.io.ascii` reader::
 
     >>> from astropy.io import ascii
-    >>> data_table = ascii.read('CrabNebula_HESS_2006.dat')
+    >>> data_table = ascii.read('RXJ1713_HESS_2007.dat')
 
 The table column names, types, and units, will be read automatically from the
 file. 
@@ -64,30 +64,31 @@ to differential fluxes (``data_sed=False``).
 Data table examples
 -------------------
 
-Ecsv
-++++
-
-Below you can see an example of a file in :class:`~astropy.io.ascii.Ecsv` format
-that includes all the necessary fields.
-
-.. literalinclude:: ../examples/CrabNebula_HESS_2006.ecsv
-    :language: guess
-
 Ipac
 ++++
 
-The same table shown in :class:`~astropy.io.ascii.Ipac` format. This format is
-focused on being human readable. Everything starting with a slash and a space
-is a comment, and keywords are given after a slash without a space.
+Below you can see an example of a file in :class:`~astropy.io.ascii.Ipac` format
+that includes all the necessary fields.  This format is focused on being human
+readable. Everything starting with a slash and a space is a comment, and
+keywords are given after a slash without a space.
 
-.. literalinclude:: ../examples/CrabNebula_HESS_2006_ipac.dat
+.. literalinclude:: ../examples/RXJ1713_HESS_2007.dat
+
+
+Ecsv
+++++
+
+The same table shown in :class:`~astropy.io.ascii.Ecsv` format. 
+
+.. literalinclude:: ../examples/RXJ1713_HESS_2007.ecsv
+    :language: guess
 
 SExtractor
 ++++++++++
 
 And the same table shown in the :class:`~astropy.io.ascii.SExtractor` format
 
-.. literalinclude:: ../examples/CrabNebula_HESS_2006_sextractor.dat
+.. literalinclude:: ../examples/RXJ1713_HESS_2007_sextractor.dat
     :language: guess
 
 
@@ -95,5 +96,5 @@ If the table is in :class:`~astropy.io.ascii.SExtractor` format, the
 confidence level of the upper limits can be added after reading the table as a
 keyword::
 
-    >>> data_table.meta['keywords'] = {'cl':{'value':0.9}}
+    >>> data_table.meta['keywords'] = {'cl':{'value':0.95}}
 

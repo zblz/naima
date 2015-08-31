@@ -7,7 +7,7 @@ from naima.models import InverseCompton, ExponentialCutoffPowerLaw
 
 ## Read data
 
-data=ascii.read('CrabNebula_HESS_2006_ipac.dat')
+data=ascii.read('RXJ1713_HESS_2007.dat')
 
 def ElectronIC(pars,data):
     """
@@ -19,12 +19,10 @@ def ElectronIC(pars,data):
             10**pars[2] * u.TeV)
     IC = InverseCompton(ECPL,seed_photon_fields=['CMB'])
 
-    return IC.flux(data, distance=2.0*u.kpc)
+    return IC.flux(data, distance=1.0*u.kpc)
 
 def lnprior(pars):
-    """
-    force a positive amplitude
-    """
+    # Limit amplitude to positive domain
     logprob = naima.uniform_prior(pars[0],0.,np.inf)
     return logprob
 
@@ -37,10 +35,12 @@ if __name__=='__main__':
 ## Run sampler
     sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
             model=ElectronIC, prior=lnprior, nwalkers=32, nburn=100, nrun=20,
-            threads=4, prefit=True)
+            threads=4, prefit=True, interactive=False)
+## Save run results
+    naima.save_run('RXJ1713_IC_run.hdf5', sampler)
 
 ## Save diagnostic plots and results table
-    naima.save_diagnostic_plots('CrabNebula_IC',sampler)
-    naima.save_results_table('CrabNebula_IC',sampler)
+    naima.save_diagnostic_plots('RXJ1713_IC',sampler,sed=False)
+    naima.save_results_table('RXJ1713_IC',sampler)
 
 

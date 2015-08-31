@@ -41,6 +41,21 @@ except ImportError:
     # If that doesn't work trying to import from astropy_helpers below will
     # still blow up
 
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if on_rtd:
+    if sys.version_info.major > 2:
+        from unittest.mock import MagicMock
+    else:
+        from mock import Mock as MagicMock
+
+    class Mock(MagicMock):
+        @classmethod
+        def __getattr__(cls, name):
+                return Mock()
+
+    MOCK_MODULES = ['h5py',]
+    sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # Load all of the global Astropy configuration
 from astropy_helpers.sphinx.conf import *
@@ -162,7 +177,6 @@ if eval(setup_cfg.get('edit_on_github')):
     edit_on_github_doc_root = "docs"
 
 # on_rtd is whether we are on readthedocs.org
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
     import sphinx_rtd_theme

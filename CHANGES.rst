@@ -8,6 +8,8 @@
 - There is a new GUI tool for interactive model fitting:
   ``InteractiveModelFitter``, which can be accessed directly or through the
   ``interactive`` argument of ``get_sampler`` prior to a sampling run.
+- Sampling run results can be saved and retrieved for later analysis or archival
+  with the new functions `naima.save_run` and `naima.read_run`.
 
 Bug Fixes
 ^^^^^^^^^
