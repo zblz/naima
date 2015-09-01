@@ -45,6 +45,10 @@ matrix:
         - python: 2.7
           env: SETUP_CMD='build_sphinx -w'
 
+        # Run examples, do it first as well as it may take some time
+        - python: 3.4
+          env: SETUP_CMD='examples'
+
         # Try Astropy development version
         - python: 2.7
           env: ASTROPY_VERSION=development SETUP_CMD='test'
@@ -106,7 +110,8 @@ install:
     - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage coveralls; fi
 
 script:
-   - python setup.py $SETUP_CMD
+   - if [[ $SETUP_CMD != 'examples' ]]; then python setup.py $SETUP_CMD; fi
+   - if [[ $SETUP_CMD == 'examples' ]]; then cd examples; for script in RXJ1713*.py; do time python $script; done; fi
 
 after_success:
     # Uncomment line below if coveralls.io is set up for this package.
