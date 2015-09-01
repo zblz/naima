@@ -117,6 +117,8 @@ script:
          cd examples
          echo 'backend : Agg' > matplotlibrc
          for script in RXJ1713*.py; do
+             echo ''
+             echo "Running example $script..."
              time python $script
          done
      else
