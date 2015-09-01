@@ -64,8 +64,9 @@ matrix:
           env: SETUP_CMD='test'
 
         # Try older numpy versions
-        - python: 2.7
-          env: NUMPY_VERSION=1.8 SETUP_CMD='test'
+        # 1.8 is already tested in coverage to get sherpa
+        #- python: 2.7
+          #env: NUMPY_VERSION=1.8 SETUP_CMD='test'
         - python: 2.7
           env: NUMPY_VERSION=1.7 SETUP_CMD='test'
         - python: 2.7
