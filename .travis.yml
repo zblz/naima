@@ -111,8 +111,17 @@ install:
     - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage coveralls; fi
 
 script:
-   - if [[ $SETUP_CMD != 'examples' ]]; then python setup.py $SETUP_CMD; fi
-   - if [[ $SETUP_CMD == 'examples' ]]; then python setup.py install; cd examples; for script in RXJ1713*.py; do time python $script; done; fi
+   - |
+     if [[ $SETUP_CMD == 'examples' ]]; then 
+         python setup.py install
+         cd examples
+         echo 'backend : Agg' > matplotlibrc
+         for script in RXJ1713*.py; do
+             time python $script
+         done
+     else
+         python setup.py $SETUP_CMD
+     fi
 
 after_success:
     # Uncomment line below if coveralls.io is set up for this package.
