@@ -490,7 +490,7 @@ def read_run(filename, modelfn=None):
         # first read each of the blobs and convert to Quantities
         try:
             ds = f['sampler/blob{0}'.format(i)]
-            rank = np.rank(ds[0])
+            rank = np.ndim(ds[0])
             blobrank.append(rank)
             if rank <= 1:
                 blobs.append(u.Quantity(ds.value, unit=ds.attrs['unit']))
