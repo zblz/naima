@@ -297,6 +297,32 @@ class Synchrotron(BaseElectron):
 
         return spec
 
+
+def G12(x, a):
+    """
+    Eqs 20, 24, 25 of Khangulyan et al (2014)
+    """
+    alpha, a, beta, b = a
+    pi26 = np.pi ** 2 / 6.0
+    G = (pi26 + x) * np.exp(-x)
+    tmp = 1 + b * x ** beta
+    g = 1. / (a * x ** alpha / tmp + 1.)
+    return G * g
+
+
+def G34(x, a):
+    """
+    Eqs 20, 24, 25 of Khangulyan et al (2014)
+    """
+    alpha, a, beta, b, c = a
+    pi26 = np.pi ** 2 / 6.0
+    tmp = (1 + c * x) / (1 + pi26 * c * x)
+    G = pi26 * tmp * np.exp(-x)
+    tmp = 1 + b * x ** beta
+    g = 1. / (a * x ** alpha / tmp + 1.)
+    return G * g
+
+
 class InverseCompton(BaseElectron):
     """Inverse Compton emission from an electron population.
 
@@ -352,14 +378,15 @@ class InverseCompton(BaseElectron):
     def __init__(self, particle_distribution, seed_photon_fields=['CMB',], **kwargs):
         super(InverseCompton, self).__init__()
         self.particle_distribution = particle_distribution
-        self._process_input_seed(seed_photon_fields)
+        self.seed_photon_fields = self._process_input_seed(seed_photon_fields)
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
         self.nEed = 100
         self.param_names += ['seed_photon_fields',]
         self.__dict__.update(**kwargs)
 
-    def _process_input_seed(self, seed_photon_fields):
+    @staticmethod
+    def _process_input_seed(seed_photon_fields):
         """
         take input list of seed_photon_fields and fix them into usable format
         """
@@ -374,7 +401,7 @@ class InverseCompton(BaseElectron):
         if type(seed_photon_fields) != list:
             seed_photon_fields = seed_photon_fields.split('-')
 
-        self.seed_photon_fields = OrderedDict()
+        result = OrderedDict()
 
         for idx, inseed in enumerate(seed_photon_fields):
             seed = {}
@@ -422,7 +449,10 @@ class InverseCompton(BaseElectron):
                 raise TypeError('Unable to process seed photon'
                         ' field: {0}'.format(inseed))
 
-            self.seed_photon_fields[name] = seed
+            result[name] = seed
+
+        return result
+
 
     @staticmethod
     def _iso_ic_on_planck(electron_energy, soft_photon_temperature, gamma_energy):
@@ -436,18 +466,6 @@ class InverseCompton(BaseElectron):
         """
         Ktomec2 = 1.6863699549e-10
         soft_photon_temperature *= Ktomec2
-
-        def G34(x, a):
-            """
-            Eqs 20, 24, 25
-            """
-            alpha, a, beta, b, c = a
-            pi26 = np.pi ** 2 / 6.0
-            tmp = (1 + c * x) / (1 + pi26 * c * x)
-            G = pi26 * tmp * np.exp(-x)
-            tmp = 1 + b * x ** beta
-            g = 1. / (a * x ** alpha / tmp + 1.)
-            return G * g
 
         gamma_energy = np.vstack(gamma_energy)
         # Parameters from Eqs 26, 27
@@ -479,17 +497,6 @@ class InverseCompton(BaseElectron):
         """
         Ktomec2 = 1.6863699549e-10
         soft_photon_temperature *= Ktomec2
-
-        def G12(x, a):
-            """
-            Eqs 20, 24, 25
-            """
-            alpha, a, beta, b = a
-            pi26 = np.pi ** 2 / 6.0
-            G = (pi26 + x) * np.exp(-x)
-            tmp = 1 + b * x ** beta
-            g = 1. / (a * x ** alpha / tmp + 1.)
-            return G * g
 
         gamma_energy = np.vstack(gamma_energy)
         # Parameters from Eqs 21, 22
