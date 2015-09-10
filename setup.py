@@ -48,7 +48,7 @@ LONG_DESCRIPTION = long_description.split('.. comment: split here\n\n')[1].strip
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
-VERSION = '0.6.dev'
+VERSION = '0.6'
 
 # Indicates if this version is a release version
 RELEASE = 'dev' not in VERSION

@@ -1,4 +1,4 @@
-0.6 (unreleased)
+0.6 (2015-09-10)
 ----------------
 
 - Medians and associated errors are now shown with a precision corresponding to
