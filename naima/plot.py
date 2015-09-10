@@ -198,20 +198,31 @@ def _plot_chain_func(sampler, p, last_step=False):
     try:
         # EnsembleSample.get_autocorr_time was only added in the
         # recently released emcee 2.1.0 (2014-05-22), so make it optional
+        # Samplers read from hdf5 will not have get_autocorr_time either
         autocorr = sampler.get_autocorr_time(window=chain.shape[1]/4.)[p]
         autocorr_message = '{0:.1f}'.format(autocorr)
     except AttributeError:
-        autocorr_message = 'Not available. Update to emcee 2.1 or later.'
+        try:
+            # Compute autocorr_time for samplers read from hdf5
+            from emcee import autocorr
+            window = chain.shape[1]/4.
+            ac = autocorr.integrated_time(np.mean(chain, axis=0), axis=0,
+                                          window=window, fast=False)[p]
+            autocorr_message = '{0:.1f}'.format(ac)
+        except ImportError:
+            # emcee < 2.1.0 will not have emcee.autocorr
+            autocorr_message = None
 
     if last_step:
         clen = 'last ensemble'
     else:
         clen = 'whole chain'
 
-    chain_props = 'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers, nsteps) + \
-            'Autocorrelation time: {0}\n'.format(autocorr_message) +\
-            'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
-            'Distribution properties for the {clen}:\n \
+    chain_props = 'Walkers: {0} \nSteps in chain: {1} \n'.format(nwalkers, nsteps)
+    if autocorr_message is not None:
+            chain_props += 'Autocorrelation time: {0}\n'.format(autocorr_message)
+    chain_props += 'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
+                   'Distribution properties for the {clen}:\n \
     $-$ median: ${median}$, std: ${std}$ \n \
     $-$ median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n'.format(
