@@ -24,7 +24,7 @@ __all__ = ["save_diagnostic_plots", "save_results_table", "save_run",
            "read_run"]
 
 def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
-        blob_labels=None, last_step=False):
+        blob_labels=None, last_step=False, dpi=100):
     """
     Generate diagnostic plots.
 
@@ -80,11 +80,11 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
             log.info('Plotting chain of parameter {0}...'.format(label))
             f = plot_chain(sampler, par, last_step=last_step)
             if pdf:
-                f.savefig(outpdf, format='pdf')
+                f.savefig(outpdf, format='pdf', dpi=dpi)
             else:
                 if 'log(' in label or 'log10(' in label:
                     label = label.split('(')[-1].split(')')[0]
-                f.savefig('{0}_chain_{1}.png'.format(outname, label))
+                f.savefig('{0}_chain_{1}.png'.format(outname, label), dpi=dpi)
             del f
         except Exception as e:
             log.warning('plot_chain failed for paramter'
@@ -97,9 +97,9 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
     f = plot_corner(sampler)
     if f is not None:
         if pdf:
-            f.savefig(outpdf, format='pdf')
+            f.savefig(outpdf, format='pdf', dpi=dpi)
         else:
-            f.savefig('{0}_corner.png'.format(outname))
+            f.savefig('{0}_corner.png'.format(outname), dpi=dpi)
         del f
 
     # Fit
@@ -127,9 +127,9 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
             f = plot_blob(sampler, blobidx=modelidx, label=label,
                           sed=plot_sed, n_samples=100, last_step=last_step)
             if pdf:
-                f.savefig(outpdf, format='pdf')
+                f.savefig(outpdf, format='pdf', dpi=dpi)
             else:
-                f.savefig('{0}_model{1}.png'.format(outname, modelidx))
+                f.savefig('{0}_model{1}.png'.format(outname, modelidx), dpi=dpi)
             del f
         except Exception as e:
             log.warning('plot_blob failed for {0}: {1}'.format(label,e))
