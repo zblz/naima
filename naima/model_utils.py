@@ -4,6 +4,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 import hashlib
+import astropy
+from astropy import units as u
 
 def memoize(func):
     """ Cache decorator for functions inside model classes """
@@ -16,6 +18,8 @@ def memoize(func):
             memoize = False
 
         if memoize:
+            if isinstance(energy, astropy.table.Table):
+                energy = u.Quantity(energy['energy'])
             data = [hashlib.sha256(energy.value.tostring()).hexdigest(),
                     energy.unit.to_string(),
                     str(kwargs.get('distance',0))]

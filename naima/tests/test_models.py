@@ -25,6 +25,12 @@ proton_properties = {'Epmax':1*u.PeV}
 
 energy = np.logspace(0, 15, 1000) * u.eV
 
+from astropy.table import QTable, Table
+data = QTable()
+data['energy'] = energy
+data2 = Table()
+data2['energy'] = energy
+
 from astropy.constants import m_e, c
 pdist_unit = 1/u.Unit(m_e * c**2)
 
@@ -66,6 +72,8 @@ def test_synchrotron_lum(particle_dists):
     assert_allclose(Wes, We_ref)
 
     sy = Synchrotron(ECPL,B=1*u.G, **electron_properties)
+    sy.flux(data)
+    sy.flux(data2)
 
     lsy = trapz_loglog(sy.flux(energy,0) * energy, energy).to('erg/s')
     assert(lsy.unit == u.erg / u.s)
@@ -162,6 +170,7 @@ def test_bremsstrahlung_lum(particle_dists):
     brems = Bremsstrahlung(ECPL, n0 = 1 * u.cm**-3, Eemin = m_e*c**2)
     lbrems = trapz_loglog(brems.flux(energy2,0) * energy2, energy2).to('erg/s')
 
+
     lum_ref = 2.3064095039069847e-05
     assert_allclose(lbrems, lum_ref)
 
@@ -186,6 +195,8 @@ def test_inverse_compton_lum(particle_dists):
     assert_allclose(lums, lum_ref)
 
     ic = InverseCompton(ECPL,seed_photon_fields=['CMB','FIR','NIR'])
+    ic.flux(data)
+    ic.flux(data2)
 
     lic = trapz_loglog(ic.flux(energy,0) * energy, energy).to('erg/s')
     assert_allclose(lic.value,0.0005833030865998417)
