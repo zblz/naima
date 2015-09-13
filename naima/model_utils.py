@@ -16,7 +16,8 @@ def memoize(func):
             memoize = False
 
         if memoize:
-            data = [str(energy),
+            data = [str(energy.value.tostring()),
+                    energy.unit.to_string(),
                     str(kwargs.get('distance',0))]
             if args:
                 data.append(str(args))
