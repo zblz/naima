@@ -54,7 +54,7 @@ class PowerLaw(object):
     """
 
     param_names = ['amplitude', 'e_0', 'alpha']
-    _memoize = True
+    _memoize = False
     _cache = {}
     _queue = []
 
@@ -111,7 +111,7 @@ class ExponentialCutoffPowerLaw(object):
     """
 
     param_names = ['amplitude', 'e_0', 'alpha', 'e_cutoff', 'beta']
-    _memoize = True
+    _memoize = False
     _cache = {}
     _queue = []
 
@@ -176,7 +176,7 @@ class BrokenPowerLaw(object):
     """
 
     param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2']
-    _memoize = True
+    _memoize = False
     _cache = {}
     _queue = []
 
@@ -249,7 +249,7 @@ class ExponentialCutoffBrokenPowerLaw(object):
 
     param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2',
             'e_cutoff', 'beta']
-    _memoize = True
+    _memoize = False
     _cache = {}
     _queue = []
 
@@ -309,7 +309,7 @@ class LogParabola(object):
     """
 
     param_names = ['amplitude', 'e_0', 'alpha', 'beta']
-    _memoize = True
+    _memoize = False
     _cache = {}
     _queue = []
 
