@@ -16,7 +16,7 @@ def memoize(func):
             memoize = False
 
         if memoize:
-            data = [str(energy.value.tostring()),
+            data = [hashlib.sha256(energy.value.tostring()).hexdigest(),
                     energy.unit.to_string(),
                     str(kwargs.get('distance',0))]
             if args:
