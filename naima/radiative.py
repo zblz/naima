@@ -1295,6 +1295,15 @@ class PionDecay(BaseProton):
 
         return epstotal
 
+    def _loadLUT(self, LUT_fname):
+        try:
+            filename = get_pkg_data_filename(os.path.join('data',LUT_fname))
+            self.diffsigma = LookupTable(filename)
+        except IOError:
+            warnings.warn('LUT {0} not found, reverting to useLUT = False'.format(LUT_fname))
+            self.diffsigma = self._diffsigma
+            self.useLUT = False
+
     def _spectrum(self,photon_energy):
         """
         Compute differential spectrum from pp interactions using the parametrization of
@@ -1313,13 +1322,12 @@ class PionDecay(BaseProton):
             if self.nuclear_enhancement:
                 LUT_base += 'NucEnh_'
             LUT_fname = LUT_base+'{0}.npz'.format(self.hiEmodel)
+            # only reload LUT if it has changed or hasn't been loaded yet
             try:
-                filename = get_pkg_data_filename(os.path.join('data',LUT_fname))
-                self.diffsigma = LookupTable(filename)
-            except IOError:
-                warnings.warn('LUT {0} not found, reverting to useLUT = False'.format(LUT_fname))
-                self.diffsigma = self._diffsigma
-                self.useLUT = False
+                if os.path.basename(self.diffsigma.fname) != LUT_fname:
+                    self._loadLUT(LUT_fname)
+            except AttributeError:
+                self._loadLUT(LUT_fname)
         else:
             self.diffsigma = self._diffsigma
 
@@ -1563,6 +1571,7 @@ class LookupTable(object):
         Y = f_lut.f.Y
         lut = f_lut.f.lut
         self.int_lut = RectBivariateSpline(X, Y, 10**lut, kx=3, ky=3, s=0)
+        self.fname = filename
 
     def __call__(self,X,Y):
         return self.int_lut(np.log10(X),np.log10(Y)).flatten()
