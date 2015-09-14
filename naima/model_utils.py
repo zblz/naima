@@ -18,11 +18,15 @@ def memoize(func):
             memoize = False
 
         if memoize:
-            if isinstance(energy, astropy.table.Table):
-                energy = u.Quantity(energy['energy'])
-            data = [hashlib.sha256(energy.value.tostring()).hexdigest(),
-                    energy.unit.to_string(),
-                    str(kwargs.get('distance',0))]
+            try:
+                energy = energy['energy']
+                data = [hashlib.sha256(u.Quantity(energy).value.tostring()).hexdigest(),]
+            except:
+                data = [hashlib.sha256(energy.value.tostring()).hexdigest(),]
+
+            data.append(energy.unit.to_string())
+            data.append(str(kwargs.get('distance',0)))
+
             if args:
                 data.append(str(args))
             if hasattr(cls,'particle_distribution'):
