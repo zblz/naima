@@ -57,8 +57,11 @@ class BaseRadiative(object):
     def __init__(self, particle_distribution):
         self.particle_distribution = particle_distribution
         try:
+            # Check first for the amplitude attribute, which will be present if
+            # the particle distribution is a function from naima.models
             pd = self.particle_distribution.amplitude
         except AttributeError:
+            # otherwise check the output
             pd = self.particle_distribution([0.1,1,10,] * u.TeV)
         validate_physical_type('Particle distribution', pd,
                 physical_type='differential energy')
