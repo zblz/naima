@@ -54,6 +54,14 @@ class BaseRadiative(object):
     This class implements the flux, sed methods and subclasses must implement the
     spectrum method which returns the intrinsic differential spectrum.
     """
+    def __init__(self, particle_distribution):
+        self.particle_distribution = particle_distribution
+        try:
+            pd = self.particle_distribution.amplitude
+        except AttributeError:
+            pd = self.particle_distribution([0.1,1,10,] * u.TeV)
+        validate_physical_type('Particle distribution', pd,
+                physical_type='differential energy')
 
     @memoize
     def flux(self, photon_energy, distance=1*u.kpc):
@@ -108,7 +116,8 @@ class BaseElectron(BaseRadiative):
     """Implements gam and nelec properties in addition to the BaseRadiative methods
     """
 
-    def __init__(self):
+    def __init__(self, particle_distribution):
+        super(BaseElectron, self).__init__(particle_distribution)
         self.param_names = ['Eemin', 'Eemax', 'nEed']
         self._memoize = True
         self._cache = {}
@@ -235,11 +244,7 @@ class Synchrotron(BaseElectron):
     """
 
     def __init__(self, particle_distribution, B=3.24e-6*u.G, **kwargs):
-        super(Synchrotron, self).__init__()
-        self.particle_distribution = particle_distribution
-        # check that the particle distribution returns particles per unit energy
-        P = self.particle_distribution(1*u.TeV)
-        validate_scalar('particle distribution', P, physical_type='differential energy')
+        super(Synchrotron, self).__init__(particle_distribution)
         self.B = validate_scalar('B',B,physical_type='magnetic flux density')
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
@@ -376,8 +381,7 @@ class InverseCompton(BaseElectron):
     """
 
     def __init__(self, particle_distribution, seed_photon_fields=['CMB',], **kwargs):
-        super(InverseCompton, self).__init__()
-        self.particle_distribution = particle_distribution
+        super(InverseCompton, self).__init__(particle_distribution)
         self.seed_photon_fields = self._process_input_seed(seed_photon_fields)
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
@@ -665,8 +669,7 @@ class Bremsstrahlung(BaseElectron):
     """
 
     def __init__(self, particle_distribution, n0 = 1 / u.cm**3, **kwargs):
-        super(Bremsstrahlung, self).__init__()
-        self.particle_distribution = particle_distribution
+        super(Bremsstrahlung, self).__init__(particle_distribution)
         self.n0 = n0
         self.Eemin = 100 * u.MeV
         self.Eemax = 1e9 * mec2
@@ -831,7 +834,8 @@ class BaseProton(BaseRadiative):
     """Implements compute_Wp at arbitrary energies
     """
 
-    def __init__(self):
+    def __init__(self, particle_distribution):
+        super(BaseProton, self).__init__(particle_distribution)
         self.param_names = ['Epmin', 'Epmax', 'nEpd']
         self._memoize = True
         self._cache = {}
@@ -980,8 +984,7 @@ class PionDecay(BaseProton):
 
     def __init__(self, particle_distribution, nh = 1.0 / u.cm**3,
             nuclear_enhancement = True, **kwargs):
-        super(PionDecay, self).__init__()
-        self.particle_distribution = particle_distribution
+        super(PionDecay, self).__init__(particle_distribution)
         self.nh = validate_scalar('nh', nh, physical_type='number density')
         self.nuclear_enhancement = nuclear_enhancement
         self.useLUT = True
