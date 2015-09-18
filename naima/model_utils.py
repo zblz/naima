@@ -22,7 +22,7 @@ def memoize(func):
             # Quantity scalar
             try:
                 energy = u.Quantity(energy['energy'])
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, IndexError):
                 pass
 
             try:
