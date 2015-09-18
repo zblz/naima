@@ -71,13 +71,15 @@ class PowerLaw(object):
         return amplitude * xx ** (-alpha)
 
     @memoize
-    def __call__(self,e):
-        """One dimensional power law model function"""
-
-        e = _validate_ene(e)
-
+    def _calc(self, e):
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.alpha)
+
+    def __call__(self,e):
+        """One dimensional power law model function"""
+        e = _validate_ene(e)
+        return self._calc(e)
+
 
 
 class ExponentialCutoffPowerLaw(object):
@@ -130,14 +132,16 @@ class ExponentialCutoffPowerLaw(object):
         return amplitude * xx ** (-alpha) * np.exp(-(e / e_cutoff) ** beta)
 
     @memoize
-    def __call__(self,e):
-        """One dimensional power law with an exponential cutoff model function"""
-
-        e = _validate_ene(e)
-
+    def _calc(self, e):
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.alpha,
                 self.e_cutoff.to('eV').value, self.beta)
+
+    def __call__(self,e):
+        """One dimensional power law with an exponential cutoff model function"""
+        e = _validate_ene(e)
+        return self._calc(e)
+
 
 class BrokenPowerLaw(object):
     """
@@ -195,14 +199,16 @@ class BrokenPowerLaw(object):
         return amplitude * K * (e / e_0) ** -alpha
 
     @memoize
-    def __call__(self,e):
-        """One dimensional power law model function"""
-
-        e = _validate_ene(e)
-
+    def _calc(self, e):
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.e_break.to('eV').value,
                 self.alpha_1, self.alpha_2)
+
+    def __call__(self,e):
+        """One dimensional broken power law model function"""
+        e = _validate_ene(e)
+        return self._calc(e)
+
 
 class ExponentialCutoffBrokenPowerLaw(object):
     """
@@ -271,15 +277,17 @@ class ExponentialCutoffBrokenPowerLaw(object):
         return amplitude * K * (e / e_0) ** -alpha * np.exp(- (ee2 ** beta))
 
     @memoize
-    def __call__(self,e):
-        """One dimensional power law model function"""
-
-        e = _validate_ene(e)
-
+    def _calc(self, e):
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value, self.e_break.to('eV').value,
                 self.alpha_1, self.alpha_2, self.e_cutoff.to('eV').value,
                 self.beta)
+
+    def __call__(self,e):
+        """One dimensional broken power law model with exponential cutoff function"""
+        e = _validate_ene(e)
+        return self._calc(e)
+
 
 class LogParabola(object):
     """
@@ -328,12 +336,14 @@ class LogParabola(object):
         return amplitude * ee ** eeponent
 
     @memoize
-    def __call__(self,e):
-        """One dimensional power law model function"""
-
-        e = _validate_ene(e)
-
+    def _calc(self, e):
         return self.eval(e.to('eV').value, self.amplitude,
                 self.e_0.to('eV').value,
                 self.alpha, self.beta)
+
+    def __call__(self,e):
+        """One dimensional curved power law function"""
+        e = _validate_ene(e)
+        return self._calc(e)
+
 

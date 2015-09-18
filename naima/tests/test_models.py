@@ -401,11 +401,16 @@ def test_inputs():
 
 
     LP = LogParabola(1., e_0, 1.7, 0.2)
+    LP._memoize = True
 
+    # do twice for memoize
     LP(np.logspace(1,10,10)*u.TeV)
+    LP(np.logspace(1,10,10)*u.TeV)
+    LP(10*u.TeV)
     LP(10*u.TeV)
 
     ECBPL = ExponentialCutoffBrokenPowerLaw(1., e_0, e_break, 1.5, 2.5, e_cutoff, 2.0)
+    ECBPL._memoize = True
     ECBPL(np.logspace(1,10,10)*u.TeV)
 
     with pytest.raises(TypeError):

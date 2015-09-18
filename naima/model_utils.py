@@ -18,11 +18,21 @@ def memoize(func):
             memoize = False
 
         if memoize:
+            # Allow for dicts or tables with energy column, Quantity array or
+            # Quantity scalar
             try:
-                energy = energy['energy']
-                data = [hashlib.sha256(u.Quantity(energy).value.tostring()).hexdigest(),]
-            except:
-                data = [hashlib.sha256(energy.value.tostring()).hexdigest(),]
+                energy = u.Quantity(energy['energy'])
+            except (TypeError, ValueError):
+                pass
+
+            try:
+                # tostring is 10 times faster than str(array).encode()
+                bstr = energy.value.tostring()
+            except AttributeError:
+                # scalar Quantity
+                bstr = str(energy.value).encode()
+
+            data = [hashlib.sha256(bstr).hexdigest(),]
 
             data.append(energy.unit.to_string())
             data.append(str(kwargs.get('distance',0)))
