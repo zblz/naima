@@ -6,7 +6,7 @@ from astropy.extern import six
 import astropy.units as u
 
 from ..analysis import save_diagnostic_plots
-from ..core import run_sampler, get_sampler, uniform_prior, normal_prior
+from ..core import run_sampler, get_sampler, uniform_prior, normal_prior, lnprob
 
 try:
     import emcee
@@ -111,6 +111,12 @@ def test_init():
 
     # test that the CL keyword has been correctly read
     assert np.all(sampler.data['cl'] == 0.99)
+
+@pytest.mark.skipif('not HAS_EMCEE')
+def test_inf_prior():
+    pars = p0
+    pars[0] = -1e-9
+    _ = lnprob(pars, data_table, cutoffexp, lnprior)
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_sed_conversion_in_lnprobmodel():
