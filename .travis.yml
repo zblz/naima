@@ -108,7 +108,10 @@ install:
     - if [[ $SETUP_CMD == build_sphinx* ]]; then $PIP_INSTALL sphinx_rtd_theme; fi
 
     # COVERAGE DEPENDENCIES
-    - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage coveralls; fi
+    # TODO can use latest version of coverage (4.0) once
+    # https://github.com/astropy/astropy/issues/4175 is addressed in
+    # astropy release version.
+    - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage==3.7.1 coveralls; fi
 
 script:
    - |
@@ -127,4 +130,4 @@ script:
 
 after_success:
     # Uncomment line below if coveralls.io is set up for this package.
-    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coveralls; fi
+    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coveralls --rcfile='naima/tests/coveragerc'; fi
