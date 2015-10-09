@@ -33,6 +33,10 @@ env:
         - SETUP_CMD='egg_info'
 
 matrix:
+
+    # Don't wait for allowed failures
+    fast_finish: true
+
     include:
 
         # Do a coverage test in Python 2 w/ numpy 1.8 for sherpa.
@@ -62,16 +66,17 @@ matrix:
         - python: 3.4
           env: SETUP_CMD='test'
         - python: 3.5
-          env: SETUP_CMD='test'
+          env: NUMPY_VERSION=1.10 SETUP_CMD='test'
 
         # Try older numpy versions
         # 1.8 is already tested in coverage to get sherpa
         #- python: 2.7
-          #env: NUMPY_VERSION=1.8 SETUP_CMD='test'
+          #env: NUMPY_VERSION=1.9 SETUP_CMD='test'
         - python: 2.7
           env: NUMPY_VERSION=1.7 SETUP_CMD='test'
-        - python: 2.7
-          env: NUMPY_VERSION=1.6 SETUP_CMD='test'
+
+    allow_failures:
+        - env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.10 SETUP_CMD='test'
 
 before_install:
 
