@@ -105,7 +105,7 @@ def test_compute_We(particle_dists):
 
     sy = Synchrotron(ECPL,B=1*u.G, **electron_properties)
 
-    Eemax, Eemin = 10*u.GeV, 100*u.TeV
+    Eemin, Eemax = 10*u.GeV, 100*u.TeV
 
     sy.compute_We()
     sy.compute_We(Eemin=Eemin)
@@ -114,7 +114,7 @@ def test_compute_We(particle_dists):
     assert sy.We == sy.compute_We(Eemin=sy.Eemin,Eemax=sy.Eemax)
 
     pp = PionDecay(ECPL)
-    Epmax, Epmin = 10*u.GeV, 100*u.TeV
+    Epmin, Epmax = 10*u.GeV, 100*u.TeV
     pp.compute_Wp()
     pp.compute_Wp(Epmin=Epmin)
     pp.compute_Wp(Epmax=Epmax)
@@ -172,7 +172,7 @@ def test_bremsstrahlung_lum(particle_dists):
 
 
     lum_ref = 2.3064095039069847e-05
-    assert_allclose(lbrems, lum_ref)
+    assert_allclose(lbrems.value, lum_ref)
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_inverse_compton_lum(particle_dists):

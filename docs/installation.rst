@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-naima requires Python 2.7, 3.2, 3.3, or 3.4, and the following
+naima requires Python 2.7, 3.3, 3.4, or 3.5 and the following
 packages to be installed:
 
 * `Numpy <http://www.numpy.org>`_
