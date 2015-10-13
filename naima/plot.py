@@ -871,7 +871,7 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
 
     interp = False
     if (data_all['energy'].size != MLene.size or
-            not np.allclose(data_all['energy'], MLene)):
+            not np.allclose(data_all['energy'].value, MLene.value)):
         interp = True
         from scipy.interpolate import interp1d
         modelfunc = interp1d(MLene.value, MLflux.value, bounds_error=False)

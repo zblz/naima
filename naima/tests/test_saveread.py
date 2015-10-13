@@ -86,11 +86,13 @@ def test_roundtrip(sampler):
         if isinstance(b0, tuple) or isinstance(b0, list):
             for m in range(len(b0)):
                 assert b0[m].unit == b1[m].unit
-                assert np.allclose(b0[m],b1[m])
+                assert np.allclose(b0[m].value, b1[m].value)
         else:
             if isinstance(b0, u.Quantity):
                 assert b0.unit == b1.unit
-            assert np.allclose(b0,b1)
+                assert np.allclose(b0.value, b1.value)
+            else:
+                assert np.allclose(b0, b1)
 
     for key in sampler.run_info.keys():
         assert np.all(sampler.run_info[key] == nresult.run_info[key])
@@ -99,7 +101,8 @@ def test_roundtrip(sampler):
         assert sampler.labels[i] == nresult.labels[i]
 
     for col in sampler.data.colnames:
-        assert np.allclose(sampler.data[col], nresult.data[col])
+        assert np.allclose(u.Quantity(sampler.data[col]).value,
+                u.Quantity(nresult.data[col]).value)
         assert str(sampler.data[col].unit) == str(nresult.data[col].unit)
     validate_data_table(nresult.data)
 
