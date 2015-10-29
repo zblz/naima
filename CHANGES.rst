@@ -1,5 +1,5 @@
-0.7 (unreleased)
-----------------
+0.6.1 (2015-10-29)
+------------------
 
 - Performance improvements to the memoize logic that result in 10% or higher
   improvement in model execution time.
