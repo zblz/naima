@@ -889,6 +889,8 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True,
     MLene = model_ML[0].to(e_unit)
     MLflux = (model_ML[1] * MLsedf).to(MLf_unit)
 
+    ax.axhline(0, color='k', lw=2, ls='--')
+
     interp = False
     if (data_all['energy'].size != MLene.size or
             not np.allclose(data_all['energy'].value, MLene.value)):
@@ -927,8 +929,6 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True,
                 yerr=(dflux / dflux).decompose().value,
                 xerr=xerr[:, notul].to(e_unit).value,
                 **opts)
-
-    ax.axhline(0, color='k', lw=2, ls='--')
 
     from matplotlib.ticker import MaxNLocator
     ax.yaxis.set_major_locator(MaxNLocator(5, integer='True', prune='upper',
