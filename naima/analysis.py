@@ -496,7 +496,7 @@ def read_run(filename, modelfn=None):
                 blobs.append(u.Quantity(ds.value, unit=ds.attrs['unit']))
             else:
                 blob = []
-                for j in range(np.rank(ds[0])):
+                for j in range(np.ndim(ds[0])):
                     blob.append(u.Quantity(ds.value[:,j,:],
                         unit=ds.attrs['unit{0}'.format(j)]))
                 blobs.append(blob)
