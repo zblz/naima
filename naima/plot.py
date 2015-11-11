@@ -610,7 +610,7 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kw
 def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
         n_samples=100, confs=None, ML_info=False, figure=None, plotdata=None,
         plotresiduals=None, e_unit=None, e_range=None, e_npoints=100,
-        xlabel=None, ylabel=None, ulim_opts={}, marker_size=6):
+        xlabel=None, ylabel=None, ulim_opts={}, errorbar_opts={}):
     """
     Plot data with fit confidence regions.
 
@@ -643,8 +643,9 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
         Wheter to plot data on top of model confidence intervals. Default is
         True if the physical types of the data and the model match.
     plotresiduals : bool, optional
-        Wheter to plot the residuals with respect to the maximum likelihood model. Default is
-        True if ``plotdata`` is True and either ``confs`` or ``n_samples`` are set.
+        Wheter to plot the residuals with respect to the maximum likelihood
+        model. Default is True if ``plotdata`` is True and either ``confs`` or
+        ``n_samples`` are set.
     e_unit : `~astropy.units.Unit`, optional
         Units for the energy axis of the plot. The default is to use the units
         of the energy array of the observed data.
@@ -654,7 +655,8 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
         model are recomputed and depending on the model speed might be quite
         slow.
     e_npoints : int, optional
-        How many points to compute for the model samples and ML model if `e_range` is set.
+        How many points to compute for the model samples and ML model if
+        `e_range` is set.
     xlabel : str, optional
         Label for the ``x`` axis of the plot.
     ylabel : str, optional
@@ -662,8 +664,9 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
     ulim_opts : dict
         Option for upper-limit plotting. Available options are capsize (arrow
         width) and height_fraction (arrow length in fraction of flux value).
-    marker_size : int
-        Size of marker in spectral flux points.
+    errorbar_opts : dict
+        Addtional options to pass to `matplotlib.plt.errorbar` for plotting the
+        spectral flux points.
 
     """
     import matplotlib.pyplot as plt
@@ -695,7 +698,7 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
     if confs is None and not n_samples and plotdata and not plotresiduals:
         # We actually only want to plot the data, so let's go there
         return plot_data(sampler.data, xlabel=xlabel, ylabel=ylabel, sed=sed, figure=figure,
-                e_unit=e_unit)
+                e_unit=e_unit, ulim_opts=ulim_opts, errorbar_opts=errorbar_opts)
 
     if figure is None:
         f = plt.figure()
@@ -725,9 +728,10 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
     xlaxis = ax1
     if plotdata:
         _plot_data_to_ax(data, ax1, e_unit=e_unit, sed=sed,
-                ylabel=ylabel)
+                ylabel=ylabel, ulim_opts=ulim_opts, errorbar_opts=errorbar_opts)
         if plotresiduals:
-            _plot_residuals_to_ax(data, model_ML, ax2, e_unit=e_unit, sed=sed)
+            _plot_residuals_to_ax(data, model_ML, ax2, e_unit=e_unit, sed=sed,
+                    errorbar_opts=errorbar_opts)
             xlaxis = ax2
             for tl in ax1.get_xticklabels():
                 tl.set_visible(False)
@@ -775,29 +779,30 @@ def plot_fit(sampler, modelidx=0, label=None, sed=True, last_step=False,
 
     return f
 
-def _plot_ulims(ax, x, y, xerr, color, capsize=5, height_fraction=0.25):
+def _plot_ulims(ax, x, y, xerr, color, capsize=5, height_fraction=0.25,
+        elinewidth=2):
     """
     Plot upper limits as arrows with cap at value of upper limit.
 
     uplim behaviour has been fixed in matplotlib 1.4
     """
     ax.errorbar(x, y, xerr=xerr, ls='',
-            color=color, elinewidth=2, capsize=0)
+            color=color, elinewidth=elinewidth, capsize=0)
 
     from distutils.version import LooseVersion
     import matplotlib
     mpl_version = LooseVersion(matplotlib.__version__)
     if mpl_version >= LooseVersion('1.4.0'):
         ax.errorbar(x, y, yerr=height_fraction * y,
-                ls='', uplims=True, color=color, elinewidth=2, capsize=capsize,
+                ls='', uplims=True, color=color, elinewidth=elinewidth, capsize=capsize,
                 zorder=10)
     else:
         ax.errorbar(x, (1 - height_fraction) * y, yerr=height_fraction*y,
-                ls='', lolims=True, color=color, elinewidth=2, capsize=capsize,
+                ls='', lolims=True, color=color, elinewidth=elinewidth, capsize=capsize,
                 zorder=10)
 
 def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None,
-        ulim_opts={}, marker_size=6):
+        ulim_opts={}, errorbar_opts={}):
     """ Plots data errorbars and upper limits onto ax.
     X label is left to plot_data and plot_fit because they depend on whether
     residuals are plotted.
@@ -831,14 +836,20 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None,
         yerr = u.Quantity((yerr_lo, data['flux_error_hi'][notul]))
         xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))
 
+        opts = dict(zorder=100, marker=marker, ls='', elinewidth=2, capsize=0,
+                mec=color, mew=0.1, ms=5, color=color)
+        opts.update(**errorbar_opts)
+
         ax1.errorbar(data['energy'][notul].to(e_unit).value,
                 (data['flux'][notul] * sedf[notul]).to(f_unit).value,
                 yerr=(yerr * sedf[notul]).to(f_unit).value,
                 xerr=xerr[:,notul].to(e_unit).value,
-                zorder=100, marker=marker, ls='', elinewidth=2, capsize=0,
-                mec=color, mew=0.1, ms=marker_size, color=color)
+                **opts)
 
         if np.any(ul):
+            if 'elinewidth' in errorbar_opts:
+                ulim_opts['elinewidth'] = errorbar_opts['elinewidth']
+
             _plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
                     (data['flux'][ul] * sedf[ul]).to(f_unit).value,
                     (xerr[:, ul]).to(e_unit).value, color, **ulim_opts)
@@ -866,7 +877,8 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None,
     else:
         ax1.set_ylabel(ylabel)
 
-def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
+def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True,
+        errorbar_opts={}):
     """Function to compute and plot residuals in units of the uncertainty"""
     if 'group' not in data_all.keys():
         data_all['group'] = np.zeros(len(data_all))
@@ -906,12 +918,15 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
         color = color_cycle[int(g) % len(color_cycle)]
         marker = marker_cycle[int(g) % len(marker_cycle)]
 
+        opts = dict(zorder=100, marker=marker, ls='', elinewidth=2, capsize=0,
+                mec=color, mew=0.1, ms=6, color=color)
+        opts.update(errorbar_opts)
+
         ax.errorbar(ene[notul].value,
                 (difference / dflux).decompose().value,
                 yerr=(dflux / dflux).decompose().value,
                 xerr=xerr[:, notul].to(e_unit).value,
-                zorder=100, marker=marker, ls='', elinewidth=2, capsize=0,
-                mec=color, mew=0.1, ms=6, color=color)
+                **opts)
 
     ax.axhline(0, color='k', lw=2, ls='--')
 
@@ -924,7 +939,7 @@ def _plot_residuals_to_ax(data_all, model_ML, ax, e_unit=u.eV, sed=True):
 
 
 def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
-        e_unit=None, ulim_opts={}, marker_size=6):
+        e_unit=None, ulim_opts={}, errorbar_opts={}):
     """
     Plot spectral data.
 
@@ -945,10 +960,11 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
     e_unit : `astropy.unit.Unit`, optional
         Units for energy axis. Defaults to those of the data.
     ulim_opts : dict
-        Option for upper-limit plotting. Available options are capsize (arrow
+        Options for upper-limit plotting. Available options are capsize (arrow
         width) and height_fraction (arrow length in fraction of flux value).
-    marker_size : int
-        Size of marker in spectral flux points.
+    errorbar_opts : dict
+        Addtional options to pass to `matplotlib.plt.errorbar` for plotting the
+        spectral flux points.
     """
 
     import matplotlib.pyplot as plt
@@ -986,7 +1002,8 @@ def plot_data(input_data, xlabel=None, ylabel=None, sed=True, figure=None,
     elif e_unit is None:
         e_unit = data['energy'].unit
 
-    _plot_data_to_ax(data, ax1, e_unit=e_unit, sed=sed, ylabel=ylabel)
+    _plot_data_to_ax(data, ax1, e_unit=e_unit, sed=sed, ylabel=ylabel,
+            ulim_opts=ulim_opts, errorbar_opts=errorbar_opts)
 
     if xlabel is not None:
         ax1.set_xlabel(xlabel)
