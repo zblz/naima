@@ -52,7 +52,10 @@ encodes our prior knowledge of the probability distribution of a given model
 parameter. If a given parameter is constrained by a previous measurement, it can
 be considered using a normal distribution (`naima.normal_prior`). If you need to
 constrain a parameter to be within a certain range, a uniform prior can be used
-(`naima.uniform_prior`).
+(`naima.uniform_prior`). For parameters expected to have a flat prior in
+log-space (e.g., normalizations, cutoff energies, etc.) you can either sample
+the logarithm of the parameter or use a log-uniform prior
+(`naima.log_uniform_prior`).
     
 The combination of the prior and data likelihood functions is passed onto the
 `emcee.EnsembleSampler`, and the MCMC run is started. `emcee

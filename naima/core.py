@@ -9,7 +9,8 @@ import warnings
 
 from .utils import validate_data_table, sed_conversion
 
-__all__ = ["normal_prior", "uniform_prior", "get_sampler", "run_sampler"]
+__all__ = ["normal_prior", "uniform_prior", "log_uniform_prior",
+           "get_sampler", "run_sampler"]
 
 # Define phsyical types used in plot and utils.validate_data_table
 u.def_physical_type(u.erg / u.cm ** 2 / u.s, 'flux')
@@ -34,6 +35,21 @@ def normal_prior(value, mean, sigma):
     """Normal prior distribution.
     """
     return - 0.5 * (2 * np.pi * sigma) - (value - mean) ** 2 / (2. * sigma)
+
+
+def log_uniform_prior(value, umin=0, umax=None):
+    """Log-uniform prior distribution.
+    """
+    if value > 0 and value >= umin:
+        if umax is not None:
+            if value <= umax:
+                return 1 / value
+            else:
+                return -np.inf
+        else:
+            return 1 / value
+    else:
+        return -np.inf
 
 # Probability function
 

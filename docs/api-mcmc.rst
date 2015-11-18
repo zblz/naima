@@ -21,6 +21,7 @@ Spectral model fitting
 - Priors
     - `naima.normal_prior`
     - `naima.uniform_prior`
+    - `naima.log_uniform_prior`
     
 API
 ---
