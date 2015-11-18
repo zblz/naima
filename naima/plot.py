@@ -1110,7 +1110,7 @@ def plot_corner(sampler, show_ML=True):
     oldlw = plt.rcParams['lines.linewidth']
     plt.rcParams['lines.linewidth'] = 0.7
     try:
-        from triangle import corner
+        from corner import corner
 
         if show_ML:
             _, MLp, _, _ = find_ML(sampler, 0)
@@ -1121,7 +1121,8 @@ def plot_corner(sampler, show_ML=True):
                    truths=MLp, quantiles=[0.16, 0.5, 0.84],
                    verbose=False, truth_color=color_cycle[0])
     except ImportError:
-        log.warning('triangle_plot not installed, corner plot not available')
+        log.warning('The corner package is not installed;'
+                ' corner plot not available')
         f = None
 
     plt.rcParams['lines.linewidth'] = oldlw
