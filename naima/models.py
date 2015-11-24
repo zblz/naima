@@ -10,7 +10,7 @@ from .model_utils import memoize
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw',
-           'LogParabola', 'ExponentialCutoffBrokenPowerLaw' ]
+           'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel']
 
 def _validate_ene(ene):
     from astropy.table import Table

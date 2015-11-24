@@ -436,6 +436,15 @@ def test_tablemodel():
     e3 = np.logspace(lemin-4, lemin-2, 100) * u.TeV
     assert_allclose(tm(e3).value, 0.0)
 
+    # use tablemodel as pdist
+    from ..radiative import Synchrotron, InverseCompton, PionDecay
+    SY = Synchrotron(tm)
+    _ = SY.flux(e/10)
+    IC = InverseCompton(tm)
+    _ = IC.flux(e/10)
+    PP = PionDecay(tm)
+    _ = PP.flux(e/10)
+
 
 
 
