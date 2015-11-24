@@ -11,6 +11,20 @@ from .model_utils import memoize
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'PionDecayKelner06']
 
+HAS_NUMBA = True
+try:
+    from numba import jit
+except ImportError:
+    HAS_NUMBA = False
+    # Define an empty decorator
+    def jit(func=None, **kwargs):
+        def wrapper(func):
+            return func
+        if func is not None:
+            return wrapper(func)
+        else:
+            return wrapper
+
 from astropy.extern import six
 from collections import OrderedDict
 import os
@@ -213,6 +227,28 @@ class BaseElectron(BaseRadiative):
             setattr(self.particle_distribution, amplitude_name,
                     oldampl * (We / oldWe).decompose())
 
+@jit(nopython=True)
+def _Gtilde_numba(x):
+    """
+    AKP10 Eq. D7
+    """
+    gt1 = 1.808 * x ** (1/3.) / np.sqrt(1 + 3.4 * x ** (2./3.))
+    gt2 = 1 + 2.210 * x ** (2./3.) + 0.347 * x ** (4./3.)
+    gt3 = 1 + 1.353 * x ** (2./3.) + 0.217 * x ** (4./3.)
+    return gt1 * (gt2 / gt3) * np.exp(-x)
+
+def _Gtilde_scipy(x):
+    """
+    AKP10 Eq. D7
+
+    Factor ~2 performance gain in using cbrt(x)**n vs x**(n/3.)
+    """
+    from scipy.special import cbrt
+    gt1 = 1.808 * cbrt(x) / np.sqrt(1 + 3.4 * cbrt(x) ** 2.)
+    gt2 = 1 + 2.210 * cbrt(x) ** 2. + 0.347 * cbrt(x) ** 4.
+    gt3 = 1 + 1.353 * cbrt(x) ** 2. + 0.217 * cbrt(x) ** 4.
+    return gt1 * (gt2 / gt3) * np.exp(-x)
+
 
 class Synchrotron(BaseElectron):
     """Synchrotron emission from an electron population.
@@ -255,6 +291,8 @@ class Synchrotron(BaseElectron):
         self.param_names += ['B',]
         self.__dict__.update(**kwargs)
 
+
+    @jit
     def _spectrum(self, photon_energy):
         """Compute intrinsic synchrotron differential spectrum for energies in ``photon_energy``
 
@@ -269,19 +307,6 @@ class Synchrotron(BaseElectron):
         """
 
         outspecene = _validate_ene(photon_energy)
-
-        from scipy.special import cbrt
-
-        def Gtilde(x):
-            """
-            AKP10 Eq. D7
-
-            Factor ~2 performance gain in using cbrt(x)**n vs x**(n/3.)
-            """
-            gt1 = 1.808 * cbrt(x) / np.sqrt(1 + 3.4 * cbrt(x) ** 2.)
-            gt2 = 1 + 2.210 * cbrt(x) ** 2. + 0.347 * cbrt(x) ** 4.
-            gt3 = 1 + 1.353 * cbrt(x) ** 2. + 0.217 * cbrt(x) ** 4.
-            return gt1 * (gt2 / gt3) * np.exp(-x)
 
         log.debug('calc_sy: Starting synchrotron computation with AKB2010...')
 
@@ -298,7 +323,10 @@ class Synchrotron(BaseElectron):
         Ec /= 2 * (m_e * c).cgs.value
 
         EgEc = outspecene.to('erg').value / np.vstack(Ec)
-        dNdE = CS1 * Gtilde(EgEc)
+        if HAS_NUMBA:
+            dNdE = CS1 * _Gtilde_numba(EgEc)
+        else:
+            dNdE = CS1 * _Gtilde_scipy(EgEc)
         # return units
         spec = trapz_loglog(np.vstack(self._nelec) * dNdE, self._gam, axis=0) / u.s / u.erg
         spec = spec.to('1/(s eV)')
@@ -306,6 +334,7 @@ class Synchrotron(BaseElectron):
         return spec
 
 
+@jit(nopython=True)
 def G12(x, a):
     """
     Eqs 20, 24, 25 of Khangulyan et al (2014)
@@ -318,6 +347,7 @@ def G12(x, a):
     return G * g
 
 
+@jit(nopython=True)
 def G34(x, a):
     """
     Eqs 20, 24, 25 of Khangulyan et al (2014)
@@ -462,6 +492,7 @@ class InverseCompton(BaseElectron):
 
 
     @staticmethod
+    @jit
     def _iso_ic_on_planck(electron_energy, soft_photon_temperature, gamma_energy):
         """
         IC cross-section for isotropic interaction with a blackbody photon
@@ -476,8 +507,8 @@ class InverseCompton(BaseElectron):
 
         gamma_energy = np.vstack(gamma_energy)
         # Parameters from Eqs 26, 27
-        a3 = [0.606, 0.443, 1.481, 0.540, 0.319]
-        a4 = [0.461, 0.726, 1.457, 0.382, 6.620]
+        a3 = np.array([0.606, 0.443, 1.481, 0.540, 0.319])
+        a4 = np.array([0.461, 0.726, 1.457, 0.382, 6.620])
         z = gamma_energy / electron_energy
         x = z / (1 - z) / (4. * electron_energy * soft_photon_temperature)
         # Eq. 14
@@ -492,6 +523,7 @@ class InverseCompton(BaseElectron):
                         np.zeros_like(cross_section))
 
     @staticmethod
+    @jit
     def _ani_ic_on_planck(electron_energy, soft_photon_temperature, gamma_energy, theta):
         """
         IC cross-section for anisotropic interaction with a blackbody photon
@@ -507,8 +539,8 @@ class InverseCompton(BaseElectron):
 
         gamma_energy = np.vstack(gamma_energy)
         # Parameters from Eqs 21, 22
-        a1 = [0.857, 0.153, 1.840, 0.254]
-        a2 = [0.691, 1.330, 1.668, 0.534]
+        a1 = np.array([0.857, 0.153, 1.840, 0.254])
+        a2 = np.array([0.691, 1.330, 1.668, 0.534])
         z = gamma_energy / electron_energy
         ttheta = 2. * electron_energy * soft_photon_temperature * (1. - np.cos(theta))
         x = z / (1 - z) / ttheta
@@ -528,6 +560,7 @@ class InverseCompton(BaseElectron):
             '_calc_specic: Computing IC on {0} seed photons...'.format(seed))
 
         T = self.seed_photon_fields[seed]['T']
+        print(type(T))
         uf = (self.seed_photon_fields[seed]['u'] / (ar * T ** 4)).decompose()
 
         Eph = (outspecene / mec2).decompose().value
@@ -1037,8 +1070,9 @@ class PionDecay(BaseProton):
     _m_pi = 0.1349766  # GeV/c2
     _Tth = 0.27966184
 
-
-    def _sigma_inel(self, Tp):
+    @staticmethod
+    @jit
+    def _sigma_inel(Tp):
         """
         Inelastic cross-section for p-p interaction. KATV14 Eq. 1
 
@@ -1053,9 +1087,10 @@ class PionDecay(BaseProton):
             Inelastic cross-section for p-p interaction [1/cm2].
 
         """
-        L = np.log(Tp/self._Tth)
-        sigma = 30.7 - 0.96 * L + 0.18 * L ** 2
-        sigma *= (1 - (self._Tth / Tp) ** 1.9) ** 3
+        Tth = 0.27966184
+        L = np.log(Tp / Tth)
+        sigma = ((30.7 - 0.96 * L + 0.18 * L ** 2)
+                 * (1 - (Tth / Tp) ** 1.9) ** 3)
         return sigma * 1e-27  # convert from mbarn to cm-2
 
     def _sigma_pi_loE(self,Tp):
