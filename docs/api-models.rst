@@ -14,11 +14,14 @@ Models
     - `naima.models.BrokenPowerLaw`
     - `naima.models.ExponentialCutoffBrokenPowerLaw`
     - `naima.models.LogParabola`
+- Table models:
+    - `naima.models.TableModel`
 
 API
 ---
 
 .. automodule:: naima.models
     :members: Synchrotron, InverseCompton, Bremsstrahlung, PionDecay, PowerLaw,
-                BrokenPowerLaw, ExponentialCutoffBrokenPowerLaw, LogParabola
+                BrokenPowerLaw, ExponentialCutoffBrokenPowerLaw, LogParabola,
+                TableModel
     :inherited-members:
