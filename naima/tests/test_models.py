@@ -417,3 +417,26 @@ def test_inputs():
         data = {'flux':[1,2,4]}
         LP(data)
 
+def test_tablemodel():
+    from ..models import TableModel
+
+    lemin, lemax = -4, 2
+    # test an exponential cutoff PL with index 2, cutoff at 10 TeV
+    e=np.logspace(lemin, lemax,50)*u.TeV
+    n=(e.value)**-2 * np.exp(-e.value/10) / u.eV 
+    tm = TableModel(e, n, amplitude=1)
+    assert_allclose(n.to('1/eV').value, tm(e).to('1/eV').value)
+
+    # test interpolation
+    e2 = np.logspace(lemin, lemax, 1000)*u.TeV
+    n2 = (e2.value)**-2 * np.exp(-e2.value/10) / u.eV
+    assert_allclose(n2.to('1/eV').value, tm(e2).to('1/eV').value)
+
+    # test that it returns 0 outside of bounds
+    e3 = np.logspace(lemin-4, lemin-2, 100) * u.TeV
+    assert_allclose(tm(e3).value, 0.0)
+
+
+
+
+
