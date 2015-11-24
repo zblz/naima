@@ -1,4 +1,6 @@
-language: python
+# set language to C because python is not supported in Mac. Does not make a
+# difference because we install python through conda
+language: c
 
 branches:
     only:
