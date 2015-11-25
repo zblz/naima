@@ -28,12 +28,13 @@ color_cycle = [
 # use sans math font, lines wider than axes
 # Hopefully won't need this for matplotlib 2.0
 rcParams = {
-        'mathtext.rm' : 'sans',
-        'mathtext.it' : 'sans:italic',
-        'mathtext.bf' : 'sans:bold',
-        'mathtext.sf' : 'sans',
-        'mathtext.cal' : 'sans:italic',
-        'mathtext.fontset' : 'custom',
+        # font modification does not hold well across system, wait for mpl 2.0
+        # 'mathtext.rm' : 'sans',
+        # 'mathtext.it' : 'sans:italic',
+        # 'mathtext.bf' : 'sans:bold',
+        # 'mathtext.sf' : 'sans',
+        # 'mathtext.cal' : 'sans:italic',
+        # 'mathtext.fontset' : 'custom',
         'axes.linewidth' : 0.7,
         'lines.linewidth' : 1.7,
         'lines.antialiased' : True,
@@ -820,6 +821,7 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None,
 
     for g in groups:
         data = data_all[np.where(data_all['group']==g)]
+        _, sedfg = sed_conversion(data['energy'], data['flux'].unit, sed)
 
         # wrap around color and marker cycles
         color = color_cycle[int(g) % len(color_cycle)]
@@ -841,8 +843,8 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None,
         opts.update(**errorbar_opts)
 
         ax1.errorbar(data['energy'][notul].to(e_unit).value,
-                (data['flux'][notul] * sedf[notul]).to(f_unit).value,
-                yerr=(yerr * sedf[notul]).to(f_unit).value,
+                (data['flux'][notul] * sedfg[notul]).to(f_unit).value,
+                yerr=(yerr * sedfg[notul]).to(f_unit).value,
                 xerr=xerr[:,notul].to(e_unit).value,
                 **opts)
 
@@ -851,7 +853,7 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None,
                 ulim_opts['elinewidth'] = errorbar_opts['elinewidth']
 
             _plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
-                    (data['flux'][ul] * sedf[ul]).to(f_unit).value,
+                    (data['flux'][ul] * sedfg[ul]).to(f_unit).value,
                     (xerr[:, ul]).to(e_unit).value, color, **ulim_opts)
 
     ax1.set_xscale('log')
@@ -860,10 +862,11 @@ def _plot_data_to_ax(data_all, ax1, e_unit=None, sed=True, ylabel=None,
     xmax = 10 ** np.ceil(np.log10(np.max(data['energy'] + data['energy_error_hi']).to(e_unit).value))
     ax1.set_xlim(xmin, xmax)
     # avoid autoscaling to errorbars to 0
-    if np.any(data['flux_error_lo'][notul] >= data['flux'][notul]):
-        elo  = ((data['flux'][notul] * sedf[notul]).to(f_unit).value -
-                (data['flux_error_lo'][notul] * sedf[notul]).to(f_unit).value)
-        gooderr = np.where(data['flux_error_lo'][notul] < data['flux'][notul])
+    notul = -data_all['ul']
+    if np.any(data_all['flux_error_lo'][notul] >= data_all['flux'][notul]):
+        elo  = ((data_all['flux'][notul] * sedf[notul]).to(f_unit).value -
+                (data_all['flux_error_lo'][notul] * sedf[notul]).to(f_unit).value)
+        gooderr = np.where(data_all['flux_error_lo'][notul] < data_all['flux'][notul])
         ymin = 10 ** np.floor(np.log10(np.min(elo[gooderr])))
         ax1.set_ylim(bottom=ymin)
 
