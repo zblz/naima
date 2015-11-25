@@ -16,8 +16,14 @@ argument. Several particle distribution functions can be found in the
 `~naima.models.BrokenPowerLaw`, and
 `~naima.models.ExponentialCutoffBrokenPowerLaw`. To use them as a particle
 distribution function the units of their amplitude must be in particles per unit
-energy (i.e., convertible to ``1/eV``). See below in `IC`_ for details about
-the inverse Compton model.::
+energy (i.e., convertible to ``1/eV``).  If you have computed a particle
+distribution from a physical code and wish to compute its radiative output, you
+can use the `~naima.models.TableModel` class to define a distribution function
+from an array of energies and an array of particle numbers per unit energy. 
+
+Here is an example of how you can use the Exponential Cutoff Power Law model as
+particle distribution function for an inverse Compton model (see below in `IC`_
+for details about the inverse Compton model).::
 
     >>> ECPL = naima.models.ExponentialCutoffPowerLaw(1e36*u.Unit('1/eV'), 1*u.TeV, 2.1, 13*u.TeV)
     >>> IC = naima.models.InverseCompton(ECPL, seed_photon_fields=['CMB'])

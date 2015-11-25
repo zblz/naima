@@ -4,6 +4,7 @@
 - ``plot_fit`` and ``plot_data`` have new options (``errorbar_opts`` and
   ``ulim_opts``) to control the properties of spectral flux points and
   upper-limits.
+- There is a new table model class in ``naima.models.TableModel``.
 
 0.6.1 (2015-10-29)
 ------------------

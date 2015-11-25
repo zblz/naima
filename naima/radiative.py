@@ -60,11 +60,13 @@ class BaseRadiative(object):
             # Check first for the amplitude attribute, which will be present if
             # the particle distribution is a function from naima.models
             pd = self.particle_distribution.amplitude
-        except AttributeError:
+            validate_physical_type('Particle distribution', pd,
+                    physical_type='differential energy')
+        except (AttributeError, TypeError):
             # otherwise check the output
             pd = self.particle_distribution([0.1,1,10,] * u.TeV)
-        validate_physical_type('Particle distribution', pd,
-                physical_type='differential energy')
+            validate_physical_type('Particle distribution', pd,
+                    physical_type='differential energy')
 
     @memoize
     def flux(self, photon_energy, distance=1*u.kpc):

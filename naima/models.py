@@ -10,7 +10,7 @@ from .model_utils import memoize
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw',
-           'LogParabola', 'ExponentialCutoffBrokenPowerLaw' ]
+           'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel']
 
 def _validate_ene(ene):
     from astropy.table import Table
@@ -345,5 +345,48 @@ class LogParabola(object):
         """One dimensional curved power law function"""
         e = _validate_ene(e)
         return self._calc(e)
+
+
+class TableModel(object):
+    """
+    A model generated from a table of energy and value arrays.
+
+    The units returned will be the units of the values array provided at
+    initialization. The model will return values interpolated in
+    log-space, returning 0 for energies outside of the limits of the provided
+    energy array.
+
+    Parameters
+    ----------
+    energy : `~astropy.units.Quantity` array
+        Array of energies at which the model values are given
+    values : array
+        Array with the values of the model at energies ``energy``.
+    amplitude : float
+        Model amplitude that is multiplied to the supplied arrays. Defaults to 1.
+    """
+
+    def __init__(self, energy, values, amplitude=1):
+        from scipy.interpolate import interp1d
+        self._energy = validate_array('energy', energy, domain='positive',
+                physical_type='energy')
+        self._values = values
+        self.amplitude = amplitude
+
+        loge = np.log10(self._energy.to('eV').value)
+        try:
+            self.unit = self._values.unit
+            logy = np.log10(self._values.value)
+        except AttributeError:
+            self.unit = u.Unit('')
+            logy = np.log10(self._values)
+
+        self._interplogy = interp1d(loge, logy, fill_value=-np.Inf,
+                bounds_error=False, kind='cubic')
+
+    def __call__(self, e):
+        e = _validate_ene(e)
+        interpy = np.power(10, self._interplogy(np.log10(e.to('eV').value)))
+        return self.amplitude * interpy * self.unit
 
 
