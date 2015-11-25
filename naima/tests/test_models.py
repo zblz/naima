@@ -448,9 +448,3 @@ def test_tablemodel():
     _ = IC.flux(e/10)
     PP = PionDecay(tm)
     _ = PP.flux(e/10)
-
-
-
-
-
-
