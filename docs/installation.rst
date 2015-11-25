@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-naima requires Python 2.7, 3.3, 3.4, or 3.5 and the following
+naima requires Python 2.7, 3.4, or 3.5 and the following
 packages to be installed:
 
 * `Numpy <http://www.numpy.org>`_
@@ -19,7 +19,7 @@ packages to be installed:
 
 * `h5py <http://www.h5py.org>`_
 
-The package `triangle_plot <https://github.com/dfm/triangle.py>`_ is also
+The package `corner <https://github.com/dfm/corner.py>`_ is also
 very useful to inspect the result of the MCMC run through a corner plot.
 
 All of the above packages are available in a typical scientific python

@@ -1094,8 +1094,8 @@ def plot_corner(sampler, show_ML=True):
     histograms and 2D histograms against each other. The maximum likelihood
     parameter vector is indicated by a cross.
 
-    This function is a thin wrapper around `triangle.corner`, found at
-    https://github.com/dfm/triangle.py.
+    This function is a thin wrapper around `corner.corner`, found at
+    https://github.com/corner/corner.py.
 
     Parameters
     ----------
