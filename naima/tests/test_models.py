@@ -432,6 +432,10 @@ def test_tablemodel():
     n2 = (e2.value)**-2 * np.exp(-e2.value/10) / u.eV
     assert_allclose(n2.to('1/eV').value, tm(e2).to('1/eV').value, rtol=1e-1)
 
+    # test TableModel without units in y
+    tm2 = TableModel(e, n.value)
+    assert_allclose(tm(e2), n2.value, rtol=1e-1)
+
     # test that it returns 0 outside of bounds
     e3 = np.logspace(lemin-4, lemin-2, 100) * u.TeV
     assert_allclose(tm(e3).value, 0.0)
@@ -444,6 +448,7 @@ def test_tablemodel():
     _ = IC.flux(e/10)
     PP = PionDecay(tm)
     _ = PP.flux(e/10)
+
 
 
 
