@@ -18,6 +18,7 @@ u.def_physical_type(u.Unit('1/(s cm2 erg)'), 'differential flux')
 u.def_physical_type(u.Unit('1/(s erg)'), 'differential power')
 u.def_physical_type(u.Unit('1/TeV'), 'differential energy')
 u.def_physical_type(u.Unit('1/cm3'), 'number density')
+u.def_physical_type(u.Unit('1/(eV cm3)'), 'differential number density')
 
 # Prior functions
 

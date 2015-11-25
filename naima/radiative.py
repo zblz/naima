@@ -434,6 +434,7 @@ class InverseCompton(BaseElectron):
             seed = {}
             if isinstance(inseed, six.string_types):
                 name = inseed
+                seed['type'] = 'thermal'
                 if inseed == 'CMB':
                     seed['T'] = Tcmb
                     seed['u'] = ar * Tcmb**4
@@ -461,23 +462,28 @@ class InverseCompton(BaseElectron):
                     name, T, uu, theta = inseed
                     seed['isotropic'] = False
                     seed['theta'] = validate_scalar('{0}-theta'.format(name),
-                                                    theta,
-                                                    physical_type='angle')
 
-                validate_scalar('{0}-T'.format(name),
-                                T,
-                                domain='positive',
-                                physical_type='temperature')
-                seed['T'] = T
-                if uu == 0:
-                    seed['u'] = ar * T**4
+                thermal = T.unit.physical_type == 'temperature'
+
+                if thermal:
+                    seed['type'] = 'thermal'
+                    validate_scalar('{0}-T'.format(name), T, domain='positive',
+                                    physical_type='temperature')
+                    seed['T'] = T
+                    if uu == 0:
+                        seed['u'] = ar * T ** 4
+                    else:
+                        # pressure has same physical type as energy density
+                        validate_scalar('{0}-u'.format(name), uu,
+                                domain='positive', physical_type='pressure')
+                        seed['u'] = uu
                 else:
-                    # pressure has same physical type as energy density
-                    validate_scalar('{0}-u'.format(name),
-                                    uu,
-                                    domain='positive',
-                                    physical_type='pressure')
-                    seed['u'] = uu
+                    seed['type'] = 'array'
+                    seed['energy'] = validate_array('{0}-energy'.format(name),
+                            T, domain='positive', physical_type='energy')
+                    seed['photon_density'] = validate_array('{0}-density'.format(name), 
+                            uu, domain='positive',
+                            physical_type='differential number density')
             else:
                 raise TypeError('Unable to process seed photon'
                                 ' field: {0}'.format(inseed))
@@ -531,7 +537,7 @@ class InverseCompton(BaseElectron):
         Ktomec2 = 1.6863699549e-10
         soft_photon_temperature *= Ktomec2
 
-        gamma_energy = np.vstack(gamma_energy)
+        gamma_energy = gamma_energy[:, None]
         # Parameters from Eqs 21, 22
         a1 = [0.857, 0.153, 1.840, 0.254]
         a2 = [0.691, 1.330, 1.668, 0.534]
@@ -549,23 +555,65 @@ class InverseCompton(BaseElectron):
         cc = ((gamma_energy < electron_energy) * (electron_energy > 1))
         return np.where(cc, cross_section, np.zeros_like(cross_section))
 
+    @staticmethod
+    def _iso_ic_on_monochromatic(electron_energy, photE0, phn,
+            gamma_energy):
+        """
+        IC cross-section for an isotropic interaction with a monochromatic
+        photon spectrum following Eq. 22 of Aharonian & Atoyan 1981, Ap&SS 79,
+        321 (`http://adsabs.harvard.edu/abs/1981Ap%26SS..79..321A`_)
+        """
+        electron_energy = electron_energy[:, None]
+        photE0 = photE0[:, None, None]
+        phn = phn[:, None, None]
+
+        b = 4 * photE0 * electron_energy
+        w = gamma_energy / electron_energy
+        q = w / (b * (1 - w))
+        fic = (2 * q * np.log(q)
+                + (1 + 2 * q) * (1 - q)
+                + (1. / 2.) * (b * q)**2 * (1 - q) / (1 + b * q)
+                )
+        gamint = (fic * heaviside(1 - q) *
+                heaviside(q - 1. / (4 * electron_energy**2)))
+        # gamint[np.isnan(gamint)] = 0.
+        if phn.size>1:
+            gamint = trapz_loglog(gamint * phn, photE0, axis=0) # 1/s
+        else:
+            gamint *= phn
+
+        gamint *= (3. / 4.) * sigt * c
+        raise NotImplementedError
+
+        return gamint
+
+
+
     def _calc_specic(self, seed, outspecene):
         log.debug('_calc_specic: Computing IC on {0} seed photons...'.format(
             seed))
-
-        T = self.seed_photon_fields[seed]['T']
-        uf = (self.seed_photon_fields[seed]['u'] / (ar * T**4)).decompose()
 
         Eph = (outspecene / mec2).decompose().value
         # Catch numpy RuntimeWarnings of overflowing exp (which are then discarded anyway)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            if self.seed_photon_fields[seed]['isotropic']:
-                gamint = self._iso_ic_on_planck(self._gam, T.to('K').value, Eph)
+            if self.seed_photon_fields[seed]['type'] == 'thermal':
+                T = self.seed_photon_fields[seed]['T']
+                uf = (self.seed_photon_fields[seed]['u'] /
+                        (ar * T ** 4)).decompose()
+                if self.seed_photon_fields[seed]['isotropic']:
+                    gamint = self._iso_ic_on_planck(self._gam, T.to('K').value, Eph)
+                else:
+                    theta = self.seed_photon_fields[seed]['theta'].to('rad').value
+                    gamint = self._ani_ic_on_planck(self._gam, T.to('K').value, Eph, theta)
             else:
-                theta = self.seed_photon_fields[seed]['theta'].to('rad').value
-                gamint = self._ani_ic_on_planck(self._gam, T.to('K').value, Eph,
-                                                theta)
+                uf = 1
+                photE0 = (self.seed_photon_fields[seed]['energy'] /
+                            mec2).decompose().value
+                phn = (self.seed_photon_fields[seed]['photon_density'].
+                        to('1/(eV cm3)').value)
+                gamint = self._iso_ic_on_monochromatic(self._gam, photE0, phn, Eph)
+
             lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
         lum *= u.Unit('1/s')
 
