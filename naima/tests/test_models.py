@@ -434,7 +434,7 @@ def test_tablemodel():
 
     # test TableModel without units in y
     tm2 = TableModel(e, n.value)
-    assert_allclose(tm(e2), n2.value, rtol=1e-1)
+    assert_allclose(tm2(e2), n2.value, rtol=1e-1)
 
     # test that it returns 0 outside of bounds
     e3 = np.logspace(lemin-4, lemin-2, 100) * u.TeV
