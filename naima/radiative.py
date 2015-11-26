@@ -483,7 +483,8 @@ class InverseCompton(BaseElectron):
                             T, domain='positive', physical_type='energy')
                     seed['photon_density'] = validate_array('{0}-density'.format(name), 
                             uu, domain='positive',
-                            physical_type='differential number density')
+                            physical_type=['differential number density', 'pressure'])
+                    # seed['photon_density'] = uu
             else:
                 raise TypeError('Unable to process seed photon'
                                 ' field: {0}'.format(inseed))
@@ -556,14 +557,18 @@ class InverseCompton(BaseElectron):
         return np.where(cc, cross_section, np.zeros_like(cross_section))
 
     @staticmethod
-    def _iso_ic_on_monochromatic(electron_energy, photE0, phn,
+    def _iso_ic_on_monochromatic(electron_energy, seed_energy, seed_edensity,
             gamma_energy):
         """
         IC cross-section for an isotropic interaction with a monochromatic
         photon spectrum following Eq. 22 of Aharonian & Atoyan 1981, Ap&SS 79,
         321 (`http://adsabs.harvard.edu/abs/1981Ap%26SS..79..321A`_)
         """
-        electron_energy = electron_energy[:, None]
+        photE0 = (seed_energy / mec2).decompose().value
+        phn = seed_edensity
+
+        # electron_energy = electron_energy[:, None]
+        gamma_energy = gamma_energy[:, None]
         photE0 = photE0[:, None, None]
         phn = phn[:, None, None]
 
@@ -574,16 +579,29 @@ class InverseCompton(BaseElectron):
                 + (1 + 2 * q) * (1 - q)
                 + (1. / 2.) * (b * q)**2 * (1 - q) / (1 + b * q)
                 )
+
         gamint = (fic * heaviside(1 - q) *
                 heaviside(q - 1. / (4 * electron_energy**2)))
-        # gamint[np.isnan(gamint)] = 0.
-        if phn.size>1:
-            gamint = trapz_loglog(gamint * phn, photE0, axis=0) # 1/s
-        else:
-            gamint *= phn
+        gamint[np.isnan(gamint)] = 0.
 
-        gamint *= (3. / 4.) * sigt * c
-        raise NotImplementedError
+        if phn.size>1:
+            phn = phn.to(1 / (mec2_unit * u.cm**3)).value
+            gamint = trapz_loglog(gamint * phn / photE0**2, photE0, axis=0) # 1/s
+        else:
+            phn = phn.to(mec2_unit / u.cm**3).value
+            gamint *= phn / photE0
+            gamint = gamint.squeeze()
+
+        # gamint /= mec2.to('erg').value
+
+        # r0 = (e**2 / m_e / c**2).to('cm')
+        # sigt = ((8 * np.pi) / 3 * r0**2).cgs
+        sigt = 6.652458734983284e-25
+        c = 29979245800.0
+
+        gamint *= (3. / 4.) * sigt * c / electron_energy**2
+        # raise NotImplementedError
+        log.warn('There are normalization problems in monochromatic IC!')
 
         return gamint
 
@@ -608,14 +626,13 @@ class InverseCompton(BaseElectron):
                     gamint = self._ani_ic_on_planck(self._gam, T.to('K').value, Eph, theta)
             else:
                 uf = 1
-                photE0 = (self.seed_photon_fields[seed]['energy'] /
-                            mec2).decompose().value
-                phn = (self.seed_photon_fields[seed]['photon_density'].
-                        to('1/(eV cm3)').value)
-                gamint = self._iso_ic_on_monochromatic(self._gam, photE0, phn, Eph)
+                gamint = self._iso_ic_on_monochromatic(self._gam,
+                        self.seed_photon_fields[seed]['energy'],
+                        self.seed_photon_fields[seed]['photon_density'],
+                        Eph)
 
             lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
-        lum *= u.Unit('1/s')
+        lum = lum * u.Unit('1/s')
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
 

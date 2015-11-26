@@ -276,6 +276,25 @@ def test_ic_seed_input(particle_dists):
     ic = InverseCompton(PL, seed_photon_fields=['CMB',
                         ['test2', 5000 * u.K, 15 * u.eV / u.cm ** 3], ],)
 
+@pytest.mark.skipif('not HAS_SCIPY')
+def test_ic_array_seed(particle_dists):
+    """
+    test IC with arbitrary seed array
+    """
+    from ..models import InverseCompton
+
+    ECPL,PL,BPL = particle_dists
+
+    Eph = (1, 10) * u.eV
+    phn = (3, 1) * u.Unit('1/(eV cm3)')
+
+    ic = InverseCompton(PL, seed_photon_fields=['CMB',
+        ['array', Eph, phn]])
+
+    f = ic.flux(np.logspace(-2,3,100)*u.TeV)
+
+    assert(np.all(-np.isnan(f)))
+
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_ic_seed_fluxes(particle_dists):
