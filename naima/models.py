@@ -12,20 +12,24 @@ __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw',
            'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel']
 
+
 def _validate_ene(ene):
     from astropy.table import Table
 
     if isinstance(ene, dict) or isinstance(ene, Table):
         try:
-            ene = validate_array('energy',u.Quantity(ene['energy']),physical_type='energy')
+            ene = validate_array('energy',
+                                 u.Quantity(ene['energy']),
+                                 physical_type='energy')
         except KeyError:
             raise TypeError('Table or dict does not have \'ene\' column')
     else:
-        if not isinstance(ene,u.Quantity):
+        if not isinstance(ene, u.Quantity):
             ene = u.Quantity(ene)
-        validate_physical_type('energy',ene,physical_type='energy')
+        validate_physical_type('energy', ene, physical_type='energy')
 
     return ene
+
 
 class PowerLaw(object):
     """
@@ -60,7 +64,10 @@ class PowerLaw(object):
 
     def __init__(self, amplitude, e_0, alpha):
         self.amplitude = amplitude
-        self.e_0 = validate_scalar('e_0', e_0, domain='positive', physical_type='energy')
+        self.e_0 = validate_scalar('e_0',
+                                   e_0,
+                                   domain='positive',
+                                   physical_type='energy')
         self.alpha = alpha
 
     @staticmethod
@@ -68,18 +75,18 @@ class PowerLaw(object):
         """One dimensional power law model function"""
 
         xx = e / e_0
-        return amplitude * xx ** (-alpha)
+        return amplitude * xx**(-alpha)
 
     @memoize
     def _calc(self, e):
-        return self.eval(e.to('eV').value, self.amplitude,
-                self.e_0.to('eV').value, self.alpha)
+        return self.eval(
+            e.to('eV').value, self.amplitude, self.e_0.to('eV').value,
+            self.alpha)
 
-    def __call__(self,e):
+    def __call__(self, e):
         """One dimensional power law model function"""
         e = _validate_ene(e)
         return self._calc(e)
-
 
 
 class ExponentialCutoffPowerLaw(object):
@@ -119,9 +126,15 @@ class ExponentialCutoffPowerLaw(object):
 
     def __init__(self, amplitude, e_0, alpha, e_cutoff, beta=1.0):
         self.amplitude = amplitude
-        self.e_0 = validate_scalar('e_0', e_0, domain='positive', physical_type='energy')
+        self.e_0 = validate_scalar('e_0',
+                                   e_0,
+                                   domain='positive',
+                                   physical_type='energy')
         self.alpha = alpha
-        self.e_cutoff = validate_scalar('e_cutoff', e_cutoff, domain='positive', physical_type='energy')
+        self.e_cutoff = validate_scalar('e_cutoff',
+                                        e_cutoff,
+                                        domain='positive',
+                                        physical_type='energy')
         self.beta = beta
 
     @staticmethod
@@ -129,15 +142,15 @@ class ExponentialCutoffPowerLaw(object):
         """One dimensional power law with an exponential cutoff model function"""
 
         xx = e / e_0
-        return amplitude * xx ** (-alpha) * np.exp(-(e / e_cutoff) ** beta)
+        return amplitude * xx**(-alpha) * np.exp(-(e / e_cutoff)**beta)
 
     @memoize
     def _calc(self, e):
-        return self.eval(e.to('eV').value, self.amplitude,
-                self.e_0.to('eV').value, self.alpha,
-                self.e_cutoff.to('eV').value, self.beta)
+        return self.eval(
+            e.to('eV').value, self.amplitude, self.e_0.to('eV').value,
+            self.alpha, self.e_cutoff.to('eV').value, self.beta)
 
-    def __call__(self,e):
+    def __call__(self, e):
         """One dimensional power law with an exponential cutoff model function"""
         e = _validate_ene(e)
         return self._calc(e)
@@ -186,25 +199,31 @@ class BrokenPowerLaw(object):
 
     def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2):
         self.amplitude = amplitude
-        self.e_0 = validate_scalar('e_0', e_0, domain='positive', physical_type='energy')
-        self.e_break = validate_scalar('e_break', e_break, domain='positive', physical_type='energy')
+        self.e_0 = validate_scalar('e_0',
+                                   e_0,
+                                   domain='positive',
+                                   physical_type='energy')
+        self.e_break = validate_scalar('e_break',
+                                       e_break,
+                                       domain='positive',
+                                       physical_type='energy')
         self.alpha_1 = alpha_1
         self.alpha_2 = alpha_2
 
     @staticmethod
     def eval(e, amplitude, e_0, e_break, alpha_1, alpha_2):
         """One dimensional broken power law model function"""
-        K = np.where(e < e_break, 1, (e_break / e_0) ** (alpha_2 - alpha_1))
+        K = np.where(e < e_break, 1, (e_break / e_0)**(alpha_2 - alpha_1))
         alpha = np.where(e < e_break, alpha_1, alpha_2)
-        return amplitude * K * (e / e_0) ** -alpha
+        return amplitude * K * (e / e_0)** -alpha
 
     @memoize
     def _calc(self, e):
-        return self.eval(e.to('eV').value, self.amplitude,
-                self.e_0.to('eV').value, self.e_break.to('eV').value,
-                self.alpha_1, self.alpha_2)
+        return self.eval(
+            e.to('eV').value, self.amplitude, self.e_0.to('eV').value,
+            self.e_break.to('eV').value, self.alpha_1, self.alpha_2)
 
-    def __call__(self,e):
+    def __call__(self, e):
         """One dimensional broken power law model function"""
         e = _validate_ene(e)
         return self._calc(e)
@@ -254,36 +273,52 @@ class ExponentialCutoffBrokenPowerLaw(object):
     """
 
     param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2',
-            'e_cutoff', 'beta']
+                   'e_cutoff', 'beta']
     _memoize = False
     _cache = {}
     _queue = []
 
-    def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0):
+    def __init__(self,
+                 amplitude,
+                 e_0,
+                 e_break,
+                 alpha_1,
+                 alpha_2,
+                 e_cutoff,
+                 beta=1.0):
         self.amplitude = amplitude
-        self.e_0 = validate_scalar('e_0', e_0, domain='positive', physical_type='energy')
-        self.e_break = validate_scalar('e_break', e_break, domain='positive', physical_type='energy')
+        self.e_0 = validate_scalar('e_0',
+                                   e_0,
+                                   domain='positive',
+                                   physical_type='energy')
+        self.e_break = validate_scalar('e_break',
+                                       e_break,
+                                       domain='positive',
+                                       physical_type='energy')
         self.alpha_1 = alpha_1
         self.alpha_2 = alpha_2
-        self.e_cutoff = validate_scalar('e_cutoff', e_cutoff, domain='positive', physical_type='energy')
+        self.e_cutoff = validate_scalar('e_cutoff',
+                                        e_cutoff,
+                                        domain='positive',
+                                        physical_type='energy')
         self.beta = beta
 
     @staticmethod
     def eval(e, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta):
         """One dimensional broken power law model function"""
-        K = np.where(e < e_break, 1, (e_break / e_0) ** (alpha_2 - alpha_1))
+        K = np.where(e < e_break, 1, (e_break / e_0)**(alpha_2 - alpha_1))
         alpha = np.where(e < e_break, alpha_1, alpha_2)
         ee2 = e / e_cutoff
-        return amplitude * K * (e / e_0) ** -alpha * np.exp(- (ee2 ** beta))
+        return amplitude * K * (e / e_0)** -alpha * np.exp(-(ee2**beta))
 
     @memoize
     def _calc(self, e):
-        return self.eval(e.to('eV').value, self.amplitude,
-                self.e_0.to('eV').value, self.e_break.to('eV').value,
-                self.alpha_1, self.alpha_2, self.e_cutoff.to('eV').value,
-                self.beta)
+        return self.eval(
+            e.to('eV').value, self.amplitude, self.e_0.to('eV').value,
+            self.e_break.to('eV').value, self.alpha_1, self.alpha_2,
+            self.e_cutoff.to('eV').value, self.beta)
 
-    def __call__(self,e):
+    def __call__(self, e):
         """One dimensional broken power law model with exponential cutoff function"""
         e = _validate_ene(e)
         return self._calc(e)
@@ -323,7 +358,10 @@ class LogParabola(object):
 
     def __init__(self, amplitude, e_0, alpha, beta):
         self.amplitude = amplitude
-        self.e_0 = validate_scalar('e_0', e_0, domain='positive', physical_type='energy')
+        self.e_0 = validate_scalar('e_0',
+                                   e_0,
+                                   domain='positive',
+                                   physical_type='energy')
         self.alpha = alpha
         self.beta = beta
 
@@ -333,15 +371,15 @@ class LogParabola(object):
 
         ee = e / e_0
         eeponent = -alpha - beta * np.log(ee)
-        return amplitude * ee ** eeponent
+        return amplitude * ee**eeponent
 
     @memoize
     def _calc(self, e):
-        return self.eval(e.to('eV').value, self.amplitude,
-                self.e_0.to('eV').value,
-                self.alpha, self.beta)
+        return self.eval(
+            e.to('eV').value, self.amplitude, self.e_0.to('eV').value,
+            self.alpha, self.beta)
 
-    def __call__(self,e):
+    def __call__(self, e):
         """One dimensional curved power law function"""
         e = _validate_ene(e)
         return self._calc(e)
@@ -368,8 +406,10 @@ class TableModel(object):
 
     def __init__(self, energy, values, amplitude=1):
         from scipy.interpolate import interp1d
-        self._energy = validate_array('energy', energy, domain='positive',
-                physical_type='energy')
+        self._energy = validate_array('energy',
+                                      energy,
+                                      domain='positive',
+                                      physical_type='energy')
         self._values = values
         self.amplitude = amplitude
 
@@ -381,12 +421,13 @@ class TableModel(object):
             self.unit = u.Unit('')
             logy = np.log10(self._values)
 
-        self._interplogy = interp1d(loge, logy, fill_value=-np.Inf,
-                bounds_error=False, kind='cubic')
+        self._interplogy = interp1d(loge,
+                                    logy,
+                                    fill_value=-np.Inf,
+                                    bounds_error=False,
+                                    kind='cubic')
 
     def __call__(self, e):
         e = _validate_ene(e)
         interpy = np.power(10, self._interplogy(np.log10(e.to('eV').value)))
         return self.amplitude * interpy * self.unit
-
-
