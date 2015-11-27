@@ -1002,6 +1002,7 @@ class PionDecay(BaseProton):
 
 
     # define model parameters from tables
+    # yapf: disable
     #
     # Table IV
     _a = {}
@@ -1031,6 +1032,7 @@ class PionDecay(BaseProton):
     _b['Pythia8']  = [9.06,  0.3795, 0.01105] # Tp >  50
     _b['SIBYLL']   = [10.77, 0.412,  0.01264] # Tp >  100
     _b['QGSJET']   = [13.16, 0.4419, 0.01439] # Tp >  100
+    # yapf: enable
 
     # energy at which each of the hiE models start being valid
     _Etrans = {'Pythia8':50, 'SIBYLL':100, 'QGSJET':100, 'Geant4': 100}
