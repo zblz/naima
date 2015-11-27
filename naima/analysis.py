@@ -23,8 +23,15 @@ except ImportError:
 __all__ = ["save_diagnostic_plots", "save_results_table", "save_run",
            "read_run"]
 
-def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
-        blob_labels=None, last_step=False, dpi=100):
+
+def save_diagnostic_plots(outname,
+                          sampler,
+                          modelidxs=None,
+                          pdf=False,
+                          sed=True,
+                          blob_labels=None,
+                          last_step=False,
+                          dpi=100):
     """
     Generate diagnostic plots.
 
@@ -68,14 +75,14 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
     if pdf:
         plt.rc('pdf', fonttype=42)
         log.info('Saving diagnostic plots in file '
-                '{0}_plots.pdf'.format(outname))
+                 '{0}_plots.pdf'.format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
         outpdf = PdfPages('{0}_plots.pdf'.format(outname))
 
     # Chains
 
-    for par, label in six.moves.zip(six.moves.range(sampler.chain.shape[-1]),
-                                    sampler.labels):
+    for par, label in six.moves.zip(
+            six.moves.range(sampler.chain.shape[-1]), sampler.labels):
         try:
             log.info('Plotting chain of parameter {0}...'.format(label))
             f = plot_chain(sampler, par, last_step=last_step)
@@ -88,7 +95,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
             del f
         except Exception as e:
             log.warning('plot_chain failed for paramter'
-                    ' {0} ({1}): {2}'.format(label,par,e))
+                        ' {0} ({1}): {2}'.format(label, par, e))
 
     # Corner plot
 
@@ -113,7 +120,7 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
 
     if blob_labels is None:
         blob_labels = ['Model output {0}'.format(idx) for idx in modelidxs]
-    elif len(modelidxs)==1 and isinstance(blob_labels, str):
+    elif len(modelidxs) == 1 and isinstance(blob_labels, str):
         blob_labels = [blob_labels,]
     elif len(blob_labels) < len(modelidxs):
         # Add labels
@@ -124,15 +131,19 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
 
         try:
             log.info('Plotting {0}...'.format(label))
-            f = plot_blob(sampler, blobidx=modelidx, label=label,
-                          sed=plot_sed, n_samples=100, last_step=last_step)
+            f = plot_blob(sampler,
+                          blobidx=modelidx,
+                          label=label,
+                          sed=plot_sed,
+                          n_samples=100,
+                          last_step=last_step)
             if pdf:
                 f.savefig(outpdf, format='pdf', dpi=dpi)
             else:
                 f.savefig('{0}_model{1}.png'.format(outname, modelidx), dpi=dpi)
             del f
         except Exception as e:
-            log.warning('plot_blob failed for {0}: {1}'.format(label,e))
+            log.warning('plot_blob failed for {0}: {1}'.format(label, e))
 
     if pdf:
         outpdf.close()
@@ -141,8 +152,12 @@ def save_diagnostic_plots(outname, sampler, modelidxs=None, pdf=False, sed=True,
     plt.rcParams['interactive'] = old_interactive
 
 
-def save_results_table(outname, sampler, format='ascii.ecsv',
-        convert_log=True, last_step=False, include_blobs=True):
+def save_results_table(outname,
+                       sampler,
+                       format='ascii.ecsv',
+                       convert_log=True,
+                       last_step=False,
+                       include_blobs=True):
     """
     Save an ASCII table with the results stored in the `~emcee.EnsembleSampler`.
 
@@ -190,55 +205,59 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
     if not HAS_PYYAML and format == 'ascii.ecsv':
         format = 'ascii.ipac'
         log.warning("PyYAML package is required for ECSV format,"
-                " falling back to {0}...".format(format))
-    elif format not in ['ascii.ecsv','ascii.ipac']:
+                    " falling back to {0}...".format(format))
+    elif format not in ['ascii.ecsv', 'ascii.ipac']:
         log.warning('The chosen table format does not have an astropy'
-                ' writer that suppports metadata writing, no run info'
-                ' will be saved to the file!')
+                    ' writer that suppports metadata writing, no run info'
+                    ' will be saved to the file!')
 
     file_extension = 'dat'
     if format == 'ascii.ecsv':
         file_extension = 'ecsv'
 
-    log.info('Saving results table in {0}_results.{1}'.format(outname,file_extension))
+    log.info('Saving results table in {0}_results.{1}'.format(outname,
+                                                              file_extension))
 
     labels = sampler.labels
 
     if last_step:
-        dists = sampler.chain[:,-1,:]
+        dists = sampler.chain[:, -1, :]
     else:
         dists = sampler.flatchain
 
     quant = [16, 50, 84]
     # Do we need more info on the distributions?
-    t=Table(names=['label','median','unc_lo','unc_hi'],
-            dtype=['S72','f8','f8','f8'])
-    t['label'].description   = 'Name of the parameter'
-    t['median'].description  = 'Median of the posterior distribution function'
-    t['unc_lo'].description = ('Difference between the median and the'
-                ' {0}th percentile of the pdf, ~1sigma lower uncertainty'.format(quant[0]))
-    t['unc_hi'].description = ('Difference between the {0}th percentile'
-                ' and the median of the pdf, ~1sigma upper uncertainty'.format(quant[2]))
+    t = Table(names=['label', 'median', 'unc_lo', 'unc_hi'],
+              dtype=['S72', 'f8', 'f8', 'f8'])
+    t['label'].description = 'Name of the parameter'
+    t['median'].description = 'Median of the posterior distribution function'
+    t['unc_lo'].description = (
+        'Difference between the median and the'
+        ' {0}th percentile of the pdf, ~1sigma lower uncertainty'.format(quant[
+            0]))
+    t['unc_hi'].description = (
+        'Difference between the {0}th percentile'
+        ' and the median of the pdf, ~1sigma upper uncertainty'.format(quant[
+            2]))
 
     metadata = {}
     # Start with info from the distributions used for storing the results
-    metadata['n_samples']= dists.shape[0]
+    metadata['n_samples'] = dists.shape[0]
     # save ML parameter vector and best/median loglikelihood
     ML, MLp, MLerr, _ = find_ML(sampler, None)
     metadata['ML_pars'] = [float(p) for p in MLp]
     metadata['MaxLogLikelihood'] = float(ML)
 
     # And add all info stored in the sampler.run_info dict
-    if hasattr(sampler,'run_info'):
+    if hasattr(sampler, 'run_info'):
         metadata.update(sampler.run_info)
 
-
-    for p,label in enumerate(labels):
-        dist = dists[:,p]
+    for p, label in enumerate(labels):
+        dist = dists[:, p]
         xquant = np.percentile(dist, quant)
         quantiles = dict(six.moves.zip(quant, xquant))
         med = quantiles[50]
-        lo,hi = med - quantiles[16], quantiles[84] - med
+        lo, hi = med - quantiles[16], quantiles[84] - med
 
         t.add_row((label, med, lo, hi))
 
@@ -250,9 +269,10 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
             elif ltype == 'log':
                 new_dist = np.exp(dist)
 
-            quantiles = dict(six.moves.zip(quant, np.percentile(new_dist, quant)))
+            quantiles = dict(six.moves.zip(quant, np.percentile(new_dist,
+                                                                quant)))
             med = quantiles[50]
-            lo,hi = med - quantiles[16], quantiles[84] - med
+            lo, hi = med - quantiles[16], quantiles[84] - med
 
             t.add_row((nlabel, med, lo, hi))
 
@@ -262,7 +282,7 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
             blob0 = sampler.blobs[-1][0][idx]
 
             IS_SCALAR = False
-            if isinstance(blob0,u.Quantity):
+            if isinstance(blob0, u.Quantity):
                 if blob0.size == 1:
                     IS_SCALAR = True
                     unit = blob0.unit
@@ -284,9 +304,10 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
                 else:
                     dist = np.array(blobl)
 
-                quantiles = dict(six.moves.zip(quant, np.percentile(dist, quant)))
+                quantiles = dict(six.moves.zip(quant, np.percentile(dist,
+                                                                    quant)))
                 med = quantiles[50]
-                lo,hi = med - quantiles[16], quantiles[84] - med
+                lo, hi = med - quantiles[16], quantiles[84] - med
 
                 t.add_row(('blob{0}'.format(idx), med, lo, hi))
 
@@ -294,7 +315,7 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
         # Only keywords are written to IPAC tables
         t.meta['keywords'] = {}
         for di in metadata.items():
-            t.meta['keywords'][di[0]]={'value':di[1]}
+            t.meta['keywords'][di[0]] = {'value': di[1]}
     else:
         if format == 'ascii.ecsv':
             # there can be no numpy arrays in the metadata (YAML doesn't like them)
@@ -309,7 +330,7 @@ def save_results_table(outname, sampler, format='ascii.ecsv',
         # Save it directly in meta for readability in ECSV
         t.meta.update(metadata)
 
-    t.write('{0}_results.{1}'.format(outname,file_extension),format=format)
+    t.write('{0}_results.{1}'.format(outname, file_extension), format=format)
 
     return t
 
@@ -339,7 +360,7 @@ def save_run(filename, sampler, compression=True, clobber=False):
         Whether to overwrite the output filename if it exists.
     """
 
-    if filename.split('.')[-1] not in ['h5','hdf5']:
+    if filename.split('.')[-1] not in ['h5', 'hdf5']:
         filename += '_chain.h5'
 
     if os.path.exists(filename) and not clobber:
@@ -348,30 +369,33 @@ def save_run(filename, sampler, compression=True, clobber=False):
 
     f = h5py.File(filename, 'w')
     group = f.create_group('sampler')
-    chain = group.create_dataset('chain', data=sampler.chain,
-            compression=compression)
+    chain = group.create_dataset('chain',
+                                 data=sampler.chain,
+                                 compression=compression)
     lnprobability = group.create_dataset('lnprobability',
-            data=sampler.lnprobability, compression=compression)
+                                         data=sampler.lnprobability,
+                                         compression=compression)
 
     # blobs
     blob = sampler.blobs[-1][0]
-    for idx,item in enumerate(blob):
+    for idx, item in enumerate(blob):
         if isinstance(item, u.Quantity):
             # scalar or array quantity
             units = [item.unit.to_string(),]
         elif isinstance(item, float):
             units = ['',]
         elif isinstance(item, tuple) or isinstance(item, list):
-            arearrs = np.all([isinstance(x,np.ndarray) for x in item])
+            arearrs = np.all([isinstance(x, np.ndarray) for x in item])
             if arearrs:
                 units = []
                 for x in item:
-                    if isinstance(x,u.Quantity):
+                    if isinstance(x, u.Quantity):
                         units.append(x.unit.to_string())
                     else:
                         units.append('')
         else:
-            log.warning('blob number {0} has unknown format and cannot be saved in HDF5 file')
+            log.warning(
+                'blob number {0} has unknown format and cannot be saved in HDF5 file')
             continue
 
         # traverse blobs list. This will probably be slow and there should be a
@@ -382,21 +406,22 @@ def save_run(filename, sampler, compression=True, clobber=False):
                 blob.append(walkerblob[idx])
         blob = u.Quantity(blob).value
 
-        blobdataset = group.create_dataset('blob{0}'.format(idx), data=blob,
-                compression=compression)
+        blobdataset = group.create_dataset('blob{0}'.format(idx),
+                                           data=blob,
+                                           compression=compression)
         if len(units) > 1:
-            for j,unit in enumerate(units):
+            for j, unit in enumerate(units):
                 blobdataset.attrs['unit{0}'.format(j)] = unit
         else:
             blobdataset.attrs['unit'] = units[0]
 
-
     if hasattr(sampler, 'data'):
         data = group.create_dataset('data',
-                data=Table(sampler.data).as_array(),compression=compression)
+                                    data=Table(sampler.data).as_array(),
+                                    compression=compression)
 
         for col in sampler.data.colnames:
-            f['sampler/data'].attrs[col+'unit'] = str(sampler.data[col].unit)
+            f['sampler/data'].attrs[col + 'unit'] = str(sampler.data[col].unit)
 
         for key in sampler.data.meta:
             val = sampler.data.meta[key]
@@ -406,9 +431,10 @@ def save_run(filename, sampler, compression=True, clobber=False):
                 try:
                     data.attrs[key] = str(val)
                 except:
-                    warnings.warn("Attribute `{0}` of type {1} of the data table"
-                            " of the sampler cannot be written to HDF5 files"
-                            "- skipping".format(key,type(val)), AstropyUserWarning)
+                    warnings.warn(
+                        "Attribute `{0}` of type {1} of the data table"
+                        " of the sampler cannot be written to HDF5 files"
+                        "- skipping".format(key, type(val)), AstropyUserWarning)
 
     # add all run info to group attributes
     if hasattr(sampler, 'run_info'):
@@ -424,16 +450,17 @@ def save_run(filename, sampler, compression=True, clobber=False):
         group.attrs[attr] = getattr(sampler, attr)
 
     # add labels as individual attrs (there might be a better way)
-    for i,label in enumerate(sampler.labels):
+    for i, label in enumerate(sampler.labels):
         group.attrs['label{0}'.format(i)] = label
 
-
     f.close()
+
 
 class _result(object):
     """
     Minimal emcee.EnsembleSampler like container for chain results
     """
+
     @property
     def flatchain(self):
         s = self.chain.shape
@@ -497,8 +524,8 @@ def read_run(filename, modelfn=None):
             else:
                 blob = []
                 for j in range(np.ndim(ds[0])):
-                    blob.append(u.Quantity(ds.value[:,j,:],
-                        unit=ds.attrs['unit{0}'.format(j)]))
+                    blob.append(u.Quantity(ds.value[:, j, :],
+                                           unit=ds.attrs['unit{0}'.format(j)]))
                 blobs.append(blob)
         except KeyError:
             break
@@ -532,8 +559,8 @@ def read_run(filename, modelfn=None):
     data = Table(np.array(f['sampler/data']))
     data.meta.update(f['sampler/data'].attrs)
     for col in data.colnames:
-        if f['sampler/data'].attrs[col+'unit'] != 'None':
-            data[col].unit = f['sampler/data'].attrs[col+'unit']
+        if f['sampler/data'].attrs[col + 'unit'] != 'None':
+            data[col].unit = f['sampler/data'].attrs[col + 'unit']
     result.data = QTable(data)
 
     return result

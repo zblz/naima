@@ -7,8 +7,10 @@ import hashlib
 import astropy
 from astropy import units as u
 
+
 def memoize(func):
     """ Cache decorator for functions inside model classes """
+
     def model(cls, energy, *args, **kwargs):
         try:
             memoize = cls._memoize
@@ -35,18 +37,18 @@ def memoize(func):
             data = [hashlib.sha256(bstr).hexdigest(),]
 
             data.append(energy.unit.to_string())
-            data.append(str(kwargs.get('distance',0)))
+            data.append(str(kwargs.get('distance', 0)))
 
             if args:
                 data.append(str(args))
-            if hasattr(cls,'particle_distribution'):
-                models = [cls,cls.particle_distribution]
+            if hasattr(cls, 'particle_distribution'):
+                models = [cls, cls.particle_distribution]
             else:
                 models = [cls,]
             for model in models:
-                if hasattr(model,'param_names'):
+                if hasattr(model, 'param_names'):
                     for par in model.param_names:
-                        data.append(str(getattr(model,par)))
+                        data.append(str(getattr(model, par)))
 
             token = u''.join(data)
             digest = hashlib.sha256(token.encode()).hexdigest()
@@ -71,4 +73,3 @@ def memoize(func):
     model.__doc__ = func.__doc__
 
     return model
-

@@ -11,8 +11,8 @@ import warnings
 import ast
 from .extern.validator import validate_array, validate_scalar
 
-__all__ = ["generate_energy_edges", "sed_conversion",
-           "build_data_table", "estimate_B"]
+__all__ = ["generate_energy_edges", "sed_conversion", "build_data_table",
+           "estimate_B"]
 
 # Input validation tools
 
@@ -20,13 +20,17 @@ __all__ = ["generate_energy_edges", "sed_conversion",
 def validate_column(data_table, key, pt, domain='positive'):
     try:
         column = data_table[key]
-        array = validate_array(key, u.Quantity(column, unit=column.unit),
-                               physical_type=pt, domain=domain)
+        array = validate_array(key,
+                               u.Quantity(column,
+                                          unit=column.unit),
+                               physical_type=pt,
+                               domain=domain)
     except KeyError:
         raise TypeError(
             'Data table does not contain required column "{0}"'.format(key))
 
     return array
+
 
 def validate_data_table(data_table, sed=None):
     """
@@ -42,32 +46,34 @@ def validate_data_table(data_table, sed=None):
         Whether to convert the fluxes to SED. If unset, all data tables are
         converted to the format of the first data table.
     """
-    if isinstance(data_table,Table) or isinstance(data_table,QTable):
+    if isinstance(data_table, Table) or isinstance(data_table, QTable):
         data_table = [data_table,]
 
     try:
         for dt in data_table:
-            if not isinstance(dt,Table) and not isinstance(dt,QTable):
-                raise TypeError("An object passed as data_table is not an astropy Table!")
+            if not isinstance(dt, Table) and not isinstance(dt, QTable):
+                raise TypeError(
+                    "An object passed as data_table is not an astropy Table!")
     except TypeError:
-        raise TypeError("Argument passed to validate_data_table is not a table and not a list")
+        raise TypeError(
+            "Argument passed to validate_data_table is not a table and not a list")
 
     def dt_sed_conversion(dt, sed):
         f_unit, sedf = sed_conversion(dt['energy'], dt['flux'].unit, sed)
         # roundtrip to Table to change the units
         t = Table(dt)
-        for col in ['flux','flux_error_lo','flux_error_hi']:
+        for col in ['flux', 'flux_error_lo', 'flux_error_hi']:
             t[col].unit = f_unit
         ndt = QTable(t)
 
-        ndt['flux'] = (dt['flux']*sedf).to(f_unit)
-        ndt['flux_error_lo'] = (dt['flux_error_lo']*sedf).to(f_unit)
-        ndt['flux_error_hi'] = (dt['flux_error_hi']*sedf).to(f_unit)
+        ndt['flux'] = (dt['flux'] * sedf).to(f_unit)
+        ndt['flux_error_lo'] = (dt['flux_error_lo'] * sedf).to(f_unit)
+        ndt['flux_error_hi'] = (dt['flux_error_hi'] * sedf).to(f_unit)
 
         return ndt
 
     data_list = []
-    for group,dt in enumerate(data_table):
+    for group, dt in enumerate(data_table):
         dt_val = _validate_single_data_table(dt, group=group)
         data_list.append(dt_val)
 
@@ -75,16 +81,17 @@ def validate_data_table(data_table, sed=None):
     data_new = data_list[0].copy()
     f_pt = data_new['flux'].unit.physical_type
     if sed is None:
-        sed = f_pt in ['flux','power']
+        sed = f_pt in ['flux', 'power']
 
     data_new = dt_sed_conversion(data_new, sed)
 
     for dt in data_list[1:]:
         nf_pt = dt['flux'].unit.physical_type
         if (('flux' in nf_pt and 'power' in f_pt) or
-                ('power' in nf_pt and 'flux' in f_pt)):
-            raise TypeError('The physical types of the data tables could not be '
-                    'matched: Some are in flux and others in luminosity units')
+            ('power' in nf_pt and 'flux' in f_pt)):
+            raise TypeError(
+                'The physical types of the data tables could not be '
+                'matched: Some are in flux and others in luminosity units')
 
         dt = dt_sed_conversion(dt, sed)
 
@@ -92,6 +99,7 @@ def validate_data_table(data_table, sed=None):
             data_new.add_row(row)
 
     return data_new
+
 
 def _validate_single_data_table(data_table, group=0):
 
@@ -108,9 +116,12 @@ def _validate_single_data_table(data_table, group=0):
         dflux = validate_column(data_table, 'flux_error', flux_types)
         data['flux_error_lo'] = dflux
         data['flux_error_hi'] = dflux
-    elif 'flux_error_lo' in data_table.keys() and 'flux_error_hi' in data_table.keys():
-        data['flux_error_lo'] = validate_column(data_table, 'flux_error_lo', flux_types)
-        data['flux_error_hi'] = validate_column(data_table, 'flux_error_hi', flux_types)
+    elif 'flux_error_lo' in data_table.keys(
+    ) and 'flux_error_hi' in data_table.keys():
+        data['flux_error_lo'] = validate_column(data_table, 'flux_error_lo',
+                                                flux_types)
+        data['flux_error_hi'] = validate_column(data_table, 'flux_error_hi',
+                                                flux_types)
     else:
         raise TypeError('Data table does not contain required column'
                         ' "flux_error" or columns "flux_error_lo"'
@@ -126,10 +137,12 @@ def _validate_single_data_table(data_table, group=0):
         data['energy_error_lo'] = energy_error
         data['energy_error_hi'] = energy_error
     elif ('energy_error_lo' in data_table.keys() and
-            'energy_error_hi' in data_table.keys()):
-        energy_error_lo = validate_column(data_table, 'energy_error_lo', 'energy')
+          'energy_error_hi' in data_table.keys()):
+        energy_error_lo = validate_column(data_table, 'energy_error_lo',
+                                          'energy')
         data['energy_error_lo'] = energy_error_lo
-        energy_error_hi = validate_column(data_table, 'energy_error_hi', 'energy')
+        energy_error_hi = validate_column(data_table, 'energy_error_hi',
+                                          'energy')
         data['energy_error_hi'] = energy_error_hi
     elif 'energy_lo' in data_table.keys() and 'energy_hi' in data_table.keys():
         energy_lo = validate_column(data_table, 'energy_lo', 'energy')
@@ -137,7 +150,8 @@ def _validate_single_data_table(data_table, group=0):
         energy_hi = validate_column(data_table, 'energy_hi', 'energy')
         data['energy_error_hi'] = (energy_hi - data['energy'])
     else:
-        data['energy_error_lo'], data['energy_error_hi'] = generate_energy_edges(data['energy'])
+        data['energy_error_lo'], data[
+            'energy_error_hi'] = generate_energy_edges(data['energy'])
 
     # Upper limit flags
     if 'ul' in data_table.keys():
@@ -151,13 +165,15 @@ def _validate_single_data_table(data_table, group=0):
                 if ul != 'True' and ul != 'False':
                     strbool = False
             if strbool:
-                data['ul'] = np.array([ast.literal_eval(ul) for ul in ul_col], dtype=np.bool)
+                data['ul'] = np.array(
+                    [ast.literal_eval(ul) for ul in ul_col],
+                    dtype=np.bool)
             else:
                 raise TypeError('UL column is in wrong format')
         else:
             raise TypeError('UL column is in wrong format')
     else:
-        data['ul'] = np.array([False, ] * len(data['energy']))
+        data['ul'] = np.array([False,] * len(data['energy']))
 
     if 'flux_ul' in data_table.keys():
         data['flux'][data['ul']] = u.Quantity(data_table['flux_ul'])[data['ul']]
@@ -166,14 +182,16 @@ def _validate_single_data_table(data_table, group=0):
     if 'keywords' in data_table.meta.keys():
         if 'cl' in data_table.meta['keywords'].keys():
             HAS_CL = True
-            CL = validate_scalar('cl', data_table.meta['keywords']['cl']['value'])
-            data['cl'] = [CL,] *len(data['energy'])
+            CL = validate_scalar('cl',
+                                 data_table.meta['keywords']['cl']['value'])
+            data['cl'] = [CL,] * len(data['energy'])
 
     if not HAS_CL:
         data['cl'] = [0.9,] * len(data['energy'])
         if np.sum(data['ul']) > 0:
-            log.warning('"cl" keyword not provided in input data table, upper limits'
-                        ' will be assumed to be at 90% confidence level')
+            log.warning(
+                '"cl" keyword not provided in input data table, upper limits'
+                ' will be assumed to be at 90% confidence level')
 
     if 'group' in data_table.colnames:
         # avoid overwriting groups
@@ -183,8 +201,8 @@ def _validate_single_data_table(data_table, group=0):
 
     return data
 
-
 # Convenience tools
+
 
 def sed_conversion(energy, model_unit, sed):
     """
@@ -201,7 +219,7 @@ def sed_conversion(energy, model_unit, sed):
         if model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
             sedf = ones
         elif 'differential' in model_pt:
-            sedf = (energy ** 2)
+            sedf = (energy**2)
         else:
             raise u.UnitsError(
                 'Model physical type ({0}) is not supported'.format(model_pt),
@@ -209,7 +227,7 @@ def sed_conversion(energy, model_unit, sed):
                 ' power, differential flux')
 
         if 'flux' in model_pt:
-            f_unit /= u.cm ** 2
+            f_unit /= u.cm**2
         elif 'energy' in model_pt:
             # particle energy distributions
             f_unit = u.erg
@@ -220,7 +238,7 @@ def sed_conversion(energy, model_unit, sed):
             sedf = ones
         elif model_pt == 'power' or model_pt == 'flux' or model_pt == 'energy':
             # From SED to differential
-            sedf = 1 / (energy ** 2)
+            sedf = 1 / (energy**2)
         else:
             raise u.UnitsError(
                 'Model physical type ({0}) is not supported'.format(model_pt),
@@ -228,14 +246,13 @@ def sed_conversion(energy, model_unit, sed):
                 ' power, differential flux')
 
         if 'flux' in model_pt:
-            f_unit /= u.cm ** 2
+            f_unit /= u.cm**2
         elif 'energy' in model_pt:
             # particle energy distributions
             f_unit = u.Unit('1/TeV')
 
-    log.debug(
-        'Converted from {0} ({1}) into {2} ({3}) for sed={4}'.format(model_unit, model_pt,
-                                                                     f_unit, f_unit.physical_type, sed))
+    log.debug('Converted from {0} ({1}) into {2} ({3}) for sed={4}'.format(
+        model_unit, model_pt, f_unit, f_unit.physical_type, sed))
 
     return f_unit, sedf
 
@@ -292,9 +309,10 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
 
         # if local powerlaw index is -1, use \int 1/x = log(x); otherwise use normal
         # powerlaw integration
-        trapzs = np.where(np.abs(b+1.) > 1e-10,
-                  (y[slice1] * (x[slice2] * (x[slice2]/x[slice1]) ** b - x[slice1]))/(b+1),
-                  x[slice1] * y[slice1] * np.log(x[slice2]/x[slice1]))
+        trapzs = np.where(
+            np.abs(b + 1.) > 1e-10, (y[slice1] * (
+                x[slice2] * (x[slice2] / x[slice1])**b - x[slice1])) / (b + 1),
+            x[slice1] * y[slice1] * np.log(x[slice2] / x[slice1]))
 
     tozero = (y[slice1] == 0.) + (y[slice2] == 0.) + (x[slice1] == x[slice2])
     trapzs[tozero] = 0.
@@ -329,14 +347,21 @@ def generate_energy_edges(ene):
     elo, ehi = np.zeros(len(ene)) * ene.unit, np.zeros(len(ene)) * ene.unit
     elo[1:] = ene[1:] - midene
     ehi[:-1] = midene - ene[:-1]
-    elo[0] = ene[0] * ( 1 - ene[0] / (ene[0] + ehi[0]))
+    elo[0] = ene[0] * (1 - ene[0] / (ene[0] + ehi[0]))
     ehi[-1] = elo[-1]
     return elo, ehi
 
 
-def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
-                     flux_error_hi=None, energy_width=None, energy_lo=None,
-                     energy_hi=None, ul=None, cl=None):
+def build_data_table(energy,
+                     flux,
+                     flux_error=None,
+                     flux_error_lo=None,
+                     flux_error_hi=None,
+                     energy_width=None,
+                     energy_lo=None,
+                     energy_hi=None,
+                     ul=None,
+                     cl=None):
     """
     Read data into data dict.
 
@@ -401,15 +426,17 @@ def build_data_table(energy, flux, flux_error=None, flux_error_lo=None,
         ul = np.array(ul, dtype=np.int)
         table['ul'] = ul
 
-    table.meta['comments'] = [
-        'Table generated with naima.build_data_table', ]
+    table.meta['comments'] = ['Table generated with naima.build_data_table',]
 
     # test table units, format, etc
     validate_data_table(table)
 
     return table
 
-def estimate_B(xray_table, vhe_table, photon_energy_density = 0.261*u.eV/u.cm**3):
+
+def estimate_B(xray_table,
+               vhe_table,
+               photon_energy_density=0.261 * u.eV / u.cm**3):
     """ Estimate magnetic field from synchrotron to Inverse Compton luminosity
     ratio
 
@@ -457,12 +484,12 @@ def estimate_B(xray_table, vhe_table, photon_energy_density = 0.261*u.eV/u.cm**3
     xray = validate_data_table(xray_table, sed=False)
     vhe = validate_data_table(vhe_table, sed=False)
 
-    xray_lum = trapz_loglog(xray['flux']*xray['energy'],xray['energy'])
-    vhe_lum = trapz_loglog(vhe['flux']*vhe['energy'],vhe['energy'])
+    xray_lum = trapz_loglog(xray['flux'] * xray['energy'], xray['energy'])
+    vhe_lum = trapz_loglog(vhe['flux'] * vhe['energy'], vhe['energy'])
 
-    uph=(photon_energy_density.to('erg/cm3')).value
+    uph = (photon_energy_density.to('erg/cm3')).value
 
-    B0=(np.sqrt((xray_lum/vhe_lum).decompose().value*8*np.pi*uph)*u.G).to('uG')
+    B0 = (np.sqrt((xray_lum / vhe_lum).decompose().value * 8 * np.pi * uph) *
+          u.G).to('uG')
 
     return B0
-

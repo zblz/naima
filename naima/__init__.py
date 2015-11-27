@@ -1,5 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-
 """
 `naima` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra
 to constrain the properties of their parent relativistic particle distributions.
