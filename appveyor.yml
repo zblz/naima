@@ -15,7 +15,7 @@ environment:
                         # of 32 bit and 64 bit builds are needed, move this
                         # to the matrix section.
       CONDA_DEPENDENCIES: "pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme"
-      PIP_DEPENDENCIES: "emcee corner"
+      #PIP_DEPENDENCIES: "emcee corner"
       ASTROPY_VERSION: "stable"
 
   matrix:
@@ -33,7 +33,6 @@ install:
     - "powershell ci-helpers/appveyor/install-miniconda.ps1"
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
     - "activate test"
-    - "pip install $env:PIP_DEPENDENCIES"
 
 # Not a .NET project, we build Astropy in the install step instead
 build: false
