@@ -12,14 +12,11 @@ environment:
                         # to the matrix section.
       CONDA_DEPENDENCIES: "pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme"
       PIP_DEPENDENCIES: "emcee corner"
+      ASTROPY_VERSION: "stable"
 
   matrix:
 
-      # We test Python 2.6 and 3.4 because 2.6 is most likely to have issues in
-      # Python 2 (if 2.6 passes, 2.7 virtually always passes) and Python 3.4 is
-      # the latest Python 3 release.
-
-      - PYTHON_VERSION: "2.6"
+      - PYTHON_VERSION: "2.7"
         NUMPY_VERSION: "1.9.1"
       - PYTHON_VERSION: "3.4"
         NUMPY_VERSION: "1.9.1"
@@ -32,6 +29,7 @@ install:
     - "powershell ci-helpers/appveyor/install-miniconda.ps1"
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
     - "activate test"
+    - "pip install $env:PIP_DEPENDENCIES"
 
 # Not a .NET project, we build Astropy in the install step instead
 build: false
