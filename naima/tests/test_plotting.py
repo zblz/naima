@@ -84,7 +84,8 @@ def cutoffexp(pars, data):
 
     # save flux model as tuple with energies and without
 
-    return flux, (x, flux), (ene, model), (ene, model_part), model1, model2, model3, (x, model3), model4, model5
+    return (flux, (x, flux), (ene, model), (ene, model_part), model1, model2,
+            model3, (x, model3), model4, model5)
 
 # Prior definition
 
@@ -124,8 +125,9 @@ def test_results_table(sampler):
         for convert_log in [True,False]:
             for include_blobs in [True,False]:
                 for format in ['ascii.ipac','ascii.ecsv','ascii']:
-                    t1 = save_results_table('test_table', sampler, convert_log=convert_log,
-                            last_step=last_step, format=format, include_blobs=include_blobs)
+                    t1 = save_results_table('test_table', sampler,
+                            convert_log=convert_log, last_step=last_step,
+                            format=format, include_blobs=include_blobs)
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_chain_plots(sampler):
@@ -188,9 +190,7 @@ def test_diagnostic_plots(sampler):
             'Wrong', 'Wrong', 'Wrong', 'Scalar', 'Scalar without units']
 
     save_diagnostic_plots('test_function_1', sampler, blob_labels=blob_labels)
-    save_diagnostic_plots('test_function_2', sampler, sed=True, blob_labels=blob_labels[:4])
-    save_diagnostic_plots(
-        'test_function_3', sampler, sed=[True, True, False, ])
-    save_diagnostic_plots('test_function_4', sampler, sed=False)
-    save_diagnostic_plots('test_function_5', sampler, sed=True, pdf=True)
+    save_diagnostic_plots('test_function_2', sampler, sed=True,
+                          blob_labels=blob_labels[:4])
+    save_diagnostic_plots('test_function_3', sampler, pdf=True)
 
