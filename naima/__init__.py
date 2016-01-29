@@ -1,10 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 """
-`naima` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra
-to constrain the properties of their parent relativistic particle distributions.
+`naima` is a Python package for computation of non-thermal radiation from
+relativistic particle populations. It includes tools to perform MCMC fitting of
+radiative models to X-ray, GeV, and TeV spectra using `~emcee`, an
+affine-invariant ensemble sampler for Markov Chain Monte Carlo.  `naima` uses
+MCMC fitting of non-thermal X-ray, GeV, and TeV spectra to constrain the
+properties of their parent relativistic particle distributions.
 
-The workhorse of naima is the powerful `~emcee`
-affine-invariant ensemble sampler for Markov chain Monte Carlo.
 """
 
 # Affiliated packages may add whatever they like to this file, but
