@@ -1088,7 +1088,7 @@ def _plot_residuals_to_ax(data_all,
     MLene = model_ML[0].to(e_unit)
     MLflux = (model_ML[1] * MLsedf).to(MLf_unit)
 
-    ax.axhline(0, color='k', lw=2, ls='--')
+    ax.axhline(0, color='k', lw=1, ls='--')
 
     interp = False
     if (data_all['energy'].size != MLene.size or

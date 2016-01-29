@@ -92,7 +92,8 @@ def save_diagnostic_plots(outname,
                 if 'log(' in label or 'log10(' in label:
                     label = label.split('(')[-1].split(')')[0]
                 f.savefig('{0}_chain_{1}.png'.format(outname, label), dpi=dpi)
-            del f
+            f.clf()
+            plt.close(f)
         except Exception as e:
             log.warning('plot_chain failed for paramter'
                         ' {0} ({1}): {2}'.format(label, par, e))
@@ -107,7 +108,8 @@ def save_diagnostic_plots(outname,
             f.savefig(outpdf, format='pdf', dpi=dpi)
         else:
             f.savefig('{0}_corner.png'.format(outname), dpi=dpi)
-        del f
+        f.clf()
+        plt.close(f)
 
     # Fit
 
@@ -141,7 +143,8 @@ def save_diagnostic_plots(outname,
                 f.savefig(outpdf, format='pdf', dpi=dpi)
             else:
                 f.savefig('{0}_model{1}.png'.format(outname, modelidx), dpi=dpi)
-            del f
+            f.clf()
+            plt.close(f)
         except Exception as e:
             log.warning('plot_blob failed for {0}: {1}'.format(label, e))
 

@@ -39,16 +39,10 @@ matrix:
         # Try MacOS X
         - os: osx
           env: PYTHON_VERSION=2.7 SETUP_CMD='test'
+        - os: osx
+          env: PYTHON_VERSION=3.5 SETUP_CMD='test'
 
-        # Do a coverage test in Python 2 w/ numpy 1.8 for sherpa.
-        - os: linux
-          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.8
-               CONDA_CHANNELS='astropy-ci-extras sherpa'
-               CONDA_DEPENDENCIES="$CONDA_DEPENDENCIES sherpa"
-               SETUP_CMD='test --coverage'
-
-        # Check for sphinx doc build warnings - we do this first because it
-        # may run for a long time
+        # Check for sphinx doc build warnings
         - os: linux
           env: PYTHON_VERSION=2.7 SETUP_CMD='build_sphinx -w'
 
@@ -62,17 +56,21 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=3.5 ASTROPY_VERSION=development SETUP_CMD='test'
 
-        # Try all python versions
+        # Try all python versions, with sherpa and coverage testing in py27
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test'
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test --coverage'
+               CONDA_CHANNELS='astropy-ci-extras sherpa'
+               CONDA_DEPENDENCIES="$CONDA_DEPENDENCIES sherpa"
         - os: linux
           env: PYTHON_VERSION=3.4 SETUP_CMD='test'
         - os: linux
           env: PYTHON_VERSION=3.5 SETUP_CMD='test'
 
-        # Try other numpy versions (1.8 is tested by sherpa)
+        # Try older numpy versions
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.7 SETUP_CMD='test'
+        - os: linux
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.8 SETUP_CMD='test'
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.9 SETUP_CMD='test'
 
