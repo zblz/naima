@@ -462,6 +462,8 @@ class InverseCompton(BaseElectron):
                     name, T, uu, theta = inseed
                     seed['isotropic'] = False
                     seed['theta'] = validate_scalar('{0}-theta'.format(name),
+                                                    theta,
+                                                    physical_type='angle')
 
                 thermal = T.unit.physical_type == 'temperature'
 
