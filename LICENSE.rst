@@ -1,4 +1,4 @@
-Copyright (c) 2013-2015, Víctor Zabalza
+Copyright (c) 2013-2016, Víctor Zabalza
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

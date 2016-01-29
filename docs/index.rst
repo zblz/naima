@@ -3,10 +3,11 @@ naima Documentation
 
 .. comment: split here
 
-``naima`` uses MCMC fitting of non-thermal X-ray, GeV, and TeV spectra to
-constrain the properties of their parent relativistic particle distributions.
-The workhorse of ``naima`` is the powerful `emcee <http://dan.iel.fm/emcee>`_
-affine-invariant ensemble sampler for Markov chain Monte Carlo.
+``naima`` is a Python package for computation of non-thermal radiation from
+relativistic particle populations. It includes tools to perform MCMC fitting of
+radiative models to X-ray, GeV, and TeV spectra using `emcee
+<http://dan.iel.fm/emcee>`_, an affine-invariant ensemble sampler for Markov
+Chain Monte Carlo.
 
 .. comment: - Code: http://www.github.com/zblz/naima
 
@@ -47,6 +48,30 @@ Appendices
    dataformat.rst
    units.rst
    api.rst
+
+License & Attribution
+---------------------
+
+Naima is released under a 3-clause BSD style license - see the
+`LICENSE.rst <https://github.com/zblz/naima/blob/master/LICENSE.rst>`_ for
+details.
+
+If you find ``naima`` useful in your research, you can cite `Zabalza (2015)
+<http://arxiv.org/abs/1509.03319>`_ (`arXiv <http://arxiv.org/abs/1509.03319>`_,
+`ADS <http://adsabs.harvard.edu/abs/2015arXiv150903319Z>`_) to acknowledge its
+use. The BibTeX entry for the paper is::
+
+    @ARTICLE{naima,
+       author = {{Zabalza}, V.},
+        title = {naima: a Python package for inference of relativistic particle
+                 energy distributions from observed nonthermal spectra},
+         year = 2015,
+      journal = {Proc.~of International Cosmic Ray Conference 2015},
+        pages = "in press",
+       eprint = {1509.03319},
+       adsurl = {http://adsabs.harvard.edu/abs/2015arXiv150903319Z},
+    }
+
 
 Contributing
 ------------
