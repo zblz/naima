@@ -31,7 +31,7 @@ def ElectronIC(pars, data):
 
     # compute flux at the energies given in data['energy'], and convert to units
     # of flux data
-    model = IC.flux(data, distance=2.0 * u.kpc).to(data['flux'].unit)
+    model = IC.flux(data, distance=1.0 * u.kpc).to(data['flux'].unit)
 
     # Save this realization of the particle distribution function
     elec_energy = np.logspace(11, 15, 100) * u.eV

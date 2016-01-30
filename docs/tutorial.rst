@@ -4,7 +4,12 @@ Tutorial: Fitting a model to a spectrum
 The first step in fitting a model to an observed spectrum is to read the
 spectrum into the appropriate format. See :ref:`dataformat`  for an explanation
 of the format and an example, and :ref:`units`  for a brief explanation of the
-unit system used in ``naima``.
+unit system used in ``naima``. We load the spectral data with
+`astropy.io.ascii`::
+
+    from astropy.io import ascii
+    data = ascii.read('RXJ1713_HESS_2007.dat')
+
 
 Building the model and prior functions
 --------------------------------------
@@ -40,17 +45,19 @@ model flux for the energies contained in the data table::
         e_cutoff = (10**pars[2]) * u.TeV
 
         ECPL = ExponentialCutoffPowerLaw(amplitude, 10*u.TeV, alpha, e_cutoff)
-        IC = InverseCompton(ECPL, seed_photon_fields=['CMB'])
+        IC = InverseCompton(ECPL, seed_photon_fields=['CMB',
+                            ['FIR', 26.5 * u.K, 0.415 * u.eV / u.cm**3]])
 
-        return IC.flux(data, distance=2.0*u.kpc)
+        return IC.flux(data, distance=1.0*u.kpc)
 
 In addition, we must build a function to return the prior function, i.e., a
 function that encodes any previous knowledge you have about the parameters, such
 as previous measurements or physically acceptable ranges. Two simple priors
-functions are included with ``naima``: `~naima.normal_prior` and
-`~naima.uniform_prior`.  `~naima.uniform_prior` can be used to set parameter
-limits. Following the example above, we might want to limit the amplitude to be
-positive, and the spectral index to be between -1 and 5::
+functions are included with ``naima``: `~naima.normal_prior`, and
+`~naima.uniform_prior`, and `~naima.loguniform_prior`.  `~naima.uniform_prior`
+can be used to set parameter limits. Following the example above, we might want
+to limit the amplitude to be positive, and the spectral index to be between -1
+and 5::
 
     from naima import uniform_prior
 
@@ -138,13 +145,13 @@ procedures of ``naima``: `~naima.plot_chain`, `~naima.plot_fit`, and
 generate a collection of plots that illustrate the results and the stability of
 the fitting procedure. These are `~naima.save_diagnostic_plots`::
 
-    naima.save_diagnostic_plots('CrabNebula_IC', sampler,
+    naima.save_diagnostic_plots('RXJ1713_IC', sampler,
         blob_labels=['Spectrum', 'Electron energy distribution',
         '$W_e (E_e>1$ TeV)'])
 
 and `~naima.save_results_table`::
 
-    naima.save_results_table('CrabNebula_naima_fit', sampler)
+    naima.save_results_table('RXJ1713_naima_fit', sampler)
 
 The saved table will include information in the metadata about the run such as
 the number of walkers ``n_walkers`` and steps ``n_run`` sampled, the initial
@@ -154,7 +161,7 @@ parameter vectori ``p0``, the parameter vector with the maximum likelihood
 uncertainties (50th, 84th, and 16th percentiles of the posterior distribution)
 for the parameters sampled: 
 
-.. literalinclude:: _static/CrabNebula_IC_results_table.txt
+.. literalinclude:: _static/RXJ1713_IC_results_table.txt
 
 The table is saved by default in `ECSV format
 <https://github.com/astropy/astropy-APEs/blob/master/APE6.rst>`_ which can be
@@ -172,20 +179,20 @@ distribution, which can be reported as the inferred marginalised value of the
 parameter and associated :math:`1\sigma` uncertainty. For the electron index
 (parameter 1), `~naima.plot_chain` shows:
 
-.. image:: _static/CrabNebula_IC_chain_index.png
+.. image:: _static/RXJ1713_IC_chain_index.png
 
 For parameters that have been sampled in logarithmic space  and their parameter
 label includes ``log10`` or ``log``, `~naima.plot_chain` will also compute the
 value and percentiles in linear space:
 
-.. image:: _static/CrabNebula_IC_chain_cutoff.png
+.. image:: _static/RXJ1713_IC_chain_cutoff.png
 
 The relationship between the samples of the different parameters can be seen
 though a `corner plot <https://github.com/dfm/corner.py>`_ with
 `~naima.plot_corner` which is a wrapper around `corner.corner`. The maximum
 likelihood parameter vector can be indicated with cross:
 
-.. image:: _static/CrabNebula_IC_corner.png
+.. image:: _static/RXJ1713_IC_corner.png
 
 
 Plotting functions: fit
@@ -196,7 +203,7 @@ results of the MCMC fitting. By default, it will show the Maximum Likelihood
 model with a black line, and 100 samples from the posterior distribution in
 gray:
 
-.. image:: _static/CrabNebula_IC_model_samples.png
+.. image:: _static/RXJ1713_IC_model_samples.png
 
 The 100 samples are taken from the blobs stored in the sampler, so they only
 contain the model values at the observed flux points. If you want to show the
@@ -207,7 +214,7 @@ called, so this may significantly slow the plot speed if the model function
 calls are expensive. Setting ``e_range=[100*u.GeV, 100*u.TeV]``, we obtain the
 following plot:
 
-.. image:: _static/CrabNebula_IC_model_samples_erange.png
+.. image:: _static/RXJ1713_IC_model_samples_erange.png
 
 The spread of the parameters in the posterior distribution can also be
 visualized as confidence bands. Using the ``confs`` parameter of ``plot_fit``, a
@@ -216,14 +223,14 @@ given in ``confs``. Setting ``confs=[3,1]``, the confidence bands at
 :math:`1\sigma` and :math:`3\sigma` are plotted. Note that no samples are shown
 if the ``confs`` parameter is set:
 
-.. image:: _static/CrabNebula_IC_model_confs.png
+.. image:: _static/RXJ1713_IC_model_confs.png
 
 As for the plot showing the samples, the energy range for the confidence bands
 can be set through the ``e_range`` parameter. The number of samples needed will
 be computed so that the highest confidence level given can be constrained. This
 results in 740 samples for a :math:`3\sigma` confidence level:
 
-.. image:: _static/CrabNebula_IC_model_confs_erange.png
+.. image:: _static/RXJ1713_IC_model_confs_erange.png
 
 
 .. _saving:
@@ -317,12 +324,12 @@ The additional quantities we have stored can the be accesed in the
 extract distribution properties. For the blobs that are a tuple or have the same
 length as ``data['energy']``, they will be plotted as spectra:
 
-.. image:: _static/CrabNebula_IC_pdist.png
+.. image:: _static/RXJ1713_IC_pdist.png
 
 and for the ones that are a scalar value, such as the total energy in electrons that
 we returned as the third object, a histogram and distribution properties will be
 plotted:
 
-.. image:: _static/CrabNebula_IC_We.png
+.. image:: _static/RXJ1713_IC_We.png
 
 
