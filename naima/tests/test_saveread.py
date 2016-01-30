@@ -106,7 +106,8 @@ def test_roundtrip(sampler):
         assert str(sampler.data[col].unit) == str(nresult.data[col].unit)
     validate_data_table(nresult.data)
 
-    assert np.allclose(sampler.acceptance_fraction, nresult.acceptance_fraction)
+    assert np.allclose(np.mean(sampler.acceptance_fraction),
+            nresult.acceptance_fraction)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
