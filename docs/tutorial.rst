@@ -181,8 +181,8 @@ value and percentiles in linear space:
 .. image:: _static/CrabNebula_IC_chain_cutoff.png
 
 The relationship between the samples of the different parameters can be seen
-though a `corner plot <https://github.com/dfm/triangle.py>`_ with
-`~naima.plot_corner` which is a wrapper around `triangle.corner`. The maximum
+though a `corner plot <https://github.com/dfm/corner.py>`_ with
+`~naima.plot_corner` which is a wrapper around `corner.corner`. The maximum
 likelihood parameter vector can be indicated with cross:
 
 .. image:: _static/CrabNebula_IC_corner.png

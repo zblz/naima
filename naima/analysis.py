@@ -40,7 +40,7 @@ def save_diagnostic_plots(outname,
       ``outname_chain_parN.png`` (see `naima.plot_chain`).
     - A corner plot of sample density in the two dimensional parameter space of
       all parameter pairs of the run, with the Maximum Likelihood parameter
-      vector indicated in blue: ``outname_corner.png`` (see `triangle.corner`).
+      vector indicated in blue: ``outname_corner.png`` (see `corner.corner`).
     - A plot for each of the models returned as blobs by the model function. The
       maximum likelihood model is shown, as well as the 1 and 3 sigma confidence
       level contours. The first model will be compared with observational data
