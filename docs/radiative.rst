@@ -86,7 +86,7 @@ These spectra can then be analysed or plotted:
             spectrum_energy.unit.to_string('latex_inline')))
     plt.ylabel('$E^2 dN/dE$ [{0}]'.format(
             sed_SYN.unit.to_string('latex_inline')))
-    plt.ylim(bottom=1e-15)
+    plt.ylim(1e-15, 1e-6)
     plt.tight_layout()
     plt.legend(loc='lower left')
 
