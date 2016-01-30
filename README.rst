@@ -12,18 +12,12 @@ Chain Monte Carlo.
 `Giant Steps (1959) <https://www.youtube.com/watch?v=QTMqes6HDqU>`_ and
 `Live at the Village Vanguard (1961) <https://www.youtube.com/watch?v=Tq3-99vbFt8>`_.
 
-.. image:: http://img.shields.io/travis/zblz/naima.svg
-	:target: https://travis-ci.org/zblz/naima
-.. image:: http://img.shields.io/coveralls/zblz/naima.svg
-	:target: https://coveralls.io/r/zblz/naima
-.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg
-	:target: http://www.astropy.org
-.. image:: http://img.shields.io/badge/benchmarked%20by-asv-green.svg
-	:target: http://zblz.github.io/naima-benchmarks
 .. image:: http://img.shields.io/pypi/v/naima.svg
 	:target: https://pypi.python.org/pypi/naima/
-.. image:: http://img.shields.io/badge/license-BSD-lightgrey.svg
+.. image:: http://img.shields.io/badge/license-BSD-green.svg
 	:target: https://github.com/zblz/naima/blob/master/LICENSE.rst
+.. image:: http://img.shields.io/badge/powered%20by-AstroPy-orange.svg
+	:target: http://www.astropy.org
 .. image:: http://img.shields.io/badge/arXiv-1509.03319-blue.svg
 	:target: http://arxiv.org/abs/1509.03319
 
@@ -57,3 +51,14 @@ License
 
 Naima is released under a 3-clause BSD style license - see the
 `LICENSE.rst <https://github.com/zblz/naima/blob/master/LICENSE.rst>`_ file.
+
+
+Code status
+^^^^^^^^^^^
+
+.. image:: http://img.shields.io/travis/zblz/naima.svg
+	:target: https://travis-ci.org/zblz/naima
+.. image:: http://img.shields.io/coveralls/zblz/naima.svg
+	:target: https://coveralls.io/r/zblz/naima
+.. image:: http://img.shields.io/badge/benchmarked%20by-asv-green.svg
+	:target: http://zblz.github.io/naima-benchmarks
