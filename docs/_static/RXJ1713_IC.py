@@ -23,7 +23,7 @@ def ElectronIC(pars,data):
 
     # compute flux at the energies given in data['energy'], and convert to units
     # of flux data
-    model = IC.flux(data, distance=1.0 * u.kpc).to(data['flux'].unit)
+    model = IC.flux(data, distance=1.0 * u.kpc)
 
     # Save this realization of the particle distribution function
     elec_energy = np.logspace(11,15,100) * u.eV
@@ -70,7 +70,7 @@ if __name__=='__main__':
     # Run sampler
         sampler,pos = naima.run_sampler(data_table=data, p0=p0, labels=labels,
                 model=ElectronIC, prior=lnprior, nwalkers=128, nburn=100,
-                nrun=100, threads=4, prefit=True)
+                nrun=100, threads=4, prefit=True, interactive=True)
     # Save sampler
         naima.save_run('RXJ1713_IC_sampler.hdf5', sampler)
 
@@ -96,9 +96,9 @@ if __name__=='__main__':
 
     print('Plotting chains...')
     f = naima.plot_chain(sampler, 1)
-    f.savefig('RXJ1713_IC_chain_index.png')
+    f.savefig('RXJ1713_IC_chain_index.png', dpi=87)
     f = naima.plot_chain(sampler, 2)
-    f.savefig('RXJ1713_IC_chain_cutoff.png')
+    f.savefig('RXJ1713_IC_chain_cutoff.png', dpi=87)
 
     #e_range = [sampler.data['energy'][0]/5, sampler.data['energy'][-1]*5]
     e_range = [100*u.GeV, 500*u.TeV]
@@ -109,13 +109,13 @@ if __name__=='__main__':
     f.axes[0].set_ylim(1e-13,2e-10)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
-    f.savefig('RXJ1713_IC_model_samples.png')
+    f.savefig('RXJ1713_IC_model_samples.png', dpi=87)
     print('Plotting samples with e_range...')
     f = naima.plot_fit(sampler, 0, e_range=e_range, ML_info=False, n_samples=500)
     f.axes[0].set_ylim(1e-13,2e-10)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
-    f.savefig('RXJ1713_IC_model_samples_erange.png')
+    f.savefig('RXJ1713_IC_model_samples_erange.png', dpi=87)
     #f.savefig('RXJ1713_IC_model_samples_erange.pdf')
 
     # with confs
@@ -124,23 +124,24 @@ if __name__=='__main__':
     f.axes[0].set_ylim(1e-13,2e-10)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
-    f.savefig('RXJ1713_IC_model_confs.png')
+    f.savefig('RXJ1713_IC_model_confs.png', dpi=87)
     print('Plotting confs with e_range...')
     f = naima.plot_fit(sampler, 0, e_range=e_range, ML_info=False, confs=[3,1])
     f.axes[0].set_ylim(1e-13,2e-10)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
-    f.savefig('RXJ1713_IC_model_confs_erange.png')
+    f.savefig('RXJ1713_IC_model_confs_erange.png', dpi=87)
 
     print('Plotting corner...')
     f = naima.plot_corner(sampler)
-    f.savefig('RXJ1713_IC_corner.png')
+    w = f.get_size_inches()[0]
+    f.savefig('RXJ1713_IC_corner.png', dpi=696./w)
 
     print('Plotting blobs...')
     f = naima.plot_blob(sampler, 1, ML_info=False, label='Electron energy distribution',
             xlabel=r'Electron energy [$\mathrm{TeV}$]')
     f.tight_layout()
-    f.savefig('RXJ1713_IC_pdist.png')
+    f.savefig('RXJ1713_IC_pdist.png', dpi=87)
     f = naima.plot_blob(sampler, 2, label=r'$W_e(E_e>1\,\mathrm{TeV})$')
-    f.savefig('RXJ1713_IC_We.png')
+    f.savefig('RXJ1713_IC_We.png', dpi=87)
 
