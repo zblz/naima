@@ -304,7 +304,8 @@ that does precisely this with an Inverse Compton emission model::
         e_0 = 10 * u.TeV
 
         ECPL = ExponentialCutoffPowerLaw(amplitude, e_0, alpha, e_cutoff)
-        IC = InverseCompton(ECPL, seed_photon_fields=['CMB'])
+        IC = InverseCompton(ECPL, seed_photon_fields=['CMB',
+                            ['FIR', 26.5 * u.K, 0.415 * u.eV / u.cm**3]])
 
         # The total enegy in electrons of model IC can be accessed through the
         # attribute We or obtained for a given range with compute_We
