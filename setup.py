@@ -94,12 +94,23 @@ for root, dirs, files in os.walk(PACKAGENAME):
                     os.path.relpath(root, PACKAGENAME), filename))
 package_info['package_data'][PACKAGENAME].extend(c_files)
 
+# Some dependencies with C extensions cannot be built on readthedocs
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+if on_rtd:
+    install_requires = []
+else:
+    install_requires=['astropy>=1.0.2',
+                      'emcee>=2.1.0',
+                      'matplotlib',
+                      'scipy',
+                      'h5py'],
+
+
 setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       scripts=scripts,
-      install_requires=['scipy', 'astropy>=1.0.2', 'emcee>=2.1.0', 'matplotlib',
-                        'h5py'],
+      install_requires=install_requires,
       provides=[PACKAGENAME],
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
@@ -108,7 +119,6 @@ setup(name=PACKAGENAME,
       long_description=LONG_DESCRIPTION,
       classifiers = [ 'Programming Language :: Python :: 3',
                       'Programming Language :: Python :: 2.7',
-                      'Programming Language :: Python :: 3.3',
                       'Programming Language :: Python :: 3.4',
                       'Programming Language :: Python :: 3.5',
                       'Development Status :: 4 - Beta',
