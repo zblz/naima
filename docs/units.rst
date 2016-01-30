@@ -1,11 +1,11 @@
 .. _units:
 
-Units system used
-=================
+Units system
+============
 
 The package makes use of the :mod:`astropy.units` package to handle units and
 unit conversions. Several of the arguments of the functions and classes of
-``naima`` require :class:`~astropy.units.quantity.Quantity` instances. Defining
+Naima require :class:`~astropy.units.quantity.Quantity` instances. Defining
 quantities is straightforward::
 
     from astropy import units as u
@@ -24,7 +24,7 @@ A note on physical types
 ------------------------
 
 Units defined through `astropy.units.Unit` have an associated physical type.
-``naima`` defines a few additional physical types to those defined in
+Naima defines a few additional physical types to those defined in
 `astropy.units`. They are used internally to check that the inputs have the
 correct physical type and can be converted to the appropriate units. These are:
 

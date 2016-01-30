@@ -1,5 +1,5 @@
-Detailed description of functions and arguments (API)
-=====================================================
+API docs
+========
 
 .. currentmodule:: naima
 

@@ -1,13 +1,14 @@
-naima Documentation
-======================
+Welcome to Naima
+================
 
 .. comment: split here
 
-``naima`` is a Python package for computation of non-thermal radiation from
+Naima is a Python package for computation of non-thermal radiation from
 relativistic particle populations. It includes tools to perform MCMC fitting of
 radiative models to X-ray, GeV, and TeV spectra using `emcee
 <http://dan.iel.fm/emcee>`_, an affine-invariant ensemble sampler for Markov
-Chain Monte Carlo.
+Chain Monte Carlo. Naima is an `Astropy`_ affiliated
+package.
 
 .. comment: - Code: http://www.github.com/zblz/naima
 
@@ -25,11 +26,12 @@ use of an arbitrary shape of the particle energy distribution, and several
 functional models are also available to be used as particle distribution
 functions. See :ref:`radiative` for a detailed explanation of these.
 
-User documentation
-------------------
+Use the sidebar on the left to access the documentation.
+
 
 .. toctree::
-   :maxdepth: 1
+   :hidden:
+   :maxdepth: 2
  
    installation.rst
    radiative.rst
@@ -38,12 +40,10 @@ User documentation
    sherpa.rst
    examples.rst
 
-Appendices
-----------
-
 
 .. toctree::
-   :maxdepth: 1
+   :hidden:
+   :maxdepth: 2
  
    dataformat.rst
    units.rst
@@ -56,7 +56,7 @@ Naima is released under a 3-clause BSD style license - see the
 `LICENSE.rst <https://github.com/zblz/naima/blob/master/LICENSE.rst>`_ for
 details.
 
-If you find ``naima`` useful in your research, you can cite `Zabalza (2015)
+If you find Naima useful in your research, you can cite `Zabalza (2015)
 <http://arxiv.org/abs/1509.03319>`_ (`arXiv <http://arxiv.org/abs/1509.03319>`_,
 `ADS <http://adsabs.harvard.edu/abs/2015arXiv150903319Z>`_) to acknowledge its
 use. The BibTeX entry for the paper is::
@@ -79,7 +79,7 @@ Contributing
 Please report any issues with the package `here
 <https://github.com/zblz/naima/issues>`_.
 
-All development of ``naima`` is done through the `github repository`_, and
+All development of Naima is done through the `github repository`_, and
 contributions to the code are welcome.  The development model is similar to that
 of `astropy`_, so you can check the `astropy Developer Documentation
 <https://astropy.readthedocs.org/en/latest/#developer-documentation>`_ if you

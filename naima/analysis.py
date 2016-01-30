@@ -449,8 +449,7 @@ def save_run(filename, sampler, compression=True, clobber=False):
                 group.attrs[key] = str(val)
 
     # add other sampler info to the attrs
-    for attr in ['acceptance_fraction',]:
-        group.attrs[attr] = getattr(sampler, attr)
+    group.attrs['acceptance_fraction'] = np.mean(sampler.acceptance_fraction)
 
     # add labels as individual attrs (there might be a better way)
     for i, label in enumerate(sampler.labels):

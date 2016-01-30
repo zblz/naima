@@ -35,7 +35,7 @@ Anaconda python distribution
 
 The `Anaconda python distribution <http://continuum.io/downloads>`_ allows to
 easily set up a fully working scientific Python distribution in any Linux or Mac
-machine, even without root access. Once Anaconda is set up, ``naima`` and all of
+machine, even without root access. Once Anaconda is set up, Naima and all of
 its dependencies can be installed in an Anaconda distribution through the
 Astropy conda channel::
 
@@ -47,7 +47,7 @@ distribution::
 
     $ conda update --all
 
-or only ``naima``::
+or only Naima::
 
     $ conda update naima
 
@@ -58,7 +58,7 @@ all dependencies are available in both Python 2 and 3.
 Using pip
 +++++++++
 
-You can install ``naima`` in an existing Python installation through pip (you
+You can install Naima in an existing Python installation through pip (you
 may need to use ``sudo`` if you want to install it system-wide, or the flag
 ``--user`` to install only for the current user)::
 
@@ -66,7 +66,7 @@ may need to use ``sudo`` if you want to install it system-wide, or the flag
 
 Note that installing with pip means that all non-installed dependencies will be
 downloaded as source and built in your machine. For pure Python packages such as
-``naima`` or ``emcee`` that is not a problem, but if Numpy or matplotlib are
+Naima or ``emcee`` that is not a problem, but if Numpy or matplotlib are
 installed this way the build can take quite a long time. You can bypass this
 problem by installing these libraries through your systemwide package manager:
 see below for how to do this for different systems.
@@ -99,7 +99,7 @@ Macports can be used on Mac systems to install most dependencies::
 Installing the development version
 ++++++++++++++++++++++++++++++++++
 
-To install from the latest development source, install ``naima`` from the
+To install from the latest development source, install Naima from the
 `github repository`_ through pip::
 
     $ pip install git+http://github.com/zblz/naima.git#egg=naima

@@ -3,7 +3,7 @@
 Radiative Models
 ================
 
-``naima`` contains several radiative models that can be used to compute the
+Naima contains several radiative models that can be used to compute the
 non-thermal emission from populations of relativistic electrons or protons.
 Below there is a brief explanation of each model, and full details on the
 physics and motivation for the implementation can be found in the referenced
@@ -100,19 +100,19 @@ The inverse Compton (IC) scattering of soft photons by relativistic electrons is
 the main gamma-ray production channel for electron populations (`Blumenthal &
 Gould 1970`_). Often, the seed photon field will be a blackbody or a diluted
 blackbody, and the calculation of IC must be done taking this into account.
-``naima`` implements the analytical approximations to IC upscattering of
+Naima implements the analytical approximations to IC upscattering of
 blackbody radiation developed by `Khangulyan et al. (2014)`_. These have the
 advantage of being computationally cheap compared to a numerical integration
 over the spectrum of the blackbody, and remain accurate within one percent over
 a wide range of energies. Both the isotropic IC and anisotropic IC
-approximations are available in ``naima``. If you use this class in your
+approximations are available in Naima. If you use this class in your
 research, please consult and cite `Khangulyan, D., Aharonian, F.A., & Kelner,
 S.R.  2014, Astrophysical Journal, 783, 100
 <http://adsabs.harvard.edu/abs/2014ApJ...783..100K>`_.
 
 .. _Khangulyan et al. (2014): http://adsabs.harvard.edu/abs/2014ApJ...783..100K
 
-The implementation in ``naima`` allows to specify which blackbody seed photon
+The implementation in Naima allows to specify which blackbody seed photon
 fields to use in the calculation, and provides the three dominant galactic
 photon fields at the location of the Solar System through the `CMB` (Cosmic
 Microwave Background), `FIR` (far-infrared dust emission), and `NIR`

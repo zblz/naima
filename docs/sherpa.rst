@@ -10,7 +10,7 @@ analysis. It is part of the Chandra analysis software pacakage (`CIAO
 by using the `Anaconda Python <http://continuum.io/downloads>`_ distribution.
 Once you have a Python 2.7 Anaconda environment set up, the `standalone Python
 version of sherpa <http://cxc.cfa.harvard.edu/contrib/sherpa/>`_ can be
-installed along with ``naima`` as follows::
+installed along with Naima as follows::
 
     $ export PATH=PATH_TO_ANACONDA/bin:$PATH
     $ conda config --add channels sherpa --add channels astropy
@@ -18,9 +18,9 @@ installed along with ``naima`` as follows::
 
 where ``PATH_TO_ANACONDA`` is the path where you have installed Anaconda. 
 
-``naima`` provides wrappers for the :ref:`radiative` to make it easier to use
+Naima provides wrappers for the :ref:`radiative` to make it easier to use
 them in a sherpa session. The models available for use in sherpa are the four
-radiative models available in ``naima`` (see :ref:`radiative`) with a
+radiative models available in Naima (see :ref:`radiative`) with a
 `~naima.models.PowerLaw` or `~naima.models.ExponentialCutoffPowerLaw` particle
 distribution:
 

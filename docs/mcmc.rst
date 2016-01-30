@@ -1,12 +1,12 @@
 .. _MCMC:
 
-Spectral model fitting with MCMC
-================================
+Model fitting
+=============
 
-``naima`` can derive the best-fit and uncertainty distributions of spectral
+Naima can derive the best-fit and uncertainty distributions of spectral
 model parameters through Markov Chain Monte Carlo (MCMC) sampling of their
 likelihood distributions. The following will only describe the implementation of
-``naima`` to do so, but a full explanation of MCMC or the sampling algorithm can
+Naima to do so, but a full explanation of MCMC or the sampling algorithm can
 be found in `MacKay (2003)
 <http://www.inference.phy.cam.ac.uk/mackay/itila/book.html>`_, and
 `Foreman-Mackey et al. (2013) <http://arxiv.org/abs/1202.3665>`_. It is also
@@ -72,21 +72,21 @@ period (there is no clear answer to many steps it takes for the sampler to
 stabilize), the samples that are accepted by the sampler are recorded, along
 with the model spectrum, and any metadata blobs provided by the model function
 (see :ref:`blobs`). These can then be accessed through the sampler object, and
-``naima`` provides several convenience functions to analyse the results and
+Naima provides several convenience functions to analyse the results and
 compare them to the input spectrum: see :ref:`plotting`.
 
 
 Overcoming the Gaussian error assumption
 ----------------------------------------
 
-``naima`` provides an alternative to MCMC fitting by providing wrappers around
+Naima provides an alternative to MCMC fitting by providing wrappers around
 the radiative models that can be used in `sherpa`_. This package allows to take
 into account instrument response functions that include bin correlation. See
 :ref:`sherpamod` for more details on these sherpa wrappers.
 
 .. _sherpa: http://cxc.cfa.harvard.edu/sherpa/
 
-However, within the framework of MCMC fitting in ``naima``, several approaches
+However, within the framework of MCMC fitting in Naima, several approaches
 will be considered for inclusion in the future to overcome the assumption of
 correct, Gaussian, independent errors.
 

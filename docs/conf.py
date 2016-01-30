@@ -69,11 +69,10 @@ setup_cfg = dict(conf.items('metadata'))
 # -- General configuration ----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.1'
+needs_sphinx = '1.3'
 
-del intersphinx_mapping['h5py']
+# del intersphinx_mapping['h5py']
 
-intersphinx_mapping['astropy'] = ('http://docs.astropy.org/en/latest/', None)
 intersphinx_mapping['emcee'] = ('http://dan.iel.fm/emcee/current/', None)
 
 
@@ -123,10 +122,34 @@ release = package.__version__
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes. To override the custom theme, set this to the
 # name of a builtin theme or the name of a custom theme in html_theme_path.
-html_theme = 'default'
+html_theme = 'alabaster'
+html_theme_options = {
+    'description': '''Python package for computation of non-thermal
+                    radiation from relativistic particle populations and
+                    MCMC fitting to observed spectra''',
+    'github_user': 'zblz',
+    'github_repo': 'naima',
+    'github_banner': True,
+    'github_button': False,
+    'travis_button': False,
+    # use sans-serif fonts
+    'font_family': "'Myriad Pro', Calibri, Helvetica, Arial, sans-serif",
+    'head_font_family': "'Lucida Grande', 'Calibri', Helvetica, Arial, sans-serif",
+    'show_powered_by': False,
+    'show_related': True,
+    'code_font_size': '0.7em',
+    }
 
 # Custom sidebar templates, maps document names to template names.
 #html_sidebars = {}
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',
+        'searchbox.html',
+    ]
+}
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -175,13 +198,4 @@ if eval(setup_cfg.get('edit_on_github')):
 
     edit_on_github_source_root = ""
     edit_on_github_doc_root = "docs"
-
-# on_rtd is whether we are on readthedocs.org
-
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
-# otherwise, readthedocs.org uses their theme by default, so no need to specify it
 

@@ -1,10 +1,10 @@
-Tutorial: Fitting a model to a spectrum
-=======================================
+Tutorial
+========
 
 The first step in fitting a model to an observed spectrum is to read the
 spectrum into the appropriate format. See :ref:`dataformat`  for an explanation
 of the format and an example, and :ref:`units`  for a brief explanation of the
-unit system used in ``naima``. We load the spectral data with
+unit system used in Naima. We load the spectral data with
 `astropy.io.ascii`::
 
     from astropy.io import ascii
@@ -18,7 +18,7 @@ The model function is the function that will be called to compare with the
 observed spectrum. It must take two parameters: an array of the free parameters
 of the model, and the data table.
 
-``naima`` includes several models in the `naima.models` module that make it
+Naima includes several models in the `naima.models` module that make it
 easier to fit common functional forms for spectra (`~naima.models.PowerLaw`,
 `~naima.models.ExponentialCutoffPowerLaw`, `~naima.models.BrokenPowerLaw`, and
 `~naima.models.LogParabola`), as well as several radiative models
@@ -53,7 +53,7 @@ model flux for the energies contained in the data table::
 In addition, we must build a function to return the prior function, i.e., a
 function that encodes any previous knowledge you have about the parameters, such
 as previous measurements or physically acceptable ranges. Two simple priors
-functions are included with ``naima``: `~naima.normal_prior`, and
+functions are included with Naima: `~naima.normal_prior`, and
 `~naima.uniform_prior`, and `~naima.loguniform_prior`.  `~naima.uniform_prior`
 can be used to set parameter limits. Following the example above, we might want
 to limit the amplitude to be positive, and the spectral index to be between -1
@@ -83,7 +83,7 @@ initial parameter vector far from the maximum likelihood vector may mean that
 during the minimization or sampling process the algorithm gets stuck in a local
 maximum.
 
-In order to make an adequate estimation easier, ``naima`` provides a tool to
+In order to make an adequate estimation easier, Naima provides a tool to
 interactively see the output of the model and compare it with the observed data
 while changing the parameter values. This tool can be accessed in two ways: the
 first is setting `interactive=True` in the options of `~naima.get_sampler` or
@@ -120,7 +120,7 @@ Sampling the posterior distribution function
 --------------------------------------------
 
 All the objects above can then be provided to `~naima.run_sampler`, the main
-fitting function in ``naima``::
+fitting function in Naima::
 
     sampler, pos = naima.run_sampler(data_table = data, p0=p0, label=labels,
                     model=model_function, prior=lnprior,
@@ -140,14 +140,15 @@ Inspecting and analysing results of the run
 
 
 The results stored in the sampler object can be analysed through the plotting
-procedures of ``naima``: `~naima.plot_chain`, `~naima.plot_fit`, and
+procedures of Naima: `~naima.plot_chain`, `~naima.plot_fit`, and
 `~naima.plot_data`. In addition, two convenience functions can be used to
 generate a collection of plots that illustrate the results and the stability of
 the fitting procedure. These are `~naima.save_diagnostic_plots`::
 
     naima.save_diagnostic_plots('RXJ1713_IC', sampler,
-        blob_labels=['Spectrum', 'Electron energy distribution',
-        '$W_e (E_e>1$ TeV)'])
+                                blob_labels=['Spectrum', 
+                                             'Electron energy distribution',
+                                             '$W_e (E_e>1$ TeV)'])
 
 and `~naima.save_results_table`::
 
@@ -277,7 +278,7 @@ extra information can be returned from the model call. This extra information
 <http://dan.iel.fm/emcee/current/user/advanced/#arbitrary-metadata-blobs>`_) is
 stored in the sampler object returned from the fitting and can be accessed
 later. There are three formats for the data stored as a metadata blob that will
-be understood by the plotting routines of ``naima``:
+be understood by the plotting routines of Naima:
 
 - A `~astropy.units.Quantity` scalar. A histogram and distribution properties
   (median, 16th and 84th percentiles, etc.) will be plotted.

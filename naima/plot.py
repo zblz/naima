@@ -1317,7 +1317,7 @@ def plot_distribution(samples, label, figure=None):
     return f
 
 
-def plot_corner(sampler, show_ML=True):
+def plot_corner(sampler, show_ML=True, **kwargs):
     """
     A plot that summarizes the parameter samples by showing them as individual
     histograms and 2D histograms against each other. The maximum likelihood
@@ -1346,12 +1346,16 @@ def plot_corner(sampler, show_ML=True):
         else:
             MLp = None
 
-        f = corner(sampler.flatchain,
-                   labels=sampler.labels,
-                   truths=MLp,
-                   quantiles=[0.16, 0.5, 0.84],
-                   verbose=False,
-                   truth_color=color_cycle[0])
+        corner_opts = {'labels': sampler.labels,
+                       'truths': MLp,
+                       'quantiles': [0.16, 0.5, 0.84],
+                       'verbose': False,
+                       'truth_color': color_cycle[0],
+                       }
+
+        corner_opts.update(kwargs)
+
+        f = corner(sampler.flatchain, **corner_opts)
     except ImportError:
         log.warning('The corner package is not installed;'
                     ' corner plot not available')

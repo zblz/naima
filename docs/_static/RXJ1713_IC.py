@@ -94,11 +94,14 @@ if __name__=='__main__':
         f.write('------------- ------- ------- --------\n')
         results.write(f,format='ascii.fixed_width_two_line')
 
+    alabaster_width= 660
+    alabaster_dpi= 100 * alabaster_width / 800
+
     print('Plotting chains...')
     f = naima.plot_chain(sampler, 1)
-    f.savefig('RXJ1713_IC_chain_index.png', dpi=87)
+    f.savefig('RXJ1713_IC_chain_index.png', dpi=alabaster_dpi)
     f = naima.plot_chain(sampler, 2)
-    f.savefig('RXJ1713_IC_chain_cutoff.png', dpi=87)
+    f.savefig('RXJ1713_IC_chain_cutoff.png', dpi=alabaster_dpi)
 
     #e_range = [sampler.data['energy'][0]/5, sampler.data['energy'][-1]*5]
     e_range = [100*u.GeV, 500*u.TeV]
@@ -109,13 +112,13 @@ if __name__=='__main__':
     f.axes[0].set_ylim(1e-13,2e-10)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
-    f.savefig('RXJ1713_IC_model_samples.png', dpi=87)
+    f.savefig('RXJ1713_IC_model_samples.png', dpi=alabaster_dpi)
     print('Plotting samples with e_range...')
     f = naima.plot_fit(sampler, 0, e_range=e_range, ML_info=False, n_samples=500)
     f.axes[0].set_ylim(1e-13,2e-10)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
-    f.savefig('RXJ1713_IC_model_samples_erange.png', dpi=87)
+    f.savefig('RXJ1713_IC_model_samples_erange.png', dpi=alabaster_dpi)
     #f.savefig('RXJ1713_IC_model_samples_erange.pdf')
 
     # with confs
@@ -124,24 +127,24 @@ if __name__=='__main__':
     f.axes[0].set_ylim(1e-13,2e-10)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
-    f.savefig('RXJ1713_IC_model_confs.png', dpi=87)
+    f.savefig('RXJ1713_IC_model_confs.png', dpi=alabaster_dpi)
     print('Plotting confs with e_range...')
     f = naima.plot_fit(sampler, 0, e_range=e_range, ML_info=False, confs=[3,1])
     f.axes[0].set_ylim(1e-13,2e-10)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
-    f.savefig('RXJ1713_IC_model_confs_erange.png', dpi=87)
+    f.savefig('RXJ1713_IC_model_confs_erange.png', dpi=alabaster_dpi)
 
     print('Plotting corner...')
-    f = naima.plot_corner(sampler)
+    f = naima.plot_corner(sampler, bins=40)
     w = f.get_size_inches()[0]
-    f.savefig('RXJ1713_IC_corner.png', dpi=696./w)
+    f.savefig('RXJ1713_IC_corner.png', dpi=alabaster_width/w)
 
     print('Plotting blobs...')
     f = naima.plot_blob(sampler, 1, ML_info=False, label='Electron energy distribution',
             xlabel=r'Electron energy [$\mathrm{TeV}$]')
     f.tight_layout()
-    f.savefig('RXJ1713_IC_pdist.png', dpi=87)
+    f.savefig('RXJ1713_IC_pdist.png', dpi=alabaster_dpi)
     f = naima.plot_blob(sampler, 2, label=r'$W_e(E_e>1\,\mathrm{TeV})$')
-    f.savefig('RXJ1713_IC_We.png', dpi=87)
+    f.savefig('RXJ1713_IC_We.png', dpi=alabaster_dpi)
 
