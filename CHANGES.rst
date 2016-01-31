@@ -1,6 +1,8 @@
 0.7 (unreleased)
 ----------------
 
+- The ``InverseCompton`` class can now compute IC on arbitrary seed photon
+  fields passed as arrays.
 - ``plot_fit`` and ``plot_data`` have new options (``errorbar_opts`` and
   ``ulim_opts``) to control the properties of spectral flux points and
   upper-limits.
