@@ -31,7 +31,7 @@ data['energy'] = energy
 data2 = Table()
 data2['energy'] = energy
 
-from astropy.constants import m_e, c
+from astropy.constants import m_e, c, sigma_sb, hbar
 pdist_unit = 1/u.Unit(m_e * c**2)
 
 @pytest.fixture
@@ -225,6 +225,40 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
 
     assert_allclose(lums, lum_ref)
 
+@pytest.mark.skipif('not HAS_SCIPY')
+def test_monochromatic_inverse_compton(particle_dists):
+    """
+    test IC monochromatic against khangulyan et al.
+    """
+    from ..models import InverseCompton, PowerLaw
+
+    PL = PowerLaw(1/u.eV, 1*u.TeV, 3)
+
+    # compute a blackbody spectrum with 1 eV/cm3 at 30K
+    from astropy.analytic_functions import blackbody_nu
+    Ephbb = np.logspace(-3.5,-1.5,100) * u.eV
+    T = 30*u.K
+    w = 1*u.eV/u.cm**3
+    bb = (blackbody_nu(Ephbb.to('AA',equivalencies=u.equivalencies.spectral()), T)
+            * 2*u.sr / c.cgs / Ephbb / hbar).to('1/(cm3 eV)')
+    Ebbmax = Ephbb[np.argmax(Ephbb**2*bb)]
+
+    ar = (4 * sigma_sb / c).to('erg/(cm3 K4)')
+    bb *= (w / (ar * T ** 4)).decompose()
+
+    eopts={'Eemax':10000*u.GeV, 'Eemin':10*u.GeV, 'nEed':1000}
+    IC_khang = InverseCompton(PL, seed_photon_fields=[
+                    ['bb', T, w]],**eopts)
+    IC_mono = InverseCompton(PL, seed_photon_fields=[
+                    ['mono', Ebbmax, w]],**eopts)
+    IC_bb = InverseCompton(PL, seed_photon_fields=[
+                    ['bb2', Ephbb, bb]],**eopts)
+
+    Eph = np.logspace(-1,1,3) * u.GeV
+
+    assert_allclose(IC_khang.sed(Eph).value, IC_mono.sed(Eph).value, rtol=1e-2)
+    assert_allclose(IC_khang.sed(Eph).value, IC_bb.sed(Eph).value, rtol=1e-2)
+
 
 @pytest.mark.skipif('not HAS_SCIPY')
 def test_flux_sed(particle_dists):
@@ -276,24 +310,16 @@ def test_ic_seed_input(particle_dists):
     ic = InverseCompton(PL, seed_photon_fields=['CMB',
                         ['test2', 5000 * u.K, 15 * u.eV / u.cm ** 3], ],)
 
-@pytest.mark.skipif('not HAS_SCIPY')
-def test_ic_array_seed(particle_dists):
-    """
-    test IC with arbitrary seed array
-    """
-    from ..models import InverseCompton
-
-    ECPL,PL,BPL = particle_dists
-
     Eph = (1, 10) * u.eV
     phn = (3, 1) * u.Unit('1/(eV cm3)')
 
+    ic = InverseCompton(PL, seed_photon_fields=['CMB', ['array', Eph, phn]])
+
     ic = InverseCompton(PL, seed_photon_fields=['CMB',
-        ['array', Eph, phn]])
+                        ['mono', Eph[0], phn[0]*Eph[0]**2]])
 
-    f = ic.flux(np.logspace(-2,3,100)*u.TeV)
-
-    assert(np.all(-np.isnan(f)))
+    ic = InverseCompton(PL, seed_photon_fields=['CMB',
+                        ['mono-array', Eph[:1], phn[:1]*Eph[:1]**2]])
 
 
 @pytest.mark.skipif('not HAS_SCIPY')

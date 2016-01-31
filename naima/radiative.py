@@ -469,24 +469,45 @@ class InverseCompton(BaseElectron):
 
                 if thermal:
                     seed['type'] = 'thermal'
-                    validate_scalar('{0}-T'.format(name), T, domain='positive',
+                    validate_scalar('{0}-T'.format(name),
+                                    T,
+                                    domain='positive',
                                     physical_type='temperature')
                     seed['T'] = T
                     if uu == 0:
-                        seed['u'] = ar * T ** 4
+                        seed['u'] = ar * T**4
                     else:
                         # pressure has same physical type as energy density
-                        validate_scalar('{0}-u'.format(name), uu,
-                                domain='positive', physical_type='pressure')
+                        validate_scalar('{0}-u'.format(name),
+                                        uu,
+                                        domain='positive',
+                                        physical_type='pressure')
                         seed['u'] = uu
                 else:
                     seed['type'] = 'array'
+                    # Ensure everythin is in arrays
+                    T = u.Quantity((T,)).flatten()
+                    uu = u.Quantity((uu,)).flatten()
+
                     seed['energy'] = validate_array('{0}-energy'.format(name),
-                            T, domain='positive', physical_type='energy')
-                    seed['photon_density'] = validate_array('{0}-density'.format(name), 
-                            uu, domain='positive',
-                            physical_type=['differential number density', 'pressure'])
-                    # seed['photon_density'] = uu
+                                                    T,
+                                                    domain='positive',
+                                                    physical_type='energy')
+ 
+                    if np.isscalar(seed['energy']) or seed['energy'].size == 1:
+                        seed['photon_density'] = validate_scalar(
+                            '{0}-density'.format(name),
+                            uu,
+                            domain='positive',
+                            physical_type='pressure')
+                        if seed['photon_density'].isscalar:
+                            seed['photon_density'] = u.Quantity([seed['photon_density'],])
+                    else:
+                        seed['photon_density'] = validate_array(
+                            '{0}-density'.format(name),
+                            uu,
+                            domain='positive',
+                            physical_type='differential number density')
             else:
                 raise TypeError('Unable to process seed photon'
                                 ' field: {0}'.format(inseed))
@@ -560,7 +581,7 @@ class InverseCompton(BaseElectron):
 
     @staticmethod
     def _iso_ic_on_monochromatic(electron_energy, seed_energy, seed_edensity,
-            gamma_energy):
+                                 gamma_energy):
         """
         IC cross-section for an isotropic interaction with a monochromatic
         photon spectrum following Eq. 22 of Aharonian & Atoyan 1981, Ap&SS 79,
@@ -577,21 +598,19 @@ class InverseCompton(BaseElectron):
         b = 4 * photE0 * electron_energy
         w = gamma_energy / electron_energy
         q = w / (b * (1 - w))
-        fic = (2 * q * np.log(q)
-                + (1 + 2 * q) * (1 - q)
-                + (1. / 2.) * (b * q)**2 * (1 - q) / (1 + b * q)
-                )
+        fic = (2 * q * np.log(q) + (1 + 2 * q) * (1 - q) + (1. / 2.) *
+               (b * q)**2 * (1 - q) / (1 + b * q))
 
         gamint = (fic * heaviside(1 - q) *
-                heaviside(q - 1. / (4 * electron_energy**2)))
+                  heaviside(q - 1. / (4 * electron_energy**2)))
         gamint[np.isnan(gamint)] = 0.
 
-        if phn.size>1:
+        if phn.size > 1:
             phn = phn.to(1 / (mec2_unit * u.cm**3)).value
-            gamint = trapz_loglog(gamint * phn / photE0**2, photE0, axis=0) # 1/s
+            gamint = trapz_loglog(gamint * phn / photE0, photE0, axis=0)  # 1/s
         else:
             phn = phn.to(mec2_unit / u.cm**3).value
-            gamint *= phn / photE0
+            gamint *= phn / photE0**2
             gamint = gamint.squeeze()
 
         # gamint /= mec2.to('erg').value
@@ -602,12 +621,8 @@ class InverseCompton(BaseElectron):
         c = 29979245800.0
 
         gamint *= (3. / 4.) * sigt * c / electron_energy**2
-        # raise NotImplementedError
-        log.warn('There are normalization problems in monochromatic IC!')
 
         return gamint
-
-
 
     def _calc_specic(self, seed, outspecene):
         log.debug('_calc_specic: Computing IC on {0} seed photons...'.format(
@@ -620,18 +635,20 @@ class InverseCompton(BaseElectron):
             if self.seed_photon_fields[seed]['type'] == 'thermal':
                 T = self.seed_photon_fields[seed]['T']
                 uf = (self.seed_photon_fields[seed]['u'] /
-                        (ar * T ** 4)).decompose()
+                      (ar * T**4)).decompose()
                 if self.seed_photon_fields[seed]['isotropic']:
-                    gamint = self._iso_ic_on_planck(self._gam, T.to('K').value, Eph)
+                    gamint = self._iso_ic_on_planck(self._gam, T.to('K').value,
+                                                    Eph)
                 else:
-                    theta = self.seed_photon_fields[seed]['theta'].to('rad').value
-                    gamint = self._ani_ic_on_planck(self._gam, T.to('K').value, Eph, theta)
+                    theta = self.seed_photon_fields[seed]['theta'].to(
+                        'rad').value
+                    gamint = self._ani_ic_on_planck(self._gam, T.to('K').value,
+                                                    Eph, theta)
             else:
                 uf = 1
-                gamint = self._iso_ic_on_monochromatic(self._gam,
-                        self.seed_photon_fields[seed]['energy'],
-                        self.seed_photon_fields[seed]['photon_density'],
-                        Eph)
+                gamint = self._iso_ic_on_monochromatic(
+                    self._gam, self.seed_photon_fields[seed]['energy'],
+                    self.seed_photon_fields[seed]['photon_density'], Eph)
 
             lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
         lum = lum * u.Unit('1/s')
