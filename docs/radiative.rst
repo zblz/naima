@@ -221,8 +221,8 @@ uniform emitter, is computed as::
 
 Note the factor 2.24 in the computation of the synchrotron photon density, which
 comes from geometrical considerations of a uniform spherical emitter (see
-Section 4.1 of `Atoyan & Aharonian (1996)
-<http://adsabs.harvard.edu/abs/1996MNRAS.278..525A>`_. The resulting emission
+Section 4.1 of `Atoyan & Aharonian 1996
+<http://adsabs.harvard.edu/abs/1996MNRAS.278..525A>`_). The resulting emission
 from Synchrotron and Inverse Compton can then be plotted:
 
 .. plot::
