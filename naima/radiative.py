@@ -364,8 +364,8 @@ class InverseCompton(BaseElectron):
         `~astropy.units.Quantity` array or float.
 
     seed_photon_fields : string or iterable of strings (optional)
-        A list of gray-body seed photon fields to use for IC calculation.
-        Each of the items of the iterable can be:
+        A list of gray-body or non-thermal seed photon fields to use for IC
+        calculation. Each of the items of the iterable can be either:
 
         * A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
           radiation fields with temperatures of 2.72 K, 30 K, and 3000 K, and
@@ -376,13 +376,12 @@ class InverseCompton(BaseElectron):
         * A list of length three (isotropic source) or four (anisotropic source)
           composed of:
 
-            1. A name for the seed photon field
-            2. Its temperature as a :class:`~astropy.units.Quantity` float
+            1. A name for the seed photon field.
+            2. Its temperature (thermal source) or energy (monochromatic or
+               non-thermal source) as a :class:`~astropy.units.Quantity`
                instance.
             3. Its photon field energy density as a
-               :class:`~astropy.units.Quantity` float instance. If the photon
-               field energy density if set to 0, its blackbody energy density
-               will be computed through the Stefan-Boltzman law.
+               :class:`~astropy.units.Quantity` instance.
             4. Optional: The angle between the seed photon direction and the scattered
                photon direction as a :class:`~astropy.units.Quantity` float
                instance.
@@ -485,7 +484,7 @@ class InverseCompton(BaseElectron):
                         seed['u'] = uu
                 else:
                     seed['type'] = 'array'
-                    # Ensure everythin is in arrays
+                    # Ensure everything is in arrays
                     T = u.Quantity((T,)).flatten()
                     uu = u.Quantity((uu,)).flatten()
 
@@ -493,16 +492,16 @@ class InverseCompton(BaseElectron):
                                                     T,
                                                     domain='positive',
                                                     physical_type='energy')
- 
+
                     if np.isscalar(seed['energy']) or seed['energy'].size == 1:
                         seed['photon_density'] = validate_scalar(
                             '{0}-density'.format(name),
                             uu,
                             domain='positive',
                             physical_type='pressure')
-                        if seed['photon_density'].isscalar:
-                            seed['photon_density'] = u.Quantity([seed['photon_density'],])
                     else:
+                        if uu.unit.physical_type == 'pressure':
+                            uu /= seed['energy']**2
                         seed['photon_density'] = validate_array(
                             '{0}-density'.format(name),
                             uu,
