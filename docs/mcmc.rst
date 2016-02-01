@@ -103,3 +103,22 @@ correct, Gaussian, independent errors.
   counts space rather than in flux space. For this, the effective area and
   exposure in each bin would be required to convert between the model flux and
   the expected counts.
+
+
+How to select which model best fits the data?
+---------------------------------------------
+
+Model selection is the method through which a given model is selected from a set
+of possible models. You can find a good overview of the process and possible
+pitfalls in a `blog post by Jake VanderPlas
+<https://jakevdp.github.io/blog/2015/08/07/frequentism-and-bayesianism-5-model-selection/>`_.
+In general, computing the `Bayes factor
+<https://en.wikipedia.org/wiki/Bayes_factor>`_ for all competing models tends to
+be the best way to gauge which model provides a better fit. However, computing
+the Bayes Factor is often non-trivial, and a simpler way to obtain an estimate
+is using the `Bayesian Information Criterion (BIC)
+<https://en.wikipedia.org/wiki/Bayesian_Information_Criterion>`_. The BIC for a
+Naima run can be found as a metadata keyword in the results table saved with
+`naima.save_results_table`. Note that the BIC is only a valid approximation for
+the Bayes factor when the number of datapoints is much larger than the number of
+parameters.

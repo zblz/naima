@@ -251,6 +251,10 @@ def save_results_table(outname,
     metadata['ML_pars'] = [float(p) for p in MLp]
     metadata['MaxLogLikelihood'] = float(ML)
 
+    # compute and save BIC
+    BIC = len(MLp) * np.log(len(sampler.data)) - 2 * ML
+    metadata['BIC'] = BIC
+
     # And add all info stored in the sampler.run_info dict
     if hasattr(sampler, 'run_info'):
         metadata.update(sampler.run_info)
