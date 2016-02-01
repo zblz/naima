@@ -211,7 +211,7 @@ uniform emitter, is computed as::
 
     # Define source radius and compute photon density
     R = 2 * u.pc
-    phn_sy = Lsy / (4 * np.pi * R**2 * c) * 2.26
+    phn_sy = Lsy / (4 * np.pi * R**2 * c) * 2.24
 
     # Create IC instance with CMB and synchrotron seed photon fields:
 
@@ -219,7 +219,7 @@ uniform emitter, is computed as::
                                                   ['SSC', Esy, phn_sy]])
 
 
-Note the factor 2.26 in the computation of the synchrotron photon density, which
+Note the factor 2.24 in the computation of the synchrotron photon density, which
 comes from geometrical considerations of a uniform spherical emitter (see
 Section 4.1 of `Atoyan & Aharonian (1996)
 <http://adsabs.harvard.edu/abs/1996MNRAS.278..525A>`_. The resulting emission
