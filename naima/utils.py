@@ -127,6 +127,12 @@ def _validate_single_data_table(data_table, group=0):
                         ' "flux_error" or columns "flux_error_lo"'
                         ' and "flux_error_hi"')
 
+    if 'group' in data_table.colnames:
+        # avoid overwriting groups
+        data['group'] = data_table['group']
+    else:
+        data['group'] = [group,] * len(data['energy'])
+
     # Energy bin edges
     if 'energy_width' in data_table.keys():
         energy_width = validate_column(data_table, 'energy_width', 'energy')
@@ -151,7 +157,8 @@ def _validate_single_data_table(data_table, group=0):
         data['energy_error_hi'] = (energy_hi - data['energy'])
     else:
         data['energy_error_lo'], data[
-            'energy_error_hi'] = generate_energy_edges(data['energy'])
+            'energy_error_hi'] = generate_energy_edges(data['energy'],
+                                                       groups=data['group'])
 
     # Upper limit flags
     if 'ul' in data_table.keys():
@@ -192,12 +199,6 @@ def _validate_single_data_table(data_table, group=0):
             log.warning(
                 '"cl" keyword not provided in input data table, upper limits'
                 ' will be assumed to be at 90% confidence level')
-
-    if 'group' in data_table.colnames:
-        # avoid overwriting groups
-        data['group'] = data_table['group']
-    else:
-        data['group'] = [group,] * len(data['energy'])
 
     return data
 
@@ -325,7 +326,18 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
     return ret
 
 
-def generate_energy_edges(ene):
+def _generate_energy_edges_single(ene):
+    """Generate energy edges for single group"""
+    midene = np.sqrt((ene[1:] * ene[:-1]))
+    elo, ehi = np.zeros(len(ene)) * ene.unit, np.zeros(len(ene)) * ene.unit
+    elo[1:] = ene[1:] - midene
+    ehi[:-1] = midene - ene[:-1]
+    elo[0] = ene[0] * (1 - ene[0] / (ene[0] + ehi[0]))
+    ehi[-1] = elo[-1]
+    return u.Quantity([elo, ehi])
+
+
+def generate_energy_edges(ene, groups=None):
     """Generate energy bin edges from given energy array.
 
     Generate an array of energy edges from given energy array to be used as
@@ -343,13 +355,14 @@ def generate_energy_edges(ene):
         Arrays of low and high energy edges corresponding to each given energy
         of the input array.
     """
-    midene = np.sqrt((ene[1:] * ene[:-1]))
-    elo, ehi = np.zeros(len(ene)) * ene.unit, np.zeros(len(ene)) * ene.unit
-    elo[1:] = ene[1:] - midene
-    ehi[:-1] = midene - ene[:-1]
-    elo[0] = ene[0] * (1 - ene[0] / (ene[0] + ehi[0]))
-    ehi[-1] = elo[-1]
-    return elo, ehi
+    if groups is None or len(ene) != len(groups):
+        return _generate_energy_edges_single(ene)
+    else:
+        eloehi = np.zeros((2,len(ene))) * ene.unit
+        for g in np.unique(groups):
+            eloehi[:,groups==g] = _generate_energy_edges_single(ene[groups==g])
+        # hstack throws away units
+        return eloehi
 
 
 def build_data_table(energy,
