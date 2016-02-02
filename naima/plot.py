@@ -488,6 +488,22 @@ def _calc_CI(sampler,
     return modelx, CI
 
 
+def _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed):
+    """compute and plot ML model"""
+
+    ML, MLp, MLerr, ML_model = _calc_ML(sampler,
+                                        modelidx,
+                                        e_range=e_range,
+                                        e_npoints=e_npoints)
+    f_unit, sedf = sed_conversion(ML_model[0], ML_model[1].unit, sed)
+
+    ax.loglog(ML_model[0].to(e_unit).value,
+              (ML_model[1] * sedf).to(f_unit).value,
+              color='k',
+              lw=2,
+              alpha=0.8)
+
+
 def plot_CI(ax,
             sampler,
             modelidx=0,
@@ -542,15 +558,7 @@ def plot_CI(ax,
             alpha=0.6,
             zorder=-10)
 
-    ML, MLp, MLerr, ML_model = _calc_ML(sampler,
-                                        modelidx,
-                                        e_range=e_range,
-                                        e_npoints=e_npoints)
-    ax.plot(ML_model[0].to(e_unit).value,
-            (ML_model[1] * sedf).to(f_unit).value,
-            color='k',
-            lw=2,
-            alpha=0.8)
+    _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed)
 
     if label is not None:
         ax.set_ylabel('{0} [{1}]'.format(label, f_unit.to_string(
@@ -606,15 +614,7 @@ def plot_samples(ax,
             alpha=sample_alpha,
             lw=1.0)
 
-    ML, MLp, MLerr, ML_model = _calc_ML(sampler,
-                                        modelidx,
-                                        e_range=e_range,
-                                        e_npoints=e_npoints)
-    ax.loglog(ML_model[0].to(e_unit).value,
-              (ML_model[1] * sedf).to(f_unit).value,
-              color='k',
-              lw=2,
-              alpha=0.8)
+    _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed)
 
     if label is not None:
         ax.set_ylabel('{0} [{1}]'.format(label, f_unit.to_string(
@@ -853,6 +853,9 @@ def plot_fit(sampler,
                      e_range=e_range,
                      e_npoints=e_npoints,
                      last_step=last_step)
+    else:
+        # plot only ML model
+        _plot_MLmodel(ax1, sampler, modelidx, e_range, e_npoints, e_unit, sed)
 
     xlaxis = ax1
     if plotdata:
