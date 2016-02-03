@@ -101,6 +101,7 @@ if on_rtd:
 else:
     install_requires=['astropy>=1.0.2',
                       'emcee>=2.1.0',
+                      'corner',
                       'matplotlib',
                       'scipy',
                       'h5py'],

@@ -7,6 +7,7 @@
   ``ulim_opts``) to control the properties of spectral flux points and
   upper-limits.
 - There is a new table model class in ``naima.models.TableModel``.
+- Added ``corner`` (former ``triangle_plot``) as a dependency.
 
 0.6.1 (2015-10-29)
 ------------------
