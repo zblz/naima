@@ -33,15 +33,9 @@ AUTHOR_EMAIL = metadata.get('author_email', '')
 LICENSE = metadata.get('license', 'unknown')
 URL = metadata.get('url', 'http://astropy.org')
 
-# Get the long description from the package's docstring
-#__import__(PACKAGENAME)
-#package = sys.modules[PACKAGENAME]
-#LONG_DESCRIPTION = package.__doc__
-
-# Get the long description from the section between 'split here' comments in docs/index.rst
-f = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs', 'index.rst'))
-long_description = f.read().strip()
-LONG_DESCRIPTION = long_description.split('.. comment: split here\n\n')[1].strip().replace('.. comment: ','')
+# Get the long description from the README.rst file
+with open('README.rst', 'rt') as f:
+    LONG_DESCRIPTION = f.read()
 
 # Store the package name in a built-in variable so it's easy
 # to get from other parts of the setup infrastructure
