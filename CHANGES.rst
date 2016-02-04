@@ -2,7 +2,7 @@
 ----------------
 
 
-0.7 (2016-04-02)
+0.7 (2016-02-04)
 ----------------
 
 - The ``InverseCompton`` class can now compute IC on arbitrary seed photon
