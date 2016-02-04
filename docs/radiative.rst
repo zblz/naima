@@ -293,9 +293,9 @@ examples page :ref:`CrabSSC`):
 Note that this is a very crude representation of the physics of the Crab Nebula,
 and as a result some of the features are not well represented, most notably the
 flux at GeV energies. The reason is likely the simplification of the electron
-distribution into a broke power law rather than two components: a relic electron
-population emitting mostly at radio, and a high-energy wind electron population
-(see, e.g. `Atoyan & Aharonian (1996)
+distribution into a broken power law rather than two components: a relic
+electron population emitting mostly at radio, and a high-energy wind electron
+population (see, e.g. `Atoyan & Aharonian (1996)
 <http://adsabs.harvard.edu/abs/1996MNRAS.278..525A>`_ or `Meyer et al. (2010)
 <http://adsabs.harvard.edu/abs/2010A%26A...523A...2M>`_).
 
