@@ -63,8 +63,9 @@ def IC_We(pars, data):
 
     # Initialize instances of the particle distribution and radiative model
     # set a bogus normalization that will be changed in third line
-    ECPL = ExponentialCutoffPowerLaw(1 / u.eV, 10. * u.TeV, alpha, e_cutoff)
-    IC = InverseCompton(ECPL, seed_photon_fields=['CMB'])
+    ECPL = naima.models.ExponentialCutoffPowerLaw(1 / u.eV, 10. * u.TeV,
+                                                  alpha, e_cutoff)
+    IC = naima.models.InverseCompton(ECPL, seed_photon_fields=['CMB'])
     IC.set_We(We, Eemin=1 * u.TeV)
 
     # compute flux at the energies given in data['energy']

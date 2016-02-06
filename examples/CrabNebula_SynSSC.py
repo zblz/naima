@@ -2,9 +2,9 @@ import numpy as np
 from astropy.io import ascii
 from astropy.constants import c
 import astropy.units as u
-import matplotlib.pyplot as plt
 import naima
-from naima.models import *
+from naima.models import (ExponentialCutoffBrokenPowerLaw, Synchrotron,
+                          InverseCompton)
 
 ECBPL = ExponentialCutoffBrokenPowerLaw(amplitude=3.699e36 / u.eV,
                                         e_0=1 * u.TeV,

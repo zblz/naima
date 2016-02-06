@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
 import astropy.units as u
-from astropy.constants import m_e, c
 from astropy.io import ascii
 
 import naima
