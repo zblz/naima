@@ -52,3 +52,4 @@ docs/_generated/
 docs/api/
 
 .idea
+*.h5

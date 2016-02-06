@@ -7,7 +7,7 @@ Requirements
 naima requires Python 2.7, 3.4, or 3.5 and the following packages to be
 installed: `Numpy <http://www.numpy.org>`_, `Scipy <http://www.scipy.org>`_,
 `Astropy`_, `Matplotlib <http://www.matplotlib.org>`_, `emcee
-<http://dan.iel.fm/emcee>`_, `corner <http://github.com/dfm/corner.py>`, and
+<http://dan.iel.fm/emcee>`_, `corner <http://github.com/dfm/corner.py>`_, and
 `h5py <http://www.h5py.org>`_. These will be installed automatically if you
 follow one of the installation methods below.
 
