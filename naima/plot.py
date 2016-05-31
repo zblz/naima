@@ -161,7 +161,7 @@ def _plot_chain_func(sampler, p, last_step=False):
 
     ax1.set_rasterization_zorder(1)
     for t in traces[-red]:  # range(nwalkers):
-        ax1.plot(t, color='0.1', lw=1.0, alpha=0.25, zorder=0)
+        ax1.plot(t, color=(0.1,)*3, lw=1.0, alpha=0.25, zorder=0)
     for t in traces[red]:
         ax1.plot(t, color=color_cycle[0], lw=1.5, alpha=0.75, zorder=0)
     ax1.set_xlabel('step number')
@@ -194,7 +194,7 @@ def _plot_chain_func(sampler, p, last_step=False):
                 label='50% quantile')
     ax2.axvspan(quantiles[16],
                 quantiles[84],
-                color='0.5',
+                color=(0.5,)*3,
                 alpha=0.25,
                 label='68% CI',
                 lw=0)
@@ -554,7 +554,7 @@ def plot_CI(ax,
             (ymax * sedf).to(f_unit).value,
             (ymin * sedf).to(f_unit).value,
             lw=0.001,
-            color='{0}'.format(color),
+            color=(color,)*3,
             alpha=0.6,
             zorder=-10)
 
@@ -610,7 +610,7 @@ def plot_samples(ax,
         ax.loglog(
             modelx.to(e_unit).value,
             (my * sedf).to(f_unit).value,
-            color='0.1',
+            color=(0.1,)*3,
             alpha=sample_alpha,
             lw=1.0)
 
@@ -1301,7 +1301,7 @@ def plot_distribution(samples, label, figure=None):
                label='50% quantile')
     ax.axvspan(quantiles[16],
                quantiles[84],
-               color='0.5',
+               color=(0.5,)*3,
                alpha=0.25,
                label='68% CI',
                lw=0)
