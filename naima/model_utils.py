@@ -6,6 +6,7 @@ import numpy as np
 import hashlib
 import astropy
 from astropy import units as u
+import warnings
 
 
 def memoize(func):
@@ -23,7 +24,9 @@ def memoize(func):
             # Allow for dicts or tables with energy column, Quantity array or
             # Quantity scalar
             try:
-                energy = u.Quantity(energy['energy'])
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore', np.VisibleDeprecationWarning)
+                    energy = u.Quantity(energy['energy'])
             except (TypeError, ValueError, IndexError):
                 pass
 
