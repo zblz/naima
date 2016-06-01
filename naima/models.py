@@ -10,7 +10,7 @@ from .model_utils import memoize
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw',
-           'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel']
+           'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel', 'AbsorptionModel']
 
 
 def _validate_ene(ene):
@@ -431,3 +431,96 @@ class TableModel(object):
         e = _validate_ene(e)
         interpy = np.power(10, self._interplogy(np.log10(e.to('eV').value)))
         return self.amplitude * interpy * self.unit
+      
+      
+class AbsorptionModel(object):
+    """
+    A Table-model like class containing the different absorption models.
+
+    It returns dimensionless opacity values, that could be multiplied to any model.
+    
+    Parameters
+    ----------    
+    redshift : float
+        Redshift considered for the absorption evaluation.
+        The minimum value used is z = 0.01; Lower values will
+        be considered as redshift 0.
+        
+    ebl_absorption_model : string 
+        Name of the EBL absorption model to use. It may be:
+    
+    * A string equal to ``Dominguez`` (default), containing Dominguez 2011 EBL model
+    
+    NOTE: Current implementarion does NOT perform an interpolation in the redshift, so 
+    it just uses the closes z value from the finely binned tau_dominguez11.out file 
+    (delta_z=0.01)    
+        
+    """
+
+    def __init__(self, redshift, ebl_absorption_model='Dominguez'):
+        from scipy.interpolate import interp1d
+        from astropy.io import ascii
+                    
+        if ebl_absorption_model == 'Dominguez':
+            converters = dict()
+            for i in range(0,500):
+               converters["col%s" % i] = [ascii.convert_numpy(np.float32)]
+            taus_table = ascii.read('naima/data/tau_dominguez11.out', converters=converters)
+            redshift_list = np.arange(0.01,4,0.01)
+            taus_table['col1'].name = 'energy'      
+            taus_table['energy'].unit = u.TeV      
+            energy = taus_table['energy'].quantity
+            if (redshift >= 0.01):
+                taus_table['col%s' % (2+(np.abs(redshift_list-redshift)).argmin())].name = 'tau'
+                taus_table['tau'].unit = u.dimensionless_unscaled
+                taus = taus_table['tau'].quantity
+            elif (redshift < 0.01): 
+                taus = np.zeros(len(taus_table['energy'])) * u.dimensionless_unscaled
+            
+            taus*=-1
+            transmission_values = np.exp(taus)
+        
+        self._energy = validate_array('energy',
+                                      energy,
+                                      domain='positive',
+                                      physical_type='energy')
+        self._values = transmission_values
+
+        loge = np.log10(self._energy.to('eV').value)
+        try:
+            self.unit = self._values.unit
+#             logy = np.log10(self._values.value)
+        except AttributeError:
+            self.unit = u.Unit('')
+#             logy = np.log10(self._values)
+
+        self._interpy = interp1d(loge,
+                                    self._values.value,
+                                    fill_value=-np.Inf,
+                                    bounds_error=False,
+                                    kind='cubic')
+      
+    def transmission(self, data_in):
+        trans = np.zeros(len(data_in['energy']))
+        for i in range(0,len(data_in['energy'])):
+#             print("Energy = %s" % data_in['energy'][i])
+#             print("Interpolated transmission = %s" % self.__call__(data_in['energy'][i]))
+#             print("Flux = %s" % data_in['flux'][i])
+            trans[i] = self.__call__(data_in['energy'][i])
+#         print(data_in['energy'])
+#         print(data_in['flux'])
+#         trans = self.__call__(data_in['energy'])
+
+        return trans
+      
+    def __call__(self, e):
+        e = _validate_ene(e)
+        if (e.to('GeV').value < 1.):
+            return 1.
+        interpy = self._interplogy(np.log10(e.to('eV').value))
+        if (interpy < 1e-15):
+            return 0
+        return interpy * self.unit
+
+
+
