@@ -23,7 +23,7 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.10
+        - NUMPY_VERSION=1.11
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme'
         - PIP_DEPENDENCIES='emcee'
@@ -73,6 +73,8 @@ matrix:
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.8 SETUP_CMD='test'
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.9 SETUP_CMD='test'
+        - os: linux
+          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.10 SETUP_CMD='test'
 
     allow_failures:
         # allow failure until mpl 2.0 is released

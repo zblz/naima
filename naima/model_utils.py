@@ -25,7 +25,8 @@ def memoize(func):
             # Quantity scalar
             try:
                 with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', np.VisibleDeprecationWarning)
+                    warnings.simplefilter('ignore',
+                            getattr(np, 'VisibleDeprecationWarning', None))
                     energy = u.Quantity(energy['energy'])
             except (TypeError, ValueError, IndexError):
                 pass
