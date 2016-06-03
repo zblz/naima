@@ -7,11 +7,11 @@ import naima
 
 ## Model definition
 
-from naima.models import InverseCompton, Synchrotron, ExponentialCutoffPowerLaw, BrokenPowerLaw, AbsorptionModel
+from naima.models import InverseCompton, Synchrotron, ExponentialCutoffPowerLaw, BrokenPowerLaw, EblAbsorptionModel
 
 # Define the redshift of the source, and absorption model
-redshift = 0.06
-EBL_transmitance = AbsorptionModel(redshift, 'Dominguez')
+redshift = 0.06 * u.dimensionless_unscaled
+EBL_transmitance = EblAbsorptionModel(redshift, 'Dominguez')
 
 def ElectronSynIC(pars, data):
 
