@@ -10,7 +10,7 @@ from .model_utils import memoize
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw',
-           'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel', 'AbsorptionModel']
+           'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel', 'EblAbsorptionModel']
 
 
 def _validate_ene(ene):
@@ -433,9 +433,9 @@ class TableModel(object):
         return self.amplitude * interpy * self.unit
       
       
-class AbsorptionModel(object):
+class EblAbsorptionModel(TableModel):
     """
-    A Table-model like class containing the different absorption models.
+    A TableModel containing the different absorption values from a specific model.
 
     It returns dimensionless opacity values, that could be multiplied to any model.
     
@@ -459,59 +459,32 @@ class AbsorptionModel(object):
 
     def __init__(self, redshift, ebl_absorption_model='Dominguez'):
         from scipy.interpolate import interp1d
-        from astropy.io import ascii
-                    
-        if ebl_absorption_model == 'Dominguez':
-            converters = dict()
-            for i in range(0,500):
-               converters["col%s" % i] = [ascii.convert_numpy(np.float64)]
-            taus_table = ascii.read('naima/data/tau_dominguez11.out', converters=converters)
-            redshift_list = np.arange(0.01,4,0.01)
-            taus_table['col1'].name = 'energy'      
-            taus_table['energy'].unit = u.TeV      
-            energy = taus_table['energy'].quantity
-            if (redshift >= 0.01):
-                taus_table['col%s' % (2+(np.abs(redshift_list-redshift)).argmin())].name = 'tau'
-                taus_table['tau'].unit = u.dimensionless_unscaled
-                taus = taus_table['tau'].quantity
-            elif (redshift < 0.01): 
-                taus = np.zeros(len(taus_table['energy'])) * u.dimensionless_unscaled
-            
-            taus*=-1
-            transmission_values = np.exp(taus)
+        import os
+  
+        self.redshift = validate_scalar('redshift',
+                                   redshift.value,
+                                   domain='positive')
+        # check that model has allowed value
+        if ebl_absorption_model not in set(['Dominguez',]):
+          raise ArgumentError("Model should be one of [Dominguez, ]")
+        self.model = ebl_absorption_model
         
-        self._energy = validate_array('energy',
-                                      energy,
-                                      domain='positive',
-                                      physical_type='energy')
-        self._values = transmission_values
-        loge = np.log10(self._energy.to('eV').value)
-        try:
-            self.unit = self._values.unit
-        except AttributeError:
-            self.unit = u.Unit('')
-
-        self._interpy = interp1d(loge,
-                                    self._values.value,
-                                    fill_value=-np.Inf,
-                                    bounds_error=False,
-                                    kind='cubic')
+        if self.model == 'Dominguez':
+            taus_table = np.load(os.path.join(os.path.dirname(__file__), 'data/tau_dominguez11.npz'))['arr_0']
+            redshift_list = np.arange(0.01,4,0.01)
+            energy = taus_table['energy'] * u.TeV
+            if (self.redshift >= 0.01):
+                taus = 10**taus_table['col%s' % (2+(np.abs(redshift_list-self.redshift)).argmin())] * u.dimensionless_unscaled
+            elif (self.redshift < 0.01): 
+                taus = 10**np.zeros(len(taus_table['energy'])) * u.dimensionless_unscaled
+        super(EblAbsorptionModel, self).__init__(energy, taus)
+        
       
-    def transmission(self, data_in):
-        trans = np.zeros(len(data_in['energy']))
-        for i in range(0,len(data_in['energy'])):
-            trans[i] = self.__call__(data_in['energy'][i])
-
-        return trans
-      
-    def __call__(self, e):
-        e = _validate_ene(e)
-        if (e.to('GeV').value < 1.):
-            return 1.
-        interpy = self._interpy(np.log10(e.to('eV').value))
-        if (interpy < 1e-15):
-            return 0.
-        return interpy * self.unit
-
-
+    def transmission(self, data):
+        taus = np.zeros(len(data['energy']))
+        for i in range(0,len(data['energy'])):
+            if data['energy'][i].to('GeV').value < 1.: taus[i] = 0.
+            elif data['energy'][i].to('TeV').value > 100. : taus[i] = np.log10(6000.)
+            else: taus[i] = np.log10(super(EblAbsorptionModel,self).__call__(data['energy'][i]))
+        return np.exp(np.negative(taus))
 
