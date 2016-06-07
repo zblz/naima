@@ -461,14 +461,20 @@ class EblAbsorptionModel(TableModel):
         from scipy.interpolate import interp1d
         from astropy.utils.data import get_pkg_data_filename
         import os
-  
-        self.redshift = validate_scalar('redshift',
+        
+        # check that the redshift is a positive scalar
+        if isinstance(redshift, u.Quantity):
+            self.redshift = validate_scalar('redshift',
                                    redshift,
                                    domain='positive',
-                                   physical_type='dimensionless')
+                                   physical_type='dimensionless')  
+        elif not np.isscalar(redshift) or redshift < 0:
+            raise ValueError("Redshift should be a positive scalar value.")
+        else: self.redshift = redshift * u.dimensionless_unscaled     
+ 
         # check that model has allowed value
         if ebl_absorption_model not in set(['Dominguez',]):
-          raise ArgumentError("Model should be one of [Dominguez, ]")
+            raise ValueError("Model should be one of [Dominguez, ]")
         self.model = ebl_absorption_model
         
         
