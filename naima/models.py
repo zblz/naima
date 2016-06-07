@@ -459,18 +459,21 @@ class EblAbsorptionModel(TableModel):
 
     def __init__(self, redshift, ebl_absorption_model='Dominguez'):
         from scipy.interpolate import interp1d
+        from astropy.utils.data import get_pkg_data_filename
         import os
   
         self.redshift = validate_scalar('redshift',
-                                   redshift.value,
-                                   domain='positive')
+                                   redshift,
+                                   domain='positive',
+                                   physical_type='dimensionless')
         # check that model has allowed value
         if ebl_absorption_model not in set(['Dominguez',]):
           raise ArgumentError("Model should be one of [Dominguez, ]")
         self.model = ebl_absorption_model
         
+        
         if self.model == 'Dominguez':
-            taus_table = np.load(os.path.join(os.path.dirname(__file__), 'data/tau_dominguez11.npz'))['arr_0']
+            taus_table = np.load(get_pkg_data_filename(os.path.join('data', 'tau_dominguez11.npz')))['arr_0']
             redshift_list = np.arange(0.01,4,0.01)
             energy = taus_table['energy'] * u.TeV
             if (self.redshift >= 0.01):
@@ -485,6 +488,6 @@ class EblAbsorptionModel(TableModel):
         for i in range(0,len(data['energy'])):
             if data['energy'][i].to('GeV').value < 1.: taus[i] = 0.
             elif data['energy'][i].to('TeV').value > 100. : taus[i] = np.log10(6000.)
-            else: taus[i] = np.log10(super(EblAbsorptionModel,self).__call__(data['energy'][i]))
+            else: taus[i] = np.log10(self.__call__(data['energy'][i]))
         return np.exp(np.negative(taus))
 

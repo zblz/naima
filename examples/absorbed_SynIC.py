@@ -46,7 +46,7 @@ def ElectronSynIC(pars, data):
 if __name__ == '__main__':
 
     # Some random values for a "beautiful double peak structure
-    p0 = np.array((33., 1., 0.35, 3., 5))
+    p0 = np.array((31., 1., 0.35, 1.5, 2.3))
 
     labels = ['log10(norm)', 'log10(Energy_Break)', 'index1', 'index2', 'B', 'redshift']
 
