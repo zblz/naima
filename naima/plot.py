@@ -7,6 +7,8 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 from astropy import table
+from multiprocessing import Pool
+from functools import partial
 
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
@@ -377,12 +379,19 @@ def _read_or_calc_samples(sampler,
         chain = sampler.chain[-1] if last_step else sampler.flatchain
         pars = chain[np.random.randint(len(chain), size=n_samples)]
         blobs = []
-        for p in pars:
-            modelout = sampler.modelfn(p, data)
+
+        p = Pool()
+        modelouts = p.map(partial(sampler.modelfn, data=data),
+                          pars)
+        p.close()
+        p.terminate()
+
+        for modelout in modelouts:
             if isinstance(modelout, np.ndarray):
                 blobs.append([modelout,])
             else:
                 blobs.append(modelout)
+
         modelx, model = _process_blob(blobs,
                                       modelidx=modelidx,
                                       energy=data['energy'])
