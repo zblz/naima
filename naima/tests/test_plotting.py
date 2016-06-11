@@ -155,6 +155,12 @@ def test_fit_plots(sampler):
                                          e_range=e_range)
                             del f
 
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_threads_in_samples(sampler):
+    for threads in [None, 1, 4]:
+        f = plot_fit(sampler, n_samples=100, threads=threads,
+                e_range=[1*u.GeV, 100*u.TeV],
+                e_npoints=20)
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_data(sampler):
