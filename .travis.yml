@@ -26,7 +26,7 @@ env:
         - NUMPY_VERSION=1.11
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme'
-        - PIP_DEPENDENCIES='emcee'
+        - PIP_DEPENDENCIES='emcee corner'
 
     matrix:
         - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
@@ -85,8 +85,6 @@ before_install:
 install:
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
-    # use unreleased corner to avoid mpl errors
-    - pip install git+http://github.com/dfm/corner.py#egg=corner
 
 script:
    - |
