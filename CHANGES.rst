@@ -1,6 +1,9 @@
 0.8 (unreleased)
 ----------------
 
+- Added a `threads` parameter to `plot_fit` and `plot_samples` that set the
+  number of cores to use in computing model samples for plotting.
+
 
 0.7.1 (2016-02-04)
 ------------------
