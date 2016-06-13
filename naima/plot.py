@@ -7,11 +7,11 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 from astropy import table
-from multiprocessing import Pool
 from functools import partial
 
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
+from .extern.interruptible_pool import InterruptiblePool as Pool
 
 __all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob", "plot_corner"]
 
