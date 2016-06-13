@@ -16,6 +16,7 @@ from .extern.validator import validate_array
 __all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob", "plot_corner"]
 
 marker_cycle = ['o', 's', 'd', 'p', '*']
+marker_fill = [True,]
 # from seaborn: sns.color_palette('deep',6)
 color_cycle = [(0.2980392156862745, 0.4470588235294118, 0.6901960784313725),
                (0.3333333333333333, 0.6588235294117647, 0.40784313725490196),
@@ -499,7 +500,8 @@ def _calc_CI(sampler,
     return modelx, CI
 
 
-def _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed):
+def _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed,
+                  color='k'):
     """compute and plot ML model"""
 
     ML, MLp, MLerr, ML_model = _calc_ML(sampler,
@@ -510,7 +512,7 @@ def _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed):
 
     ax.loglog(ML_model[0].to(e_unit).value,
               (ML_model[1] * sedf).to(f_unit).value,
-              color='k',
+              color=color,
               lw=2,
               alpha=0.8)
 
@@ -588,6 +590,7 @@ def plot_samples(ax,
                  sampler,
                  modelidx=0,
                  sed=True,
+                 model_color='k',
                  n_samples=100,
                  e_unit=u.eV,
                  e_range=None,
@@ -646,7 +649,8 @@ def plot_samples(ax,
             alpha=sample_alpha,
             lw=1.0)
 
-    _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed)
+    _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed,
+                  color=model_color)
 
     if label is not None:
         ax.set_ylabel('{0} [{1}]'.format(label, f_unit.to_string(
@@ -751,6 +755,7 @@ def plot_fit(sampler,
              threads=None,
              xlabel=None,
              ylabel=None,
+             model_color='k',
              ulim_opts={},
              errorbar_opts={}):
     """
@@ -883,6 +888,7 @@ def plot_fit(sampler,
         plot_samples(ax1,
                      sampler,
                      modelidx,
+                     model_color=model_color,
                      sed=sed,
                      n_samples=n_samples,
                      e_unit=e_unit,
@@ -1043,6 +1049,10 @@ def _plot_data_to_ax(data_all,
         # wrap around color and marker cycles
         color = color_cycle[int(g) % len(color_cycle)]
         marker = marker_cycle[int(g) % len(marker_cycle)]
+        markerf = marker_fill[int(g) % len(marker_fill)]
+        mfc = color if markerf else 'w'
+
+
 
         ul = data['ul']
         notul = -ul
@@ -1061,7 +1071,8 @@ def _plot_data_to_ax(data_all,
                     elinewidth=2,
                     capsize=0,
                     mec=color,
-                    mew=0.1,
+                    mew=2,
+                    mfc=mfc,
                     ms=5,
                     color=color)
         opts.update(**errorbar_opts)
@@ -1157,6 +1168,8 @@ def _plot_residuals_to_ax(data_all,
         # wrap around color and marker cycles
         color = color_cycle[int(g) % len(color_cycle)]
         marker = marker_cycle[int(g) % len(marker_cycle)]
+        markerf = marker_fill[int(g) % len(marker_fill)]
+        mfc = color if markerf else 'w'
 
         opts = dict(zorder=100,
                     marker=marker,
@@ -1165,6 +1178,7 @@ def _plot_residuals_to_ax(data_all,
                     capsize=0,
                     mec=color,
                     mew=0.1,
+                    mfc=mfc,
                     ms=6,
                     color=color)
         opts.update(errorbar_opts)
