@@ -1036,13 +1036,13 @@ def _plot_data_to_ax(data_all,
 
     groups = np.unique(data_all['group'])
 
-    for i, g in enumerate(groups):
+    for g in groups:
         data = data_all[np.where(data_all['group'] == g)]
         _, sedfg = sed_conversion(data['energy'], data['flux'].unit, sed)
 
         # wrap around color and marker cycles
-        color = color_cycle[i % len(color_cycle)]
-        marker = marker_cycle[i % len(marker_cycle)]
+        color = color_cycle[int(g) % len(color_cycle)]
+        marker = marker_cycle[int(g) % len(marker_cycle)]
 
         ul = data['ul']
         notul = -ul
