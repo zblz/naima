@@ -1087,6 +1087,8 @@ def _plot_data_to_ax(data_all,
             if 'elinewidth' in errorbar_opts:
                 ulim_opts['elinewidth'] = errorbar_opts['elinewidth']
 
+            color = ulim_opts.pop('color', color)
+
             _plot_ulims(ax1, data['energy'][ul].to(e_unit).value,
                         (data['flux'][ul] * sedfg[ul]).to(f_unit).value,
                         (xerr[:, ul]).to(e_unit).value, color, **ulim_opts)
