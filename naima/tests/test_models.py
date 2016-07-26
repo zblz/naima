@@ -523,3 +523,25 @@ def test_tablemodel():
     _ = IC.flux(e / 10)
     PP = PionDecay(tm)
     _ = PP.flux(e / 10)
+
+
+def test_EblAbsorptionModel():
+    print("Llega!")
+    from ..models import EblAbsorptionModel
+  
+    lemin, lemax = -4, 2
+  
+    EBL_zero = EblAbsorptionModel(0., 'Dominguez')
+    EBL_moderate = EblAbsorptionModel(0.5, 'Dominguez')
+    print("Llega!")
+  
+    # test if the EBL absorption at z = 0 changes an exponential cutoff PL with index 2, cutoff at 10 TeV
+    e = np.logspace(lemin, lemax, 50) * u.TeV
+    n = (e.value)** -2 * np.exp(-e.value / 10) / u.eV
+    tm = TableModel(e, n, amplitude=1)
+
+    from ..radiative import InverseCompton
+    IC = InverseCompton(tm)
+    print("Llega!")
+    absIC = InverseCompton(tm) * EBL_zero(e)
+    assert_allclose(IC.sed(e).value, absIC.sed(e).value)
