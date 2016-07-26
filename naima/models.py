@@ -431,69 +431,69 @@ class TableModel(object):
         e = _validate_ene(e)
         interpy = np.power(10, self._interplogy(np.log10(e.to('eV').value)))
         return self.amplitude * interpy * self.unit
-      
-      
+
+
 class EblAbsorptionModel(TableModel):
     """
     A TableModel containing the different absorption values from a specific model.
 
     It returns dimensionless opacity values, that could be multiplied to any model.
-    
     Parameters
-    ----------    
+    ----------
     redshift : float
         Redshift considered for the absorption evaluation.
         The minimum value used is z = 0.01; Lower values will
         be considered as redshift 0.
-        
-    ebl_absorption_model : string 
+    ebl_absorption_model : string
         Name of the EBL absorption model to use. It may be:
-    
     * A string equal to ``Dominguez`` (default), containing Dominguez 2011 EBL model
-    
-    NOTE: Current implementation does NOT perform an interpolation in the redshift, so 
-    it just uses the closes z value from the finely binned tau_dominguez11.out file 
-    (delta_z=0.01)    
-        
+    NOTE: Current implementation does NOT perform an interpolation in the redshift, so
+    it just uses the closes z value from the finely binned tau_dominguez11.out file
+    (delta_z=0.01)
+
     """
 
     def __init__(self, redshift, ebl_absorption_model='Dominguez'):
         from scipy.interpolate import interp1d
         from astropy.utils.data import get_pkg_data_filename
         import os
-        
+
         # check that the redshift is a positive scalar
         if isinstance(redshift, u.Quantity):
             self.redshift = validate_scalar('redshift',
-                                   redshift,
-                                   domain='positive',
-                                   physical_type='dimensionless')  
+                                            redshift,
+                                            domain='positive',
+                                            physical_type='dimensionless')
         elif not np.isscalar(redshift) or redshift < 0:
             raise ValueError("Redshift should be a positive scalar value.")
-        else: self.redshift = redshift * u.dimensionless_unscaled     
- 
+        else:
+            self.redshift = redshift * u.dimensionless_unscaled
+
         # check that model has allowed value
-        if ebl_absorption_model not in set(['Dominguez',]):
+        if ebl_absorption_model not in set(['Dominguez', ]):
             raise ValueError("Model should be one of [Dominguez, ]")
         self.model = ebl_absorption_model
-        
-        
+
         if self.model == 'Dominguez':
-            taus_table = np.load(get_pkg_data_filename(os.path.join('data', 'tau_dominguez11.npz')))['arr_0']
-            redshift_list = np.arange(0.01,4,0.01)
+            filename = get_pkg_data_filename(os.path.join('data', 'tau_dominguez11.npz'))
+            taus_table = np.load(filename)['arr_0']
+            redshift_list = np.arange(0.01, 4, 0.01)
             energy = taus_table['energy'] * u.TeV
             if (self.redshift >= 0.01):
-                taus = 10**taus_table['col%s' % (2+(np.abs(redshift_list-self.redshift)).argmin())] * u.dimensionless_unscaled
-            elif (self.redshift < 0.01): 
+                colname = 'col%s' % (2+(np.abs(redshift_list-self.redshift)).argmin())
+                taus = 10**taus_table[colname] * u.dimensionless_unscaled
+            elif (self.redshift < 0.01):
                 taus = 10**np.zeros(len(taus_table['energy'])) * u.dimensionless_unscaled
         super(EblAbsorptionModel, self).__init__(energy, taus)
-        
-      
-    def transmission(self, data):
-        taus = np.zeros(len(data['energy']))
-        for i in range(0,len(data['energy'])):
-            if data['energy'][i].to('GeV').value < 1.: taus[i] = 0.
-            elif data['energy'][i].to('TeV').value > 100. : taus[i] = np.log10(6000.)
-            else: taus[i] = np.log10(self.__call__(data['energy'][i]))
-        return np.exp(np.negative(taus))
 
+    def transmission(self, e):
+        e = _validate_ene(e)
+        taus = np.zeros(len(e))
+        for i in range(0, len(e)):
+            if e[i].to('GeV').value < 1.:
+                taus[i] = 0.
+            elif e[i].to('TeV').value > 100.:
+                taus[i] = np.log10(6000.)
+            else:
+                taus[i] = np.log10(self(e[i]))
+        return np.exp(-taus)
