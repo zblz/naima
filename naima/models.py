@@ -481,7 +481,10 @@ class EblAbsorptionModel(TableModel):
             energy = taus_table['energy'] * u.TeV
             if (self.redshift >= 0.01):
                 colname = 'col%s' % (2+(np.abs(redshift_list-self.redshift)).argmin())
-                taus = 10**taus_table[colname] * u.dimensionless_unscaled
+                tableValues = taus_table[colname]
+                # Set maximum value of the log(Tau) to 150, as it is high enough. This solves later overflow problems.
+                tableValues[tableValues > 150.] = 150.
+                taus = 10**tableValues * u.dimensionless_unscaled
             elif (self.redshift < 0.01):
                 taus = 10**np.zeros(len(taus_table['energy'])) * u.dimensionless_unscaled
         super(EblAbsorptionModel, self).__init__(energy, taus)
