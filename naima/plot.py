@@ -211,25 +211,25 @@ def _plot_chain_func(sampler, p, last_step=False):
     # Print distribution parameters on lower-left
 
     try:
-        # EnsembleSample.get_autocorr_time was only added in the
-        # recently released emcee 2.1.0 (2014-05-22), so make it optional
-        # Samplers read from hdf5 will not have get_autocorr_time either
-        autocorr = sampler.get_autocorr_time(window=chain.shape[1] / 4.)[p]
+        # EnsembleSample.get_autocorr_time was only added in  emcee 2.1.0
+        # (2014-05-22), so make it optional. Samplers read from hdf5 will not
+        # have get_autocorr_time either
+        autocorr = sampler.get_autocorr_time(c=1)[p]
         autocorr_message = '{0:.1f}'.format(autocorr)
     except AttributeError:
         try:
             # Compute autocorr_time for samplers read from hdf5
             from emcee import autocorr
-            window = chain.shape[1] / 4.
             ac = autocorr.integrated_time(
                 np.mean(chain,
                         axis=0),
+                c=1,
                 axis=0,
-                window=window,
                 fast=False)[p]
             autocorr_message = '{0:.1f}'.format(ac)
-        except ImportError:
-            # emcee < 2.1.0 will not have emcee.autocorr
+        except (ImportError, autocorr.AutocorrError):
+            # emcee < 2.1.0 will not have emcee.autocorr or the chain is too
+            # short
             autocorr_message = None
 
     if last_step:
