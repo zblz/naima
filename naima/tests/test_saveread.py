@@ -60,11 +60,11 @@ p0=np.array((np.log(1.8e-12),2.4,np.log10(15.0),))
 labels=['log(norm)','index','log10(cutoff)']
 
 # Run sampler
-@pytest.fixture
+@pytest.fixture(scope='module')
 def sampler():
     sampler, pos = run_sampler(
         data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
-        prior=lnprior, nwalkers=10, nburn=2, nrun=4, threads=1)
+        prior=lnprior, nwalkers=10, nburn=2, nrun=10, threads=1)
     return sampler
 
 @pytest.mark.skipif('not HAS_EMCEE')

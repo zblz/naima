@@ -8,6 +8,7 @@ from astropy.extern import six
 from astropy import log
 from astropy import table
 from functools import partial
+from emcee import autocorr
 
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
@@ -211,26 +212,19 @@ def _plot_chain_func(sampler, p, last_step=False):
     # Print distribution parameters on lower-left
 
     try:
-        # EnsembleSample.get_autocorr_time was only added in the
-        # recently released emcee 2.1.0 (2014-05-22), so make it optional
-        # Samplers read from hdf5 will not have get_autocorr_time either
-        autocorr = sampler.get_autocorr_time(window=chain.shape[1] / 4.)[p]
-        autocorr_message = '{0:.1f}'.format(autocorr)
-    except AttributeError:
         try:
-            # Compute autocorr_time for samplers read from hdf5
-            from emcee import autocorr
-            window = chain.shape[1] / 4.
+            ac = sampler.get_autocorr_time()[p]
+        except AttributeError:
             ac = autocorr.integrated_time(
-                np.mean(chain,
-                        axis=0),
-                axis=0,
-                window=window,
-                fast=False)[p]
-            autocorr_message = '{0:.1f}'.format(ac)
-        except ImportError:
-            # emcee < 2.1.0 will not have emcee.autocorr
-            autocorr_message = None
+                            np.mean(chain,
+                                    axis=0),
+                            axis=0,
+                            fast=False)[p]
+        autocorr_message = '{0:.1f}'.format(ac)
+    except autocorr.AutocorrError:
+        # Raised when chain is too short for meaningful auto-correlation
+        # estimation
+        autocorr_message = None
 
     if last_step:
         clen = 'last ensemble'
