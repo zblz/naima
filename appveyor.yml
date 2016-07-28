@@ -15,15 +15,15 @@ environment:
                         # of 32 bit and 64 bit builds are needed, move this
                         # to the matrix section.
       CONDA_DEPENDENCIES: "pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme"
-      #PIP_DEPENDENCIES: "emcee corner"
+      PIP_DEPENDENCIES: "emcee corner"
       ASTROPY_VERSION: "stable"
 
   matrix:
 
       - PYTHON_VERSION: "2.7"
-        NUMPY_VERSION: "1.9.1"
-      - PYTHON_VERSION: "3.4"
-        NUMPY_VERSION: "1.9.1"
+        NUMPY_VERSION: "stable"
+      - PYTHON_VERSION: "3.5"
+        NUMPY_VERSION: "stable"
 
 platform:
     -x64
