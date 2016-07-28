@@ -213,14 +213,14 @@ def _plot_chain_func(sampler, p, last_step=False):
 
     try:
         try:
-            autocorr = sampler.get_autocorr_time()[p]
+            ac = sampler.get_autocorr_time()[p]
         except AttributeError:
-            autocorr = autocorr.integrated_time(
+            ac = autocorr.integrated_time(
                             np.mean(chain,
                                     axis=0),
                             axis=0,
                             fast=False)[p]
-        autocorr_message = '{0:.1f}'.format(autocorr)
+        autocorr_message = '{0:.1f}'.format(ac)
     except autocorr.AutocorrError:
         # Raised when chain is too short for meaningful auto-correlation
         # estimation
