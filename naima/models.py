@@ -440,7 +440,6 @@ class EblAbsorptionModel(TableModel):
     It returns dimensionless opacity values, that could be multiplied to any model.
 
     Parameters
-
     ----------
     redshift : float
         Redshift considered for the absorption evaluation.
