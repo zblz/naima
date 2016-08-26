@@ -7,9 +7,12 @@ import astropy.units as u
 from astropy.extern import six
 from astropy import log
 from astropy import table
+from functools import partial
+from emcee import autocorr
 
 from .utils import sed_conversion, validate_data_table
 from .extern.validator import validate_array
+from .extern.interruptible_pool import InterruptiblePool as Pool
 
 __all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob", "plot_corner"]
 
@@ -161,7 +164,7 @@ def _plot_chain_func(sampler, p, last_step=False):
 
     ax1.set_rasterization_zorder(1)
     for t in traces[-red]:  # range(nwalkers):
-        ax1.plot(t, color='0.1', lw=1.0, alpha=0.25, zorder=0)
+        ax1.plot(t, color=(0.1,) * 3, lw=1.0, alpha=0.25, zorder=0)
     for t in traces[red]:
         ax1.plot(t, color=color_cycle[0], lw=1.5, alpha=0.75, zorder=0)
     ax1.set_xlabel('step number')
@@ -194,7 +197,7 @@ def _plot_chain_func(sampler, p, last_step=False):
                 label='50% quantile')
     ax2.axvspan(quantiles[16],
                 quantiles[84],
-                color='0.5',
+                color=(0.5,) * 3,
                 alpha=0.25,
                 label='68% CI',
                 lw=0)
@@ -209,26 +212,19 @@ def _plot_chain_func(sampler, p, last_step=False):
     # Print distribution parameters on lower-left
 
     try:
-        # EnsembleSample.get_autocorr_time was only added in the
-        # recently released emcee 2.1.0 (2014-05-22), so make it optional
-        # Samplers read from hdf5 will not have get_autocorr_time either
-        autocorr = sampler.get_autocorr_time(window=chain.shape[1] / 4.)[p]
-        autocorr_message = '{0:.1f}'.format(autocorr)
-    except AttributeError:
         try:
-            # Compute autocorr_time for samplers read from hdf5
-            from emcee import autocorr
-            window = chain.shape[1] / 4.
+            ac = sampler.get_autocorr_time()[p]
+        except AttributeError:
             ac = autocorr.integrated_time(
-                np.mean(chain,
-                        axis=0),
-                axis=0,
-                window=window,
-                fast=False)[p]
-            autocorr_message = '{0:.1f}'.format(ac)
-        except ImportError:
-            # emcee < 2.1.0 will not have emcee.autocorr
-            autocorr_message = None
+                            np.mean(chain,
+                                    axis=0),
+                            axis=0,
+                            fast=False)[p]
+        autocorr_message = '{0:.1f}'.format(ac)
+    except autocorr.AutocorrError:
+        # Raised when chain is too short for meaningful auto-correlation
+        # estimation
+        autocorr_message = None
 
     if last_step:
         clen = 'last ensemble'
@@ -355,7 +351,8 @@ def _read_or_calc_samples(sampler,
                           n_samples=100,
                           last_step=False,
                           e_range=None,
-                          e_npoints=100):
+                          e_npoints=100,
+                          threads=None):
     """Get samples from blob or compute them from chain and sampler.modelfn
     """
 
@@ -377,12 +374,18 @@ def _read_or_calc_samples(sampler,
         chain = sampler.chain[-1] if last_step else sampler.flatchain
         pars = chain[np.random.randint(len(chain), size=n_samples)]
         blobs = []
-        for p in pars:
-            modelout = sampler.modelfn(p, data)
+
+        p = Pool(threads)
+        modelouts = p.map(partial(sampler.modelfn, data=data), pars)
+        p.close()
+        p.terminate()
+
+        for modelout in modelouts:
             if isinstance(modelout, np.ndarray):
                 blobs.append([modelout,])
             else:
                 blobs.append(modelout)
+
         modelx, model = _process_blob(blobs,
                                       modelidx=modelidx,
                                       energy=data['energy'])
@@ -433,7 +436,8 @@ def _calc_CI(sampler,
              confs=[3, 1],
              last_step=False,
              e_range=None,
-             e_npoints=100):
+             e_npoints=100,
+             threads=None):
     """Calculate confidence interval.
     """
     from scipy import stats
@@ -468,7 +472,8 @@ def _calc_CI(sampler,
                                           last_step=last_step,
                                           e_range=e_range,
                                           e_npoints=e_npoints,
-                                          n_samples=minsamples)
+                                          n_samples=minsamples,
+                                          threads=threads)
 
     nwalkers = len(model) - 1
     CI = []
@@ -513,6 +518,7 @@ def plot_CI(ax,
             label=None,
             e_range=None,
             e_npoints=100,
+            threads=None,
             last_step=False):
     """Plot confidence interval.
 
@@ -532,6 +538,12 @@ def plot_CI(ax,
         confidence intervals. Default is `[3,1,0.5]`
     e_unit : :class:`~astropy.units.Unit` or str parseable to unit
         Unit in which to plot energy axis.
+    e_npoints : int, optional
+        How many points to compute for the model samples and ML model if
+        `e_range` is set.
+    threads : int, optional
+        How many parallel processing threads to use when computing the samples.
+        Defaults to the number of available cores.
     last_step : bool, optional
         Whether to only use the positions in the final step of the run (True,
         default) or the whole chain (False).
@@ -543,7 +555,8 @@ def plot_CI(ax,
                           confs=confs,
                           e_range=e_range,
                           e_npoints=e_npoints,
-                          last_step=last_step)
+                          last_step=last_step,
+                          threads=threads)
     # pick first confidence interval curve for units
     f_unit, sedf = sed_conversion(modelx, CI[0][0].unit, sed)
 
@@ -554,7 +567,7 @@ def plot_CI(ax,
             (ymax * sedf).to(f_unit).value,
             (ymin * sedf).to(f_unit).value,
             lw=0.001,
-            color='{0}'.format(color),
+            color=(color,) * 3,
             alpha=0.6,
             zorder=-10)
 
@@ -571,10 +584,11 @@ def plot_samples(ax,
                  sed=True,
                  n_samples=100,
                  e_unit=u.eV,
-                 last_step=False,
-                 label=None,
                  e_range=None,
-                 e_npoints=100):
+                 e_npoints=100,
+                 threads=None,
+                 label=None,
+                 last_step=False):
     """Plot a number of samples from the sampler chain.
 
     Parameters
@@ -592,6 +606,17 @@ def plot_samples(ax,
         Number of samples to plot. Default is 100.
     e_unit : :class:`~astropy.units.Unit` or str parseable to unit
         Unit in which to plot energy axis.
+    e_range : list of `~astropy.units.Quantity`, length 2, optional
+        Limits in energy for the computation of the model samples and ML model.
+        Note that setting this parameter will mean that the samples for the
+        model are recomputed and depending on the model speed might be quite
+        slow.
+    e_npoints : int, optional
+        How many points to compute for the model samples and ML model if
+        `e_range` is set.
+    threads : int, optional
+        How many parallel processing threads to use when computing the samples.
+        Defaults to the number of available cores.
     last_step : bool, optional
         Whether to only use the positions in the final step of the run (True,
         default) or the whole chain (False).
@@ -601,7 +626,8 @@ def plot_samples(ax,
                                           modelidx,
                                           last_step=last_step,
                                           e_range=e_range,
-                                          e_npoints=e_npoints)
+                                          e_npoints=e_npoints,
+                                          threads=threads)
     # pick first model sample for units
     f_unit, sedf = sed_conversion(modelx, model[0].unit, sed)
 
@@ -610,7 +636,7 @@ def plot_samples(ax,
         ax.loglog(
             modelx.to(e_unit).value,
             (my * sedf).to(f_unit).value,
-            color='0.1',
+            color=(0.1,) * 3,
             alpha=sample_alpha,
             lw=1.0)
 
@@ -716,6 +742,7 @@ def plot_fit(sampler,
              e_unit=None,
              e_range=None,
              e_npoints=100,
+             threads=None,
              xlabel=None,
              ylabel=None,
              ulim_opts={},
@@ -766,6 +793,9 @@ def plot_fit(sampler,
     e_npoints : int, optional
         How many points to compute for the model samples and ML model if
         `e_range` is set.
+    threads : int, optional
+        How many parallel processing threads to use when computing the samples.
+        Defaults to the number of available cores.
     xlabel : str, optional
         Label for the ``x`` axis of the plot.
     ylabel : str, optional
@@ -841,7 +871,8 @@ def plot_fit(sampler,
                 label=label,
                 e_range=e_range,
                 e_npoints=e_npoints,
-                last_step=last_step)
+                last_step=last_step,
+                threads=threads)
     elif n_samples:
         plot_samples(ax1,
                      sampler,
@@ -852,7 +883,8 @@ def plot_fit(sampler,
                      label=label,
                      e_range=e_range,
                      e_npoints=e_npoints,
-                     last_step=last_step)
+                     last_step=last_step,
+                     threads=threads)
     else:
         # plot only ML model
         _plot_MLmodel(ax1, sampler, modelidx, e_range, e_npoints, e_unit, sed)
@@ -1301,7 +1333,7 @@ def plot_distribution(samples, label, figure=None):
                label='50% quantile')
     ax.axvspan(quantiles[16],
                quantiles[84],
-               color='0.5',
+               color=(0.5,) * 3,
                alpha=0.25,
                label='68% CI',
                lw=0)
@@ -1351,8 +1383,7 @@ def plot_corner(sampler, show_ML=True, **kwargs):
                        'truths': MLp,
                        'quantiles': [0.16, 0.5, 0.84],
                        'verbose': False,
-                       'truth_color': color_cycle[0],
-                       }
+                       'truth_color': color_cycle[0],}
 
         corner_opts.update(kwargs)
 

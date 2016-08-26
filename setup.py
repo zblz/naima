@@ -21,12 +21,15 @@ from astropy_helpers.git_helpers import get_git_devstr
 from astropy_helpers.version_helpers import generate_version_py
 
 # Get some values from the setup.cfg
-from distutils import config
-conf = config.ConfigParser()
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
+conf = ConfigParser()
 conf.read(['setup.cfg'])
 metadata = dict(conf.items('metadata'))
 
-PACKAGENAME = metadata.get('package_name', 'packagename')
+PACKAGENAME = str(metadata.get('package_name', 'packagename'))
 DESCRIPTION = metadata.get('description', 'Astropy affiliated package')
 AUTHOR = metadata.get('author', '')
 AUTHOR_EMAIL = metadata.get('author_email', '')
@@ -90,7 +93,7 @@ if on_rtd:
     install_requires = []
 else:
     install_requires=['astropy>=1.0.2',
-                      'emcee>=2.1.0',
+                      'emcee>=2.2.0',
                       'corner',
                       'matplotlib',
                       'scipy',
