@@ -438,19 +438,24 @@ class EblAbsorptionModel(TableModel):
     A TableModel containing the different absorption values from a specific model.
 
     It returns dimensionless opacity values, that could be multiplied to any model.
+
     Parameters
+
     ----------
     redshift : float
         Redshift considered for the absorption evaluation.
-        The minimum value used is z = 0.01; Lower values will
-        be considered as redshift 0.
     ebl_absorption_model : string
-        Name of the EBL absorption model to use. It may be:
-    * A string equal to ``Dominguez`` (default), containing Dominguez 2011 EBL model
-    NOTE: Current implementation does NOT perform an interpolation in the redshift, so
-    it just uses the closes z value from the finely binned tau_dominguez11.out file
-    (delta_z=0.01)
+        Name of the EBL absorption model to use (Dominguez by default).
 
+    See Also
+    --------
+    TableModel
+
+    Notes
+    -----
+    Dominguez model refers to the Dominguez 2011 EBL model. Current implementation 
+    does NOT perform an interpolation in the redshift, so it just uses the closest
+    z value from the finely binned tau_dominguez11.out file (delta_z=0.01).
     """
 
     def __init__(self, redshift, ebl_absorption_model='Dominguez'):
