@@ -4,7 +4,6 @@ import numpy as np
 from numpy.testing import assert_allclose
 from astropy.tests.helper import pytest
 from astropy.extern import six
-from sre_constants import ASSERT_NOT
 
 from ..utils import trapz_loglog
 
@@ -543,4 +542,4 @@ def test_eblabsorptionmodel():
     assert_allclose(np.ones_like(e).value, np.ones_like(e).value * EBL_zero.transmission(e), rtol=1e-1)
 #   Make sure the transmission at z = 0. is always larger than the one at z = 0.5
     difference = EBL_zero.transmission(e) - EBL_moderate.transmission(e)
-    assert(not np.any(difference < -1E-10))
+    assert(np.all(difference < -1E-10))
