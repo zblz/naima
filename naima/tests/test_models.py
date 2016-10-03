@@ -539,7 +539,8 @@ def test_eblabsorptionmodel():
     e = np.logspace(lemin, lemax, 50) * u.TeV
 
 #   Test if the EBL absorption at z = 0 changes the test array filled with ones
-    assert_allclose(np.ones_like(e).value, np.ones_like(e).value * EBL_zero.transmission(e), rtol=1e-1)
+    assert_allclose(np.ones_like(e).value, np.ones_like(e).value * 
+                    EBL_zero.transmission(e), rtol=1e-1)
 #   Make sure the transmission at z = 0. is always larger than the one at z = 0.5
     difference = EBL_zero.transmission(e) - EBL_moderate.transmission(e)
-    assert(np.all(difference < -1E-10))
+    assert(np.all(difference > -1E-10))

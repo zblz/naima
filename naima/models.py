@@ -464,7 +464,7 @@ class EblAbsorptionModel(TableModel):
 
         # check that the redshift is a positive scalar
         if not isinstance(redshift, u.Quantity):
-            self.redshift *= u.dimensionless_unscaled
+            redshift *= u.dimensionless_unscaled
 
         self.redshift = validate_scalar('redshift',
                                         redshift,
