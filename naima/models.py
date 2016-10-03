@@ -441,9 +441,9 @@ class EblAbsorptionModel(TableModel):
 
     Parameters
     ----------
-    redshift : float
+    redshift : float 
         Redshift considered for the absorption evaluation.
-    ebl_absorption_model : string
+    ebl_absorption_model : string, optional
         Name of the EBL absorption model to use (Dominguez by default).
 
     See Also
@@ -454,7 +454,7 @@ class EblAbsorptionModel(TableModel):
     -----
     Dominguez model refers to the Dominguez 2011 EBL model. Current implementation 
     does NOT perform an interpolation in the redshift, so it just uses the closest
-    z value from the finely binned tau_dominguez11.out file (delta_z=0.01).
+    z value from the finely binned tau_dominguez11.npz file (delta_z=0.01).
     """
 
     def __init__(self, redshift, ebl_absorption_model='Dominguez'):
