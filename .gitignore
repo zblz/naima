@@ -47,6 +47,7 @@ distribute-*.tar.gz
 
 .project
 .pydevproject
+.cproject
 .settings
 docs/_generated/
 docs/api/

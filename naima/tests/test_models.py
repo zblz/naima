@@ -523,3 +523,24 @@ def test_tablemodel():
     _ = IC.flux(e / 10)
     PP = PionDecay(tm)
     _ = PP.flux(e / 10)
+
+
+def test_eblabsorptionmodel():
+    """
+    test EblAbsorptionModel
+    """
+    from ..models import EblAbsorptionModel, BrokenPowerLaw
+
+    lemin, lemax = -4, 2
+
+    EBL_zero = EblAbsorptionModel(0., 'Dominguez')
+    EBL_moderate = EblAbsorptionModel(0.5, 'Dominguez')
+
+    e = np.logspace(lemin, lemax, 50) * u.TeV
+
+#   Test if the EBL absorption at z = 0 changes the test array filled with ones
+    assert_allclose(np.ones_like(e).value, np.ones_like(e).value * 
+                    EBL_zero.transmission(e), rtol=1e-1)
+#   Make sure the transmission at z = 0. is always larger than the one at z = 0.5
+    difference = EBL_zero.transmission(e) - EBL_moderate.transmission(e)
+    assert(np.all(difference > -1E-10))
