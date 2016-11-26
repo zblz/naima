@@ -409,8 +409,8 @@ class ExponentialCutoffSmoothBrokenPowerLaw(object):
     def eval(e, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff,
              break_beta, beta):
         """One dimensional smoothly broken power law model function"""
-        sbpl = ((e / e_0) ** -alpha_1 *
-                (1 + (e / e_break) ** ((alpha_1 - alpha_2) / break_beta)) **
+        sbpl = ((e / e_0) ** - alpha_1 *
+                (1 + (e / e_break) ** ((alpha_2 - alpha_1) / break_beta)) **
                 - break_beta)
 
         exp_cutoff = np.exp(-(e / e_cutoff)**beta)
