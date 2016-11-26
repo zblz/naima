@@ -10,7 +10,8 @@ from .model_utils import memoize
 
 __all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
            'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw',
-           'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel']
+           'LogParabola', 'ExponentialCutoffBrokenPowerLaw', 'TableModel',
+           'ExponentialCutoffSmoothBrokenPowerLaw']
 
 
 def _validate_ene(ene):
@@ -320,6 +321,111 @@ class ExponentialCutoffBrokenPowerLaw(object):
 
     def __call__(self, e):
         """One dimensional broken power law model with exponential cutoff function"""
+        e = _validate_ene(e)
+        return self._calc(e)
+
+
+class ExponentialCutoffSmoothBrokenPowerLaw(object):
+    """
+    One dimensional power law model with a smooth break and exponential cutoff.
+
+    Parameters
+    ----------
+    amplitude : float
+        Model amplitude at the break point
+    e_0 : `~astropy.units.Quantity` float
+        Reference point
+    e_break : `~astropy.units.Quantity` float
+        Break energy
+    alpha_1 : float
+        Power law index for x < x_break
+    alpha_2 : float
+        Power law index for x > x_break
+    e_cutoff : `~astropy.units.Quantity` float
+        Exponential Cutoff energy
+    beta_break : float
+        Smoothness of the break
+    beta : float, optional
+        Exponential cutoff rapidity. Default is 1.
+
+    See Also
+    --------
+    PowerLaw, ExponentialCutoffBrokenPowerLaw, ExponentialCutoffPowerLaw,
+    LogParabola
+
+    Notes
+    -----
+    INCORRECT
+    Model formula (with :math:`A` for ``amplitude``, :math:`E_0` for ``e_0``,
+    :math:`\\alpha_1` for ``alpha_1``, :math:`\\alpha_2` for ``alpha_2``,
+    :math:`E_{cutoff}` for ``e_cutoff``, and :math:`\\beta` for ``beta``):
+
+        .. math::
+
+
+            f(E) = \\exp(-(E / E_{cutoff})^\\beta)\\left \\{
+                     \\begin{array}{ll}
+                       A (E / E_0) ^ {-\\alpha_1}                                         & : E < E_{break} \\\\
+                       A (E_{break}/E_0) ^ {\\alpha_2-\\alpha_1} (E / E_0) ^ {-\\alpha_2} & : E > E_{break} \\\\
+                     \\end{array}
+                   \\right.
+
+    """
+
+    param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2',
+                   'e_cutoff', 'break_beta', 'beta']
+    _memoize = False
+    _cache = {}
+    _queue = []
+
+    def __init__(self,
+                 amplitude,
+                 e_0,
+                 e_break,
+                 alpha_1,
+                 alpha_2,
+                 e_cutoff,
+                 break_beta=1.0,
+                 beta=1.0):
+        self.amplitude = amplitude
+        self.e_0 = validate_scalar('e_0',
+                                   e_0,
+                                   domain='positive',
+                                   physical_type='energy')
+        self.e_break = validate_scalar('e_break',
+                                       e_break,
+                                       domain='positive',
+                                       physical_type='energy')
+        self.alpha_1 = alpha_1
+        self.alpha_2 = alpha_2
+        self.e_cutoff = validate_scalar('e_cutoff',
+                                        e_cutoff,
+                                        domain='positive',
+                                        physical_type='energy')
+        self.break_beta = break_beta
+        self.beta = beta
+
+    @staticmethod
+    def eval(e, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff,
+             break_beta, beta):
+        """One dimensional smoothly broken power law model function"""
+        sbpl = ((e / e_0) ** -alpha_1 *
+                (1 + (e / e_break) ** ((alpha_1 - alpha_2) / break_beta)) **
+                - break_beta)
+
+        exp_cutoff = np.exp(-(e / e_cutoff)**beta)
+        return amplitude * sbpl * exp_cutoff
+
+    @memoize
+    def _calc(self, e):
+        return self.eval(
+            e.to('eV').value, self.amplitude, self.e_0.to('eV').value,
+            self.e_break.to('eV').value, self.alpha_1, self.alpha_2,
+            self.e_cutoff.to('eV').value, self.break_beta, self.beta)
+
+    def __call__(self, e):
+        """One dimensional broken power law model with exponential cutoff
+        function"""
         e = _validate_ene(e)
         return self._calc(e)
 
