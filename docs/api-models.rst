@@ -16,6 +16,7 @@ Models
     - `naima.models.LogParabola`
 - Table models:
     - `naima.models.TableModel`
+    - `naima.models.EblAbsorptionModel`
 
 API
 ---
@@ -23,5 +24,5 @@ API
 .. automodule:: naima.models
     :members: Synchrotron, InverseCompton, Bremsstrahlung, PionDecay, PowerLaw,
                 BrokenPowerLaw, ExponentialCutoffBrokenPowerLaw, LogParabola,
-                TableModel
+                TableModel, EblAbsorptionModel
     :inherited-members:
