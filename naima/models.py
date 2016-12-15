@@ -2,8 +2,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import os
 import numpy as np
 import astropy.units as u
+from astropy.utils.data import get_pkg_data_filename
 from .extern.validator import validate_scalar, validate_array, validate_physical_type
 from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
 from .model_utils import memoize
@@ -443,24 +445,21 @@ class EblAbsorptionModel(TableModel):
     ----------
     redshift : float
         Redshift considered for the absorption evaluation.
-    ebl_absorption_model : string, optional
+    ebl_absorption_model : {'Dominguez'}
         Name of the EBL absorption model to use (Dominguez by default).
-
-    See Also
-    --------
-    TableModel
 
     Notes
     -----
     Dominguez model refers to the Dominguez 2011 EBL model. Current implementation
     does NOT perform an interpolation in the redshift, so it just uses the closest
     z value from the finely binned tau_dominguez11.npz file (delta_z=0.01).
+
+    See Also
+    --------
+    TableModel
     """
 
     def __init__(self, redshift, ebl_absorption_model='Dominguez'):
-        from scipy.interpolate import interp1d
-        from astropy.utils.data import get_pkg_data_filename
-        import os
 
         # check that the redshift is a positive scalar
         if not isinstance(redshift, u.Quantity):
@@ -471,9 +470,6 @@ class EblAbsorptionModel(TableModel):
                                         domain='positive',
                                         physical_type='dimensionless')
 
-        # check that model has allowed value
-        if ebl_absorption_model not in set(['Dominguez', ]):
-            raise ValueError("Model should be one of [Dominguez, ]")
         self.model = ebl_absorption_model
 
         if self.model == 'Dominguez':
@@ -485,15 +481,18 @@ class EblAbsorptionModel(TableModel):
             taus_table = np.load(filename)['arr_0']
             redshift_list = np.arange(0.01, 4, 0.01)
             energy = taus_table['energy'] * u.TeV
-            if (self.redshift >= 0.01):
+            if self.redshift >= 0.01:
                 colname = 'col%s' % (2 + (np.abs(redshift_list - self.redshift)).argmin())
-                tableValues = taus_table[colname]
-                """"Set maximum value of the log(Tau) to 150, as it is high enough.
-                This solves later overflow problems."""
-                tableValues[tableValues > 150.] = 150.
-                taus = 10**tableValues * u.dimensionless_unscaled
-            elif (self.redshift < 0.01):
-                taus = 10**np.zeros(len(taus_table['energy'])) * u.dimensionless_unscaled
+                table_values = taus_table[colname]
+                # Set maximum value of the log(Tau) to 150, as it is high enough.
+                # This solves later overflow problems.
+                table_values[table_values > 150.] = 150.
+                taus = 10 ** table_values * u.dimensionless_unscaled
+            elif self.redshift < 0.01:
+                taus = 10 ** np.zeros(len(taus_table['energy'])) * u.dimensionless_unscaled
+        else:
+            raise ValueError('Model should be one of: ["Dominguez"]')
+
         super(EblAbsorptionModel, self).__init__(energy, taus)
 
     def transmission(self, e):
