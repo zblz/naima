@@ -9,10 +9,10 @@ import astropy.units as u
 from sherpa.models.parameter import Parameter
 from sherpa.models.model import ArithmeticModel, modelCacher1d
 
-__all__ = ['InverseCompton', 'Synchrotron', 'PionDecay', 'Bremsstrahlung']
-
 from . import models
 from .utils import trapz_loglog
+
+__all__ = ['InverseCompton', 'Synchrotron', 'PionDecay', 'Bremsstrahlung']
 
 
 def _mergex(xlo, xhi):
@@ -48,7 +48,8 @@ class SherpaModel(ArithmeticModel):
 
     @modelCacher1d
     def calc(self, p, x, xhi=None):
-        # Sherpa provides xlo, xhi in KeV, we merge into a single array if bins required
+        # Sherpa provides xlo, xhi in KeV, we merge into a single array if bins
+        # required
         if xhi is None:
             Eph = x * u.keV
         else:
@@ -76,6 +77,7 @@ class SherpaModelECPL(SherpaModel):
     """
 
     def __init__(self, name='Model'):
+        self.name = name
         # Initialize ECPL parameters
         self.index = Parameter(name, 'index', 2.1, min=-10, max=10)
         self.ref = Parameter(name, 'ref', 60, min=0, frozen=True, units='TeV')
@@ -128,6 +130,7 @@ class InverseCompton(SherpaModelECPL):
     """
 
     def __init__(self, name='IC'):
+        self.name = name
         self.TFIR = Parameter(name, 'TFIR', 30, min=0, frozen=True, units='K')
         self.uFIR = Parameter(name,
                               'uFIR',
@@ -135,15 +138,16 @@ class InverseCompton(SherpaModelECPL):
                               min=0,
                               frozen=True,
                               units='eV/cm3'
-                             )  # , 0.2eV/cm3 typical in outer disk
-        self.TNIR = Parameter(name, 'TNIR', 3000, min=0, frozen=True, units='K')
+                              )  # , 0.2eV/cm3 typical in outer disk
+        self.TNIR = Parameter(name, 'TNIR', 3000, min=0, frozen=True,
+                              units='K')
         self.uNIR = Parameter(name,
                               'uNIR',
                               0.0,
                               min=0,
                               frozen=True,
                               units='eV/cm3'
-                             )  # , 0.2eV/cm3 typical in outer disk
+                              )  # , 0.2eV/cm3 typical in outer disk
         # add ECPL params
         super(InverseCompton, self).__init__(name=name)
         # Initialize model
@@ -155,10 +159,11 @@ class InverseCompton(SherpaModelECPL):
         self.cache = 10
 
     def flux(self, p, Eph):
-        index, ref, ampl, cutoff, beta, TFIR, uFIR, TNIR, uNIR, distance, verbose = p
+        (index, ref, ampl, cutoff, beta, TFIR, uFIR, TNIR, uNIR, distance,
+         verbose) = p
 
         # Build seedspec definition
-        seedspec = ['CMB',]
+        seedspec = ['CMB']
         if uFIR > 0.0:
             seedspec.append(['FIR', TFIR * u.K, uFIR * u.eV / u.cm**3])
         if uNIR > 0.0:
@@ -183,6 +188,7 @@ class Synchrotron(SherpaModelECPL):
     """
 
     def __init__(self, name='Sync'):
+        self.name = name
         self.B = Parameter(name, 'B', 1, min=0, max=10, frozen=True, units='G')
         # add ECPL params
         super(Synchrotron, self).__init__(name=name)
@@ -209,6 +215,7 @@ class Bremsstrahlung(SherpaModelECPL):
     """
 
     def __init__(self, name='Bremsstrahlung'):
+        self.name = name
         self.n0 = Parameter(name,
                             'n0',
                             1,
@@ -239,7 +246,8 @@ class Bremsstrahlung(SherpaModelECPL):
         self.cache = 10
 
     def flux(self, p, Eph):
-        index, ref, ampl, cutoff, beta, n0, weight_ee, weight_ep, distance, verbose = p
+        (index, ref, ampl, cutoff, beta, n0, weight_ee, weight_ep, distance,
+         verbose) = p
         brems = models.Bremsstrahlung(
             self._pdist(p),
             n0=n0 / u.cm**3,
@@ -258,6 +266,7 @@ class PionDecay(SherpaModelECPL):
     """
 
     def __init__(self, name='pp'):
+        self.name = name
         self.nh = Parameter(name, 'nH', 1, min=0, frozen=True, units='1/cm3')
         # add ECPL params
         super(PionDecay, self).__init__(name=name)
