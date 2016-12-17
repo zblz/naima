@@ -24,21 +24,6 @@ color_cycle = [(0.2980392156862745, 0.4470588235294118, 0.6901960784313725),
                (0.8, 0.7254901960784313, 0.4549019607843137),
                (0.39215686274509803, 0.7098039215686275, 0.803921568627451)]
 
-# use sans math font, lines wider than axes
-# Hopefully won't need this for matplotlib 2.0
-rcParams = {
-    # font modification does not hold well across system, wait for mpl 2.0
-    # 'mathtext.rm' : 'sans',
-    # 'mathtext.it' : 'sans:italic',
-    # 'mathtext.bf' : 'sans:bold',
-    # 'mathtext.sf' : 'sans',
-    # 'mathtext.cal' : 'sans:italic',
-    # 'mathtext.fontset' : 'custom',
-    'axes.linewidth': 0.7,
-    'lines.linewidth': 1.7,
-    'lines.antialiased': True,
-}
-
 
 def plot_chain(sampler, p=None, **kwargs):
     """Generate a diagnostic plot of the sampler chains.
@@ -131,7 +116,6 @@ def _plot_chain_func(sampler, p, last_step=False):
     label = sampler.labels[p]
 
     import matplotlib.pyplot as plt
-    plt.rcParams.update(rcParams)
 
     from scipy import stats
     if len(chain.shape) > 2:
@@ -813,7 +797,6 @@ def plot_fit(sampler,
 
     """
     import matplotlib.pyplot as plt
-    plt.rcParams.update(rcParams)
 
     ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = 'Maximum log probability: {0:.3g}\n'.format(ML)
@@ -1229,7 +1212,6 @@ def plot_data(input_data,
     """
 
     import matplotlib.pyplot as plt
-    plt.rcParams.update(rcParams)
 
     try:
         data = validate_data_table(input_data)
@@ -1288,7 +1270,6 @@ def plot_distribution(samples, label, figure=None):
 
     from scipy import stats
     import matplotlib.pyplot as plt
-    plt.rcParams.update(rcParams)
 
     quant = [16, 50, 84]
     quantiles = dict(six.moves.zip(quant, np.percentile(samples, quant)))
@@ -1387,7 +1368,6 @@ def plot_corner(sampler, show_ML=True, **kwargs):
         the 2D histograms.
     """
     import matplotlib.pyplot as plt
-    plt.rcParams.update(rcParams)
     oldlw = plt.rcParams['lines.linewidth']
     plt.rcParams['lines.linewidth'] = 0.7
     try:
