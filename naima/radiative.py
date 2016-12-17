@@ -387,7 +387,7 @@ class InverseCompton(BaseElectron):
           galactic center).
 
         * A list of length three (isotropic source) or four (anisotropic
-        source) composed of:
+          source) composed of:
 
             1. A name for the seed photon field.
             2. Its temperature (thermal source) or energy (monochromatic or
@@ -398,7 +398,6 @@ class InverseCompton(BaseElectron):
             4. Optional: The angle between the seed photon direction and the
                scattered photon direction as a :class:`~astropy.units.Quantity`
                float instance.
-
 
     Other parameters
     ----------------
