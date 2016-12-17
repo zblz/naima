@@ -399,6 +399,7 @@ class InverseCompton(BaseElectron):
                scattered photon direction as a :class:`~astropy.units.Quantity`
                float instance.
 
+
     Other parameters
     ----------------
     Eemin : :class:`~astropy.units.Quantity` float instance, optional
