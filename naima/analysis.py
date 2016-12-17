@@ -20,8 +20,9 @@ try:
 except ImportError:
     HAS_PYYAML = False
 
-__all__ = ["save_diagnostic_plots", "save_results_table", "save_run",
-           "read_run"]
+__all__ = [
+    "save_diagnostic_plots", "save_results_table", "save_run", "read_run"
+]
 
 
 def save_diagnostic_plots(outname,
@@ -36,16 +37,16 @@ def save_diagnostic_plots(outname,
     Generate diagnostic plots.
 
     - A plot for each of the chain parameters showing walker progression, final
-      sample distribution and several statistical measures of this distribution:
-      ``outname_chain_parN.png`` (see `naima.plot_chain`).
+      sample distribution and several statistical measures of this
+      distribution: ``outname_chain_parN.png`` (see `naima.plot_chain`).
     - A corner plot of sample density in the two dimensional parameter space of
       all parameter pairs of the run, with the Maximum Likelihood parameter
       vector indicated in blue: ``outname_corner.png`` (see `corner.corner`).
-    - A plot for each of the models returned as blobs by the model function. The
-      maximum likelihood model is shown, as well as the 1 and 3 sigma confidence
-      level contours. The first model will be compared with observational data
-      and residuals shown. ``outname_fit_modelN.png`` (see `naima.plot_fit` and
-      `naima.plot_blob`).
+    - A plot for each of the models returned as blobs by the model function.
+      The maximum likelihood model is shown, as well as the 1 and 3 sigma
+      confidence level contours. The first model will be compared with
+      observational data and residuals shown. ``outname_fit_modelN.png`` (see
+      `naima.plot_fit` and `naima.plot_blob`).
 
     Parameters
     ----------
@@ -123,26 +124,30 @@ def save_diagnostic_plots(outname,
     if blob_labels is None:
         blob_labels = ['Model output {0}'.format(idx) for idx in modelidxs]
     elif len(modelidxs) == 1 and isinstance(blob_labels, str):
-        blob_labels = [blob_labels,]
+        blob_labels = [blob_labels]
     elif len(blob_labels) < len(modelidxs):
         # Add labels
         n = len(blob_labels)
-        blob_labels += ['Model output {0}'.format(idx) for idx in modelidxs[n:]]
+        blob_labels += ['Model output {0}'.format(idx)
+                        for idx in modelidxs[n:]]
 
-    for modelidx, plot_sed, label in six.moves.zip(modelidxs, sed, blob_labels):
+    for modelidx, plot_sed, label in six.moves.zip(
+            modelidxs, sed, blob_labels):
 
         try:
             log.info('Plotting {0}...'.format(label))
-            f = plot_blob(sampler,
-                          blobidx=modelidx,
-                          label=label,
-                          sed=plot_sed,
-                          n_samples=100,
-                          last_step=last_step)
+            f = plot_blob(
+                sampler,
+                blobidx=modelidx,
+                label=label,
+                sed=plot_sed,
+                n_samples=100,
+                last_step=last_step)
             if pdf:
                 f.savefig(outpdf, format='pdf', dpi=dpi)
             else:
-                f.savefig('{0}_model{1}.png'.format(outname, modelidx), dpi=dpi)
+                f.savefig('{0}_model{1}.png'.format(outname, modelidx),
+                          dpi=dpi)
             f.clf()
             plt.close(f)
         except Exception as e:
@@ -151,7 +156,7 @@ def save_diagnostic_plots(outname,
     if pdf:
         outpdf.close()
 
-    #set interactive back to original
+    # set interactive back to original
     plt.rcParams['interactive'] = old_interactive
 
 
@@ -162,7 +167,8 @@ def save_results_table(outname,
                        last_step=False,
                        include_blobs=True):
     """
-    Save an ASCII table with the results stored in the `~emcee.EnsembleSampler`.
+    Save an ASCII table with the results stored in the
+    `~emcee.EnsembleSampler`.
 
     The table contains the median, 16th and 84th percentile confidence region
     (~1sigma) for each parameter.
@@ -187,8 +193,8 @@ def save_results_table(outname,
         ``ascii.ipac``.
 
     convert_log : bool, optional
-        Whether to convert natural or base-10 logarithms into original values in
-        addition to saving the logarithm value.
+        Whether to convert natural or base-10 logarithms into original values
+        in addition to saving the logarithm value.
 
     last_step : bool, optional
         Whether to only use the positions in the final step of the run (True,
@@ -230,8 +236,9 @@ def save_results_table(outname,
 
     quant = [16, 50, 84]
     # Do we need more info on the distributions?
-    t = Table(names=['label', 'median', 'unc_lo', 'unc_hi'],
-              dtype=['S72', 'f8', 'f8', 'f8'])
+    t = Table(
+        names=['label', 'median', 'unc_lo', 'unc_hi'],
+        dtype=['S72', 'f8', 'f8', 'f8'])
     t['label'].description = 'Name of the parameter'
     t['median'].description = 'Median of the posterior distribution function'
     t['unc_lo'].description = (
@@ -240,8 +247,9 @@ def save_results_table(outname,
             0]))
     t['unc_hi'].description = (
         'Difference between the {0}th percentile'
-        ' and the median of the pdf, ~1sigma upper uncertainty'.format(quant[
-            2]))
+        ' and the median of the pdf, ~1sigma upper uncertainty'
+        .format(quant[2])
+    )
 
     metadata = {}
     # Start with info from the distributions used for storing the results
@@ -276,8 +284,8 @@ def save_results_table(outname,
             elif ltype == 'log':
                 new_dist = np.exp(dist)
 
-            quantiles = dict(six.moves.zip(quant, np.percentile(new_dist,
-                                                                quant)))
+            quantiles = dict(
+                six.moves.zip(quant, np.percentile(new_dist, quant)))
             med = quantiles[50]
             lo, hi = med - quantiles[16], quantiles[84] - med
 
@@ -311,8 +319,8 @@ def save_results_table(outname,
                 else:
                     dist = np.array(blobl)
 
-                quantiles = dict(six.moves.zip(quant, np.percentile(dist,
-                                                                    quant)))
+                quantiles = dict(
+                    six.moves.zip(quant, np.percentile(dist, quant)))
                 med = quantiles[50]
                 lo, hi = med - quantiles[16], quantiles[84] - med
 
@@ -325,7 +333,8 @@ def save_results_table(outname,
             t.meta['keywords'][di[0]] = {'value': di[1]}
     else:
         if format == 'ascii.ecsv':
-            # there can be no numpy arrays in the metadata (YAML doesn't like them)
+            # there can be no numpy arrays in the metadata (YAML doesn't like
+            # them)
             for di in list(metadata.items()):
                 if type(di[1]).__module__ == np.__name__:
                     try:
@@ -347,14 +356,14 @@ def save_run(filename, sampler, compression=True, clobber=False):
     Save the sampler chain, data table, parameter labels, metadata blobs, and
     run information to a hdf5 file.
 
-    The data table and parameter labels stored in the sampler will also be saved
-    to the hdf5 file.
+    The data table and parameter labels stored in the sampler will also be
+    saved to the hdf5 file.
 
     Parameters
     ----------
     filename : str
-        Filename for hdf5 file. If the filename extension is not 'h5' or 'hdf5',
-        the suffix '_chain.h5' will be appended to the filename.
+        Filename for hdf5 file. If the filename extension is not 'h5' or
+        'hdf5', the suffix '_chain.h5' will be appended to the filename.
 
     sampler : `emcee.EnsembleSampler` instance
         Sampler instance for which chain and run information is saved.
@@ -371,26 +380,25 @@ def save_run(filename, sampler, compression=True, clobber=False):
         filename += '_chain.h5'
 
     if os.path.exists(filename) and not clobber:
-        log.warning('Not writing file because file exists and clobber is False')
+        log.warning(
+            'Not writing file because file exists and clobber is False')
         return
 
     f = h5py.File(filename, 'w')
     group = f.create_group('sampler')
-    chain = group.create_dataset('chain',
-                                 data=sampler.chain,
-                                 compression=compression)
-    lnprobability = group.create_dataset('lnprobability',
-                                         data=sampler.lnprobability,
-                                         compression=compression)
+    group.create_dataset(
+        'chain', data=sampler.chain, compression=compression)
+    group.create_dataset(
+        'lnprobability', data=sampler.lnprobability, compression=compression)
 
     # blobs
     blob = sampler.blobs[-1][0]
     for idx, item in enumerate(blob):
         if isinstance(item, u.Quantity):
             # scalar or array quantity
-            units = [item.unit.to_string(),]
+            units = [item.unit.to_string()]
         elif isinstance(item, float):
-            units = ['',]
+            units = ['']
         elif isinstance(item, tuple) or isinstance(item, list):
             arearrs = np.all([isinstance(x, np.ndarray) for x in item])
             if arearrs:
@@ -402,7 +410,9 @@ def save_run(filename, sampler, compression=True, clobber=False):
                         units.append('')
         else:
             log.warning(
-                'blob number {0} has unknown format and cannot be saved in HDF5 file')
+                'blob number {0} has unknown format and cannot be saved '
+                'in HDF5 file'
+            )
             continue
 
         # traverse blobs list. This will probably be slow and there should be a
@@ -413,9 +423,8 @@ def save_run(filename, sampler, compression=True, clobber=False):
                 blob.append(walkerblob[idx])
         blob = u.Quantity(blob).value
 
-        blobdataset = group.create_dataset('blob{0}'.format(idx),
-                                           data=blob,
-                                           compression=compression)
+        blobdataset = group.create_dataset(
+            'blob{0}'.format(idx), data=blob, compression=compression)
         if len(units) > 1:
             for j, unit in enumerate(units):
                 blobdataset.attrs['unit{0}'.format(j)] = unit
@@ -423,9 +432,10 @@ def save_run(filename, sampler, compression=True, clobber=False):
             blobdataset.attrs['unit'] = units[0]
 
     if hasattr(sampler, 'data'):
-        data = group.create_dataset('data',
-                                    data=Table(sampler.data).as_array(),
-                                    compression=compression)
+        data = group.create_dataset(
+            'data',
+            data=Table(sampler.data).as_array(),
+            compression=compression)
 
         for col in sampler.data.colnames:
             f['sampler/data'].attrs[col + 'unit'] = str(sampler.data[col].unit)
@@ -441,7 +451,8 @@ def save_run(filename, sampler, compression=True, clobber=False):
                     warnings.warn(
                         "Attribute `{0}` of type {1} of the data table"
                         " of the sampler cannot be written to HDF5 files"
-                        "- skipping".format(key, type(val)), AstropyUserWarning)
+                        "- skipping".format(key, type(val)), AstropyUserWarning
+                    )
 
     # add all run info to group attributes
     if hasattr(sampler, 'run_info'):
@@ -483,14 +494,15 @@ def read_run(filename, modelfn=None):
 
     This function will also read the labels, data table, and metadata blobs
     stored in the original sampler. If you want to use the result object with
-    `plot_fit` and setting the ``e_range`` parameter, you must provide the model
-    function with the `modelfn` argument given that functions cannot be
+    `plot_fit` and setting the ``e_range`` parameter, you must provide the
+    model function with the `modelfn` argument given that functions cannot be
     serialized in hdf5 files.
 
     Parameters
     ----------
     filename : str
-        Filename of the hdf5 containing the chain, lnprobability, and blob arrays in the group 'sampler'
+        Filename of the hdf5 containing the chain, lnprobability, and blob
+        arrays in the group 'sampler'
 
     modelfn : function, optional
         Model function to be attached to the returned sampler
@@ -530,8 +542,10 @@ def read_run(filename, modelfn=None):
             else:
                 blob = []
                 for j in range(np.ndim(ds[0])):
-                    blob.append(u.Quantity(ds.value[:, j, :],
-                                           unit=ds.attrs['unit{0}'.format(j)]))
+                    blob.append(
+                        u.Quantity(
+                            ds.value[:, j, :],
+                            unit=ds.attrs['unit{0}'.format(j)]))
                 blobs.append(blob)
         except KeyError:
             break

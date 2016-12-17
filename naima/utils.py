@@ -4,15 +4,15 @@ from __future__ import (absolute_import, division, print_function,
 
 import numpy as np
 import astropy.units as u
-from astropy.table import Table, QTable, Column
+from astropy.table import Table, QTable
 from astropy import log
-from astropy.extern import six
 import warnings
 import ast
 from .extern.validator import validate_array, validate_scalar
 
-__all__ = ["generate_energy_edges", "sed_conversion", "build_data_table",
-           "estimate_B"]
+__all__ = [
+    "generate_energy_edges", "sed_conversion", "build_data_table", "estimate_B"
+]
 
 # Input validation tools
 
@@ -20,11 +20,12 @@ __all__ = ["generate_energy_edges", "sed_conversion", "build_data_table",
 def validate_column(data_table, key, pt, domain='positive'):
     try:
         column = data_table[key]
-        array = validate_array(key,
-                               u.Quantity(column,
-                                          unit=column.unit),
-                               physical_type=pt,
-                               domain=domain)
+        array = validate_array(
+            key,
+            u.Quantity(
+                column, unit=column.unit),
+            physical_type=pt,
+            domain=domain)
     except KeyError:
         raise TypeError(
             'Data table does not contain required column "{0}"'.format(key))
@@ -47,16 +48,18 @@ def validate_data_table(data_table, sed=None):
         converted to the format of the first data table.
     """
     if isinstance(data_table, Table) or isinstance(data_table, QTable):
-        data_table = [data_table,]
+        data_table = [data_table]
 
     try:
         for dt in data_table:
             if not isinstance(dt, Table) and not isinstance(dt, QTable):
                 raise TypeError(
-                    "An object passed as data_table is not an astropy Table!")
+                    'An object passed as data_table is not an astropy Table!')
     except TypeError:
         raise TypeError(
-            "Argument passed to validate_data_table is not a table and not a list")
+            'Argument passed to validate_data_table is not a table and '
+            'not a list'
+        )
 
     def dt_sed_conversion(dt, sed):
         f_unit, sedf = sed_conversion(dt['energy'], dt['flux'].unit, sed)
@@ -88,7 +91,7 @@ def validate_data_table(data_table, sed=None):
     for dt in data_list[1:]:
         nf_pt = dt['flux'].unit.physical_type
         if (('flux' in nf_pt and 'power' in f_pt) or
-            ('power' in nf_pt and 'flux' in f_pt)):
+                ('power' in nf_pt and 'flux' in f_pt)):
             raise TypeError(
                 'The physical types of the data tables could not be '
                 'matched: Some are in flux and others in luminosity units')
@@ -131,7 +134,7 @@ def _validate_single_data_table(data_table, group=0):
         # avoid overwriting groups
         data['group'] = data_table['group']
     else:
-        data['group'] = [group,] * len(data['energy'])
+        data['group'] = [group] * len(data['energy'])
 
     # Energy bin edges
     if 'energy_width' in data_table.keys():
@@ -157,8 +160,8 @@ def _validate_single_data_table(data_table, group=0):
         data['energy_error_hi'] = (energy_hi - data['energy'])
     else:
         data['energy_error_lo'], data[
-            'energy_error_hi'] = generate_energy_edges(data['energy'],
-                                                       groups=data['group'])
+            'energy_error_hi'] = generate_energy_edges(
+                data['energy'], groups=data['group'])
 
     # Upper limit flags
     if 'ul' in data_table.keys():
@@ -173,17 +176,17 @@ def _validate_single_data_table(data_table, group=0):
                     strbool = False
             if strbool:
                 data['ul'] = np.array(
-                    [ast.literal_eval(ul) for ul in ul_col],
-                    dtype=np.bool)
+                    [ast.literal_eval(ul) for ul in ul_col], dtype=np.bool)
             else:
                 raise TypeError('UL column is in wrong format')
         else:
             raise TypeError('UL column is in wrong format')
     else:
-        data['ul'] = np.array([False,] * len(data['energy']))
+        data['ul'] = np.array([False] * len(data['energy']))
 
     if 'flux_ul' in data_table.keys():
-        data['flux'][data['ul']] = u.Quantity(data_table['flux_ul'])[data['ul']]
+        data['flux'][data['ul']] = u.Quantity(
+            data_table['flux_ul'])[data['ul']]
 
     HAS_CL = False
     if 'keywords' in data_table.meta.keys():
@@ -191,16 +194,17 @@ def _validate_single_data_table(data_table, group=0):
             HAS_CL = True
             CL = validate_scalar('cl',
                                  data_table.meta['keywords']['cl']['value'])
-            data['cl'] = [CL,] * len(data['energy'])
+            data['cl'] = [CL] * len(data['energy'])
 
     if not HAS_CL:
-        data['cl'] = [0.9,] * len(data['energy'])
+        data['cl'] = [0.9] * len(data['energy'])
         if np.sum(data['ul']) > 0:
             log.warning(
                 '"cl" keyword not provided in input data table, upper limits'
                 ' will be assumed to be at 90% confidence level')
 
     return data
+
 
 # Convenience tools
 
@@ -308,8 +312,8 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
         # Compute the power law indices in each integration bin
         b = np.log10(y[slice2] / y[slice1]) / np.log10(x[slice2] / x[slice1])
 
-        # if local powerlaw index is -1, use \int 1/x = log(x); otherwise use normal
-        # powerlaw integration
+        # if local powerlaw index is -1, use \int 1/x = log(x); otherwise use
+        # normal powerlaw integration
         trapzs = np.where(
             np.abs(b + 1.) > 1e-10, (y[slice1] * (
                 x[slice2] * (x[slice2] / x[slice1])**b - x[slice1])) / (b + 1),
@@ -358,9 +362,10 @@ def generate_energy_edges(ene, groups=None):
     if groups is None or len(ene) != len(groups):
         return _generate_energy_edges_single(ene)
     else:
-        eloehi = np.zeros((2,len(ene))) * ene.unit
+        eloehi = np.zeros((2, len(ene))) * ene.unit
         for g in np.unique(groups):
-            eloehi[:,groups==g] = _generate_energy_edges_single(ene[groups==g])
+            group_edges = _generate_energy_edges_single(ene[groups == g])
+            eloehi[:, groups == g] = group_edges
         # hstack throws away units
         return eloehi
 
@@ -387,17 +392,19 @@ def build_data_table(energy,
     flux : :class:`~astropy.units.Quantity` array instance
         Observed flux array [physical type ``flux`` or ``differential flux``]
 
-    flux_error, flux_error_hi, flux_error_lo : :class:`~astropy.units.Quantity` array instance
+    flux_error, flux_error_hi, flux_error_lo :
+            :class:`~astropy.units.Quantity` array instance
         68% CL gaussian uncertainty of the flux [physical type ``flux`` or
         ``differential flux``]. Either ``flux_error`` (symmetrical uncertainty)
         or ``flux_error_hi`` and ``flux_error_lo`` (asymmetrical uncertainties)
         must be provided.
 
-    energy_width, energy_lo, energy_hi : :class:`~astropy.units.Quantity` array instance, optional
+    energy_width, energy_lo, energy_hi :
+            :class:`~astropy.units.Quantity` array instance, optional
         Width of the energy bins [physical type ``energy``]. Either
         ``energy_width`` (bin width) or ``energy_lo`` and ``energy_hi``
-        (Energies of the lower and upper bin edges) can be provided. If none are
-        provided, ``generate_energy_edges`` will be used.
+        (Energies of the lower and upper bin edges) can be provided. If none
+        are provided, ``generate_energy_edges`` will be used.
 
     ul : boolean or int array, optional
         Boolean array indicating which of the flux values given in ``flux``
@@ -439,7 +446,7 @@ def build_data_table(energy,
         ul = np.array(ul, dtype=np.int)
         table['ul'] = ul
 
-    table.meta['comments'] = ['Table generated with naima.build_data_table',]
+    table.meta['comments'] = ['Table generated with naima.build_data_table']
 
     # test table units, format, etc
     validate_data_table(table)
@@ -458,16 +465,17 @@ def estimate_B(xray_table,
 
     .. math::
 
-        \\frac{L_\mathrm{xray}}{L_\gamma} = \\frac{u_\mathrm{B}}{u_\mathrm{ph}} =
-                \\frac{B^2}{ 8 \pi u_\mathrm{ph}}
+        \\frac{L_\mathrm{xray}}{L_\gamma} =
+        \\frac{u_\mathrm{B}}{u_\mathrm{ph}} =
+        \\frac{B^2}{ 8 \pi u_\mathrm{ph}}
 
     where :math:`L_\mathrm{xray}` is the X-ray luminosity, :math:`L_\gamma` is
-    the gamma-ray luminosity, and :math:`u_\mathrm{ph}` is the seed photon field
-    energy density.
+    the gamma-ray luminosity, and :math:`u_\mathrm{ph}` is the seed photon
+    field energy density.
 
     Note that this assumes that the ratio of observed fluxes is equal to the
-    ratio of bolometric synchrotron and IC luminosities, and that IC proceeds in
-    the Thomson regims. This assumption is safe as long as the X-ray and
+    ratio of bolometric synchrotron and IC luminosities, and that IC proceeds
+    in the Thomson regims. This assumption is safe as long as the X-ray and
     gamma-ray emission contain the bulk of the bolometric emission (i.e., the
     peak in the SED is in the X-ray and gamma-ray observed bands). Even if the
     assumption does not hold, this is a good starting point for the magnetic

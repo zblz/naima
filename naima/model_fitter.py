@@ -5,7 +5,6 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 from astropy.extern import six
-from astropy import log
 
 from .core import lnprobmodel, _prefit
 from .plot import color_cycle, _plot_data_to_ax
@@ -46,11 +45,11 @@ class InteractiveModelFitter(object):
         `e_range` and once for computation of the log-probability using the
         energy values of the spectra.
     e_npoints : int, optional
-        How many points to compute for the model if `e_range` is set. Default is
-        100.
+        How many points to compute for the model if `e_range` is set. Default
+        is 100.
     labels : iterable of strings, optional
-        Labels for the parameters included in the position vector ``p0``. If not
-        provided ``['par1','par2', ... ,'parN']`` will be used.
+        Labels for the parameters included in the position vector ``p0``. If
+        not provided ``['par1','par2', ... ,'parN']`` will be used.
     sed : bool, optional
         Whether to plot SED or differential spectrum.
     auto_update : bool, optional
@@ -89,12 +88,11 @@ class InteractiveModelFitter(object):
         modelax = plt.subplot2grid((10, 4), (0, 0), rowspan=4, colspan=4)
 
         if e_range:
-            e_range = validate_array('e_range',
-                                     u.Quantity(e_range),
-                                     physical_type='energy')
+            e_range = validate_array(
+                'e_range', u.Quantity(e_range), physical_type='energy')
             energy = np.logspace(
-                np.log10(e_range[0].value), np.log10(e_range[1].value),
-                e_npoints) * e_range.unit
+                np.log10(e_range[0].value),
+                np.log10(e_range[1].value), e_npoints) * e_range.unit
             if self.hasdata:
                 energy = energy.to(self.data['energy'].unit)
             else:
@@ -122,34 +120,37 @@ class InteractiveModelFitter(object):
         model = _process_model(self.modelfn(p0, self.data_for_model))
 
         if self.hasdata:
-            if not np.all(self.data_for_model['energy'] == self.data['energy']):
-                # this will be sloooow, maybe interpolate already computed model?
-                model_for_lnprob = _process_model(self.modelfn(self.pars,
-                                                               self.data))
+            if not np.all(
+                    self.data_for_model['energy'] == self.data['energy']):
+                # this will be slow, maybe interpolate already computed model?
+                model_for_lnprob = _process_model(
+                    self.modelfn(self.pars, self.data))
             else:
                 model_for_lnprob = model
             lnprob = lnprobmodel(model_for_lnprob, self.data)
             if isinstance(lnprob, u.Quantity):
                 lnprob = lnprob.decompose().value
-            self.lnprobtxt = modelax.text(0.05,
-                                          0.05,
-                                          r'',
-                                          ha='left',
-                                          va='bottom',
-                                          transform=modelax.transAxes,
-                                          size=20)
+            self.lnprobtxt = modelax.text(
+                0.05,
+                0.05,
+                r'',
+                ha='left',
+                va='bottom',
+                transform=modelax.transAxes,
+                size=20)
             self.lnprobtxt.set_text(r'$\ln\mathcal{{L}} = {0:.1f}$'.format(
                 lnprob))
 
         self.f_unit, self.sedf = sed_conversion(energy, model.unit, sed)
 
         if self.hasdata:
-            datamin = (self.data['energy'][0] -
-                       self.data['energy_error_lo'][0]).to(e_unit).value / 3
-            datamax = (self.data['energy'][-1] +
-                       self.data['energy_error_hi'][-1]).to(e_unit).value * 3
+            datamin = (self.data['energy'][0] - self.data['energy_error_lo'][0]
+                       ).to(e_unit).value / 3
             xmin = min(datamin, energy[0].to(e_unit).value)
-            xmax = max(datamin, energy[-1].to(e_unit).value)
+            datamax = (
+                self.data['energy'][-1] + self.data['energy_error_hi'][-1]
+            ).to(e_unit).value * 3
+            xmax = max(datamax, energy[-1].to(e_unit).value)
             modelax.set_xlim(xmin, xmax)
         else:
             # plot_data_to_ax has not set ylabel
@@ -161,21 +162,19 @@ class InteractiveModelFitter(object):
             modelax.set_xlim(energy[0].value, energy[-1].value)
 
         self.line, = modelax.loglog(
-            energy.to(e_unit),
-            (model * self.sedf).to(self.f_unit),
+            energy.to(e_unit), (model * self.sedf).to(self.f_unit),
             lw=2,
             c='k',
             zorder=10)
 
-        modelax.set_xlabel('Energy [{0}]'.format(energy.unit.to_string(
-            'latex_inline')))
+        modelax.set_xlabel('Energy [{0}]'.format(
+            energy.unit.to_string('latex_inline')))
 
         paraxes = []
         for n in range(npars):
-            paraxes.append(plt.subplot2grid(
-                (2 * npars, 10),
-                (npars + n, 0),
-                colspan=7))
+            paraxes.append(
+                plt.subplot2grid(
+                    (2 * npars, 10), (npars + n, 0), colspan=7))
         self.parsliders = []
         slider_props = {'facecolor': color_cycle[-1], 'alpha': 0.5}
         for label, parax, valinit in six.moves.zip(labels, paraxes, p0):
@@ -197,13 +196,14 @@ class InteractiveModelFitter(object):
                 # only linear
                 pmin, pmax = valinit / 100, valinit * 100
 
-            slider = Slider(parax,
-                            label,
-                            pmin,
-                            pmax,
-                            valinit=valinit,
-                            valfmt='%.4g',
-                            **slider_props)
+            slider = Slider(
+                parax,
+                label,
+                pmin,
+                pmax,
+                valinit=valinit,
+                valfmt='%.4g',
+                **slider_props)
             slider.on_changed(self.update_if_auto)
             self.parsliders.append(slider)
 
@@ -244,8 +244,9 @@ class InteractiveModelFitter(object):
         model = _process_model(self.modelfn(self.pars, self.data_for_model))
         self.line.set_ydata((model * self.sedf).to(self.f_unit))
         if self.hasdata:
-            if not np.all(self.data_for_model['energy'] == self.data['energy']):
-                # this will be sloooow, maybe interpolate already computed model?
+            if not np.all(
+                    self.data_for_model['energy'] == self.data['energy']):
+                # this will be slow, maybe interpolate already computed model?
                 model = _process_model(self.modelfn(self.pars, self.data))
             lnprob = lnprobmodel(model, self.data)
             if isinstance(lnprob, u.Quantity):

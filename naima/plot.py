@@ -6,7 +6,6 @@ import numpy as np
 import astropy.units as u
 from astropy.extern import six
 from astropy import log
-from astropy import table
 from functools import partial
 from emcee import autocorr
 
@@ -51,7 +50,8 @@ def plot_chain(sampler, p=None, **kwargs):
     p : int (optional)
         Index of the parameter to plot. If omitted, all chains are plotted.
     last_step : bool (optional)
-        Whether to plot the last step of the chain or the complete chain (default).
+        Whether to plot the last step of the chain or the complete chain
+        (default).
 
     Returns
     -------
@@ -99,24 +99,27 @@ def _latex_value_error(val, elo, ehi=0, tol=0.25):
     else:
         order = 0
     nlo = -int(np.floor(np.log10(elo)))
-    if elo * 10**nlo < 2: nlo += 1
+    if elo * 10 ** nlo < 2:
+        nlo += 1
     if ehi:
-        #elo = round(elo,nlo)
+        # elo = round(elo,nlo)
         nhi = -int(np.floor(np.log10(ehi)))
-        if ehi * 10**nhi < 2: nhi += 1
-        #ehi = round(ehi,nhi)
+        if ehi * 10 ** nhi < 2:
+            nhi += 1
+        # ehi = round(ehi,nhi)
         if np.abs(elo - ehi) / ((elo + ehi) / 2.) > tol:
             n = max(nlo, nhi)
-            string = '{0}^{{+{1}}}_{{-{2}}}'.format(
-                *[round2(x, nn) for x, nn in zip(
-                    [val, ehi, elo], [n, nhi, nlo])])
+            string = '{0}^{{+{1}}}_{{-{2}}}'.format(* [
+                round2(x, nn) for x, nn in zip([val, ehi, elo], [n, nhi, nlo])
+            ])
         else:
             e = (elo + ehi) / 2.
             n = -int(np.floor(np.log10(e)))
-            if e * 10**n < 2: n += 1
-            string = '{0} \pm {1}'.format(*[round2(x, n) for x in [val, e]])
+            if e * 10**n < 2:
+                n += 1
+            string = '{0} \pm {1}'.format(* [round2(x, n) for x in [val, e]])
     else:
-        string = '{0} \pm {1}'.format(*[round2(x, nlo) for x in [val, elo]])
+        string = '{0} \pm {1}'.format(* [round2(x, nlo) for x in [val, elo]])
     if order != 0:
         string = '(' + string + r')\times10^{{{0}}}'.format(order)
 
@@ -168,39 +171,40 @@ def _plot_chain_func(sampler, p, last_step=False):
     for t in traces[red]:
         ax1.plot(t, color=color_cycle[0], lw=1.5, alpha=0.75, zorder=0)
     ax1.set_xlabel('step number')
-    #[l.set_rotation(45) for l in ax1.get_yticklabels()]
+    # [l.set_rotation(45) for l in ax1.get_yticklabels()]
     ax1.set_ylabel(label)
     ax1.yaxis.set_label_coords(-0.15, 0.5)
     ax1.set_title('Walker traces')
 
     nbins = min(max(25, int(len(dist) / 100.)), 100)
     xlabel = label
-    n, x, _ = ax2.hist(dist,
-                       nbins,
-                       histtype='stepfilled',
-                       color=color_cycle[0],
-                       lw=0,
-                       normed=1)
+    n, x, _ = ax2.hist(
+        dist,
+        nbins,
+        histtype='stepfilled',
+        color=color_cycle[0],
+        lw=0,
+        normed=1)
     kde = stats.kde.gaussian_kde(dist)
     ax2.plot(x, kde(x), color='k', label='KDE')
-    # for m,ls,lab in zip([np.mean(dist),np.median(dist)],('--','-.'),('mean: {0:.4g}','median: {0:.4g}')):
-    # ax2.axvline(m,ls=ls,color='k',alpha=0.5,lw=2,label=lab.format(m))
     quant = [16, 50, 84]
     xquant = np.percentile(dist, quant)
     quantiles = dict(six.moves.zip(quant, xquant))
 
-    ax2.axvline(quantiles[50],
-                ls='--',
-                color='k',
-                alpha=0.5,
-                lw=2,
-                label='50% quantile')
-    ax2.axvspan(quantiles[16],
-                quantiles[84],
-                color=(0.5,) * 3,
-                alpha=0.25,
-                label='68% CI',
-                lw=0)
+    ax2.axvline(
+        quantiles[50],
+        ls='--',
+        color='k',
+        alpha=0.5,
+        lw=2,
+        label='50% quantile')
+    ax2.axvspan(
+        quantiles[16],
+        quantiles[84],
+        color=(0.5,) * 3,
+        alpha=0.25,
+        label='68% CI',
+        lw=0)
     # ax2.legend()
     for l in ax2.get_xticklabels():
         l.set_rotation(45)
@@ -216,10 +220,8 @@ def _plot_chain_func(sampler, p, last_step=False):
             ac = sampler.get_autocorr_time()[p]
         except AttributeError:
             ac = autocorr.integrated_time(
-                            np.mean(chain,
-                                    axis=0),
-                            axis=0,
-                            fast=False)[p]
+                np.mean(
+                    chain, axis=0), axis=0, fast=False)[p]
         autocorr_message = '{0:.1f}'.format(ac)
     except autocorr.AutocorrError:
         # Raised when chain is too short for meaningful auto-correlation
@@ -235,7 +237,8 @@ def _plot_chain_func(sampler, p, last_step=False):
                                                                  nsteps)
     if autocorr_message is not None:
         chain_props += 'Autocorrelation time: {0}\n'.format(autocorr_message)
-    chain_props += 'Mean acceptance fraction: {0:.3f}\n'.format(np.mean(sampler.acceptance_fraction)) +\
+    chain_props += 'Mean acceptance fraction: {0:.3f}\n'.format(
+                        np.mean(sampler.acceptance_fraction)) +\
                    'Distribution properties for the {clen}:\n \
     $-$ median: ${median}$, std: ${std}$ \n \
     $-$ median with uncertainties based on \n \
@@ -293,7 +296,7 @@ def _process_blob(sampler, modelidx, last_step=False, energy=None):
         blobs = sampler.blobs
         energy = sampler.data['energy']
     else:
-        blobs = [sampler,]
+        blobs = [sampler]
         blob0 = sampler[0][modelidx]
         last_step = True
 
@@ -361,15 +364,16 @@ def _read_or_calc_samples(sampler,
         modelx, model = _process_blob(sampler, modelidx, last_step=last_step)
     else:
         # prepare bogus data for calculation
-        e_range = validate_array('e_range',
-                                 u.Quantity(e_range),
-                                 physical_type='energy')
+        e_range = validate_array(
+            'e_range', u.Quantity(e_range), physical_type='energy')
         e_unit = e_range.unit
         energy = np.logspace(
             np.log10(e_range[0].value), np.log10(e_range[1].value),
             e_npoints) * e_unit
-        data = {'energy': energy,
-                'flux': np.zeros(energy.shape) * sampler.data['flux'].unit}
+        data = {
+            'energy': energy,
+            'flux': np.zeros(energy.shape) * sampler.data['flux'].unit
+        }
         # init pool and select parameters
         chain = sampler.chain[-1] if last_step else sampler.flatchain
         pars = chain[np.random.randint(len(chain), size=n_samples)]
@@ -382,13 +386,12 @@ def _read_or_calc_samples(sampler,
 
         for modelout in modelouts:
             if isinstance(modelout, np.ndarray):
-                blobs.append([modelout,])
+                blobs.append([modelout])
             else:
                 blobs.append(modelout)
 
-        modelx, model = _process_blob(blobs,
-                                      modelidx=modelidx,
-                                      energy=data['energy'])
+        modelx, model = _process_blob(
+            blobs, modelidx=modelidx, energy=data['energy'])
 
     return modelx, model
 
@@ -401,15 +404,16 @@ def _calc_ML(sampler, modelidx=0, e_range=None, e_npoints=100):
 
     if e_range is not None:
         # prepare bogus data for calculation
-        e_range = validate_array('e_range',
-                                 u.Quantity(e_range),
-                                 physical_type='energy')
+        e_range = validate_array(
+            'e_range', u.Quantity(e_range), physical_type='energy')
         e_unit = e_range.unit
         energy = np.logspace(
             np.log10(e_range[0].value), np.log10(e_range[1].value),
             e_npoints) * e_unit
-        data = {'energy': energy,
-                'flux': np.zeros(energy.shape) * sampler.data['flux'].unit}
+        data = {
+            'energy': energy,
+            'flux': np.zeros(energy.shape) * sampler.data['flux'].unit
+        }
         modelout = sampler.modelfn(MLp, data)
 
         if isinstance(modelout, np.ndarray):
@@ -467,13 +471,14 @@ def _calc_CI(sampler,
     else:
         minsamples = None
 
-    modelx, model = _read_or_calc_samples(sampler,
-                                          modelidx,
-                                          last_step=last_step,
-                                          e_range=e_range,
-                                          e_npoints=e_npoints,
-                                          n_samples=minsamples,
-                                          threads=threads)
+    modelx, model = _read_or_calc_samples(
+        sampler,
+        modelidx,
+        last_step=last_step,
+        e_range=e_range,
+        e_npoints=e_npoints,
+        n_samples=minsamples,
+        threads=threads)
 
     nwalkers = len(model) - 1
     CI = []
@@ -496,17 +501,15 @@ def _calc_CI(sampler,
 def _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed):
     """compute and plot ML model"""
 
-    ML, MLp, MLerr, ML_model = _calc_ML(sampler,
-                                        modelidx,
-                                        e_range=e_range,
-                                        e_npoints=e_npoints)
+    ML, MLp, MLerr, ML_model = _calc_ML(
+        sampler, modelidx, e_range=e_range, e_npoints=e_npoints)
     f_unit, sedf = sed_conversion(ML_model[0], ML_model[1].unit, sed)
 
-    ax.loglog(ML_model[0].to(e_unit).value,
-              (ML_model[1] * sedf).to(f_unit).value,
-              color='k',
-              lw=2,
-              alpha=0.8)
+    ax.loglog(
+        ML_model[0].to(e_unit).value, (ML_model[1] * sedf).to(f_unit).value,
+        color='k',
+        lw=2,
+        alpha=0.8)
 
 
 def plot_CI(ax,
@@ -550,21 +553,21 @@ def plot_CI(ax,
     """
     confs.sort(reverse=True)
 
-    modelx, CI = _calc_CI(sampler,
-                          modelidx=modelidx,
-                          confs=confs,
-                          e_range=e_range,
-                          e_npoints=e_npoints,
-                          last_step=last_step,
-                          threads=threads)
+    modelx, CI = _calc_CI(
+        sampler,
+        modelidx=modelidx,
+        confs=confs,
+        e_range=e_range,
+        e_npoints=e_npoints,
+        last_step=last_step,
+        threads=threads)
     # pick first confidence interval curve for units
     f_unit, sedf = sed_conversion(modelx, CI[0][0].unit, sed)
 
     for (ymin, ymax), conf in zip(CI, confs):
         color = np.log(conf) / np.log(20) + 0.4
         ax.fill_between(
-            modelx.to(e_unit).value,
-            (ymax * sedf).to(f_unit).value,
+            modelx.to(e_unit).value, (ymax * sedf).to(f_unit).value,
             (ymin * sedf).to(f_unit).value,
             lw=0.001,
             color=(color,) * 3,
@@ -622,20 +625,20 @@ def plot_samples(ax,
         default) or the whole chain (False).
     """
 
-    modelx, model = _read_or_calc_samples(sampler,
-                                          modelidx,
-                                          last_step=last_step,
-                                          e_range=e_range,
-                                          e_npoints=e_npoints,
-                                          threads=threads)
+    modelx, model = _read_or_calc_samples(
+        sampler,
+        modelidx,
+        last_step=last_step,
+        e_range=e_range,
+        e_npoints=e_npoints,
+        threads=threads)
     # pick first model sample for units
     f_unit, sedf = sed_conversion(modelx, model[0].unit, sed)
 
     sample_alpha = min(5. / n_samples, 0.5)
     for my in model[np.random.randint(len(model), size=n_samples)]:
         ax.loglog(
-            modelx.to(e_unit).value,
-            (my * sedf).to(f_unit).value,
+            modelx.to(e_unit).value, (my * sedf).to(f_unit).value,
             color=(0.1,) * 3,
             alpha=sample_alpha,
             lw=1.0)
@@ -667,7 +670,7 @@ def find_ML(sampler, modelidx):
             raise TypeError('Model {0} has wrong blob format'.format(modelidx))
     elif modelidx is not None and hasattr(sampler, 'modelfn'):
         blob = _process_blob(
-            [sampler.modelfn(MLp, sampler.data),],
+            [sampler.modelfn(MLp, sampler.data)],
             modelidx,
             energy=sampler.data['energy'])
         modelx, model_ML = blob[0], blob[1][0]
@@ -718,12 +721,13 @@ def plot_blob(sampler,
         # Blob is scalar, plot distribution
         f = plot_distribution(model, label, figure=figure)
     else:
-        f = plot_fit(sampler,
-                     modelidx=blobidx,
-                     last_step=last_step,
-                     label=label,
-                     figure=figure,
-                     **kwargs)
+        f = plot_fit(
+            sampler,
+            modelidx=blobidx,
+            last_step=last_step,
+            label=label,
+            figure=figure,
+            **kwargs)
 
     return f
 
@@ -761,8 +765,8 @@ def plot_fit(sampler,
     sed : bool, optional
         Whether to plot SED or differential spectrum.
     last_step : bool, optional
-        Whether to use only the samples of the last step in the run when showing
-        either the model samples or the confidence intervals.
+        Whether to use only the samples of the last step in the run when
+        showing either the model samples or the confidence intervals.
     n_samples : int, optional
         If not ``None``, number of sample models to plot. If ``None``,
         confidence bands will be plotted instead of samples. Default is 100.
@@ -836,14 +840,15 @@ def plot_fit(sampler,
 
     if confs is None and not n_samples and plotdata and not plotresiduals:
         # We actually only want to plot the data, so let's go there
-        return plot_data(sampler.data,
-                         xlabel=xlabel,
-                         ylabel=ylabel,
-                         sed=sed,
-                         figure=figure,
-                         e_unit=e_unit,
-                         ulim_opts=ulim_opts,
-                         errorbar_opts=errorbar_opts)
+        return plot_data(
+            sampler.data,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            sed=sed,
+            figure=figure,
+            e_unit=e_unit,
+            ulim_opts=ulim_opts,
+            errorbar_opts=errorbar_opts)
 
     if figure is None:
         f = plt.figure()
@@ -862,56 +867,64 @@ def plot_fit(sampler,
         e_unit = data['energy'].unit
 
     if confs is not None:
-        plot_CI(ax1,
-                sampler,
-                modelidx,
-                sed=sed,
-                confs=confs,
-                e_unit=e_unit,
-                label=label,
-                e_range=e_range,
-                e_npoints=e_npoints,
-                last_step=last_step,
-                threads=threads)
+        plot_CI(
+            ax1,
+            sampler,
+            modelidx,
+            sed=sed,
+            confs=confs,
+            e_unit=e_unit,
+            label=label,
+            e_range=e_range,
+            e_npoints=e_npoints,
+            last_step=last_step,
+            threads=threads)
     elif n_samples:
-        plot_samples(ax1,
-                     sampler,
-                     modelidx,
-                     sed=sed,
-                     n_samples=n_samples,
-                     e_unit=e_unit,
-                     label=label,
-                     e_range=e_range,
-                     e_npoints=e_npoints,
-                     last_step=last_step,
-                     threads=threads)
+        plot_samples(
+            ax1,
+            sampler,
+            modelidx,
+            sed=sed,
+            n_samples=n_samples,
+            e_unit=e_unit,
+            label=label,
+            e_range=e_range,
+            e_npoints=e_npoints,
+            last_step=last_step,
+            threads=threads)
     else:
         # plot only ML model
         _plot_MLmodel(ax1, sampler, modelidx, e_range, e_npoints, e_unit, sed)
 
     xlaxis = ax1
     if plotdata:
-        _plot_data_to_ax(data,
-                         ax1,
-                         e_unit=e_unit,
-                         sed=sed,
-                         ylabel=ylabel,
-                         ulim_opts=ulim_opts,
-                         errorbar_opts=errorbar_opts)
+        _plot_data_to_ax(
+            data,
+            ax1,
+            e_unit=e_unit,
+            sed=sed,
+            ylabel=ylabel,
+            ulim_opts=ulim_opts,
+            errorbar_opts=errorbar_opts)
         if plotresiduals:
-            _plot_residuals_to_ax(data,
-                                  model_ML,
-                                  ax2,
-                                  e_unit=e_unit,
-                                  sed=sed,
-                                  errorbar_opts=errorbar_opts)
+            _plot_residuals_to_ax(
+                data,
+                model_ML,
+                ax2,
+                e_unit=e_unit,
+                sed=sed,
+                errorbar_opts=errorbar_opts)
             xlaxis = ax2
             for tl in ax1.get_xticklabels():
                 tl.set_visible(False)
-        xmin = 10**np.floor(np.log10(np.min(data['energy'] - data[
-            'energy_error_lo']).to(e_unit).value))
-        xmax = 10**np.ceil(np.log10(np.max(data['energy'] + data[
-            'energy_error_hi']).to(e_unit).value))
+        xmin = 10**np.floor(
+            np.log10(
+                np.min(data['energy'] - data['energy_error_lo']).to(e_unit)
+                .value))
+        xmax = 10**np.ceil(
+            np.log10(
+                np.max(data['energy'] + data['energy_error_hi']).to(e_unit)
+                .value))
         ax1.set_xlim(xmin, xmax)
     else:
         ax1.set_xscale('log')
@@ -939,20 +952,21 @@ def plot_fit(sampler,
         ax1.set_xlim(xmin, xmax)
 
     if ML_info and (confs is not None or n_samples):
-        ax1.text(0.05,
-                 0.05,
-                 infostr,
-                 ha='left',
-                 va='bottom',
-                 transform=ax1.transAxes,
-                 family='monospace')
+        ax1.text(
+            0.05,
+            0.05,
+            infostr,
+            ha='left',
+            va='bottom',
+            transform=ax1.transAxes,
+            family='monospace')
 
     if label is not None:
         ax1.set_title(label)
 
     if xlabel is None:
-        xlaxis.set_xlabel('Energy [{0}]'.format(e_unit.to_string(
-            'latex_inline')))
+        xlaxis.set_xlabel('Energy [{0}]'.format(
+            e_unit.to_string('latex_inline')))
     else:
         xlaxis.set_xlabel(xlabel)
 
@@ -974,37 +988,33 @@ def _plot_ulims(ax,
 
     uplim behaviour has been fixed in matplotlib 1.4
     """
-    ax.errorbar(x,
-                y,
-                xerr=xerr,
-                ls='',
-                color=color,
-                elinewidth=elinewidth,
-                capsize=0)
+    ax.errorbar(
+        x, y, xerr=xerr, ls='', color=color, elinewidth=elinewidth, capsize=0)
 
     from distutils.version import LooseVersion
     import matplotlib
     mpl_version = LooseVersion(matplotlib.__version__)
     if mpl_version >= LooseVersion('1.4.0'):
-        ax.errorbar(x,
-                    y,
-                    yerr=height_fraction * y,
-                    ls='',
-                    uplims=True,
-                    color=color,
-                    elinewidth=elinewidth,
-                    capsize=capsize,
-                    zorder=10)
+        ax.errorbar(
+            x,
+            y,
+            yerr=height_fraction * y,
+            ls='',
+            uplims=True,
+            color=color,
+            elinewidth=elinewidth,
+            capsize=capsize,
+            zorder=10)
     else:
-        ax.errorbar(x,
-                    (1 - height_fraction) * y,
-                    yerr=height_fraction * y,
-                    ls='',
-                    lolims=True,
-                    color=color,
-                    elinewidth=elinewidth,
-                    capsize=capsize,
-                    zorder=10)
+        ax.errorbar(
+            x, (1 - height_fraction) * y,
+            yerr=height_fraction * y,
+            ls='',
+            lolims=True,
+            color=color,
+            elinewidth=elinewidth,
+            capsize=capsize,
+            zorder=10)
 
 
 def _plot_data_to_ax(data_all,
@@ -1049,22 +1059,24 @@ def _plot_data_to_ax(data_all,
         yerr = u.Quantity((yerr_lo, data['flux_error_hi'][notul]))
         xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))
 
-        opts = dict(zorder=100,
-                    marker=marker,
-                    ls='',
-                    elinewidth=2,
-                    capsize=0,
-                    mec=color,
-                    mew=0.1,
-                    ms=5,
-                    color=color)
+        opts = dict(
+            zorder=100,
+            marker=marker,
+            ls='',
+            elinewidth=2,
+            capsize=0,
+            mec=color,
+            mew=0.1,
+            ms=5,
+            color=color)
         opts.update(**errorbar_opts)
 
-        ax1.errorbar(data['energy'][notul].to(e_unit).value,
-                     (data['flux'][notul] * sedfg[notul]).to(f_unit).value,
-                     yerr=(yerr * sedfg[notul]).to(f_unit).value,
-                     xerr=xerr[:, notul].to(e_unit).value,
-                     **opts)
+        ax1.errorbar(
+            data['energy'][notul].to(e_unit).value,
+            (data['flux'][notul] * sedfg[notul]).to(f_unit).value,
+            yerr=(yerr * sedfg[notul]).to(f_unit).value,
+            xerr=xerr[:, notul].to(e_unit).value,
+            **opts)
 
         if np.any(ul):
             if 'elinewidth' in errorbar_opts:
@@ -1076,10 +1088,12 @@ def _plot_data_to_ax(data_all,
 
     ax1.set_xscale('log')
     ax1.set_yscale('log')
-    xmin = 10**np.floor(np.log10(np.min(data['energy'] - data[
-        'energy_error_lo']).to(e_unit).value))
-    xmax = 10**np.ceil(np.log10(np.max(data['energy'] + data[
-        'energy_error_hi']).to(e_unit).value))
+    xmin = 10**np.floor(
+        np.log10(
+            np.min(data['energy'] - data['energy_error_lo']).to(e_unit).value))
+    xmax = 10**np.ceil(
+        np.log10(
+            np.max(data['energy'] + data['energy_error_hi']).to(e_unit).value))
     ax1.set_xlim(xmin, xmax)
     # avoid autoscaling to errorbars to 0
     notul = -data_all['ul']
@@ -1087,20 +1101,20 @@ def _plot_data_to_ax(data_all,
         elo = (
             (data_all['flux'][notul] * sedf[notul]).to(f_unit).value -
             (data_all['flux_error_lo'][notul] * sedf[notul]).to(f_unit).value)
-        gooderr = np.where(data_all['flux_error_lo'][notul] < data_all['flux'][
-            notul])
+        gooderr = np.where(
+            data_all['flux_error_lo'][notul] < data_all['flux'][notul])
         ymin = 10**np.floor(np.log10(np.min(elo[gooderr])))
         ax1.set_ylim(bottom=ymin)
 
     if ylabel is None:
         if sed:
             ax1.set_ylabel(r'$E^2\mathrm{{d}}N/\mathrm{{d}}E$'
-                           ' [{0}]'.format(u.Unit(f_unit).to_string(
-                               'latex_inline')))
+                           ' [{0}]'.format(
+                               u.Unit(f_unit).to_string('latex_inline')))
         else:
             ax1.set_ylabel(r'$\mathrm{{d}}N/\mathrm{{d}}E$'
-                           ' [{0}]'.format(u.Unit(f_unit).to_string(
-                               'latex_inline')))
+                           ' [{0}]'.format(
+                               u.Unit(f_unit).to_string('latex_inline')))
     else:
         ax1.set_ylabel(ylabel)
 
@@ -1152,28 +1166,28 @@ def _plot_residuals_to_ax(data_all,
         color = color_cycle[int(g) % len(color_cycle)]
         marker = marker_cycle[int(g) % len(marker_cycle)]
 
-        opts = dict(zorder=100,
-                    marker=marker,
-                    ls='',
-                    elinewidth=2,
-                    capsize=0,
-                    mec=color,
-                    mew=0.1,
-                    ms=6,
-                    color=color)
+        opts = dict(
+            zorder=100,
+            marker=marker,
+            ls='',
+            elinewidth=2,
+            capsize=0,
+            mec=color,
+            mew=0.1,
+            ms=6,
+            color=color)
         opts.update(errorbar_opts)
 
-        ax.errorbar(ene[notul].value,
-                    (difference / dflux).decompose().value,
-                    yerr=(dflux / dflux).decompose().value,
-                    xerr=xerr[:, notul].to(e_unit).value,
-                    **opts)
+        ax.errorbar(
+            ene[notul].value, (difference / dflux).decompose().value,
+            yerr=(dflux / dflux).decompose().value,
+            xerr=xerr[:, notul].to(e_unit).value,
+            **opts)
 
     from matplotlib.ticker import MaxNLocator
-    ax.yaxis.set_major_locator(MaxNLocator(5,
-                                           integer='True',
-                                           prune='upper',
-                                           symmetric=True))
+    ax.yaxis.set_major_locator(
+        MaxNLocator(
+            5, integer='True', prune='upper', symmetric=True))
 
     ax.set_ylabel(r'$\Delta\sigma$')
     ax.set_xscale('log')
@@ -1249,19 +1263,20 @@ def plot_data(input_data,
     elif e_unit is None:
         e_unit = data['energy'].unit
 
-    _plot_data_to_ax(data,
-                     ax1,
-                     e_unit=e_unit,
-                     sed=sed,
-                     ylabel=ylabel,
-                     ulim_opts=ulim_opts,
-                     errorbar_opts=errorbar_opts)
+    _plot_data_to_ax(
+        data,
+        ax1,
+        e_unit=e_unit,
+        sed=sed,
+        ylabel=ylabel,
+        ulim_opts=ulim_opts,
+        errorbar_opts=errorbar_opts)
 
     if xlabel is not None:
         ax1.set_xlabel(xlabel)
     elif xlabel is None and ax1.get_xlabel() == '':
-        ax1.set_xlabel(r'$\mathrm{Energy}$' + ' [{0}]'.format(e_unit.to_string(
-            'latex_inline')))
+        ax1.set_xlabel(r'$\mathrm{Energy}$' + ' [{0}]'.format(
+            e_unit.to_string('latex_inline')))
 
     ax1.autoscale()
 
@@ -1295,8 +1310,9 @@ def plot_distribution(samples, label, figure=None):
         label=label,
         median=_latex_float(quantiles[50]),
         std=_latex_float(std),
-        value_error=_latex_value_error(quantiles[50], quantiles[50] - quantiles[
-            16], quantiles[84] - quantiles[50]),
+        value_error=_latex_value_error(quantiles[50],
+                                       quantiles[50] - quantiles[16],
+                                       quantiles[84] - quantiles[50]),
         unit=unit)
 
     if figure is None:
@@ -1311,12 +1327,13 @@ def plot_distribution(samples, label, figure=None):
 
     histnbins = min(max(25, int(len(samples) / 100.)), 100)
     xlabel = '' if label is None else label
-    n, x, _ = ax.hist(samples,
-                      histnbins,
-                      histtype='stepfilled',
-                      color=color_cycle[0],
-                      lw=0,
-                      normed=1)
+    n, x, _ = ax.hist(
+        samples,
+        histnbins,
+        histtype='stepfilled',
+        color=color_cycle[0],
+        lw=0,
+        normed=1)
     if isinstance(samples, u.Quantity):
         samples_nounit = samples.value
     else:
@@ -1325,22 +1342,24 @@ def plot_distribution(samples, label, figure=None):
     kde = stats.kde.gaussian_kde(samples_nounit)
     ax.plot(x, kde(x), color='k', label='KDE')
 
-    ax.axvline(quantiles[50],
-               ls='--',
-               color='k',
-               alpha=0.5,
-               lw=2,
-               label='50% quantile')
-    ax.axvspan(quantiles[16],
-               quantiles[84],
-               color=(0.5,) * 3,
-               alpha=0.25,
-               label='68% CI',
-               lw=0)
+    ax.axvline(
+        quantiles[50],
+        ls='--',
+        color='k',
+        alpha=0.5,
+        lw=2,
+        label='50% quantile')
+    ax.axvspan(
+        quantiles[16],
+        quantiles[84],
+        color=(0.5,) * 3,
+        alpha=0.25,
+        label='68% CI',
+        lw=0)
     # ax.legend()
     for l in ax.get_xticklabels():
         l.set_rotation(45)
-    #[l.set_rotation(45) for l in ax.get_yticklabels()]
+    # [l.set_rotation(45) for l in ax.get_yticklabels()]
     if unit != '':
         xlabel += ' [{0}]'.format(unit)
     ax.set_xlabel(xlabel)
@@ -1379,11 +1398,13 @@ def plot_corner(sampler, show_ML=True, **kwargs):
         else:
             MLp = None
 
-        corner_opts = {'labels': sampler.labels,
-                       'truths': MLp,
-                       'quantiles': [0.16, 0.5, 0.84],
-                       'verbose': False,
-                       'truth_color': color_cycle[0],}
+        corner_opts = {
+            'labels': sampler.labels,
+            'truths': MLp,
+            'quantiles': [0.16, 0.5, 0.84],
+            'verbose': False,
+            'truth_color': color_cycle[0],
+        }
 
         corner_opts.update(kwargs)
 

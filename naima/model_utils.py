@@ -4,7 +4,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
 import hashlib
-import astropy
 from astropy import units as u
 import warnings
 
@@ -25,8 +24,9 @@ def memoize(func):
             # Quantity scalar
             try:
                 with warnings.catch_warnings():
-                    warnings.simplefilter('ignore',
-                            getattr(np, 'VisibleDeprecationWarning', None))
+                    warnings.simplefilter(
+                        'ignore',
+                        getattr(np, 'VisibleDeprecationWarning', None))
                     energy = u.Quantity(energy['energy'])
             except (TypeError, ValueError, IndexError):
                 pass
@@ -38,7 +38,7 @@ def memoize(func):
                 # scalar Quantity
                 bstr = str(energy.value).encode()
 
-            data = [hashlib.sha256(bstr).hexdigest(),]
+            data = [hashlib.sha256(bstr).hexdigest()]
 
             data.append(energy.unit.to_string())
             data.append(str(kwargs.get('distance', 0)))
@@ -48,7 +48,7 @@ def memoize(func):
             if hasattr(cls, 'particle_distribution'):
                 models = [cls, cls.particle_distribution]
             else:
-                models = [cls,]
+                models = [cls]
             for model in models:
                 if hasattr(model, 'param_names'):
                     for par in model.param_names:

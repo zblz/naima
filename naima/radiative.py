@@ -3,13 +3,11 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-from .extern.validator import validate_scalar, validate_array, validate_physical_type
+from .extern.validator import (validate_scalar, validate_array,
+                               validate_physical_type)
 
 from .utils import trapz_loglog
 from .model_utils import memoize
-
-__all__ = ['Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
-           'PionDecayKelner06']
 
 from astropy.extern import six
 from collections import OrderedDict
@@ -17,14 +15,21 @@ import os
 from astropy.utils.data import get_pkg_data_filename
 import warnings
 import logging
-# Get a new logger to avoid changing the level of the astropy logger
-log = logging.getLogger('naima.radiative')
-log.setLevel(logging.INFO)
 
 # Constants and units
 from astropy import units as u
 # import constant values from astropy.constants
-from astropy.constants import c, m_e, h, hbar, k_B, R_sun, sigma_sb, e, m_p, M_sun, alpha
+from astropy.constants import c, m_e, hbar, sigma_sb, e, m_p, alpha
+
+__all__ = [
+    'Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
+    'PionDecayKelner06'
+]
+
+# Get a new logger to avoid changing the level of the astropy logger
+log = logging.getLogger('naima.radiative')
+log.setLevel(logging.INFO)
+
 e = e.gauss
 
 mec2 = (m_e * c**2).cgs
@@ -39,9 +44,8 @@ def _validate_ene(ene):
 
     if isinstance(ene, dict) or isinstance(ene, Table):
         try:
-            ene = validate_array('energy',
-                                 u.Quantity(ene['energy']),
-                                 physical_type='energy')
+            ene = validate_array(
+                'energy', u.Quantity(ene['energy']), physical_type='energy')
         except KeyError:
             raise TypeError('Table or dict does not have \'energy\' column')
     else:
@@ -55,8 +59,8 @@ def _validate_ene(ene):
 class BaseRadiative(object):
     """Base class for radiative models
 
-    This class implements the flux, sed methods and subclasses must implement the
-    spectrum method which returns the intrinsic differential spectrum.
+    This class implements the flux, sed methods and subclasses must implement
+    the spectrum method which returns the intrinsic differential spectrum.
     """
 
     def __init__(self, particle_distribution):
@@ -65,15 +69,21 @@ class BaseRadiative(object):
             # Check first for the amplitude attribute, which will be present if
             # the particle distribution is a function from naima.models
             pd = self.particle_distribution.amplitude
-            validate_physical_type('Particle distribution',
-                                   pd,
-                                   physical_type='differential energy')
+            validate_physical_type(
+                'Particle distribution',
+                pd,
+                physical_type='differential energy')
         except (AttributeError, TypeError):
             # otherwise check the output
-            pd = self.particle_distribution([0.1, 1, 10,] * u.TeV)
-            validate_physical_type('Particle distribution',
-                                   pd,
-                                   physical_type='differential energy')
+            pd = self.particle_distribution([
+                0.1,
+                1,
+                10,
+            ] * u.TeV)
+            validate_physical_type(
+                'Particle distribution',
+                pd,
+                physical_type='differential energy')
 
     @memoize
     def flux(self, photon_energy, distance=1 * u.kpc):
@@ -92,9 +102,8 @@ class BaseRadiative(object):
         spec = self._spectrum(photon_energy)
 
         if distance != 0:
-            distance = validate_scalar('distance',
-                                       distance,
-                                       physical_type='length')
+            distance = validate_scalar(
+                'distance', distance, physical_type='length')
             spec /= 4 * np.pi * distance.to('cm')**2
             out_unit = '1/(s cm2 eV)'
         else:
@@ -121,8 +130,8 @@ class BaseRadiative(object):
 
         photon_energy = _validate_ene(photon_energy)
 
-        sed = (self.flux(photon_energy, distance) * photon_energy
-               **2.).to(out_unit)
+        sed = (self.flux(photon_energy, distance) * photon_energy ** 2.).to(
+            out_unit)
 
         return sed
 
@@ -216,12 +225,14 @@ class BaseElectron(BaseRadiative):
 
         if amplitude_name is None:
             try:
-                self.particle_distribution.amplitude *= (We / oldWe).decompose()
+                self.particle_distribution.amplitude *= (
+                    We / oldWe).decompose()
             except AttributeError:
                 log.error(
                     'The particle distribution does not have an attribute'
-                    ' called amplitude to modify its normalization: you can set'
-                    ' the name with the amplitude_name parameter of set_We')
+                    ' called amplitude to modify its normalization: you can'
+                    ' set the name with the amplitude_name parameter of set_We'
+                )
         else:
             oldampl = getattr(self.particle_distribution, amplitude_name)
             setattr(self.particle_distribution, amplitude_name,
@@ -250,10 +261,12 @@ class Synchrotron(BaseElectron):
     Other parameters
     ----------------
     Eemin : :class:`~astropy.units.Quantity` float instance, optional
-        Minimum electron energy for the electron distribution. Default is 1 GeV.
+        Minimum electron energy for the electron distribution. Default is 1
+        GeV.
 
     Eemax : :class:`~astropy.units.Quantity` float instance, optional
-        Maximum electron energy for the electron distribution. Default is 510 TeV.
+        Maximum electron energy for the electron distribution. Default is 510
+        TeV.
 
     nEed : scalar
         Number of points per decade in energy for the electron energy and
@@ -266,15 +279,16 @@ class Synchrotron(BaseElectron):
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
         self.nEed = 100
-        self.param_names += ['B',]
+        self.param_names += ['B']
         self.__dict__.update(**kwargs)
 
     def _spectrum(self, photon_energy):
-        """Compute intrinsic synchrotron differential spectrum for energies in ``photon_energy``
+        """Compute intrinsic synchrotron differential spectrum for energies in
+        ``photon_energy``
 
-        Compute synchrotron for random magnetic field according to approximation
-        of Aharonian, Kelner, and Prosekin 2010, PhysRev D 82, 3002
-        (`arXiv:1006.1045 <http://arxiv.org/abs/1006.1045>`_).
+        Compute synchrotron for random magnetic field according to
+        approximation of Aharonian, Kelner, and Prosekin 2010, PhysRev D 82,
+        3002 (`arXiv:1006.1045 <http://arxiv.org/abs/1006.1045>`_).
 
         Parameters
         ----------
@@ -300,11 +314,12 @@ class Synchrotron(BaseElectron):
         log.debug('calc_sy: Starting synchrotron computation with AKB2010...')
 
         # strip units, ensuring correct conversion
-        # astropy units do not convert correctly for gyroradius calculation when using
-        # cgs (SI is fine, see https://github.com/astropy/astropy/issues/1687)
+        # astropy units do not convert correctly for gyroradius calculation
+        # when using cgs (SI is fine, see
+        # https://github.com/astropy/astropy/issues/1687)
         CS1_0 = np.sqrt(3) * e.value**3 * self.B.to('G').value
         CS1_1 = (2 * np.pi * m_e.cgs.value * c.cgs.value
-                 **2 * hbar.cgs.value * outspecene.to('erg').value)
+                 ** 2 * hbar.cgs.value * outspecene.to('erg').value)
         CS1 = CS1_0 / CS1_1
 
         # Critical energy, erg
@@ -315,9 +330,7 @@ class Synchrotron(BaseElectron):
         dNdE = CS1 * Gtilde(EgEc)
         # return units
         spec = trapz_loglog(
-            np.vstack(self._nelec) * dNdE,
-            self._gam,
-            axis=0) / u.s / u.erg
+            np.vstack(self._nelec) * dNdE, self._gam, axis=0) / u.s / u.erg
         spec = spec.to('1/(s eV)')
 
         return spec
@@ -351,9 +364,9 @@ def G34(x, a):
 class InverseCompton(BaseElectron):
     """Inverse Compton emission from an electron population.
 
-    If you use this class in your research, please consult and cite `Khangulyan,
-    D., Aharonian, F.A., & Kelner, S.R.  2014, Astrophysical Journal, 783, 100
-    <http://adsabs.harvard.edu/abs/2014ApJ...783..100K>`_
+    If you use this class in your research, please consult and cite
+    `Khangulyan, D., Aharonian, F.A., & Kelner, S.R.  2014, Astrophysical
+    Journal, 783, 100 <http://adsabs.harvard.edu/abs/2014ApJ...783..100K>`_
 
     Parameters
     ----------
@@ -373,8 +386,8 @@ class InverseCompton(BaseElectron):
           the GALPROP values for a location at a distance of 6.5 kpc from the
           galactic center).
 
-        * A list of length three (isotropic source) or four (anisotropic source)
-          composed of:
+        * A list of length three (isotropic source) or four (anisotropic
+        source) composed of:
 
             1. A name for the seed photon field.
             2. Its temperature (thermal source) or energy (monochromatic or
@@ -382,17 +395,19 @@ class InverseCompton(BaseElectron):
                instance.
             3. Its photon field energy density as a
                :class:`~astropy.units.Quantity` instance.
-            4. Optional: The angle between the seed photon direction and the scattered
-               photon direction as a :class:`~astropy.units.Quantity` float
-               instance.
+            4. Optional: The angle between the seed photon direction and the
+               scattered photon direction as a :class:`~astropy.units.Quantity`
+               float instance.
 
     Other parameters
     ----------------
     Eemin : :class:`~astropy.units.Quantity` float instance, optional
-        Minimum electron energy for the electron distribution. Default is 1 GeV.
+        Minimum electron energy for the electron distribution. Default is 1
+        GeV.
 
     Eemax : :class:`~astropy.units.Quantity` float instance, optional
-        Maximum electron energy for the electron distribution. Default is 510 TeV.
+        Maximum electron energy for the electron distribution. Default is 510
+        TeV.
 
     nEed : scalar
         Number of points per decade in energy for the electron energy and
@@ -401,14 +416,14 @@ class InverseCompton(BaseElectron):
 
     def __init__(self,
                  particle_distribution,
-                 seed_photon_fields=['CMB',],
+                 seed_photon_fields=['CMB'],
                  **kwargs):
         super(InverseCompton, self).__init__(particle_distribution)
         self.seed_photon_fields = self._process_input_seed(seed_photon_fields)
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
         self.nEed = 100
-        self.param_names += ['seed_photon_fields',]
+        self.param_names += ['seed_photon_fields']
         self.__dict__.update(**kwargs)
 
     @staticmethod
@@ -423,7 +438,8 @@ class InverseCompton(BaseElectron):
         Tnir = 3000 * u.K
         unir = 1.0 * u.eV / u.cm**3
 
-        # Allow for seed_photon_fields definitions of the type 'CMB-NIR-FIR' or 'CMB'
+        # Allow for seed_photon_fields definitions of the type 'CMB-NIR-FIR' or
+        # 'CMB'
         if type(seed_photon_fields) != list:
             seed_photon_fields = seed_photon_fields.split('-')
 
@@ -460,27 +476,28 @@ class InverseCompton(BaseElectron):
                 else:
                     name, T, uu, theta = inseed
                     seed['isotropic'] = False
-                    seed['theta'] = validate_scalar('{0}-theta'.format(name),
-                                                    theta,
-                                                    physical_type='angle')
+                    seed['theta'] = validate_scalar(
+                        '{0}-theta'.format(name), theta, physical_type='angle')
 
                 thermal = T.unit.physical_type == 'temperature'
 
                 if thermal:
                     seed['type'] = 'thermal'
-                    validate_scalar('{0}-T'.format(name),
-                                    T,
-                                    domain='positive',
-                                    physical_type='temperature')
+                    validate_scalar(
+                        '{0}-T'.format(name),
+                        T,
+                        domain='positive',
+                        physical_type='temperature')
                     seed['T'] = T
                     if uu == 0:
                         seed['u'] = ar * T**4
                     else:
                         # pressure has same physical type as energy density
-                        validate_scalar('{0}-u'.format(name),
-                                        uu,
-                                        domain='positive',
-                                        physical_type='pressure')
+                        validate_scalar(
+                            '{0}-u'.format(name),
+                            uu,
+                            domain='positive',
+                            physical_type='pressure')
                         seed['u'] = uu
                 else:
                     seed['type'] = 'array'
@@ -488,10 +505,11 @@ class InverseCompton(BaseElectron):
                     T = u.Quantity((T,)).flatten()
                     uu = u.Quantity((uu,)).flatten()
 
-                    seed['energy'] = validate_array('{0}-energy'.format(name),
-                                                    T,
-                                                    domain='positive',
-                                                    physical_type='energy')
+                    seed['energy'] = validate_array(
+                        '{0}-energy'.format(name),
+                        T,
+                        domain='positive',
+                        physical_type='energy')
 
                     if np.isscalar(seed['energy']) or seed['energy'].size == 1:
                         seed['photon_density'] = validate_scalar(
@@ -520,8 +538,8 @@ class InverseCompton(BaseElectron):
                           gamma_energy):
         """
         IC cross-section for isotropic interaction with a blackbody photon
-        spectrum following Eq. 14 of Khangulyan, Aharonian, and Kelner 2014, ApJ
-        783, 100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
+        spectrum following Eq. 14 of Khangulyan, Aharonian, and Kelner 2014,
+        ApJ 783, 100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
 
         `electron_energy` and `gamma_energy` are in units of m_ec^2
         `soft_photon_temperature` is in units of K
@@ -550,8 +568,8 @@ class InverseCompton(BaseElectron):
                           gamma_energy, theta):
         """
         IC cross-section for anisotropic interaction with a blackbody photon
-        spectrum following Eq. 11 of Khangulyan, Aharonian, and Kelner 2014, ApJ
-        783, 100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
+        spectrum following Eq. 11 of Khangulyan, Aharonian, and Kelner 2014,
+        ApJ 783, 100 (`arXiv:1310.7971 <http://www.arxiv.org/abs/1310.7971>`_).
 
         `electron_energy` and `gamma_energy` are in units of m_ec^2
         `soft_photon_temperature` is in units of K
@@ -628,7 +646,8 @@ class InverseCompton(BaseElectron):
             seed))
 
         Eph = (outspecene / mec2).decompose().value
-        # Catch numpy RuntimeWarnings of overflowing exp (which are then discarded anyway)
+        # Catch numpy RuntimeWarnings of overflowing exp (which are then
+        # discarded anyway)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if self.seed_photon_fields[seed]['type'] == 'thermal':
@@ -636,13 +655,13 @@ class InverseCompton(BaseElectron):
                 uf = (self.seed_photon_fields[seed]['u'] /
                       (ar * T**4)).decompose()
                 if self.seed_photon_fields[seed]['isotropic']:
-                    gamint = self._iso_ic_on_planck(self._gam, T.to('K').value,
-                                                    Eph)
+                    gamint = self._iso_ic_on_planck(self._gam,
+                                                    T.to('K').value, Eph)
                 else:
                     theta = self.seed_photon_fields[seed]['theta'].to(
                         'rad').value
-                    gamint = self._ani_ic_on_planck(self._gam, T.to('K').value,
-                                                    Eph, theta)
+                    gamint = self._ani_ic_on_planck(
+                        self._gam, T.to('K').value, Eph, theta)
             else:
                 uf = 1
                 gamint = self._iso_ic_on_monochromatic(
@@ -673,8 +692,8 @@ class InverseCompton(BaseElectron):
 
         for seed in self.seed_photon_fields:
             # Call actual computation, detached to allow changes in subclasses
-            self.specic.append(self._calc_specic(seed, outspecene).to(
-                '1/(s eV)'))
+            self.specic.append(
+                self._calc_specic(seed, outspecene).to('1/(s eV)'))
 
         return np.sum(u.Quantity(self.specic), axis=0)
 
@@ -692,12 +711,12 @@ class InverseCompton(BaseElectron):
             be returned. Default is 1 kpc.
 
         seed : int, str or None
-            Number or name of seed photon field for which the IC contribution is
-            required. If set to None it will return the sum of all contributions
-            (default).
+            Number or name of seed photon field for which the IC contribution
+            is required. If set to None it will return the sum of all
+            contributions (default).
         """
-        model = super(InverseCompton, self).flux(photon_energy,
-                                                 distance=distance)
+        model = super(InverseCompton, self).flux(
+            photon_energy, distance=distance)
 
         if seed is not None:
             # Test seed argument
@@ -715,9 +734,8 @@ class InverseCompton(BaseElectron):
                     ' InverseCompton instance')
 
             if distance != 0:
-                distance = validate_scalar('distance',
-                                           distance,
-                                           physical_type='length')
+                distance = validate_scalar(
+                    'distance', distance, physical_type='length')
                 dfac = 4 * np.pi * distance.to('cm')**2
                 out_unit = '1/(s cm2 eV)'
             else:
@@ -741,9 +759,9 @@ class InverseCompton(BaseElectron):
             be returned. Default is 1 kpc.
 
         seed : int, str or None
-            Number or name of seed photon field for which the IC contribution is
-            required. If set to None it will return the sum of all contributions
-            (default).
+            Number or name of seed photon field for which the IC contribution
+            is required. If set to None it will return the sum of all
+            contributions (default).
         """
         sed = super(InverseCompton, self).sed(photon_energy, distance=distance)
 
@@ -753,9 +771,9 @@ class InverseCompton(BaseElectron):
             else:
                 out_unit = 'erg/s'
 
-            sed = (self.flux(photon_energy,
-                             distance=distance,
-                             seed=seed) * photon_energy**2.).to(out_unit)
+            sed = (self.flux(
+                photon_energy, distance=distance, seed=seed) * photon_energy
+                   ** 2.).to(out_unit)
 
         return sed
 
@@ -780,11 +798,11 @@ class Bremsstrahlung(BaseElectron):
     Other parameters
     ----------------
     weight_ee : float
-        Weight of electron-electron bremsstrahlung. Defined as :math:`\sum_i Z_i
-        X_i`, default is 1.088.
+        Weight of electron-electron bremsstrahlung. Defined as :math:`\sum_i
+        Z_i X_i`, default is 1.088.
     weight_ep : float
-        Weight of electron-proton bremsstrahlung. Defined as :math:`\sum_i Z_i^2
-        X_i`, default is 1.263.
+        Weight of electron-proton bremsstrahlung. Defined as :math:`\sum_i
+        Z_i^2 X_i`, default is 1.263.
     """
 
     def __init__(self, particle_distribution, n0=1 / u.cm**3, **kwargs):
@@ -793,7 +811,8 @@ class Bremsstrahlung(BaseElectron):
         self.Eemin = 100 * u.MeV
         self.Eemax = 1e9 * mec2
         self.nEed = 300
-        # compute ee and ep weights from H and He abundances in ISM assumin ionized medium
+        # compute ee and ep weights from H and He abundances in ISM assumin
+        # ionized medium
         Y = np.array([1., 9.59e-2])
         Z = np.array([1, 2])
         N = np.sum(Y)
@@ -852,7 +871,7 @@ class Bremsstrahlung(BaseElectron):
         """
         Eqs. A6, A7 of Baring et al. (1999)
         """
-        beta = np.sqrt(1 - gam** -2)
+        beta = np.sqrt(1 - gam**-2)
         B = 1 + 0.5 * (gam**2 - 1)
         C = 10 * x * gam * beta * (2 + gam * beta)
         C /= 1 + x**2 * (gam**2 - 1)
@@ -937,7 +956,8 @@ class Bremsstrahlung(BaseElectron):
         return emiss
 
     def _spectrum(self, photon_energy):
-        """Compute differential bremsstrahlung spectrum for energies in ``photon_energy``.
+        """Compute differential bremsstrahlung spectrum for energies in
+        ``photon_energy``.
 
         Parameters
         ----------
@@ -1041,12 +1061,14 @@ class BaseProton(BaseRadiative):
 
         if amplitude_name is None:
             try:
-                self.particle_distribution.amplitude *= (Wp / oldWp).decompose()
+                self.particle_distribution.amplitude *= (
+                    Wp / oldWp).decompose()
             except AttributeError:
                 log.error(
                     'The particle distribution does not have an attribute'
-                    ' called amplitude to modify its normalization: you can set'
-                    ' the name with the amplitude_name parameter of set_Wp')
+                    ' called amplitude to modify its normalization: you can'
+                    ' set the name with the amplitude_name parameter of set_Wp'
+                )
         else:
             oldampl = getattr(self.particle_distribution, amplitude_name)
             setattr(self.particle_distribution, amplitude_name,
@@ -1057,8 +1079,8 @@ class PionDecay(BaseProton):
     r"""Pion decay gamma-ray emission from a proton population.
 
     Compute gamma-ray spectrum arising from the interaction of a relativistic
-    proton distribution with stationary target protons using the parametrization
-    of Kafexhiu et al. (2014).
+    proton distribution with stationary target protons using the
+    parametrization of Kafexhiu et al. (2014).
 
     If you use this class in your research, please consult and cite `Kafexhiu,
     E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014, Physical Review D, 90,
@@ -1075,7 +1097,8 @@ class PionDecay(BaseProton):
         `~astropy.units.Quantity` array or float.
 
     nh : `~astropy.units.Quantity`
-        Number density of the target protons. Default is :math:`1 \mathrm{cm}^{-3}`.
+        Number density of the target protons. Default is :math:`1
+        \mathrm{cm}^{-3}`.
 
     nuclear_enhancement : bool
         Whether to apply the energy-dependent nuclear enhancement factor
@@ -1284,7 +1307,7 @@ class PionDecay(BaseProton):
         EpiCM = (s - 4 * m_p**2 + m_pi**2) / (2 * np.sqrt(s))
         PpiCM = np.sqrt(EpiCM**2 - m_pi**2)
         gCM = (Tp + 2 * m_p) / np.sqrt(s)
-        betaCM = np.sqrt(1 - gCM** -2)
+        betaCM = np.sqrt(1 - gCM**-2)
         EpimaxLAB = gCM * (EpiCM + PpiCM * betaCM)
 
         return EpimaxLAB
@@ -1293,7 +1316,7 @@ class PionDecay(BaseProton):
         m_pi = self._m_pi
         EpimaxLAB = self._calc_EpimaxLAB(Tp)
         gpiLAB = EpimaxLAB / m_pi
-        betapiLAB = np.sqrt(1 - gpiLAB** -2)
+        betapiLAB = np.sqrt(1 - gpiLAB**-2)
         Egmax = (m_pi / 2) * gpiLAB * (1 + betapiLAB)
 
         return Egmax
@@ -1335,7 +1358,7 @@ class PionDecay(BaseProton):
 
     def _kappa(self, Tp):
         thetap = Tp / self._m_p
-        return 3.29 - thetap** -1.5 / 5.
+        return 3.29 - thetap**-1.5 / 5.
 
     def _mu(self, Tp):
         q = (Tp - 1.0) / self._m_p
@@ -1421,7 +1444,8 @@ class PionDecay(BaseProton):
                             (eps1 + eps2) * sigmaRpp * G / sigmainel, 0.0)
 
         if np.any(Tp < 1.0):
-            # nuclear enhancement factor diverges towards Tp = Tth, fix Tp<1 to eps(1.0) = 1.91
+            # nuclear enhancement factor diverges towards Tp = Tth, fix Tp<1 to
+            # eps(1.0) = 1.91
             loE = np.where((Tp > self._Tth) * (Tp < 1.0))
             epstotal[loE] = 1.9141
 
@@ -1432,17 +1456,17 @@ class PionDecay(BaseProton):
             filename = get_pkg_data_filename(os.path.join('data', LUT_fname))
             self.diffsigma = LookupTable(filename)
         except IOError:
-            warnings.warn(
-                'LUT {0} not found, reverting to useLUT = False'.format(
-                    LUT_fname))
+            warnings.warn('LUT {0} not found, reverting to useLUT = False'.
+                          format(LUT_fname))
             self.diffsigma = self._diffsigma
             self.useLUT = False
 
     def _spectrum(self, photon_energy):
         """
-        Compute differential spectrum from pp interactions using the parametrization of
-        Kafexhiu, E., Aharonian, F., Taylor, A.~M., and Vila, G.~S.\ 2014,
-        `arXiv:1406.7369 <http://www.arxiv.org/abs/1406.7369>`_.
+        Compute differential spectrum from pp interactions using the
+        parametrization of Kafexhiu, E., Aharonian, F., Taylor, A.~M., and
+        Vila, G.~S.\ 2014, `arXiv:1406.7369
+        <http://www.arxiv.org/abs/1406.7369>`_.
 
         Parameters
         ----------
@@ -1481,7 +1505,8 @@ class PionDecay(BaseProton):
         return self.specpp.to('1/(s eV)')
 
 
-heaviside = lambda x: (np.sign(x) + 1) / 2.
+def heaviside(x):
+    return (np.sign(x) + 1) / 2.
 
 
 class PionDecayKelner06(BaseRadiative):
@@ -1504,9 +1529,9 @@ class PionDecayKelner06(BaseRadiative):
     Other parameters
     ----------------
     Etrans : `~astropy.units.Quantity`
-        For photon energies below ``Etrans``, the delta-functional approximation
-        is used for the spectral calculation, and the full calculation is used
-        at higher energies. Default is 0.1 TeV.
+        For photon energies below ``Etrans``, the delta-functional
+        approximation is used for the spectral calculation, and the full
+        calculation is used at higher energies. Default is 0.1 TeV.
 
     References
     ----------
@@ -1528,10 +1553,8 @@ class PionDecayKelner06(BaseRadiative):
                  **kwargs):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar('nh', nh, physical_type='number density')
-        self.Etrans = validate_scalar('Etrans',
-                                      Etrans,
-                                      domain='positive',
-                                      physical_type='energy')
+        self.Etrans = validate_scalar(
+            'Etrans', Etrans, domain='positive', physical_type='energy')
 
         self.__dict__.update(**kwargs)
 
@@ -1553,8 +1576,8 @@ class PionDecayKelner06(BaseRadiative):
         """
         L = np.log(Ep)
         B = 1.30 + 0.14 * L + 0.011 * L**2  # Eq59
-        beta = (1.79 + 0.11 * L + 0.008 * L**2)** -1  # Eq60
-        k = (0.801 + 0.049 * L + 0.014 * L**2)** -1  # Eq61
+        beta = (1.79 + 0.11 * L + 0.008 * L**2)**-1  # Eq60
+        k = (0.801 + 0.049 * L + 0.014 * L**2)**-1  # Eq61
         xb = x**beta
 
         F1 = B * (np.log(x) / x) * ((1 - xb) / (1 + k * xb * (1 - xb)))**4
@@ -1592,8 +1615,9 @@ class PionDecayKelner06(BaseRadiative):
         Integrand of Eq. 72
         """
         try:
-            return self._sigma_inel(Egamma / x) * self._particle_distribution((Egamma / x)) \
-                * self._Fgamma(x, Egamma / x) / x
+            return (self._sigma_inel(Egamma / x) *
+                    self._particle_distribution((Egamma / x)) *
+                    self._Fgamma(x, Egamma / x) / x)
         except ZeroDivisionError:
             return np.nan
 
@@ -1610,12 +1634,9 @@ class PionDecayKelner06(BaseRadiative):
         # ], n = 40)[0]
         from scipy.integrate import quad
         Egamma = Egamma.to('TeV').value
-        specpp = c.cgs.value * quad(self._photon_integrand,
-                                    0.,
-                                    1.,
-                                    args=Egamma,
-                                    epsrel=1e-3,
-                                    epsabs=0)[0]
+        specpp = c.cgs.value * quad(
+            self._photon_integrand, 0., 1., args=Egamma, epsrel=1e-3,
+            epsabs=0)[0]
 
         return specpp * u.Unit('1/(s TeV)')
 
@@ -1627,8 +1648,9 @@ class PionDecayKelner06(BaseRadiative):
 
     def _delta_integrand(self, Epi):
         Ep0 = self._mp + Epi / self._Kpi
-        qpi = self._c * \
-            (self.nhat / self._Kpi) * self._sigma_inel(Ep0) * self._particle_distribution(Ep0)
+        qpi = (self._c *
+               (self.nhat / self._Kpi) * self._sigma_inel(Ep0) *
+               self._particle_distribution(Ep0))
         return qpi / np.sqrt(Epi**2 + self._m_pi**2)
 
     def _calc_specpp_loE(self, Egamma):
@@ -1639,11 +1661,8 @@ class PionDecayKelner06(BaseRadiative):
         Egamma = Egamma.to('TeV').value
         Epimin = Egamma + self._m_pi**2 / (4 * Egamma)
 
-        result = 2 * quad(self._delta_integrand,
-                          Epimin,
-                          np.inf,
-                          epsrel=1e-3,
-                          epsabs=0)[0]
+        result = 2 * quad(
+            self._delta_integrand, Epimin, np.inf, epsrel=1e-3, epsabs=0)[0]
 
         return result * u.Unit('1/(s TeV)')
 
@@ -1663,9 +1682,10 @@ class PionDecayKelner06(BaseRadiative):
 
     def _spectrum(self, photon_energy):
         """
-        Compute differential spectrum from pp interactions using Eq.71 and Eq.58 of
-        Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006 PhysRevD 74, 034018
-        (`arXiv:astro-ph/0606058 <http://www.arxiv.org/abs/astro-ph/0606058>`_).
+        Compute differential spectrum from pp interactions using Eq.71 and
+        Eq.58 of Kelner, S.R., Aharonian, F.A., and Bugayov, V.V., 2006
+        PhysRevD 74, 034018 (`arXiv:astro-ph/0606058
+        <http://www.arxiv.org/abs/astro-ph/0606058>`_).
 
         Parameters
         ----------
@@ -1678,10 +1698,10 @@ class PionDecayKelner06(BaseRadiative):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.nhat = 1.  # initial value, works for index~2.1
-            if np.any(outspecene < self.Etrans) and np.any(outspecene >=
-                                                           self.Etrans):
-                # compute value of nhat so that delta functional matches accurate
-                # calculation at 0.1TeV
+            if np.any(outspecene < self.Etrans) and np.any(
+                    outspecene >= self.Etrans):
+                # compute value of nhat so that delta functional matches
+                # accurate calculation at 0.1TeV
                 full = self._calc_specpp_hiE(self.Etrans)
                 delta = self._calc_specpp_loE(self.Etrans)
                 self.nhat *= (full / delta).decompose().value
@@ -1730,7 +1750,6 @@ class LookupTable(object):
 
 def _calc_lut_pp(args):  # pragma: no cover
     epr, eph, hiEmodel, nuc = args
-    #print('Computing diffsigma for Egamma = {0}...'.format(eph))
     from .models import PowerLaw
     pl = PowerLaw(1 / u.eV, 1 * u.TeV, 0.0)
     pp = PionDecay(pl, hiEmodel=hiEmodel, nuclear_enhancement=nuc)
@@ -1751,7 +1770,7 @@ def generate_lut_pp(Ep=np.logspace(0.085623713910610105, 7, 800) * u.GeV,
     if hiEmodel is None:
         hiEmodel = ['Geant4', 'Pythia8', 'SIBYLL', 'QGSJET']
     elif type(hiEmodel) is str:
-        hiEmodel = [hiEmodel,]
+        hiEmodel = [hiEmodel]
 
     if nuclear_enhancement:
         out_base += 'NucEnh_'
@@ -1764,7 +1783,8 @@ def generate_lut_pp(Ep=np.logspace(0.085623713910610105, 7, 800) * u.GeV,
 
         diffsigma = np.array(diffsigma_list).T
 
-        np.savez_compressed(out_file,
-                            X=np.log10(Ep.to('GeV').value),
-                            Y=np.log10(Eg.to('GeV').value),
-                            lut=np.log10(diffsigma))
+        np.savez_compressed(
+            out_file,
+            X=np.log10(Ep.to('GeV').value),
+            Y=np.log10(Eg.to('GeV').value),
+            lut=np.log10(diffsigma))
