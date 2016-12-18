@@ -61,13 +61,12 @@ class SherpaModel(ArithmeticModel):
         if xhi is None:
             photons = (model * Eph).to('1/(s cm2)').value
         else:
-            photons = trapz_loglog(model,
-                                   Eph,
-                                   intervals=True).to('1/(s cm2)').value
+            photons = trapz_loglog(
+                model, Eph, intervals=True).to('1/(s cm2)').value
 
         if p[-1]:
-            print(self.thawedpars, trapz_loglog(Eph * model,
-                                                Eph).to('erg/(s cm2)'))
+            print(self.thawedpars,
+                  trapz_loglog(Eph * model, Eph).to('erg/(s cm2)'))
 
         return photons
 
@@ -81,27 +80,14 @@ class SherpaModelECPL(SherpaModel):
         # Initialize ECPL parameters
         self.index = Parameter(name, 'index', 2.1, min=-10, max=10)
         self.ref = Parameter(name, 'ref', 60, min=0, frozen=True, units='TeV')
-        self.ampl = Parameter(name,
-                              'ampl',
-                              100,
-                              min=0,
-                              max=1e60,
-                              hard_max=1e100,
-                              units='1e30/eV')
-        self.cutoff = Parameter(name,
-                                'cutoff',
-                                0,
-                                min=0,
-                                frozen=True,
-                                units='TeV')
+        self.ampl = Parameter(
+            name, 'ampl', 100, min=0, max=1e60, hard_max=1e100, units='1e30/eV'
+        )
+        self.cutoff = Parameter(
+            name, 'cutoff', 0, min=0, frozen=True, units='TeV')
         self.beta = Parameter(name, 'beta', 1, min=0, max=10, frozen=True)
-        self.distance = Parameter(name,
-                                  'distance',
-                                  1,
-                                  min=0,
-                                  max=1e6,
-                                  frozen=True,
-                                  units='kpc')
+        self.distance = Parameter(
+            name, 'distance', 1, min=0, max=1e6, frozen=True, units='kpc')
         self.verbose = Parameter(name, 'verbose', 0, min=0, max=1, frozen=True)
 
     @staticmethod
@@ -112,12 +98,12 @@ class SherpaModelECPL(SherpaModel):
             pdist = models.PowerLaw(ampl * 1e30 * u.Unit('1/eV'), ref * u.TeV,
                                     index)
         else:
-            pdist = models.ExponentialCutoffPowerLaw(ampl * 1e30 *
-                                                     u.Unit('1/eV'),
-                                                     ref * u.TeV,
-                                                     index,
-                                                     cutoff * u.TeV,
-                                                     beta=beta)
+            pdist = models.ExponentialCutoffPowerLaw(
+                ampl * 1e30 * u.Unit('1/eV'),
+                ref * u.TeV,
+                index,
+                cutoff * u.TeV,
+                beta=beta)
         return pdist
 
 
@@ -132,29 +118,20 @@ class InverseCompton(SherpaModelECPL):
     def __init__(self, name='IC'):
         self.name = name
         self.TFIR = Parameter(name, 'TFIR', 30, min=0, frozen=True, units='K')
-        self.uFIR = Parameter(name,
-                              'uFIR',
-                              0.0,
-                              min=0,
-                              frozen=True,
-                              units='eV/cm3'
-                              )  # , 0.2eV/cm3 typical in outer disk
-        self.TNIR = Parameter(name, 'TNIR', 3000, min=0, frozen=True,
-                              units='K')
-        self.uNIR = Parameter(name,
-                              'uNIR',
-                              0.0,
-                              min=0,
-                              frozen=True,
-                              units='eV/cm3'
-                              )  # , 0.2eV/cm3 typical in outer disk
+        self.uFIR = Parameter(
+            name, 'uFIR', 0.0, min=0, frozen=True,
+            units='eV/cm3')  # , 0.2eV/cm3 typical in outer disk
+        self.TNIR = Parameter(
+            name, 'TNIR', 3000, min=0, frozen=True, units='K')
+        self.uNIR = Parameter(
+            name, 'uNIR', 0.0, min=0, frozen=True,
+            units='eV/cm3')  # , 0.2eV/cm3 typical in outer disk
         # add ECPL params
         super(InverseCompton, self).__init__(name=name)
         # Initialize model
-        ArithmeticModel.__init__(self, name,
-                                 (self.index, self.ref, self.ampl, self.cutoff,
-                                  self.beta, self.TFIR, self.uFIR, self.TNIR,
-                                  self.uNIR, self.distance, self.verbose))
+        ArithmeticModel.__init__(self, name, (
+            self.index, self.ref, self.ampl, self.cutoff, self.beta, self.TFIR,
+            self.uFIR, self.TNIR, self.uNIR, self.distance, self.verbose))
         self._use_caching = True
         self.cache = 10
 
@@ -216,32 +193,18 @@ class Bremsstrahlung(SherpaModelECPL):
 
     def __init__(self, name='Bremsstrahlung'):
         self.name = name
-        self.n0 = Parameter(name,
-                            'n0',
-                            1,
-                            min=0,
-                            max=1e20,
-                            frozen=True,
-                            units='1/cm3')
-        self.weight_ee = Parameter(name,
-                                   'weight_ee',
-                                   1.088,
-                                   min=0,
-                                   max=10,
-                                   frozen=True)
-        self.weight_ep = Parameter(name,
-                                   'weight_ep',
-                                   1.263,
-                                   min=0,
-                                   max=10,
-                                   frozen=True)
+        self.n0 = Parameter(
+            name, 'n0', 1, min=0, max=1e20, frozen=True, units='1/cm3')
+        self.weight_ee = Parameter(
+            name, 'weight_ee', 1.088, min=0, max=10, frozen=True)
+        self.weight_ep = Parameter(
+            name, 'weight_ep', 1.263, min=0, max=10, frozen=True)
         # add ECPL params
         super(Bremsstrahlung, self).__init__(name=name)
         # Initialize model
-        ArithmeticModel.__init__(self, name,
-                                 (self.index, self.ref, self.ampl, self.cutoff,
-                                  self.beta, self.n0, self.weight_ee,
-                                  self.weight_ep, self.distance, self.verbose))
+        ArithmeticModel.__init__(self, name, (
+            self.index, self.ref, self.ampl, self.cutoff, self.beta, self.n0,
+            self.weight_ee, self.weight_ep, self.distance, self.verbose))
         self._use_caching = True
         self.cache = 10
 

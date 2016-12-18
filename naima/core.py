@@ -9,8 +9,10 @@ import warnings
 
 from .utils import validate_data_table, sed_conversion
 
-__all__ = ["normal_prior", "uniform_prior", "log_uniform_prior", "get_sampler",
-           "run_sampler"]
+__all__ = [
+    "normal_prior", "uniform_prior", "log_uniform_prior", "get_sampler",
+    "run_sampler"
+]
 
 # Define phsyical types used in plot and utils.validate_data_table
 u.def_physical_type(u.erg / u.cm**2 / u.s, 'flux')
@@ -51,6 +53,7 @@ def log_uniform_prior(value, umin=0, umax=None):
             return 1 / value
     else:
         return -np.inf
+
 
 # Probability function
 
@@ -102,7 +105,7 @@ def lnprob(pars, data, modelfunc, priorfunc):
         # Save blobs or save model if no blobs given
         # If model is not in blobs, save model+blobs
         if ((type(modelout) == tuple or type(modelout) == list) and
-            (type(modelout) != np.ndarray)):
+                (type(modelout) != np.ndarray)):
             model = modelout[0]
 
             MODEL_IN_BLOB = False
@@ -127,6 +130,7 @@ def lnprob(pars, data, modelfunc, priorfunc):
 
     return total_lnprob, blob
 
+
 # Sampler funcs
 
 
@@ -135,32 +139,37 @@ def _run_mcmc(sampler, pos, nrun):
         progress = (100. * float(i) / float(nrun))
         if progress % 5 < (5. / float(nrun)):
             print("\nProgress of the run: {0:.0f} percent"
-                  " ({1} of {2} steps)".format(
-                      int(progress), i, nrun))
+                  " ({1} of {2} steps)".format(int(progress), i, nrun))
             npars = out[0].shape[-1]
             paravg, parstd = [], []
             for npar in range(npars):
                 paravg.append(np.median(out[0][:, npar]))
                 parstd.append(np.std(out[0][:, npar]))
-            print("                           " + (" ".join(
-                ["{%i:-^15}" % i for i in range(npars)])).format(
-                    *sampler.labels))
+            print("                           " + (" ".join([
+                "{%i:-^15}" % i for i in range(npars)
+            ])).format(*sampler.labels))
             print("  Last ensemble median : " + (" ".join(
                 ["{%i:^15.3g}" % i for i in range(npars)])).format(*paravg))
             print("  Last ensemble std    : " + (" ".join(
                 ["{%i:^15.3g}" % i for i in range(npars)])).format(*parstd))
-            print("  Last ensemble lnprob :  avg: {0:.3f}, max: {1:.3f}".format(
-                np.average(out[1]), np.max(out[1])))
+            print("  Last ensemble lnprob :  avg: {0:.3f}, max: {1:.3f}"
+                  .format(np.average(out[1]), np.max(out[1])))
     return sampler, out[0]
 
 
 def _prefit(p0, data, model, prior):
     P0_IS_ML = False
     from .extern.minimize import minimize
-    flat_prior = lambda *args: 0.0
+
+    def flat_prior(*args):
+        return 0.0
+
     if prior is None:
         prior = flat_prior
-    nll = lambda *args: -lnprob(*args)[0]
+
+    def nll(*args):
+        return -lnprob(*args)[0]
+
     log.info(
         'Finding Maximum Likelihood parameters through Nelder-Mead fitting...')
     log.info('   Initial parameters: {0}'.format(p0))
@@ -168,13 +177,14 @@ def _prefit(p0, data, model, prior):
                                                           prior)))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        result = minimize(nll,
-                          p0,
-                          args=(data, model, flat_prior),
-                          method='Nelder-Mead',
-                          options={'maxfev': 500,
-                                   'xtol': 1e-1,
-                                   'ftol': 1e-3})
+        result = minimize(
+            nll,
+            p0,
+            args=(data, model, flat_prior),
+            method='Nelder-Mead',
+            options={'maxfev': 500,
+                     'xtol': 1e-1,
+                     'ftol': 1e-3})
         ll_prior = lnprob(result['x'], data, model, prior)[0]
 
     if (result['success'] or result['status'] == 1) and not np.isinf(ll_prior):
@@ -220,10 +230,10 @@ def get_sampler(data_table=None,
     Parameters
     ----------
     data_table : `~astropy.table.Table` or list of `~astropy.table.Table`
-        Table containing the observed spectrum. If multiple tables are passed as
-        a string, they will be concatenated in the order given. Each table needs
-        at least these columns, with the appropriate associated units (with the
-        physical type indicated in brackets below) as either a
+        Table containing the observed spectrum. If multiple tables are passed
+        as a string, they will be concatenated in the order given. Each table
+        needs at least these columns, with the appropriate associated units
+        (with the physical type indicated in brackets below) as either a
         `~astropy.units.Unit` instance or parseable string:
 
         - ``energy``: Observed photon energy [``energy``]
@@ -244,8 +254,8 @@ def get_sampler(data_table=None,
           upper uncertainties of the flux.
         - ``ul``: Flag to indicate that a flux measurement is an upper limit.
         - ``flux_ul``: Upper limit to the flux. If not present, the ``flux``
-          column will be taken as an upper limit for those measurements with the
-          ``ul`` flag set to True or 1.
+          column will be taken as an upper limit for those measurements with
+          the ``ul`` flag set to True or 1.
 
         The ``keywords`` metadata field of the table can be used to provide the
         confidence level of the upper limits with the keyword ``cl``, which
@@ -277,12 +287,12 @@ def get_sampler(data_table=None,
     nwalkers : int, optional
         The number of Goodman & Weare “walkers”. Default is 500.
     nburn : int, optional
-        Number of burn-in steps. After ``nburn`` steps, the sampler is reset and
-        chain history discarded. It is necessary to settle the sampler into the
-        maximum of the parameter space density. Default is 100.
+        Number of burn-in steps. After ``nburn`` steps, the sampler is reset
+        and chain history discarded. It is necessary to settle the sampler into
+        the maximum of the parameter space density. Default is 100.
     labels : iterable of strings, optional
-        Labels for the parameters included in the position vector ``p0``. If not
-        provided ``['par1','par2', ... ,'parN']`` will be used.
+        Labels for the parameters included in the position vector ``p0``. If
+        not provided ``['par1','par2', ... ,'parN']`` will be used.
     threads : int, optional
         Number of threads to use for sampling. Default is 4.
     guess : bool, optional
@@ -329,19 +339,20 @@ def get_sampler(data_table=None,
     # Add parameter labels if not provided or too short
     if labels is None:
         # First is normalization
-        labels = ['norm',] + ['par{0}'.format(i) for i in range(1, len(p0))]
+        labels = ['norm'] + ['par{0}'.format(i) for i in range(1, len(p0))]
     elif len(labels) < len(p0):
         labels += ['par{0}'.format(i) for i in range(len(labels), len(p0))]
 
     # Check that the model returns fluxes in same physical type as data
     modelout = model(p0, data)
     if ((type(modelout) == tuple or type(modelout) == list) and
-        (type(modelout) != np.ndarray)):
+            (type(modelout) != np.ndarray)):
         spec = modelout[0]
     else:
         spec = modelout
 
-    # check whether both can be converted to same physical type through sed_conversion
+    # check whether both can be converted to same physical type through
+    # sed_conversion
     try:
         # If both can be converted to differential flux, they can be compared
         # Otherwise, sed_conversion will raise a u.UnitsError
@@ -364,7 +375,8 @@ def get_sampler(data_table=None,
         for l in normNames:
             for l2 in labels:
                 if l2.startswith(l):
-                    # check with startswith to include normalization, amplitude, etc.
+                    # check with startswith to include normalization,
+                    # amplitude, etc.
                     idxs.append(labels.index(l2))
 
         if len(idxs) == 1:
@@ -375,7 +387,8 @@ def get_sampler(data_table=None,
             nunit, sedf = sed_conversion(data['energy'], data['flux'].unit,
                                          False)
             dataFlux = np.trapz(data['energy'] *
-                                (data['flux'] * sedf).to(nunit), data['energy'])
+                                (data['flux'] * sedf).to(nunit),
+                                data['energy'])
             ratio = (dataFlux / currFlux)
             if labels[idxs[0]].startswith('log('):
                 p0[idxs[0]] += np.log(ratio)
@@ -396,16 +409,13 @@ def get_sampler(data_table=None,
     if interactive:
         try:
             log.info(
-                'Launching interactive model fitter, close window when finished')
+                'Launching interactive model fitter, close when finished')
             from .model_fitter import InteractiveModelFitter
             import matplotlib.pyplot as plt
             iprev = plt.rcParams['interactive']
             plt.rcParams['interactive'] = False
-            imf = InteractiveModelFitter(model,
-                                         p0,
-                                         data,
-                                         labels=labels,
-                                         sed=True)
+            imf = InteractiveModelFitter(
+                model, p0, data, labels=labels, sed=True)
             p0 = imf.pars
             P0_IS_ML = imf.P0_IS_ML
             plt.rcParams['interactive'] = iprev
@@ -418,11 +428,8 @@ def get_sampler(data_table=None,
     if prefit and not P0_IS_ML:
         p0, P0_IS_ML = _prefit(p0, data, model, prior)
 
-    sampler = emcee.EnsembleSampler(nwalkers,
-                                    len(p0),
-                                    lnprob,
-                                    args=[data, model, prior],
-                                    threads=threads)
+    sampler = emcee.EnsembleSampler(
+        nwalkers, len(p0), lnprob, args=[data, model, prior], threads=threads)
 
     # Add data and parameters properties to sampler
     sampler.data_table = data_table
@@ -431,14 +438,16 @@ def get_sampler(data_table=None,
     # Add model function to sampler
     sampler.modelfn = model
     # Add run_info dict
-    sampler.run_info = {'n_walkers': nwalkers,
-                        'n_burn': nburn,
-                        # convert from np.float to regular float
-                        'p0': [float(p) for p in p0],
-                        'guess': guess,}
+    sampler.run_info = {
+        'n_walkers': nwalkers,
+        'n_burn': nburn,
+        # convert from np.float to regular float
+        'p0': [float(p) for p in p0],
+        'guess': guess,
+    }
 
-    # Initialize walkers in a ball of relative size 0.5% in all dimensions if the
-    # parameters have been fit to their ML values, or to 10% otherwise
+    # Initialize walkers in a ball of relative size 0.5% in all dimensions if
+    # the parameters have been fit to their ML values, or to 10% otherwise
     spread = 0.005 if P0_IS_ML else 0.1
     p0var = np.array([spread * pp for pp in p0])
     p0 = emcee.utils.sample_ball(p0, p0var, nwalkers)
@@ -450,8 +459,10 @@ def get_sampler(data_table=None,
     else:
         pos = p0
 
-    sampler.run_info['p0_burn_median'] = [float(p) for p in np.median(pos,
-                                                                      axis=0)]
+    sampler.run_info['p0_burn_median'] = [
+        float(p) for p in np.median(
+            pos, axis=0)
+    ]
 
     return sampler, pos
 
@@ -472,7 +483,8 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
         A list of initial position vectors for the walkers. It should have
         dimensions of ``(nwalkers,dim)``, where ``dim`` is the number of free
         parameters. `emcee.utils.sample_ball` can be used to generate a
-        multidimensional gaussian distribution around a single initial position.
+        multidimensional gaussian distribution around a single initial
+        position.
 
     Returns
     -------
