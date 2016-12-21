@@ -1,9 +1,15 @@
-0.8 (unreleased)
+0.8 (2016-12-21)
 ----------------
 
 - Added a `threads` parameter to `plot_fit` and `plot_samples` that set the
   number of cores to use in computing model samples for plotting.
+- Added a new model for EBL absorption based on the tables of Dominguez et al.
+  2011.
 
+Bug fixes
+^^^^^^^^^
+- Updated to use new ``emcee`` autocorrelation API in version 2.2.
+- Fixed sherpa models string representation.
 
 0.7.1 (2016-02-04)
 ------------------
