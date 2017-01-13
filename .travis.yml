@@ -30,7 +30,7 @@ env:
 
     matrix:
         - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
-        - PYTHON_VERSION=3.5 SETUP_CMD='egg_info'
+        - PYTHON_VERSION=3.6 SETUP_CMD='egg_info'
 
 matrix:
 
@@ -40,7 +40,7 @@ matrix:
         - os: osx
           env: PYTHON_VERSION=2.7 SETUP_CMD='test'
         - os: osx
-          env: PYTHON_VERSION=3.5 SETUP_CMD='test'
+          env: PYTHON_VERSION=3.6 SETUP_CMD='test'
 
         # Check for sphinx doc build warnings
         - os: linux
@@ -48,33 +48,23 @@ matrix:
 
         # Run examples, do it first as well as it may take some time
         - os: linux
-          env: PYTHON_VERSION=3.5 SETUP_CMD='examples'
+          env: PYTHON_VERSION=3.6 SETUP_CMD='examples'
 
-        # Try Astropy development version
+        # Try all python versions, with sherpa and coverage testing in py35
         - os: linux
-          env: PYTHON_VERSION=2.7 ASTROPY_VERSION=development SETUP_CMD='test'
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test'
         - os: linux
-          env: PYTHON_VERSION=3.5 ASTROPY_VERSION=development SETUP_CMD='test'
-
-        # Try all python versions, with sherpa and coverage testing in py27
-        - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test --coverage'
+          env: PYTHON_VERSION=3.5 SETUP_CMD='test --coverage'
                CONDA_CHANNELS='astropy-ci-extras sherpa'
                CONDA_DEPENDENCIES="$CONDA_DEPENDENCIES sherpa"
         - os: linux
-          env: PYTHON_VERSION=3.4 SETUP_CMD='test'
-        - os: linux
-          env: PYTHON_VERSION=3.5 SETUP_CMD='test'
+          env: PYTHON_VERSION=3.6 SETUP_CMD='test'
 
         # Try older numpy versions
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.9 SETUP_CMD='test'
         - os: linux
           env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.10 SETUP_CMD='test'
-
-    allow_failures:
-        # allow failure until mpl 2.0 is released
-        - os: osx
 
 before_install:
     # If there are matplotlib tests, comment these out to
