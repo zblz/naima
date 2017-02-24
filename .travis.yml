@@ -23,7 +23,7 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.11
+        - NUMPY_VERSION=1.12
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme'
         - PIP_DEPENDENCIES='emcee corner'
@@ -59,12 +59,6 @@ matrix:
                CONDA_DEPENDENCIES="$CONDA_DEPENDENCIES sherpa"
         - os: linux
           env: PYTHON_VERSION=3.6 SETUP_CMD='test'
-
-        # Try older numpy versions
-        - os: linux
-          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.9 SETUP_CMD='test'
-        - os: linux
-          env: PYTHON_VERSION=2.7 NUMPY_VERSION=1.10 SETUP_CMD='test'
 
 before_install:
     # If there are matplotlib tests, comment these out to
