@@ -8,9 +8,9 @@ fit a variety of data from spatial morphology to forward-folding spectral
 analysis. It is part of the Chandra analysis software pacakage (`CIAO
 <http://cxc.cfa.harvard.edu/ciao/>`_), but it can be easily installed standalone
 by using the `Anaconda Python <http://continuum.io/downloads>`_ distribution.
-Once you have a Python 2.7 Anaconda environment set up, the `standalone Python
-version of sherpa <http://cxc.cfa.harvard.edu/contrib/sherpa/>`_ can be
-installed along with Naima as follows::
+The `standalone Python version of sherpa
+<http://cxc.cfa.harvard.edu/contrib/sherpa/>`_  can be installed along with
+Naima as follows::
 
     $ export PATH=PATH_TO_ANACONDA/bin:$PATH
     $ conda config --add channels sherpa --add channels astropy

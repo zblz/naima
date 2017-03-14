@@ -40,7 +40,7 @@ the paper is::
                  energy distributions from observed nonthermal spectra},
          year = 2015,
       journal = {Proc.~of International Cosmic Ray Conference 2015},
-        pages = "in press",
+        pages = "922",
        eprint = {1509.03319},
        adsurl = {http://adsabs.harvard.edu/abs/2015arXiv150903319Z},
     }
