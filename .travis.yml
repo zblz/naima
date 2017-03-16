@@ -30,7 +30,7 @@ env:
 
     matrix:
         - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
-        - PYTHON_VERSION=3.6 SETUP_CMD='egg_info'
+        - PYTHON_VERSION=3.5 SETUP_CMD='egg_info'
 
 matrix:
 
@@ -40,7 +40,7 @@ matrix:
         - os: osx
           env: PYTHON_VERSION=2.7 SETUP_CMD='test'
         - os: osx
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test'
+          env: PYTHON_VERSION=3.5 SETUP_CMD='test'
 
         # Check for sphinx doc build warnings
         - os: linux
@@ -48,13 +48,13 @@ matrix:
 
         # Run examples, do it first as well as it may take some time
         - os: linux
-          env: PYTHON_VERSION=3.6 SETUP_CMD='examples'
+          env: PYTHON_VERSION=3.5 SETUP_CMD='examples'
 
         # Try Astropy development version
         - os: linux
           env: PYTHON_VERSION=2.7 ASTROPY_VERSION=development SETUP_CMD='test'
         - os: linux
-          env: PYTHON_VERSION=3.6 ASTROPY_VERSION=development SETUP_CMD='test'
+          env: PYTHON_VERSION=3.5 ASTROPY_VERSION=development SETUP_CMD='test'
 
         # Try all python versions, with sherpa and coverage testing in py27
         - os: linux
@@ -64,7 +64,7 @@ matrix:
         - os: linux
           env: PYTHON_VERSION=3.4 SETUP_CMD='test'
         - os: linux
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test'
+          env: PYTHON_VERSION=3.5 SETUP_CMD='test'
 
         # Try older numpy versions
         - os: linux
