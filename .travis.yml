@@ -84,7 +84,6 @@ script:
      else
          python setup.py $SETUP_CMD
      fi
-
 after_success:
     # Uncomment line below if coveralls.io is set up for this package.
 - if [[ $SETUP_CMD == *coverage* ]]; then coveralls --rcfile='naima/tests/coveragerc'; fi
