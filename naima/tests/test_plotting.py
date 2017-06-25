@@ -31,6 +31,7 @@ data_table = ascii.read(fname)
 
 # Model definition
 
+
 def cutoffexp(pars, data):
     """
     Powerlaw with exponential cutoff
@@ -68,8 +69,9 @@ def cutoffexp(pars, data):
 
     # save a broken powerlaw in luminosity units
     _model1 = N * np.where(x <= x0,
-                          (x / x0) ** -(gamma - 0.5),
-                          (x / x0) ** -(gamma + 0.5)) * u.Unit('1/(cm2 s TeV)')
+                           (x / x0) ** -(gamma - 0.5),
+                           (x / x0) ** -(gamma + 0.5)
+                           ) * u.Unit('1/(cm2 s TeV)')
 
     model1 = (_model1 * (x ** 2) * 4 * np.pi * (2 * u.kpc) ** 2).to('erg/s')
 
@@ -122,12 +124,14 @@ def test_results_table(sampler):
     # set one keyword to a numpy array to try an break ecsv
     sampler.run_info['test'] = np.random.randn(3)
     for last_step in [True, False]:
-        for convert_log in [True,False]:
-            for include_blobs in [True,False]:
+        for convert_log in [True, False]:
+            for include_blobs in [True, False]:
                 for format in ['ascii.ipac','ascii.ecsv','ascii']:
-                    t1 = save_results_table('test_table', sampler,
+                    _ = save_results_table(
+                            'test_table', sampler,
                             convert_log=convert_log, last_step=last_step,
                             format=format, include_blobs=include_blobs)
+
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_chain_plots(sampler):
@@ -146,21 +150,25 @@ def test_fit_plots(sampler):
     for idx in range(4):
         for sed in [True, False]:
             for last_step in [True, False]:
-                for confs in [[1,2], None]:
+                for confs in [[1, 2], None]:
                     for n_samples in [100, None]:
-                        for e_range in [[1*u.GeV,100*u.TeV],None]:
-                            f = plot_fit(sampler, modelidx=idx, sed=sed,
-                                         last_step=last_step, plotdata=True,
-                                         confs=confs, n_samples=n_samples,
-                                         e_range=e_range)
-                            del f
+                        for e_range in [[1 * u.GeV, 100 * u.TeV], None]:
+                            fig = plot_fit(sampler, modelidx=idx, sed=sed,
+                                           last_step=last_step, plotdata=True,
+                                           confs=confs, n_samples=n_samples,
+                                           e_range=e_range)
+                            del fig
+
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_threads_in_samples(sampler):
     for threads in [None, 1, 4]:
-        f = plot_fit(sampler, n_samples=100, threads=threads,
-                e_range=[1*u.GeV, 100*u.TeV],
-                e_npoints=20)
+        f = plot_fit(sampler,
+                     n_samples=100,
+                     threads=threads,
+                     e_range=[1 * u.GeV, 100 * u.TeV],
+                     e_npoints=20)
+
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_data(sampler):
@@ -187,16 +195,17 @@ def test_fit_data_units(sampler):
 
     plot_fit(sampler, modelidx=0, sed=None)
 
+
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_diagnostic_plots(sampler):
     # Diagnostic plots
     # try to plot all models, including those with wrong format/units
 
-    blob_labels=['Model', 'Flux', 'Model', 'Particle Distribution', 'Broken PL',
-            'Wrong', 'Wrong', 'Wrong', 'Scalar', 'Scalar without units']
+    blob_labels = ['Model', 'Flux', 'Model', 'Particle Distribution',
+                   'Broken PL', 'Wrong', 'Wrong', 'Wrong', 'Scalar',
+                   'Scalar without units']
 
     save_diagnostic_plots('test_function_1', sampler, blob_labels=blob_labels)
     save_diagnostic_plots('test_function_2', sampler, sed=True,
                           blob_labels=blob_labels[:4])
     save_diagnostic_plots('test_function_3', sampler, pdf=True)
-

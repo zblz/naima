@@ -150,7 +150,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     red = np.arange(nwalkers) / float(nwalkers) >= thresh
 
     ax1.set_rasterization_zorder(1)
-    for t in traces[-red]:  # range(nwalkers):
+    for t in traces[~red]:  # range(nwalkers):
         ax1.plot(t, color=(0.1,) * 3, lw=1.0, alpha=0.25, zorder=0)
     for t in traces[red]:
         ax1.plot(t, color=color_cycle[0], lw=1.5, alpha=0.75, zorder=0)
@@ -1032,7 +1032,7 @@ def _plot_data_to_ax(data_all,
         marker = marker_cycle[int(g) % len(marker_cycle)]
 
         ul = data['ul']
-        notul = -ul
+        notul = ~ul
 
         # Hack to show y errors compatible with 0 in loglog plot
         yerr_lo = data['flux_error_lo'][notul]
@@ -1079,7 +1079,7 @@ def _plot_data_to_ax(data_all,
             np.max(data['energy'] + data['energy_error_hi']).to(e_unit).value))
     ax1.set_xlim(xmin, xmax)
     # avoid autoscaling to errorbars to 0
-    notul = -data_all['ul']
+    notul = ~data_all['ul']
     if np.any(data_all['flux_error_lo'][notul] >= data_all['flux'][notul]):
         elo = (
             (data_all['flux'][notul] * sedf[notul]).to(f_unit).value -
@@ -1132,7 +1132,7 @@ def _plot_residuals_to_ax(data_all,
 
         data = data_all[groupidx]
 
-        notul = -data['ul']
+        notul = ~data['ul']
         df_unit, dsedf = sed_conversion(data['energy'], data['flux'].unit, sed)
         ene = data['energy'].to(e_unit)
         xerr = u.Quantity((data['energy_error_lo'], data['energy_error_hi']))

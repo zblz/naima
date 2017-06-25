@@ -19,7 +19,7 @@ data_table_sym = ascii.read(fname_sym)
 
 def test_validate_energy_error_types():
     for etype in ['edges','error','width','errors']:
-        fname = get_pkg_data_filename( 
+        fname = get_pkg_data_filename(
                 'data/CrabNebula_HESS_ipac_energy_{0}.dat'.format(etype))
         dt = ascii.read(fname)
         data = validate_data_table(dt)
@@ -60,13 +60,13 @@ def test_validate_string_uls():
 
     # replace uls column with valid strings
     data_table2.remove_column('ul')
-    data_table2.add_column(Column(name='ul',dtype=str, data=['False',]*len(data_table2)))
+    data_table2.add_column(Column(name='ul', dtype=str, data=['False']*len(data_table2)))
     data_table2['ul'][1] = 'True'
 
     data = validate_data_table(data_table2)
 
     assert np.sum(data['ul']) == 1
-    assert np.sum(-data['ul']) == len(data_table2)-1
+    assert np.sum(~data['ul']) == len(data_table2)-1
 
     # put an invalid value
     data_table2['ul'][2] = 'invalid'
@@ -121,4 +121,3 @@ def test_estimate_B():
     B = estimate_B(xray, data_table)
 
     assert_allclose(B.to('uG'), 0.4848756912803697 * u.uG)
-
