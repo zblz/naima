@@ -38,9 +38,9 @@ matrix:
 
         # Try MacOS X
         - os: osx
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test'
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test --args="-v"'
         - os: osx
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test'
+          env: PYTHON_VERSION=3.6 SETUP_CMD='test --args="-v"'
 
         # Check for sphinx doc build warnings
         - os: linux
@@ -52,13 +52,13 @@ matrix:
 
         # Try all python versions, with sherpa and coverage testing in py35
         - os: linux
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test'
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test --args="-v"'
         - os: linux
-          env: PYTHON_VERSION=3.5 SETUP_CMD='test --coverage'
+          env: PYTHON_VERSION=3.5 SETUP_CMD='test --coverage --args="-v"'
                CONDA_CHANNELS='astropy-ci-extras sherpa'
                CONDA_DEPENDENCIES="$CONDA_DEPENDENCIES sherpa"
         - os: linux
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test'
+          env: PYTHON_VERSION=3.6 SETUP_CMD='test --args="-v"'
 
 before_install:
     # If there are matplotlib tests, comment these out to
@@ -72,7 +72,7 @@ install:
 
 script:
    - |
-     if [[ $SETUP_CMD == 'examples' ]]; then 
+     if [[ $SETUP_CMD == 'examples' ]]; then
          python setup.py install
          cd examples
          echo 'backend : Agg' > matplotlibrc
