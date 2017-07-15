@@ -1,4 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import os
+from glob import glob
 import numpy as np
 
 import astropy.units as u
@@ -130,6 +132,8 @@ def test_results_table(sampler, last_step, convert_log, include_blobs, format):
         'test_table', sampler,
         convert_log=convert_log, last_step=last_step,
         format=format, include_blobs=include_blobs)
+
+    os.unlink(glob('test_table_results*')[0])
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
