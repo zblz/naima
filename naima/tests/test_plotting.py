@@ -88,8 +88,6 @@ def cutoffexp(pars, data):
             model3, (x, model3), model4, model5)
 
 # Prior definition
-
-
 def lnprior(pars):
     """
     Return probability of parameter values according to prior knowledge.
@@ -107,8 +105,6 @@ p0=np.array((np.log(1.8e-12),2.4,np.log10(15.0),))
 labels=['log(norm)','index','log10(cutoff)']
 
 # Run sampler
-
-
 @pytest.fixture
 def sampler():
     sampler, pos = run_sampler(
@@ -125,7 +121,7 @@ def sampler():
 def test_results_table(sampler, last_step, convert_log, include_blobs, format):
     # set one keyword to a numpy array to try an break ecsv
     sampler.run_info['test'] = np.random.randn(3)
-    _ = save_results_table(
+    save_results_table(
         'test_table', sampler,
         convert_log=convert_log, last_step=last_step,
         format=format, include_blobs=include_blobs)
@@ -134,11 +130,11 @@ def test_results_table(sampler, last_step, convert_log, include_blobs, format):
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_chain_plots(sampler):
 
-    f = plot_chain(sampler, last_step=True)
-    f = plot_chain(sampler, last_step=False)
-    f = plot_chain(sampler, p=1)
+    fig = plot_chain(sampler, last_step=True)
+    fig = plot_chain(sampler, last_step=False)
+    fig = plot_chain(sampler, p=1)
 
-    del f
+    del fig
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
@@ -170,26 +166,25 @@ def test_threads_in_samples(sampler, threads):
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_data(sampler):
     # only plot data
-    f = plot_data(sampler,)
-    f = plot_data(sampler, sed=True)
+    fig = plot_data(sampler,)
+    fig = plot_data(sampler, sed=True)
     # change the energy units between calls
     data = sampler.data
-    f = plot_data(data, sed=True)
+    fig = plot_data(data, sed=True)
     data['energy'] = (data['energy']/1000).to('keV')
-    f = plot_data(data, sed=True, figure=f)
+    fig = plot_data(data, sed=True, figure=fig)
     # Only plot data tables
     fname = get_pkg_data_filename('data/CrabNebula_Fake_Xray.dat')
     data_table2 = ascii.read(fname)
     data_list = [data_table2, data_table]
-    f = plot_data(data_table)
-    f = plot_data(data_table2)
-    f = plot_data(data_list)
-    del f
+    fig = plot_data(data_table)
+    fig = plot_data(data_table2)
+    fig = plot_data(data_list)
+    del fig
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_fit_data_units(sampler):
-
     plot_fit(sampler, modelidx=0, sed=None)
 
 
