@@ -112,6 +112,7 @@ def test_roundtrip(sampler):
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_fit(sampler):
+    save_run('test_chain.h5', sampler, clobber=True)
     nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
 
     f = plot_data(nresult)
@@ -121,6 +122,7 @@ def test_plot_fit(sampler):
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_chain(sampler):
+    save_run('test_chain.h5', sampler, clobber=True)
     nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
 
     for i in range(nresult.chain.shape[2]):
@@ -128,6 +130,7 @@ def test_plot_chain(sampler):
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_imf(sampler):
+    save_run('test_chain.h5', sampler, clobber=True)
     nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
 
     imf = InteractiveModelFitter(nresult.modelfn, nresult.chain[-1][-1],
