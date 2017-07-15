@@ -23,7 +23,8 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.12
+        - PYTHON_VERSION=3.6
+        - NUMPY_VERSION=1.13
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme'
         - PIP_DEPENDENCIES='emcee corner'
@@ -40,15 +41,15 @@ matrix:
         - os: osx
           env: PYTHON_VERSION=2.7 SETUP_CMD='test --args="-v"'
         - os: osx
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test --args="-v"'
+          env: SETUP_CMD='test --args="-v"'
 
         # Check for sphinx doc build warnings
         - os: linux
-          env: PYTHON_VERSION=2.7 SPHINX_VERSION=1.5.6 SETUP_CMD='build_docs -w'
+          env: SETUP_CMD='build_docs -w'
 
         # Run examples, do it first as well as it may take some time
         - os: linux
-          env: PYTHON_VERSION=3.6 SETUP_CMD='examples'
+          env: SETUP_CMD='examples'
 
         # Try all python versions, with sherpa and coverage testing in py35
         - os: linux
@@ -58,7 +59,7 @@ matrix:
                CONDA_CHANNELS='astropy-ci-extras sherpa'
                CONDA_DEPENDENCIES="$CONDA_DEPENDENCIES sherpa"
         - os: linux
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test --args="-v"'
+          env: SETUP_CMD='test --args="-v"'
 
 before_install:
     # If there are matplotlib tests, comment these out to
