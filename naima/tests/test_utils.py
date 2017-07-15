@@ -42,17 +42,17 @@ def test_validate_data_types():
     data_table2 = data_table.copy()
     data_table2['energy'].unit=''
     with pytest.raises(TypeError):
-        data = validate_data_table(data_table2)
+        validate_data_table(data_table2)
 
 def test_validate_missing_column():
     data_table2 = data_table.copy()
     data_table2.remove_column('energy')
     with pytest.raises(TypeError):
-        data = validate_data_table(data_table2)
+        validate_data_table(data_table2)
     data_table2 = data_table_sym.copy()
     data_table2.remove_column('flux_error')
     with pytest.raises(TypeError):
-        data = validate_data_table(data_table2)
+        validate_data_table(data_table2)
 
 def test_validate_string_uls():
     from astropy.table import Column
@@ -60,7 +60,9 @@ def test_validate_string_uls():
 
     # replace uls column with valid strings
     data_table2.remove_column('ul')
-    data_table2.add_column(Column(name='ul', dtype=str, data=['False']*len(data_table2)))
+    data_table2.add_column(
+        Column(name='ul', dtype=str, data=['False']*len(data_table2))
+    )
     data_table2['ul'][1] = 'True'
 
     data = validate_data_table(data_table2)
@@ -69,10 +71,10 @@ def test_validate_string_uls():
     assert np.sum(~data['ul']) == len(data_table2)-1
 
     # put an invalid value
-    data_table2['ul'][2] = 'invalid'
+    data_table2['ul'][2] = 'foo'
 
     with pytest.raises(TypeError):
-        data = validate_data_table(data_table2)
+        validate_data_table(data_table2)
 
 def test_validate_cl():
     data_table2 = data_table.copy()
