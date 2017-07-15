@@ -9,6 +9,7 @@ from astropy.io import ascii
 try:
     import matplotlib
     matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
     HAS_MATPLOTLIB = True
 except ImportError:
     HAS_MATPLOTLIB = False
@@ -26,6 +27,10 @@ from ..plot import plot_chain, plot_fit, plot_data
 # Read data
 fname = get_pkg_data_filename('data/CrabNebula_HESS_ipac.dat')
 data_table = ascii.read(fname)
+
+fname2 = get_pkg_data_filename('data/CrabNebula_Fake_Xray.dat')
+data_table2 = ascii.read(fname2)
+data_list = [data_table2, data_table]
 
 # Model definition
 
@@ -128,13 +133,12 @@ def test_results_table(sampler, last_step, convert_log, include_blobs, format):
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
-def test_chain_plots(sampler):
-
-    fig = plot_chain(sampler, last_step=True)
-    fig = plot_chain(sampler, last_step=False)
-    fig = plot_chain(sampler, p=1)
-
-    del fig
+@pytest.mark.parametrize("last_step", [True, False])
+@pytest.mark.parametrize("p", [None, 1])
+def test_chain_plots(sampler, last_step, p):
+    fig = plot_chain(sampler, last_step=last_step, p=p)
+    if fig is not None:
+        plt.close(fig)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
@@ -150,42 +154,48 @@ def test_fit_plots(sampler, idx, sed, last_step, confs, n_samples, e_range):
                    last_step=last_step, plotdata=True,
                    confs=confs, n_samples=n_samples,
                    e_range=e_range)
-    del fig
+    plt.close(fig)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 @pytest.mark.parametrize("threads", [None, 1, 4])
 def test_threads_in_samples(sampler, threads):
-    f = plot_fit(sampler,
-                 n_samples=100,
-                 threads=threads,
-                 e_range=[1 * u.GeV, 100 * u.TeV],
-                 e_npoints=20)
+    fig = plot_fit(sampler,
+                   n_samples=100,
+                   threads=threads,
+                   e_range=[1 * u.GeV, 100 * u.TeV],
+                   e_npoints=20)
+    plt.close(fig)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
-def test_plot_data(sampler):
-    # only plot data
-    fig = plot_data(sampler,)
-    fig = plot_data(sampler, sed=True)
+@pytest.mark.parametrize("sed", [True, False])
+def test_plot_data(sampler, sed):
+    fig = plot_data(sampler, sed=sed)
+    plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+def test_plot_data_reuse_fig(sampler):
     # change the energy units between calls
     data = sampler.data
     fig = plot_data(data, sed=True)
     data['energy'] = (data['energy']/1000).to('keV')
-    fig = plot_data(data, sed=True, figure=fig)
-    # Only plot data tables
-    fname = get_pkg_data_filename('data/CrabNebula_Fake_Xray.dat')
-    data_table2 = ascii.read(fname)
-    data_list = [data_table2, data_table]
-    fig = plot_data(data_table)
-    fig = plot_data(data_table2)
-    fig = plot_data(data_list)
-    del fig
+    plot_data(data, sed=True, figure=fig)
+    plt.close(fig)
+
+
+@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+@pytest.mark.parametrize("data_tables", [data_table, data_table2, data_list])
+def test_plot_data_tables(sampler, data_tables):
+    fig = plot_data(data_tables)
+    plt.close(fig)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_fit_data_units(sampler):
-    plot_fit(sampler, modelidx=0, sed=None)
+    fig = plot_fit(sampler, modelidx=0, sed=None)
+    plt.close(fig)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
