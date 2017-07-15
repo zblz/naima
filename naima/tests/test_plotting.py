@@ -4,19 +4,19 @@ import numpy as np
 import astropy.units as u
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
-from astropy.extern import six
+from astropy.io import ascii
 
 try:
     import matplotlib
     matplotlib.use('Agg')
     HAS_MATPLOTLIB = True
-except:
+except ImportError:
     HAS_MATPLOTLIB = False
 
 try:
     import emcee
     HAS_EMCEE = True
-except:
+except ImportError:
     HAS_EMCEE = False
 
 from ..analysis import save_diagnostic_plots, save_results_table
@@ -24,8 +24,6 @@ from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_fit, plot_data
 
 # Read data
-from astropy.io import ascii
-
 fname = get_pkg_data_filename('data/CrabNebula_HESS_ipac.dat')
 data_table = ascii.read(fname)
 
@@ -80,7 +78,7 @@ def cutoffexp(pars, data):
     # save a model with wrong length to check that it is dealt with gracefully
     model3 = 1e-10 * np.ones(len(x) * 2) * u.Unit('erg/s')
     # add a scalar value to test plot_distribution
-    model4 = np.trapz(model,ene).to('1/(cm2 s)')
+    model4 = np.trapz(model, ene).to('1/(cm2 s)')
     # and without units
     model5 = model4.value
 
@@ -98,7 +96,7 @@ def lnprior(pars):
     Parameter limits should be done here through uniform prior ditributions
     """
 
-    #logprob = uniform_prior(np.exp(pars[0]), 0., np.inf) \
+    # logprob = uniform_prior(np.exp(pars[0]), 0., np.inf) \
     logprob = uniform_prior(pars[1], -1, 5)
 
     return logprob
@@ -120,17 +118,17 @@ def sampler():
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
-def test_results_table(sampler):
+@pytest.mark.parametrize("last_step", [True, False])
+@pytest.mark.parametrize("convert_log", [True, False])
+@pytest.mark.parametrize("include_blobs", [True, False])
+@pytest.mark.parametrize("format", ['ascii.ipac', 'ascii.ecsv', 'ascii'])
+def test_results_table(sampler, last_step, convert_log, include_blobs, format):
     # set one keyword to a numpy array to try an break ecsv
     sampler.run_info['test'] = np.random.randn(3)
-    for last_step in [True, False]:
-        for convert_log in [True, False]:
-            for include_blobs in [True, False]:
-                for format in ['ascii.ipac','ascii.ecsv','ascii']:
-                    _ = save_results_table(
-                            'test_table', sampler,
-                            convert_log=convert_log, last_step=last_step,
-                            format=format, include_blobs=include_blobs)
+    _ = save_results_table(
+        'test_table', sampler,
+        convert_log=convert_log, last_step=last_step,
+        format=format, include_blobs=include_blobs)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
@@ -144,30 +142,29 @@ def test_chain_plots(sampler):
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
-def test_fit_plots(sampler):
-
+@pytest.mark.parametrize("idx", range(4))
+@pytest.mark.parametrize("sed", [True, False])
+@pytest.mark.parametrize("last_step", [True, False])
+@pytest.mark.parametrize("confs", [[1, 2], None])
+@pytest.mark.parametrize("n_samples", [100, None])
+@pytest.mark.parametrize("e_range", [[1 * u.GeV, 100 * u.TeV], None])
+def test_fit_plots(sampler, idx, sed, last_step, confs, n_samples, e_range):
     # plot models with correct format
-    for idx in range(4):
-        for sed in [True, False]:
-            for last_step in [True, False]:
-                for confs in [[1, 2], None]:
-                    for n_samples in [100, None]:
-                        for e_range in [[1 * u.GeV, 100 * u.TeV], None]:
-                            fig = plot_fit(sampler, modelidx=idx, sed=sed,
-                                           last_step=last_step, plotdata=True,
-                                           confs=confs, n_samples=n_samples,
-                                           e_range=e_range)
-                            del fig
+    fig = plot_fit(sampler, modelidx=idx, sed=sed,
+                   last_step=last_step, plotdata=True,
+                   confs=confs, n_samples=n_samples,
+                   e_range=e_range)
+    del fig
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
-def test_threads_in_samples(sampler):
-    for threads in [None, 1, 4]:
-        f = plot_fit(sampler,
-                     n_samples=100,
-                     threads=threads,
-                     e_range=[1 * u.GeV, 100 * u.TeV],
-                     e_npoints=20)
+@pytest.mark.parametrize("threads", [None, 1, 4])
+def test_threads_in_samples(sampler, threads):
+    f = plot_fit(sampler,
+                 n_samples=100,
+                 threads=threads,
+                 e_range=[1 * u.GeV, 100 * u.TeV],
+                 e_npoints=20)
 
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
