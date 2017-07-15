@@ -60,10 +60,9 @@ def test_synchrotron_lum(particle_dists):
 
     ECPL, PL, BPL = particle_dists
 
-    lum_ref = [0.00025231299317576985, 0.03316716140790719,
-               0.00044597094281743937]
-
-    We_ref = [5064124681.509977, 11551172186.500914, 926633862.864901]
+    lum_ref = [0.00025231296225663107, 0.03316715765695228,
+               0.00044597089198025806]
+    We_ref = [5064124672.902273, 11551172166.866821, 926633861.2898524]
 
     Wes = []
     lsys = []
@@ -73,9 +72,11 @@ def test_synchrotron_lum(particle_dists):
         Wes.append(sy.We.to('erg').value)
 
         lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to('erg/s')
-        assert (lsy.unit == u.erg / u.s)
+        assert lsy.unit == u.erg / u.s
         lsys.append(lsy.value)
 
+    print(lsys)
+    print(Wes)
     assert_allclose(lsys, lum_ref)
     assert_allclose(Wes, We_ref)
 
@@ -85,7 +86,7 @@ def test_synchrotron_lum(particle_dists):
 
     lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to('erg/s')
     assert (lsy.unit == u.erg / u.s)
-    assert_allclose(lsy.value, 31374135.447829477)
+    assert_allclose(lsy.value, 31374131.90312505)
 
 
 @pytest.mark.skipif('not HAS_SCIPY')
@@ -210,7 +211,7 @@ def test_inverse_compton_lum(particle_dists):
     ic.flux(data2)
 
     lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to('erg/s')
-    assert_allclose(lic.value, 0.0005833030865998417)
+    assert_allclose(lic.value, 0.0005833034007064158)
 
 
 @pytest.mark.skipif('not HAS_SCIPY')
@@ -224,7 +225,7 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
 
     angles = [45, 90, 135] * u.deg
 
-    lum_ref = [48901.37566513, 111356.44973684, 149800.27022024]
+    lum_ref = [48901.427779, 111356.569043, 149800.431109]
 
     lums = []
     for angle in angles:
@@ -539,7 +540,7 @@ def test_eblabsorptionmodel():
     e = np.logspace(lemin, lemax, 50) * u.TeV
 
 #   Test if the EBL absorption at z = 0 changes the test array filled with ones
-    assert_allclose(np.ones_like(e).value, np.ones_like(e).value * 
+    assert_allclose(np.ones_like(e).value, np.ones_like(e).value *
                     EBL_zero.transmission(e), rtol=1e-1)
 #   Make sure the transmission at z = 0. is always larger than the one at z = 0.5
     difference = EBL_zero.transmission(e) - EBL_moderate.transmission(e)
