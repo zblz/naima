@@ -198,7 +198,7 @@ class BaseLorentzFactor(BaseRadiative):
             Maximum particle energy for energy content calculation.
         """
         if Emin is None and Emax is None:
-            W = self.W
+            W = self._W
         else:
             if Emin is None:
                 Emin = self.gmin * self.mc2
@@ -210,7 +210,7 @@ class BaseLorentzFactor(BaseRadiative):
             gam = np.logspace(log10gmin, log10gmax,
                               self.ngd * (log10gmax - log10gmin))
 
-            pd = self.particle_distribution(self._gam * self.mc2)
+            pd = self.particle_distribution(gam * self.mc2)
             npart = pd.to(1 / self.mc2_unit).value
 
             W = trapz_loglog(gam * npart, gam * self.mc2)
