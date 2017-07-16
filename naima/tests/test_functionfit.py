@@ -2,11 +2,11 @@
 import numpy as np
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
-from astropy.extern import six
 import astropy.units as u
+from astropy.io import ascii
 
-from ..analysis import save_diagnostic_plots
-from ..core import run_sampler, get_sampler, uniform_prior, normal_prior, lnprob
+from ..core import (run_sampler, get_sampler, uniform_prior, normal_prior,
+                    lnprob)
 
 try:
     import emcee
@@ -24,10 +24,8 @@ try:
     import matplotlib
     matplotlib.use('Agg')
     HAS_MATPLOTLIB = True
-except:
+except ImportError:
     HAS_MATPLOTLIB = False
-
-from astropy.io import ascii
 
 # Read data
 fname = get_pkg_data_filename('data/CrabNebula_HESS_ipac.dat')
@@ -99,6 +97,7 @@ labels = ['norm', 'index', 'cutoff']
 
 # Initialize in different ways to test argument validation
 
+
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_init():
     sampler, pos = get_sampler(
@@ -112,17 +111,20 @@ def test_init():
     # test that the CL keyword has been correctly read
     assert np.all(sampler.data['cl'] == 0.99)
 
+
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_inf_prior():
     pars = p0
     pars[0] = -1e-9
     _ = lnprob(pars, data_table, cutoffexp, lnprior)
 
+
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_sed_conversion_in_lnprobmodel():
     sampler, pos = get_sampler(
         data_table=data_table, p0=p0, labels=labels, model=cutoffexp_sed,
         prior=lnprior, nwalkers=10, nburn=2, threads=1)
+
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_wrong_model_units():
@@ -132,17 +134,20 @@ def test_wrong_model_units():
             data_table=data_table, p0=p0, labels=labels, model=cutoffexp_wrong,
             prior=lnprior, nwalkers=10, nburn=2, threads=1)
 
+
 @pytest.mark.skipif('not HAS_EMCEE or not HAS_SCIPY')
 def test_prefit():
     sampler, pos = get_sampler(
         data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
         prior=lnprior, nwalkers=10, nburn=5, threads=1, prefit=True)
 
+
 @pytest.mark.skipif('not HAS_EMCEE or not HAS_SCIPY or not HAS_MATPLOTLIB')
 def test_interactive():
     sampler, pos = get_sampler(
         data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
         prior=lnprior, nwalkers=10, nburn=5, threads=1, interactive=True)
+
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_init_symmetric_dflux():
@@ -151,14 +156,17 @@ def test_init_symmetric_dflux():
         data_table=data_table2, p0=p0, labels=labels, model=cutoffexp,
         prior=lnprior, nwalkers=10, nburn=2, nrun=2, threads=1)
 
+
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_init_labels():
     # labels
-    sampler, pos = run_sampler(data_table=data_table, p0=p0, labels=None, model=cutoffexp,
-                               prior=lnprior, nwalkers=10, nrun=2, nburn=2, threads=1)
+    sampler, pos = run_sampler(data_table=data_table, p0=p0, labels=None,
+                               model=cutoffexp, prior=lnprior, nwalkers=10,
+                               nrun=2, nburn=2, threads=1)
     sampler, pos = run_sampler(
         data_table=data_table, p0=p0, labels=labels[:2], model=cutoffexp,
         prior=lnprior, nwalkers=10, nrun=2, nburn=2, threads=1)
+
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_init_prior():
@@ -167,28 +175,33 @@ def test_init_prior():
         data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
         prior=None, nwalkers=10, nrun=2, nburn=2, threads=1)
 
+
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_init_exception_model():
     # test exception raised when no model or data_table are provided
     with pytest.raises(TypeError):
         sampler, pos = get_sampler(data_table=data_table, p0=p0, labels=labels,
-                                   prior=lnprior, nwalkers=10, nburn=2, threads=1)
+                                   prior=lnprior, nwalkers=10, nburn=2,
+                                   threads=1)
+
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_init_exception_data():
     with pytest.raises(TypeError):
         sampler, pos = get_sampler(p0=p0, labels=labels, model=cutoffexp,
-                                   prior=lnprior, nwalkers=10, nburn=2, threads=1)
+                                   prior=lnprior, nwalkers=10, nburn=2,
+                                   threads=1)
+
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_multiple_data_tables():
     sampler, pos = get_sampler(data_table=[data_table_sed, data_table], p0=p0,
-            labels=labels, model=cutoffexp, prior=lnprior, nwalkers=10, nburn=2,
-            threads=1)
+                               labels=labels, model=cutoffexp, prior=lnprior,
+                               nwalkers=10, nburn=2, threads=1)
+
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_data_table_in_list():
-    sampler, pos = get_sampler(data_table=[data_table], p0=p0,
-            labels=labels, model=cutoffexp, prior=lnprior, nwalkers=10, nburn=2,
-            threads=1)
-
+    sampler, pos = get_sampler(data_table=[data_table], p0=p0, labels=labels,
+                               model=cutoffexp, prior=lnprior, nwalkers=10,
+                               nburn=2, threads=1)

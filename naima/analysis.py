@@ -213,8 +213,8 @@ def save_results_table(outname,
 
     if not HAS_PYYAML and format == 'ascii.ecsv':
         format = 'ascii.ipac'
-        log.warning("PyYAML package is required for ECSV format,"
-                    " falling back to {0}...".format(format))
+        log.warning('PyYAML package is required for ECSV format,'
+                    ' falling back to {0}...'.format(format))
     elif format not in ['ascii.ecsv', 'ascii.ipac']:
         log.warning('The chosen table format does not have an astropy'
                     ' writer that suppports metadata writing, no run info'
