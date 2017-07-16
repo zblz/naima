@@ -57,7 +57,6 @@ def test_results_table(sampler, last_step, convert_log, include_blobs, format):
 @pytest.mark.parametrize("last_step", [True, False])
 @pytest.mark.parametrize("p", [None, 1])
 def test_chain_plots(sampler, last_step, p):
-    assert len(plt.get_fignums()) == 0
     plot_chain(sampler, last_step=last_step, p=p)
     plt.close('all')
 
