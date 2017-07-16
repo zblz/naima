@@ -10,6 +10,7 @@ from astropy.io import ascii
 try:
     import matplotlib
     matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
     HAS_MATPLOTLIB = True
 except:
     HAS_MATPLOTLIB = False
@@ -52,6 +53,7 @@ def test_modelwidget_inputs():
     imf = InteractiveModelFitter(model, p0, labels=labels)
     labels[0] = 'norm'
     imf = InteractiveModelFitter(model, p0, labels=labels)
+    plt.close('all')
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB')
 def test_modelwidget_funcs():
@@ -65,4 +67,4 @@ def test_modelwidget_funcs():
 
     imf = InteractiveModelFitter(modelfn, p0, labels=labels, auto_update=False)
     imf.update('test')
-
+    plt.close('all')
