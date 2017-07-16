@@ -175,9 +175,7 @@ def test_compute_We(particle_dists):
     ECPL, PL, BPL = particle_dists
 
     sy = Synchrotron(ECPL, B=1 * u.G, **electron_properties)
-
     Eemin, Eemax = 10 * u.GeV, 100 * u.TeV
-
     sy.compute_We()
     sy.compute_We(Eemin=Eemin)
     sy.compute_We(Eemax=Eemax)
@@ -193,7 +191,9 @@ def test_compute_We(particle_dists):
 
 
 @pytest.mark.skipif('not HAS_SCIPY')
-def test_set_We(particle_dists):
+@pytest.mark.parametrize("Eemin", [1 * u.GeV, 10 * u.GeV, None])
+@pytest.mark.parametrize("Eemax", [100 * u.TeV, None])
+def test_set_We(particle_dists, Eemin, Eemax):
     """
     test sync calculation
     """
@@ -206,18 +206,15 @@ def test_set_We(particle_dists):
 
     W = 1e49 * u.erg
 
-    Eemax = 100 * u.TeV
-    for Eemin in [1 * u.GeV, 10 * u.GeV, None]:
-        for Eemax in [100 * u.TeV, None]:
-            sy.set_We(W, Eemin, Eemax)
-            assert_allclose(W, sy.compute_We(Eemin, Eemax))
-            sy.set_We(W, Eemin, Eemax, amplitude_name='amplitude')
-            assert_allclose(W, sy.compute_We(Eemin, Eemax))
+    sy.set_We(W, Eemin, Eemax)
+    assert_allclose(W, sy.compute_We(Eemin, Eemax))
+    sy.set_We(W, Eemin, Eemax, amplitude_name='amplitude')
+    assert_allclose(W, sy.compute_We(Eemin, Eemax))
 
-            pp.set_Wp(W, Eemin, Eemax)
-            assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
-            pp.set_Wp(W, Eemin, Eemax, amplitude_name='amplitude')
-            assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
+    pp.set_Wp(W, Eemin, Eemax)
+    assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
+    pp.set_Wp(W, Eemin, Eemax, amplitude_name='amplitude')
+    assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
 
     with pytest.raises(AttributeError):
         sy.set_We(W, amplitude_name='norm')
@@ -238,8 +235,9 @@ def test_bremsstrahlung_lum(particle_dists):
     # avoid low-energy (E<2MeV) where there are problems with cross-section
     energy2 = np.logspace(8, 14, 100) * u.eV
 
-    brems = Bremsstrahlung(ECPL, n0=1 * u.cm** -3, Eemin=m_e * c**2)
-    lbrems = trapz_loglog(brems.flux(energy2, 0) * energy2, energy2).to('erg/s')
+    brems = Bremsstrahlung(ECPL, n0=1 * u.cm ** -3, Eemin=m_e * c ** 2)
+    lbrems = trapz_loglog(brems.flux(energy2, 0) * energy2,
+                          energy2).to('erg/s')
 
     lum_ref = 2.3064095039069847e-05
     assert_allclose(lbrems.value, lum_ref)
