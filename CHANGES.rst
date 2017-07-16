@@ -1,3 +1,13 @@
+0.9 (unreleased)
+----------------
+
+- Added the `ProtonSynchrotron` class to compute synchrotron radiation from
+  proton populations.
+
+Bug fixes
+^^^^^^^^^
+- Updated deprecated numpy usages.
+
 0.8 (2016-12-21)
 ----------------
 
@@ -139,7 +149,6 @@ API Changes
 ^^^^^^^^^^^
 
 - module sherpamod is now sherpa_modules.
-
 
 0.1 (2015-02-02)
 ----------------
