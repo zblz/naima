@@ -5,6 +5,8 @@ from numpy.testing import assert_allclose
 from astropy.tests.helper import pytest
 from astropy.extern import six
 
+from traitlets import TraitError
+
 from ..utils import trapz_loglog
 
 try:
@@ -52,7 +54,7 @@ def particle_dists():
 
 
 @pytest.mark.skipif('not HAS_SCIPY')
-def test_synchrotron_lum(particle_dists):
+def test_electron_synchrotron_lum(particle_dists):
     """
     test sync calculation
     """
@@ -87,6 +89,64 @@ def test_synchrotron_lum(particle_dists):
     lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to('erg/s')
     assert (lsy.unit == u.erg / u.s)
     assert_allclose(lsy.value, 31374131.90312505)
+
+
+@pytest.mark.skipif('not HAS_SCIPY')
+def test_proton_synchrotron_lum(particle_dists):
+    """
+    test sync calculation
+    """
+    from ..models import ProtonSynchrotron
+
+    ECPL, PL, BPL = particle_dists
+
+    #  lum_ref = [0.00025231296225663107, 0.03316715765695228,
+    #             0.00044597089198025806]
+    #  We_ref = [5064124672.902273, 11551172166.866821, 926633861.2898524]
+
+    Wps = []
+    lsys = []
+    for pdist in particle_dists:
+        sy = ProtonSynchrotron(pdist, **proton_properties)
+
+        Wps.append(sy.Wp.to('erg').value)
+
+        lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to('erg/s')
+        assert lsy.unit == u.erg / u.s
+        lsys.append(lsy.value)
+
+    print(lsys)
+    print(Wps)
+    #  assert_allclose(lsys, lum_ref)
+    #  assert_allclose(Wes, We_ref)
+
+    sy = ProtonSynchrotron(ECPL, B=1 * u.G, **proton_properties)
+    sy.flux(data)
+    sy.flux(data2)
+
+    lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to('erg/s')
+    assert (lsy.unit == u.erg / u.s)
+    print(lsy)
+    #  assert_allclose(lsy.value, 31374131.90312505)
+
+
+@pytest.mark.skipif('not HAS_SCIPY')
+def test_synchrotron_traits(particle_dists):
+    from ..models import Synchrotron
+    ECPL, _, _ = particle_dists
+    sy = Synchrotron(ECPL, Eemin=1 * u.GeV, Eemax=1 * u.PeV)
+
+    sy.Eemin = 1 * u.TeV
+    assert sy.gmin == float(1 * u.TeV / (m_e * c **2))
+
+    sy.Eemax = 100 * u.TeV
+    assert sy.gmax == float(100 * u.TeV / (m_e * c **2))
+
+    sy.nEed = 10
+    assert sy.ngd == 10
+
+    with pytest.raises(TraitError):
+        sy.Eemin = 10 * u.m
 
 
 @pytest.mark.skipif('not HAS_SCIPY')

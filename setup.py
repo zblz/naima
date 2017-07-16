@@ -97,7 +97,9 @@ else:
                       'corner',
                       'matplotlib',
                       'scipy',
-                      'h5py'],
+                      'h5py',
+                      'numtraits',
+                      'traitlets'],
 
 
 setup(name=PACKAGENAME,

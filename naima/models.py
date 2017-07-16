@@ -8,12 +8,16 @@ import astropy.units as u
 from astropy.utils.data import get_pkg_data_filename
 from .extern.validator import (validate_scalar, validate_array,
                                validate_physical_type)
-from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
+from .radiative import (
+    Synchrotron, ElectronSynchrotron, ProtonSynchrotron,
+    InverseCompton, PionDecay, Bremsstrahlung
+)
 from .model_utils import memoize
 
 __all__ = [
-    'Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
-    'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola',
+    'Synchrotron', 'ElectronSynchrotron', 'ProtonSynchrotron',
+    'InverseCompton', 'PionDecay', 'Bremsstrahlung', 'BrokenPowerLaw',
+    'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola',
     'ExponentialCutoffBrokenPowerLaw', 'TableModel', 'EblAbsorptionModel'
 ]
 
