@@ -14,8 +14,8 @@ environment:
       PYTHON_ARCH: "64" # needs to be set for CMD_IN_ENV to succeed. If a mix
                         # of 32 bit and 64 bit builds are needed, move this
                         # to the matrix section.
-      CONDA_DEPENDENCIES: "pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme"
-      PIP_DEPENDENCIES: "emcee"
+      CONDA_DEPENDENCIES: "pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme traitlets"
+      PIP_DEPENDENCIES: "emcee numtraits"
       ASTROPY_VERSION: "stable"
 
   matrix:
