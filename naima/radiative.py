@@ -630,7 +630,8 @@ class InverseCompton(BaseElectron):
         self.Eemax = 1e9 * mec2
         self.nEed = 100
         self.param_names += ['seed_photon_fields']
-        self.__dict__.update(**kwargs)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @staticmethod
     def _process_input_seed(seed_photon_fields):
@@ -874,7 +875,7 @@ class InverseCompton(BaseElectron):
                     self._gam, self.seed_photon_fields[seed]['energy'],
                     self.seed_photon_fields[seed]['photon_density'], Eph)
 
-            lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
+            lum = uf * Eph * trapz_loglog(self._npart * gamint, self._gam)
         lum = lum * u.Unit('1/s')
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
@@ -1026,7 +1027,8 @@ class Bremsstrahlung(BaseElectron):
         self.weight_ee = np.sum(Z * X)
         self.weight_ep = np.sum(Z**2 * X)
         self.param_names += ['n0', 'weight_ee', 'weight_ep']
-        self.__dict__.update(**kwargs)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @staticmethod
     def _sigma_1(gam, eps):
@@ -1140,7 +1142,7 @@ class Bremsstrahlung(BaseElectron):
         gam = np.vstack(self._gam)
         # compute integral with electron distribution
         emiss = c.cgs * trapz_loglog(
-            np.vstack(self._nelec) * self._sigma_ee(gam, Eph),
+            np.vstack(self._npart) * self._sigma_ee(gam, Eph),
             self._gam,
             axis=0)
         return emiss
@@ -1156,7 +1158,7 @@ class Bremsstrahlung(BaseElectron):
         eps = (Eph / mec2).decompose().value
         # compute integral with electron distribution
         emiss = c.cgs * trapz_loglog(
-            np.vstack(self._nelec) * self._sigma_ep(gam, eps),
+            np.vstack(self._npart) * self._sigma_ep(gam, eps),
             self._gam,
             axis=0).to(u.cm**2 / Eph.unit)
         return emiss
