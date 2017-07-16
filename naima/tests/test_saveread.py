@@ -11,6 +11,7 @@ import os
 try:
     import matplotlib
     matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
     HAS_MATPLOTLIB = True
 except:
     HAS_MATPLOTLIB = False
@@ -28,44 +29,11 @@ from ..utils import validate_data_table
 from ..core import run_sampler, uniform_prior
 from ..models import ExponentialCutoffPowerLaw
 
+from .fixtures import simple_sampler as sampler
+
 fname = get_pkg_data_filename('data/CrabNebula_HESS_ipac.dat')
 data_table = ascii.read(fname)
 
-def cutoffexp(pars, data):
-    x = data['energy'].copy()
-    ECPL = ExponentialCutoffPowerLaw(np.exp(pars[0])*u.Unit('1/(cm2 s TeV)'),
-            1*u.TeV, pars[1], 10**pars[2]*u.TeV)
-    flux = ECPL(x)
-
-    # save a particle energy distribution
-    ene = np.logspace(np.log10(x[0].value) - 1,
-                      np.log10(x[-1].value) + 1, 100) * x.unit
-    ECPL.amplitude = np.exp(pars[0])*u.Unit('1/(TeV)')
-    model_part = ECPL(ene)
-
-    # add a scalar value to test plot_distribution
-    model4 = np.trapz(flux*x,x).to('erg/(cm2 s)')
-    # and without units
-    model5 = model4.value
-
-    return flux, (ene, model_part), model4, model5
-
-# Prior definition
-def lnprior(pars):
-    logprob = uniform_prior(pars[1], -1, 5)
-    return logprob
-
-# Set initial parameters
-p0=np.array((np.log(1.8e-12),2.4,np.log10(15.0),))
-labels=['log(norm)','index','log10(cutoff)']
-
-# Run sampler
-@pytest.fixture(scope='module')
-def sampler():
-    sampler, pos = run_sampler(
-        data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
-        prior=lnprior, nwalkers=10, nburn=2, nrun=10, threads=1)
-    return sampler
 
 @pytest.mark.skipif('not HAS_EMCEE')
 def test_roundtrip(sampler):
@@ -115,10 +83,12 @@ def test_plot_fit(sampler):
     save_run('test_chain.h5', sampler, clobber=True)
     nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
 
-    f = plot_data(nresult)
-    f = plot_fit(nresult, 0)
-    f = plot_fit(nresult, 0, e_range=[0.1,10]*u.TeV)
-    f = plot_fit(nresult, 0, sed=False)
+    plot_data(nresult)
+    plot_fit(nresult, 0)
+    plot_fit(nresult, 0, e_range=[0.1, 10] * u.TeV)
+    plot_fit(nresult, 0, sed=False)
+    plt.close('all')
+
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_plot_chain(sampler):
@@ -126,7 +96,9 @@ def test_plot_chain(sampler):
     nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
 
     for i in range(nresult.chain.shape[2]):
-        f = plot_chain(nresult, i)
+        plot_chain(nresult, i)
+    plt.close('all')
+
 
 @pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
 def test_imf(sampler):
@@ -138,3 +110,4 @@ def test_imf(sampler):
     imf.do_fit('test')
     from naima.core import lnprobmodel
     lnprobmodel(nresult.modelfn(imf.pars,nresult.data)[0], nresult.data)
+    plt.close('all')
