@@ -1089,7 +1089,6 @@ class PionDecay(BaseProton):
     123014 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_.
 
 
-
     Parameters
     ----------
     particle_distribution : function
@@ -1653,7 +1652,7 @@ class PionDecayKelner06(BaseRadiative):
         qpi = (self._c *
                (self.nhat / self._Kpi) * self._sigma_inel(Ep0) *
                self._particle_distribution(Ep0))
-        return qpi / np.sqrt(Epi**2 + self._m_pi**2)
+        return qpi / np.sqrt(Epi**2 - self._m_pi**2)
 
     def _calc_specpp_loE(self, Egamma):
         """
