@@ -457,7 +457,7 @@ def test_pion_decay_kelner(particle_dists):
     for pdist in [ECPL, PL, BPL]:
         pdist.amplitude = 1 * (1 / u.TeV)
 
-    lum_ref = [5.54225481494e-13, 1.21723084093e-12, 7.35927471e-14]
+    lum_ref = 5.54580582494601e-13 * u.erg / u.s
 
     energy = np.logspace(9, 13, 20) * u.eV
     pp = PionDecay(ECPL, **proton_properties)
@@ -465,7 +465,7 @@ def test_pion_decay_kelner(particle_dists):
     lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to('erg/s')
     assert (lpp.unit == u.erg / u.s)
 
-    assert_allclose(lpp.value, lum_ref[0])
+    assert_allclose(lpp, lum_ref)
 
 
 def test_inputs():

@@ -1,3 +1,11 @@
+0.9 (unreleased)
+----------------
+
+Bug fixes
+^^^^^^^^^
+
+- Fixed wrong sign in delta functional approximation of Kelner PionDecay.
+
 0.8 (2016-12-21)
 ----------------
 
@@ -139,7 +147,6 @@ API Changes
 ^^^^^^^^^^^
 
 - module sherpamod is now sherpa_modules.
-
 
 0.1 (2015-02-02)
 ----------------
