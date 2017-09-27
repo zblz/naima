@@ -1,9 +1,10 @@
-0.9 (unreleased)
-----------------
+0.8.1 (2017-09-27)
+------------------
 
 Bug fixes
 ^^^^^^^^^
 
+- Fixed deprecated negative signs on numpy booleans.
 - Fixed wrong sign in delta functional approximation of Kelner PionDecay.
 
 0.8 (2016-12-21)
