@@ -250,7 +250,7 @@ def test_monochromatic_inverse_compton(particle_dists):
     PL = PowerLaw(1 / u.eV, 1 * u.TeV, 3)
 
     # compute a blackbody spectrum with 1 eV/cm3 at 30K
-    from astropy.analytic_functions import blackbody_nu
+    from astropy.modeling.blackbody import blackbody_nu
     Ephbb = np.logspace(-3.5, -1.5, 100) * u.eV
     lambdabb = Ephbb.to('AA', equivalencies=u.equivalencies.spectral())
     T = 30 * u.K
