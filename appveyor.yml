@@ -20,9 +20,7 @@ environment:
 
   matrix:
 
-      - PYTHON_VERSION: "2.7"
-        NUMPY_VERSION: "stable"
-      - PYTHON_VERSION: "3.5"
+      - PYTHON_VERSION: "3.6"
         NUMPY_VERSION: "stable"
 
 platform:
