@@ -7,9 +7,11 @@ The `sherpa`_ package is a modeling and fitting application which can be used to
 fit a variety of data from spatial morphology to forward-folding spectral
 analysis. It is part of the Chandra analysis software pacakage (`CIAO
 <http://cxc.cfa.harvard.edu/ciao/>`_), but it can be easily installed standalone
-by using the `Anaconda Python <http://continuum.io/downloads>`_ distribution.
+by using either the `Anaconda Python <http://continuum.io/downloads>`_ distribution
+or with pip.
+
 The `standalone Python version of sherpa
-<http://cxc.cfa.harvard.edu/contrib/sherpa/>`_  can be installed along with
+<https://sherpa.readthedocs.io/>`_  can be installed using Anaconda along with
 Naima as follows::
 
     $ export PATH=PATH_TO_ANACONDA/bin:$PATH
@@ -17,6 +19,11 @@ Naima as follows::
     $ conda install sherpa naima
 
 where ``PATH_TO_ANACONDA`` is the path where you have installed Anaconda. 
+
+Sherpa can also be installed using pip, as long as NumPy is already
+installed::
+
+    $ pip install sherpa
 
 Naima provides wrappers for the :ref:`radiative` to make it easier to use
 them in a sherpa session. The models available for use in sherpa are the four
