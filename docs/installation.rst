@@ -11,6 +11,8 @@ installed: `Numpy <http://www.numpy.org>`_, `Scipy <http://www.scipy.org>`_,
 `h5py <http://www.h5py.org>`_. These will be installed automatically if you
 follow one of the installation methods below.
 
+The :ref:`sherpamod` can be used if the Sherpa package is installed.
+
 All of the above packages are available in a typical scientific python
 installation (or in all-in-one Python installations such as the `Anaconda Python
 Distribution <http://continuum.io/downloads>`_) or can be installed through
@@ -39,10 +41,6 @@ distribution::
 or only Naima::
 
     $ conda update naima
-
-Note that if you want to use the :ref:`sherpamod` you have to use a Python 2
-version of Anaconda, as sherpa is not yet compatible with Python 3. Otherwise,
-all dependencies are available in both Python 2 and 3.
 
 Using pip
 +++++++++
