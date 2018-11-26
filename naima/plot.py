@@ -168,7 +168,7 @@ def _plot_chain_func(sampler, p, last_step=False):
         histtype='stepfilled',
         color=color_cycle[0],
         lw=0,
-        normed=1)
+        density=True)
     kde = stats.kde.gaussian_kde(dist)
     ax2.plot(x, kde(x), color='k', label='KDE')
     quant = [16, 50, 84]
@@ -1314,7 +1314,7 @@ def plot_distribution(samples, label, figure=None):
         histtype='stepfilled',
         color=color_cycle[0],
         lw=0,
-        normed=1)
+        density=True)
     if isinstance(samples, u.Quantity):
         samples_nounit = samples.value
     else:
