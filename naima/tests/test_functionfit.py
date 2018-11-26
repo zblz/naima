@@ -1,4 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import warnings
+
 import numpy as np
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
@@ -144,9 +146,12 @@ def test_prefit():
 
 @pytest.mark.skipif('not HAS_EMCEE or not HAS_SCIPY or not HAS_MATPLOTLIB')
 def test_interactive():
-    sampler, pos = get_sampler(
-        data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
-        prior=lnprior, nwalkers=10, nburn=5, threads=1, interactive=True)
+    with warnings.catch_warnings():
+        # Matplotlib warns a lot when unable to bring up the widget
+        warnings.simplefilter("ignore")
+        sampler, pos = get_sampler(
+            data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
+            prior=lnprior, nwalkers=10, nburn=5, threads=1, interactive=True)
 
 
 @pytest.mark.skipif('not HAS_EMCEE')
