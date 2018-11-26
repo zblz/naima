@@ -18,12 +18,13 @@ from ..models import (
     PionDecay,
     PowerLaw,
     Synchrotron,
-    TableModel
+    TableModel,
 )
 from ..radiative import PionDecayKelner06
 
 try:
     import scipy
+
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
@@ -35,37 +36,40 @@ e_break = 1 * u.TeV
 alpha_1 = 1.5
 alpha_2 = 2.5
 
-electron_properties = {'Eemin': 100 * u.GeV, 'Eemax': 1 * u.PeV}
-proton_properties = {'Epmax': 1 * u.PeV}
+electron_properties = {"Eemin": 100 * u.GeV, "Eemax": 1 * u.PeV}
+proton_properties = {"Epmax": 1 * u.PeV}
 
 energy = np.logspace(0, 15, 1000) * u.eV
 
 from astropy.table import QTable, Table
+
 data = QTable()
-data['energy'] = energy
+data["energy"] = energy
 data2 = Table()
-data2['energy'] = energy
+data2["energy"] = energy
 
 from astropy.constants import m_e, c, sigma_sb, hbar
-pdist_unit = 1 / u.Unit(m_e * c**2)
+
+pdist_unit = 1 / u.Unit(m_e * c ** 2)
 
 
 @pytest.fixture
 def particle_dists():
-    ECPL = ExponentialCutoffPowerLaw(amplitude=1 * pdist_unit,
-                                     e_0=e_0,
-                                     alpha=alpha,
-                                     e_cutoff=e_cutoff)
+    ECPL = ExponentialCutoffPowerLaw(
+        amplitude=1 * pdist_unit, e_0=e_0, alpha=alpha, e_cutoff=e_cutoff
+    )
     PL = PowerLaw(amplitude=1 * pdist_unit, e_0=e_0, alpha=alpha)
-    BPL = BrokenPowerLaw(amplitude=1 * pdist_unit,
-                         e_0=e_0,
-                         e_break=e_break,
-                         alpha_1=alpha_1,
-                         alpha_2=alpha_2)
+    BPL = BrokenPowerLaw(
+        amplitude=1 * pdist_unit,
+        e_0=e_0,
+        e_break=e_break,
+        alpha_1=alpha_1,
+        alpha_2=alpha_2,
+    )
     return ECPL, PL, BPL
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_synchrotron_lum(particle_dists):
     """
     test sync calculation
@@ -73,8 +77,11 @@ def test_synchrotron_lum(particle_dists):
 
     ECPL, PL, BPL = particle_dists
 
-    lum_ref = [0.00025231296225663107, 0.03316715765695228,
-               0.00044597089198025806]
+    lum_ref = [
+        0.00025231296225663107,
+        0.03316715765695228,
+        0.00044597089198025806,
+    ]
     We_ref = [5064124672.902273, 11551172166.866821, 926633861.2898524]
 
     Wes = []
@@ -82,9 +89,9 @@ def test_synchrotron_lum(particle_dists):
     for pdist in particle_dists:
         sy = Synchrotron(pdist, **electron_properties)
 
-        Wes.append(sy.We.to('erg').value)
+        Wes.append(sy.We.to("erg").value)
 
-        lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to('erg/s')
+        lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to("erg/s")
         assert lsy.unit == u.erg / u.s
         lsys.append(lsy.value)
 
@@ -95,12 +102,12 @@ def test_synchrotron_lum(particle_dists):
     sy.flux(data)
     sy.flux(data2)
 
-    lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to('erg/s')
-    assert (lsy.unit == u.erg / u.s)
+    lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to("erg/s")
+    assert lsy.unit == u.erg / u.s
     assert_allclose(lsy.value, 31374131.90312505)
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_bolometric_luminosity(particle_dists):
     """
     test sync calculation
@@ -115,7 +122,7 @@ def test_bolometric_luminosity(particle_dists):
     sy.sed(energy, distance=0)
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_compute_We(particle_dists):
     """
     test sync calculation
@@ -141,7 +148,7 @@ def test_compute_We(particle_dists):
     pp.compute_Wp(Epmin=Epmin, Epmax=Epmax)
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_set_We(particle_dists):
     """
     test sync calculation
@@ -159,22 +166,22 @@ def test_set_We(particle_dists):
         for Eemax in [100 * u.TeV, None]:
             sy.set_We(W, Eemin, Eemax)
             assert_allclose(W, sy.compute_We(Eemin, Eemax))
-            sy.set_We(W, Eemin, Eemax, amplitude_name='amplitude')
+            sy.set_We(W, Eemin, Eemax, amplitude_name="amplitude")
             assert_allclose(W, sy.compute_We(Eemin, Eemax))
 
             pp.set_Wp(W, Eemin, Eemax)
             assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
-            pp.set_Wp(W, Eemin, Eemax, amplitude_name='amplitude')
+            pp.set_Wp(W, Eemin, Eemax, amplitude_name="amplitude")
             assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
 
     with pytest.raises(AttributeError):
-        sy.set_We(W, amplitude_name='norm')
+        sy.set_We(W, amplitude_name="norm")
 
     with pytest.raises(AttributeError):
-        pp.set_Wp(W, amplitude_name='norm')
+        pp.set_Wp(W, amplitude_name="norm")
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_bremsstrahlung_lum(particle_dists):
     """
     test sync calculation
@@ -185,14 +192,16 @@ def test_bremsstrahlung_lum(particle_dists):
     # avoid low-energy (E<2MeV) where there are problems with cross-section
     energy2 = np.logspace(8, 14, 100) * u.eV
 
-    brems = Bremsstrahlung(ECPL, n0=1 * u.cm** -3, Eemin=m_e * c**2)
-    lbrems = trapz_loglog(brems.flux(energy2, 0) * energy2, energy2).to('erg/s')
+    brems = Bremsstrahlung(ECPL, n0=1 * u.cm ** -3, Eemin=m_e * c ** 2)
+    lbrems = trapz_loglog(brems.flux(energy2, 0) * energy2, energy2).to(
+        "erg/s"
+    )
 
     lum_ref = 2.3064095039069847e-05
     assert_allclose(lbrems.value, lum_ref)
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_inverse_compton_lum(particle_dists):
     """
     test IC calculation
@@ -200,27 +209,30 @@ def test_inverse_compton_lum(particle_dists):
 
     ECPL, PL, BPL = particle_dists
 
-    lum_ref = [0.00027822017772343816, 0.004821189282097695,
-               0.00012916583207749083]
+    lum_ref = [
+        0.00027822017772343816,
+        0.004821189282097695,
+        0.00012916583207749083,
+    ]
 
     lums = []
     for pdist in particle_dists:
         ic = InverseCompton(pdist, **electron_properties)
-        lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to('erg/s')
-        assert (lic.unit == u.erg / u.s)
+        lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s")
+        assert lic.unit == u.erg / u.s
         lums.append(lic.value)
 
     assert_allclose(lums, lum_ref)
 
-    ic = InverseCompton(ECPL, seed_photon_fields=['CMB', 'FIR', 'NIR'])
+    ic = InverseCompton(ECPL, seed_photon_fields=["CMB", "FIR", "NIR"])
     ic.flux(data)
     ic.flux(data2)
 
-    lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to('erg/s')
+    lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s")
     assert_allclose(lic.value, 0.0005833034007064158)
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_anisotropic_inverse_compton_lum(particle_dists):
     """
     test IC calculation
@@ -234,18 +246,21 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
 
     lums = []
     for angle in angles:
-        ic = InverseCompton(PL,
-                            seed_photon_fields=[['Star', 20000 * u.K, 0.1 *
-                                                 u.erg / u.cm**3, angle],],
-                            **electron_properties)
-        lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to('erg/s')
-        assert (lic.unit == u.erg / u.s)
+        ic = InverseCompton(
+            PL,
+            seed_photon_fields=[
+                ["Star", 20000 * u.K, 0.1 * u.erg / u.cm ** 3, angle]
+            ],
+            **electron_properties
+        )
+        lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s")
+        assert lic.unit == u.erg / u.s
         lums.append(lic.value)
 
     assert_allclose(lums, lum_ref)
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_monochromatic_inverse_compton(particle_dists):
     """
     test IC monochromatic against khangulyan et al.
@@ -255,34 +270,39 @@ def test_monochromatic_inverse_compton(particle_dists):
 
     # compute a blackbody spectrum with 1 eV/cm3 at 30K
     Ephbb = np.logspace(-3.5, -1.5, 100) * u.eV
-    lambdabb = Ephbb.to('AA', equivalencies=u.equivalencies.spectral())
+    lambdabb = Ephbb.to("AA", equivalencies=u.equivalencies.spectral())
     T = 30 * u.K
-    w = 1 * u.eV / u.cm**3
-    bb = (blackbody_nu(lambdabb, T) * 2 * u.sr / c.cgs
-            / Ephbb / hbar).to('1/(cm3 eV)')
-    Ebbmax = Ephbb[np.argmax(Ephbb**2 * bb)]
+    w = 1 * u.eV / u.cm ** 3
+    bb = (blackbody_nu(lambdabb, T) * 2 * u.sr / c.cgs / Ephbb / hbar).to(
+        "1/(cm3 eV)"
+    )
+    Ebbmax = Ephbb[np.argmax(Ephbb ** 2 * bb)]
 
-    ar = (4 * sigma_sb / c).to('erg/(cm3 K4)')
-    bb *= (w / (ar * T**4)).decompose()
+    ar = (4 * sigma_sb / c).to("erg/(cm3 K4)")
+    bb *= (w / (ar * T ** 4)).decompose()
 
-    eopts = {'Eemax': 10000 * u.GeV, 'Eemin': 10 * u.GeV, 'nEed': 1000}
-    IC_khang = InverseCompton(PL, seed_photon_fields=[['bb', T, w]], **eopts)
-    IC_mono = InverseCompton(PL,
-                             seed_photon_fields=[['mono', Ebbmax, w]],
-                             **eopts)
-    IC_bb = InverseCompton(PL, seed_photon_fields=[['bb2', Ephbb, bb]], **eopts)
-    IC_bb_ene = InverseCompton(PL,
-                    seed_photon_fields=[['bb2', Ephbb, Ephbb**2 * bb]], **eopts)
+    eopts = {"Eemax": 10000 * u.GeV, "Eemin": 10 * u.GeV, "nEed": 1000}
+    IC_khang = InverseCompton(PL, seed_photon_fields=[["bb", T, w]], **eopts)
+    IC_mono = InverseCompton(
+        PL, seed_photon_fields=[["mono", Ebbmax, w]], **eopts
+    )
+    IC_bb = InverseCompton(
+        PL, seed_photon_fields=[["bb2", Ephbb, bb]], **eopts
+    )
+    IC_bb_ene = InverseCompton(
+        PL, seed_photon_fields=[["bb2", Ephbb, Ephbb ** 2 * bb]], **eopts
+    )
 
     Eph = np.logspace(-1, 1, 3) * u.GeV
 
     assert_allclose(IC_khang.sed(Eph).value, IC_mono.sed(Eph).value, rtol=1e-2)
     assert_allclose(IC_khang.sed(Eph).value, IC_bb.sed(Eph).value, rtol=1e-2)
-    assert_allclose(IC_khang.sed(Eph).value, IC_bb_ene.sed(Eph).value,
-                    rtol=1e-2)
+    assert_allclose(
+        IC_khang.sed(Eph).value, IC_bb_ene.sed(Eph).value, rtol=1e-2
+    )
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_flux_sed(particle_dists):
     """
     test IC calculation
@@ -291,35 +311,43 @@ def test_flux_sed(particle_dists):
     ECPL, PL, BPL = particle_dists
 
     d1 = 2.5 * u.kpc
-    d2 = 10. * u.kpc
+    d2 = 10.0 * u.kpc
 
-    ic = InverseCompton(ECPL,
-                        seed_photon_fields=['CMB', 'FIR', 'NIR'],
-                        **electron_properties)
+    ic = InverseCompton(
+        ECPL, seed_photon_fields=["CMB", "FIR", "NIR"], **electron_properties
+    )
 
-    luminosity = trapz_loglog(
-        ic.flux(energy, 0) * energy, energy).to('erg/s').value
+    luminosity = (
+        trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s").value
+    )
 
-    int_flux1 = trapz_loglog(
-        ic.flux(energy, d1) * energy, energy).to('erg/(s cm2)').value
-    int_flux2 = trapz_loglog(
-        ic.flux(energy, d2) * energy, energy).to('erg/(s cm2)').value
+    int_flux1 = (
+        trapz_loglog(ic.flux(energy, d1) * energy, energy)
+        .to("erg/(s cm2)")
+        .value
+    )
+    int_flux2 = (
+        trapz_loglog(ic.flux(energy, d2) * energy, energy)
+        .to("erg/(s cm2)")
+        .value
+    )
 
     # check distance scaling
-    assert_allclose(int_flux1 / int_flux2, (d2 / d1).value**2.)
+    assert_allclose(int_flux1 / int_flux2, (d2 / d1).value ** 2.0)
 
     # check values
-    assert_allclose(int_flux1, luminosity / (4 * np.pi *
-                                             (d1.to('cm').value)**2))
+    assert_allclose(
+        int_flux1, luminosity / (4 * np.pi * (d1.to("cm").value) ** 2)
+    )
 
     # check SED
-    sed1 = ic.sed(energy, d1).to('erg/(s cm2)').value
-    sed0 = (ic.flux(energy, 0) * energy**2).to('erg/s').value
+    sed1 = ic.sed(energy, d1).to("erg/(s cm2)").value
+    sed0 = (ic.flux(energy, 0) * energy ** 2).to("erg/s").value
 
-    assert_allclose(sed1, sed0 / (4 * np.pi * (d1.to('cm').value)**2))
+    assert_allclose(sed1, sed0 / (4 * np.pi * (d1.to("cm").value) ** 2))
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_ic_seed_input(particle_dists):
     """
     test initialization of different input formats for seed photon fields
@@ -327,28 +355,30 @@ def test_ic_seed_input(particle_dists):
 
     ECPL, PL, BPL = particle_dists
 
-    ic = InverseCompton(PL, seed_photon_fields='CMB')
+    ic = InverseCompton(PL, seed_photon_fields="CMB")
 
-    ic = InverseCompton(PL, seed_photon_fields=['CMB', 'FIR', 'NIR'],)
+    ic = InverseCompton(PL, seed_photon_fields=["CMB", "FIR", "NIR"])
 
     Eph = (1, 10) * u.eV
-    phn = (3, 1) * u.Unit('1/(eV cm3)')
-    test_seeds = [['test', 5000 * u.K, 0],
-                  ['array', Eph, phn],
-                  ['array-energy', Eph, Eph**2 * phn],
-                  ['mono', Eph[0], phn[0] * Eph[0]**2],
-                  ['mono-array', Eph[:1], phn[:1] * Eph[:1]**2],
-                  # from docs:
-                  ['NIR', 50 * u.K, 1.5 * u.eV / u.cm**3],
-                  ['star', 25000 * u.K, 3 * u.erg / u.cm**3, 120 * u.deg],
-                  ['X-ray', [1, 10] * u.keV, [1, 1e-2] * 1 / (u.eV * u.cm**3)],
-                  ['UV', 50 * u.eV, 15 * u.eV / u.cm**3],]
+    phn = (3, 1) * u.Unit("1/(eV cm3)")
+    test_seeds = [
+        ["test", 5000 * u.K, 0],
+        ["array", Eph, phn],
+        ["array-energy", Eph, Eph ** 2 * phn],
+        ["mono", Eph[0], phn[0] * Eph[0] ** 2],
+        ["mono-array", Eph[:1], phn[:1] * Eph[:1] ** 2],
+        # from docs:
+        ["NIR", 50 * u.K, 1.5 * u.eV / u.cm ** 3],
+        ["star", 25000 * u.K, 3 * u.erg / u.cm ** 3, 120 * u.deg],
+        ["X-ray", [1, 10] * u.keV, [1, 1e-2] * 1 / (u.eV * u.cm ** 3)],
+        ["UV", 50 * u.eV, 15 * u.eV / u.cm ** 3],
+    ]
 
     for seed in test_seeds:
-        ic = InverseCompton(PL, seed_photon_fields=['CMB', seed])
+        ic = InverseCompton(PL, seed_photon_fields=["CMB", seed])
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_ic_seed_fluxes(particle_dists):
     """
     test per seed flux computation
@@ -358,27 +388,29 @@ def test_ic_seed_fluxes(particle_dists):
 
     ic = InverseCompton(
         PL,
-        seed_photon_fields=['CMB',
-                            ['test', 5000 * u.K, 0],
-                            ['test2', 5000 * u.K, 10 * u.eV / u.cm**3],
-                            ['test3', 5000 * u.K, 10 * u.eV / u.cm**3, 90 *
-                             u.deg],],)
+        seed_photon_fields=[
+            "CMB",
+            ["test", 5000 * u.K, 0],
+            ["test2", 5000 * u.K, 10 * u.eV / u.cm ** 3],
+            ["test3", 5000 * u.K, 10 * u.eV / u.cm ** 3, 90 * u.deg],
+        ],
+    )
 
     ene = np.logspace(-3, 0, 5) * u.TeV
 
-    for idx, name in enumerate(['CMB', 'test', 'test2', 'test3',]):
+    for idx, name in enumerate(["CMB", "test", "test2", "test3"]):
         icname = ic.sed(ene, seed=name)
         icnumber = ic.sed(ene, seed=idx)
         assert_allclose(icname, icnumber)
 
     with pytest.raises(ValueError):
-        _ = ic.sed(ene, seed='FIR')
+        _ = ic.sed(ene, seed="FIR")
 
     with pytest.raises(ValueError):
         _ = ic.sed(ene, seed=10)
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_pion_decay(particle_dists):
     """
     test ProtonOZM
@@ -401,12 +433,12 @@ def test_pion_decay(particle_dists):
     lpps_noLUT = []
     for pdist in particle_dists:
         pp = PionDecay(pdist, useLUT=True, **proton_properties)
-        Wps.append(pp.Wp.to('erg').value)
-        lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to('erg/s')
-        assert (lpp.unit == u.erg / u.s)
+        Wps.append(pp.Wp.to("erg").value)
+        lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to("erg/s")
+        assert lpp.unit == u.erg / u.s
         lpps_LUT.append(lpp.value)
         pp.useLUT = False
-        lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to('erg/s')
+        lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to("erg/s")
         lpps_noLUT.append(lpp.value)
 
     assert_allclose(lpps_LUT, lum_ref_LUT)
@@ -414,11 +446,11 @@ def test_pion_decay(particle_dists):
     assert_allclose(Wps, Wp_ref)
 
     # test LUT not found
-    pp = PionDecay(PL, useLUT=True, hiEmodel='Geant4', **proton_properties)
+    pp = PionDecay(PL, useLUT=True, hiEmodel="Geant4", **proton_properties)
     pp.flux(energy, 0)
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_pion_decay_no_nuc_enh(particle_dists):
     """
     test PionDecayKelner06
@@ -430,21 +462,20 @@ def test_pion_decay_no_nuc_enh(particle_dists):
     for pdist in [ECPL, PL, BPL]:
         pdist.amplitude = 1 * (1 / u.TeV)
 
-    lum_ref = [5.693100769654807e-13,]
+    lum_ref = [5.693100769654807e-13]
 
     energy = np.logspace(9, 13, 20) * u.eV
-    pp = PionDecay(ECPL,
-                   nuclear_enhancement=False,
-                   useLUT=False,
-                   **proton_properties)
-    Wp = pp.Wp.to('erg').value
-    lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to('erg/s')
-    assert (lpp.unit == u.erg / u.s)
+    pp = PionDecay(
+        ECPL, nuclear_enhancement=False, useLUT=False, **proton_properties
+    )
+    Wp = pp.Wp.to("erg").value
+    lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to("erg/s")
+    assert lpp.unit == u.erg / u.s
 
     assert_allclose(lpp.value, lum_ref[0])
 
 
-@pytest.mark.skipif('not HAS_SCIPY')
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_pion_decay_kelner(particle_dists):
     """
     test PionDecayKelner06
@@ -459,8 +490,8 @@ def test_pion_decay_kelner(particle_dists):
 
     energy = np.logspace(9, 13, 20) * u.eV
     pp = PionDecayKelner06(ECPL, **proton_properties)
-    lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to('erg/s')
-    assert (lpp.unit == u.erg / u.s)
+    lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to("erg/s")
+    assert lpp.unit == u.erg / u.s
 
     assert_allclose(lpp, lum_ref)
 
@@ -469,7 +500,7 @@ def test_inputs():
     """ test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw
     """
 
-    LP = LogParabola(1., e_0, 1.7, 0.2)
+    LP = LogParabola(1.0, e_0, 1.7, 0.2)
     LP._memoize = True
 
     # do twice for memoize
@@ -478,13 +509,14 @@ def test_inputs():
     LP(10 * u.TeV)
     LP(10 * u.TeV)
 
-    ECBPL = ExponentialCutoffBrokenPowerLaw(1., e_0, e_break, 1.5, 2.5,
-                                            e_cutoff, 2.0)
+    ECBPL = ExponentialCutoffBrokenPowerLaw(
+        1.0, e_0, e_break, 1.5, 2.5, e_cutoff, 2.0
+    )
     ECBPL._memoize = True
     ECBPL(np.logspace(1, 10, 10) * u.TeV)
 
     with pytest.raises(TypeError):
-        data = {'flux': [1, 2, 4]}
+        data = {"flux": [1, 2, 4]}
         LP(data)
 
 
@@ -493,14 +525,14 @@ def test_tablemodel():
     lemin, lemax = -4, 2
     # test an exponential cutoff PL with index 2, cutoff at 10 TeV
     e = np.logspace(lemin, lemax, 50) * u.TeV
-    n = (e.value)** -2 * np.exp(-e.value / 10) / u.eV
+    n = (e.value) ** -2 * np.exp(-e.value / 10) / u.eV
     tm = TableModel(e, n, amplitude=1)
-    assert_allclose(n.to('1/eV').value, tm(e).to('1/eV').value)
+    assert_allclose(n.to("1/eV").value, tm(e).to("1/eV").value)
 
     # test interpolation at low tolerance
     e2 = np.logspace(lemin, lemax, 1000) * u.TeV
-    n2 = (e2.value)** -2 * np.exp(-e2.value / 10) / u.eV
-    assert_allclose(n2.to('1/eV').value, tm(e2).to('1/eV').value, rtol=1e-1)
+    n2 = (e2.value) ** -2 * np.exp(-e2.value / 10) / u.eV
+    assert_allclose(n2.to("1/eV").value, tm(e2).to("1/eV").value, rtol=1e-1)
 
     # test TableModel without units in y
     tm2 = TableModel(e, n.value)
@@ -512,6 +544,7 @@ def test_tablemodel():
 
     # use tablemodel as pdist
     from ..radiative import Synchrotron, InverseCompton, PionDecay
+
     SY = Synchrotron(tm)
     _ = SY.flux(e / 10)
     IC = InverseCompton(tm)
@@ -527,14 +560,17 @@ def test_eblabsorptionmodel():
 
     lemin, lemax = -4, 2
 
-    EBL_zero = EblAbsorptionModel(0., 'Dominguez')
-    EBL_moderate = EblAbsorptionModel(0.5, 'Dominguez')
+    EBL_zero = EblAbsorptionModel(0.0, "Dominguez")
+    EBL_moderate = EblAbsorptionModel(0.5, "Dominguez")
 
     e = np.logspace(lemin, lemax, 50) * u.TeV
 
-#   Test if the EBL absorption at z = 0 changes the test array filled with ones
-    assert_allclose(np.ones_like(e).value, np.ones_like(e).value *
-                    EBL_zero.transmission(e), rtol=1e-1)
-#   Make sure the transmission at z = 0. is always larger than the one at z = 0.5
+    #   Test if the EBL absorption at z = 0 changes the test array filled with ones
+    assert_allclose(
+        np.ones_like(e).value,
+        np.ones_like(e).value * EBL_zero.transmission(e),
+        rtol=1e-1,
+    )
+    #   Make sure the transmission at z = 0. is always larger than the one at z = 0.5
     difference = EBL_zero.transmission(e) - EBL_moderate.transmission(e)
-    assert(np.all(difference > -1E-10))
+    assert np.all(difference > -1e-10)

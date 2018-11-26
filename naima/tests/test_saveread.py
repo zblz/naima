@@ -10,14 +10,17 @@ import os
 
 try:
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+
     HAS_MATPLOTLIB = True
 except:
     HAS_MATPLOTLIB = False
 
 try:
     import emcee
+
     HAS_EMCEE = True
 except:
     HAS_EMCEE = False
@@ -31,15 +34,15 @@ from ..models import ExponentialCutoffPowerLaw
 
 from .fixtures import simple_sampler as sampler
 
-fname = get_pkg_data_filename('data/CrabNebula_HESS_ipac.dat')
+fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
 data_table = ascii.read(fname)
 
 
-@pytest.mark.skipif('not HAS_EMCEE')
+@pytest.mark.skipif("not HAS_EMCEE")
 def test_roundtrip(sampler):
-    save_run('test_chain.h5', sampler, clobber=True)
-    assert os.path.exists('test_chain.h5')
-    nresult = read_run('test_chain.h5')
+    save_run("test_chain.h5", sampler, clobber=True)
+    assert os.path.exists("test_chain.h5")
+    nresult = read_run("test_chain.h5")
 
     assert np.allclose(sampler.chain, nresult.chain)
     assert np.allclose(sampler.flatchain, nresult.flatchain)
@@ -47,7 +50,7 @@ def test_roundtrip(sampler):
     assert np.allclose(sampler.flatlnprobability, nresult.flatlnprobability)
 
     nwalkers, nsteps = sampler.chain.shape[:2]
-    j, k = int(nsteps/2), int(nwalkers/2)
+    j, k = int(nsteps / 2), int(nwalkers / 2)
     for l in range(len(sampler.blobs[j][k])):
         b0 = sampler.blobs[j][k][l]
         b1 = nresult.blobs[j][k][l]
@@ -69,45 +72,50 @@ def test_roundtrip(sampler):
         assert sampler.labels[i] == nresult.labels[i]
 
     for col in sampler.data.colnames:
-        assert np.allclose(u.Quantity(sampler.data[col]).value,
-                u.Quantity(nresult.data[col]).value)
+        assert np.allclose(
+            u.Quantity(sampler.data[col]).value,
+            u.Quantity(nresult.data[col]).value,
+        )
         assert str(sampler.data[col].unit) == str(nresult.data[col].unit)
     validate_data_table(nresult.data)
 
-    assert np.allclose(np.mean(sampler.acceptance_fraction),
-            nresult.acceptance_fraction)
+    assert np.allclose(
+        np.mean(sampler.acceptance_fraction), nresult.acceptance_fraction
+    )
 
 
-@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+@pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
 def test_plot_fit(sampler):
-    save_run('test_chain.h5', sampler, clobber=True)
-    nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
+    save_run("test_chain.h5", sampler, clobber=True)
+    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
 
     plot_data(nresult)
     plot_fit(nresult, 0)
     plot_fit(nresult, 0, e_range=[0.1, 10] * u.TeV)
     plot_fit(nresult, 0, sed=False)
-    plt.close('all')
+    plt.close("all")
 
 
-@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+@pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
 def test_plot_chain(sampler):
-    save_run('test_chain.h5', sampler, clobber=True)
-    nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
+    save_run("test_chain.h5", sampler, clobber=True)
+    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
 
     for i in range(nresult.chain.shape[2]):
         plot_chain(nresult, i)
-    plt.close('all')
+    plt.close("all")
 
 
-@pytest.mark.skipif('not HAS_MATPLOTLIB or not HAS_EMCEE')
+@pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
 def test_imf(sampler):
-    save_run('test_chain.h5', sampler, clobber=True)
-    nresult = read_run('test_chain.h5', modelfn=sampler.modelfn)
+    save_run("test_chain.h5", sampler, clobber=True)
+    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
 
-    imf = InteractiveModelFitter(nresult.modelfn, nresult.chain[-1][-1],
-            nresult.data)
-    imf.do_fit('test')
+    imf = InteractiveModelFitter(
+        nresult.modelfn, nresult.chain[-1][-1], nresult.data
+    )
+    imf.do_fit("test")
     from naima.core import lnprobmodel
-    lnprobmodel(nresult.modelfn(imf.pars,nresult.data)[0], nresult.data)
-    plt.close('all')
+
+    lnprobmodel(nresult.modelfn(imf.pars, nresult.data)[0], nresult.data)
+    plt.close("all")

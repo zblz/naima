@@ -1,21 +1,36 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 import os
 import numpy as np
 import astropy.units as u
 from astropy.utils.data import get_pkg_data_filename
 from astropy.table import Table
-from .extern.validator import (validate_scalar, validate_array,
-                               validate_physical_type)
+from .extern.validator import (
+    validate_scalar,
+    validate_array,
+    validate_physical_type,
+)
 from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
 from .model_utils import memoize
 
 __all__ = [
-    'Synchrotron', 'InverseCompton', 'PionDecay', 'Bremsstrahlung',
-    'BrokenPowerLaw', 'ExponentialCutoffPowerLaw', 'PowerLaw', 'LogParabola',
-    'ExponentialCutoffBrokenPowerLaw', 'TableModel', 'EblAbsorptionModel'
+    "Synchrotron",
+    "InverseCompton",
+    "PionDecay",
+    "Bremsstrahlung",
+    "BrokenPowerLaw",
+    "ExponentialCutoffPowerLaw",
+    "PowerLaw",
+    "LogParabola",
+    "ExponentialCutoffBrokenPowerLaw",
+    "TableModel",
+    "EblAbsorptionModel",
 ]
 
 
@@ -23,13 +38,14 @@ def _validate_ene(ene):
     if isinstance(ene, dict) or isinstance(ene, Table):
         try:
             ene = validate_array(
-                'energy', u.Quantity(ene['energy']), physical_type='energy')
+                "energy", u.Quantity(ene["energy"]), physical_type="energy"
+            )
         except KeyError:
-            raise TypeError('Table or dict does not have \'ene\' column')
+            raise TypeError("Table or dict does not have 'ene' column")
     else:
         if not isinstance(ene, u.Quantity):
             ene = u.Quantity(ene)
-        validate_physical_type('energy', ene, physical_type='energy')
+        validate_physical_type("energy", ene, physical_type="energy")
 
     return ene
 
@@ -60,7 +76,7 @@ class PowerLaw(object):
 
     """
 
-    param_names = ['amplitude', 'e_0', 'alpha']
+    param_names = ["amplitude", "e_0", "alpha"]
     _memoize = False
     _cache = {}
     _queue = []
@@ -68,7 +84,8 @@ class PowerLaw(object):
     def __init__(self, amplitude, e_0, alpha):
         self.amplitude = amplitude
         self.e_0 = validate_scalar(
-            'e_0', e_0, domain='positive', physical_type='energy')
+            "e_0", e_0, domain="positive", physical_type="energy"
+        )
         self.alpha = alpha
 
     @staticmethod
@@ -76,13 +93,16 @@ class PowerLaw(object):
         """One dimensional power law model function"""
 
         xx = e / e_0
-        return amplitude * xx**(-alpha)
+        return amplitude * xx ** (-alpha)
 
     @memoize
     def _calc(self, e):
         return self.eval(
-            e.to('eV').value, self.amplitude,
-            self.e_0.to('eV').value, self.alpha)
+            e.to("eV").value,
+            self.amplitude,
+            self.e_0.to("eV").value,
+            self.alpha,
+        )
 
     def __call__(self, e):
         """One dimensional power law model function"""
@@ -121,7 +141,7 @@ class ExponentialCutoffPowerLaw(object):
 
     """
 
-    param_names = ['amplitude', 'e_0', 'alpha', 'e_cutoff', 'beta']
+    param_names = ["amplitude", "e_0", "alpha", "e_cutoff", "beta"]
     _memoize = False
     _cache = {}
     _queue = []
@@ -129,10 +149,12 @@ class ExponentialCutoffPowerLaw(object):
     def __init__(self, amplitude, e_0, alpha, e_cutoff, beta=1.0):
         self.amplitude = amplitude
         self.e_0 = validate_scalar(
-            'e_0', e_0, domain='positive', physical_type='energy')
+            "e_0", e_0, domain="positive", physical_type="energy"
+        )
         self.alpha = alpha
         self.e_cutoff = validate_scalar(
-            'e_cutoff', e_cutoff, domain='positive', physical_type='energy')
+            "e_cutoff", e_cutoff, domain="positive", physical_type="energy"
+        )
         self.beta = beta
 
     @staticmethod
@@ -141,14 +163,18 @@ class ExponentialCutoffPowerLaw(object):
         """
 
         xx = e / e_0
-        return amplitude * xx**(-alpha) * np.exp(-(e / e_cutoff)**beta)
+        return amplitude * xx ** (-alpha) * np.exp(-(e / e_cutoff) ** beta)
 
     @memoize
     def _calc(self, e):
         return self.eval(
-            e.to('eV').value, self.amplitude,
-            self.e_0.to('eV').value, self.alpha,
-            self.e_cutoff.to('eV').value, self.beta)
+            e.to("eV").value,
+            self.amplitude,
+            self.e_0.to("eV").value,
+            self.alpha,
+            self.e_cutoff.to("eV").value,
+            self.beta,
+        )
 
     def __call__(self, e):
         """One dimensional power law with an exponential cutoff model function
@@ -194,7 +220,7 @@ class BrokenPowerLaw(object):
                    \\right.
     """
 
-    param_names = ['amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2']
+    param_names = ["amplitude", "e_0", "e_break", "alpha_1", "alpha_2"]
     _memoize = False
     _cache = {}
     _queue = []
@@ -202,25 +228,31 @@ class BrokenPowerLaw(object):
     def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2):
         self.amplitude = amplitude
         self.e_0 = validate_scalar(
-            'e_0', e_0, domain='positive', physical_type='energy')
+            "e_0", e_0, domain="positive", physical_type="energy"
+        )
         self.e_break = validate_scalar(
-            'e_break', e_break, domain='positive', physical_type='energy')
+            "e_break", e_break, domain="positive", physical_type="energy"
+        )
         self.alpha_1 = alpha_1
         self.alpha_2 = alpha_2
 
     @staticmethod
     def eval(e, amplitude, e_0, e_break, alpha_1, alpha_2):
         """One dimensional broken power law model function"""
-        K = np.where(e < e_break, 1, (e_break / e_0)**(alpha_2 - alpha_1))
+        K = np.where(e < e_break, 1, (e_break / e_0) ** (alpha_2 - alpha_1))
         alpha = np.where(e < e_break, alpha_1, alpha_2)
-        return amplitude * K * (e / e_0)**-alpha
+        return amplitude * K * (e / e_0) ** -alpha
 
     @memoize
     def _calc(self, e):
         return self.eval(
-            e.to('eV').value, self.amplitude,
-            self.e_0.to('eV').value,
-            self.e_break.to('eV').value, self.alpha_1, self.alpha_2)
+            e.to("eV").value,
+            self.amplitude,
+            self.e_0.to("eV").value,
+            self.e_break.to("eV").value,
+            self.alpha_1,
+            self.alpha_2,
+        )
 
     def __call__(self, e):
         """One dimensional broken power law model function"""
@@ -273,46 +305,55 @@ class ExponentialCutoffBrokenPowerLaw(object):
     """
 
     param_names = [
-        'amplitude', 'e_0', 'e_break', 'alpha_1', 'alpha_2', 'e_cutoff', 'beta'
+        "amplitude",
+        "e_0",
+        "e_break",
+        "alpha_1",
+        "alpha_2",
+        "e_cutoff",
+        "beta",
     ]
     _memoize = False
     _cache = {}
     _queue = []
 
-    def __init__(self,
-                 amplitude,
-                 e_0,
-                 e_break,
-                 alpha_1,
-                 alpha_2,
-                 e_cutoff,
-                 beta=1.0):
+    def __init__(
+        self, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0
+    ):
         self.amplitude = amplitude
         self.e_0 = validate_scalar(
-            'e_0', e_0, domain='positive', physical_type='energy')
+            "e_0", e_0, domain="positive", physical_type="energy"
+        )
         self.e_break = validate_scalar(
-            'e_break', e_break, domain='positive', physical_type='energy')
+            "e_break", e_break, domain="positive", physical_type="energy"
+        )
         self.alpha_1 = alpha_1
         self.alpha_2 = alpha_2
         self.e_cutoff = validate_scalar(
-            'e_cutoff', e_cutoff, domain='positive', physical_type='energy')
+            "e_cutoff", e_cutoff, domain="positive", physical_type="energy"
+        )
         self.beta = beta
 
     @staticmethod
     def eval(e, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta):
         """One dimensional broken power law model function"""
-        K = np.where(e < e_break, 1, (e_break / e_0)**(alpha_2 - alpha_1))
+        K = np.where(e < e_break, 1, (e_break / e_0) ** (alpha_2 - alpha_1))
         alpha = np.where(e < e_break, alpha_1, alpha_2)
         ee2 = e / e_cutoff
-        return amplitude * K * (e / e_0)**-alpha * np.exp(-(ee2**beta))
+        return amplitude * K * (e / e_0) ** -alpha * np.exp(-(ee2 ** beta))
 
     @memoize
     def _calc(self, e):
         return self.eval(
-            e.to('eV').value, self.amplitude,
-            self.e_0.to('eV').value,
-            self.e_break.to('eV').value, self.alpha_1, self.alpha_2,
-            self.e_cutoff.to('eV').value, self.beta)
+            e.to("eV").value,
+            self.amplitude,
+            self.e_0.to("eV").value,
+            self.e_break.to("eV").value,
+            self.alpha_1,
+            self.alpha_2,
+            self.e_cutoff.to("eV").value,
+            self.beta,
+        )
 
     def __call__(self, e):
         """One dimensional broken power law model with exponential cutoff
@@ -352,7 +393,7 @@ class LogParabola(object):
 
     """
 
-    param_names = ['amplitude', 'e_0', 'alpha', 'beta']
+    param_names = ["amplitude", "e_0", "alpha", "beta"]
     _memoize = False
     _cache = {}
     _queue = []
@@ -360,7 +401,8 @@ class LogParabola(object):
     def __init__(self, amplitude, e_0, alpha, beta):
         self.amplitude = amplitude
         self.e_0 = validate_scalar(
-            'e_0', e_0, domain='positive', physical_type='energy')
+            "e_0", e_0, domain="positive", physical_type="energy"
+        )
         self.alpha = alpha
         self.beta = beta
 
@@ -370,13 +412,17 @@ class LogParabola(object):
 
         ee = e / e_0
         eeponent = -alpha - beta * np.log(ee)
-        return amplitude * ee**eeponent
+        return amplitude * ee ** eeponent
 
     @memoize
     def _calc(self, e):
         return self.eval(
-            e.to('eV').value, self.amplitude,
-            self.e_0.to('eV').value, self.alpha, self.beta)
+            e.to("eV").value,
+            self.amplitude,
+            self.e_0.to("eV").value,
+            self.alpha,
+            self.beta,
+        )
 
     def __call__(self, e):
         """One dimensional curved power law function"""
@@ -406,25 +452,28 @@ class TableModel(object):
 
     def __init__(self, energy, values, amplitude=1):
         from scipy.interpolate import interp1d
+
         self._energy = validate_array(
-            'energy', energy, domain='positive', physical_type='energy')
+            "energy", energy, domain="positive", physical_type="energy"
+        )
         self._values = values
         self.amplitude = amplitude
 
-        loge = np.log10(self._energy.to('eV').value)
+        loge = np.log10(self._energy.to("eV").value)
         try:
             self.unit = self._values.unit
             logy = np.log10(self._values.value)
         except AttributeError:
-            self.unit = u.Unit('')
+            self.unit = u.Unit("")
             logy = np.log10(self._values)
 
         self._interplogy = interp1d(
-            loge, logy, fill_value=-np.Inf, bounds_error=False, kind='cubic')
+            loge, logy, fill_value=-np.Inf, bounds_error=False, kind="cubic"
+        )
 
     def __call__(self, e):
         e = _validate_ene(e)
-        interpy = np.power(10, self._interplogy(np.log10(e.to('eV').value)))
+        interpy = np.power(10, self._interplogy(np.log10(e.to("eV").value)))
         return self.amplitude * interpy * self.unit
 
 
@@ -455,41 +504,46 @@ class EblAbsorptionModel(TableModel):
     TableModel
     """
 
-    def __init__(self, redshift, ebl_absorption_model='Dominguez'):
+    def __init__(self, redshift, ebl_absorption_model="Dominguez"):
 
         # check that the redshift is a positive scalar
         if not isinstance(redshift, u.Quantity):
             redshift *= u.dimensionless_unscaled
 
         self.redshift = validate_scalar(
-            'redshift',
+            "redshift",
             redshift,
-            domain='positive',
-            physical_type='dimensionless')
+            domain="positive",
+            physical_type="dimensionless",
+        )
 
         self.model = ebl_absorption_model
 
-        if self.model == 'Dominguez':
+        if self.model == "Dominguez":
             """Table generated by Alberto Dominguez containing tau vs energy
             [TeV] vs redshift.  Energy is defined between 1 GeV and 100 TeV, in
             500 bins uniform in log(E).  Redshift is defined between 0.01 and
             4, in steps of 0.01.  """
             filename = get_pkg_data_filename(
-                os.path.join('data', 'tau_dominguez11.npz'))
-            taus_table = np.load(filename)['arr_0']
+                os.path.join("data", "tau_dominguez11.npz")
+            )
+            taus_table = np.load(filename)["arr_0"]
             redshift_list = np.arange(0.01, 4, 0.01)
-            energy = taus_table['energy'] * u.TeV
+            energy = taus_table["energy"] * u.TeV
             if self.redshift >= 0.01:
-                colname = 'col%s' % (
-                    2 + (np.abs(redshift_list - self.redshift)).argmin())
+                colname = "col%s" % (
+                    2 + (np.abs(redshift_list - self.redshift)).argmin()
+                )
                 table_values = taus_table[colname]
                 # Set maximum value of the log(Tau) to 150, as it is high
                 # enough.  This solves later overflow problems.
-                table_values[table_values > 150.] = 150.
-                taus = 10**table_values * u.dimensionless_unscaled
+                table_values[table_values > 150.0] = 150.0
+                taus = 10 ** table_values * u.dimensionless_unscaled
             elif self.redshift < 0.01:
-                taus = 10**np.zeros(len(taus_table[
-                    'energy'])) * u.dimensionless_unscaled
+                taus = (
+                    10 ** np.zeros(len(taus_table["energy"]))
+                    * u.dimensionless_unscaled
+                )
         else:
             raise ValueError('Model should be one of: ["Dominguez"]')
 
@@ -499,10 +553,10 @@ class EblAbsorptionModel(TableModel):
         e = _validate_ene(e)
         taus = np.zeros(len(e))
         for i in range(0, len(e)):
-            if e[i].to('GeV').value < 1.:
-                taus[i] = 0.
-            elif e[i].to('TeV').value > 100.:
-                taus[i] = np.log10(6000.)
+            if e[i].to("GeV").value < 1.0:
+                taus[i] = 0.0
+            elif e[i].to("TeV").value > 100.0:
+                taus[i] = np.log10(6000.0)
             else:
                 taus[i] = np.log10(self(e[i]))
         return np.exp(-taus)

@@ -33,8 +33,8 @@ try:
     import astropy_helpers
 except ImportError:
     # Building from inside the docs/ directory?
-    if os.path.basename(os.getcwd()) == 'docs':
-        a_h_path = os.path.abspath(os.path.join('..', 'astropy_helpers'))
+    if os.path.basename(os.getcwd()) == "docs":
+        a_h_path = os.path.abspath(os.path.join("..", "astropy_helpers"))
         if os.path.isdir(a_h_path):
             sys.path.insert(1, a_h_path)
 
@@ -50,22 +50,22 @@ try:
 except ImportError:
     from configparser import ConfigParser
 conf = ConfigParser()
-conf.read([os.path.join(os.path.dirname(__file__), '..', 'setup.cfg')])
-setup_cfg = dict(conf.items('metadata'))
+conf.read([os.path.join(os.path.dirname(__file__), "..", "setup.cfg")])
+setup_cfg = dict(conf.items("metadata"))
 
 # -- General configuration ----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-needs_sphinx = '1.3'
+needs_sphinx = "1.3"
 
 # del intersphinx_mapping['h5py']
 
-intersphinx_mapping['emcee'] = ('http://dan.iel.fm/emcee/current/', None)
+intersphinx_mapping["emcee"] = ("http://dan.iel.fm/emcee/current/", None)
 
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns.append('_templates')
+exclude_patterns.append("_templates")
 
 # This is added to the end of RST files - a good place to put substitutions to
 # be used globally.
@@ -75,20 +75,21 @@ rst_epilog += """
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
-project = setup_cfg['package_name']
-author = setup_cfg['author']
-copyright = '{0}, {1}'.format(
-    datetime.datetime.now().year, setup_cfg['author'])
+project = setup_cfg["package_name"]
+author = setup_cfg["author"]
+copyright = "{0}, {1}".format(
+    datetime.datetime.now().year, setup_cfg["author"]
+)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-__import__(setup_cfg['package_name'])
-package = sys.modules[setup_cfg['package_name']]
+__import__(setup_cfg["package_name"])
+package = sys.modules[setup_cfg["package_name"]]
 
 # The short X.Y version.
-version = package.__version__.split('-', 1)[0]
+version = package.__version__.split("-", 1)[0]
 # The full version, including alpha/beta/rc tags.
 release = package.__version__
 
@@ -104,80 +105,77 @@ release = package.__version__
 
 # Add any paths that contain custom themes here, relative to this directory.
 # To use a different custom theme, add the directory containing the theme.
-#html_theme_path = []
+# html_theme_path = []
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes. To override the custom theme, set this to the
 # name of a builtin theme or the name of a custom theme in html_theme_path.
-html_theme = 'alabaster'
+html_theme = "alabaster"
 html_theme_options = {
-    'description': '''Python package for computation of non-thermal
+    "description": """Python package for computation of non-thermal
                     radiation from relativistic particle populations and
-                    MCMC fitting to observed spectra''',
-    'github_user': 'zblz',
-    'github_repo': 'naima',
-    'github_banner': True,
-    'github_button': False,
-    'travis_button': False,
+                    MCMC fitting to observed spectra""",
+    "github_user": "zblz",
+    "github_repo": "naima",
+    "github_banner": True,
+    "github_button": False,
+    "travis_button": False,
     # use sans-serif fonts
-    'font_family': "'Myriad Pro', Calibri, Helvetica, Arial, sans-serif",
-    'head_font_family': "'Lucida Grande', 'Calibri', Helvetica, Arial, sans-serif",
-    'show_powered_by': False,
-    'show_related': True,
-    'code_font_size': '0.7em',
-    }
+    "font_family": "'Myriad Pro', Calibri, Helvetica, Arial, sans-serif",
+    "head_font_family": "'Lucida Grande', 'Calibri', Helvetica, Arial, sans-serif",
+    "show_powered_by": False,
+    "show_related": True,
+    "code_font_size": "0.7em",
+}
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+# html_sidebars = {}
 html_sidebars = {
-    '**': [
-        'about.html',
-        'navigation.html',
-        'relations.html',
-        'searchbox.html',
-    ]
+    "**": ["about.html", "navigation.html", "relations.html", "searchbox.html"]
 }
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = ''
+# html_favicon = ''
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-#html_last_updated_fmt = ''
+# html_last_updated_fmt = ''
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = '{0} v{1}'.format(project, release)
+html_title = "{0} v{1}".format(project, release)
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = project + 'doc'
+htmlhelp_basename = project + "doc"
 
 
 # -- Options for LaTeX output --------------------------------------------------
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [('index', project + '.tex', project + u' Documentation',
-                    author, 'manual')]
+latex_documents = [
+    ("index", project + ".tex", project + u" Documentation", author, "manual")
+]
 
 
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [('index', project.lower(), project + u' Documentation',
-              [author], 1)]
+man_pages = [
+    ("index", project.lower(), project + u" Documentation", [author], 1)
+]
 
 
 ## -- Options for the edit_on_github extension ----------------------------------------
 
-if eval(setup_cfg.get('edit_on_github')):
-    extensions += ['astropy_helpers.sphinx.ext.edit_on_github']
+if eval(setup_cfg.get("edit_on_github")):
+    extensions += ["astropy_helpers.sphinx.ext.edit_on_github"]
 
-    versionmod = __import__(setup_cfg['package_name'] + '.version')
-    edit_on_github_project = setup_cfg['github_project']
+    versionmod = __import__(setup_cfg["package_name"] + ".version")
+    edit_on_github_project = setup_cfg["github_project"]
     if versionmod.version.release:
         edit_on_github_branch = "v" + versionmod.version.version
     else:
