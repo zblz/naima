@@ -5,6 +5,8 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 from astropy.extern import six
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Button, Slider, CheckButtons
 
 from .core import lnprobmodel, _prefit
 from .plot import color_cycle, _plot_data_to_ax
@@ -67,9 +69,6 @@ class InteractiveModelFitter(object):
                  sed=True,
                  auto_update=True):
 
-        import matplotlib.pyplot as plt
-        from matplotlib.widgets import Button, Slider, CheckButtons
-
         self.pars = p0
         self.P0_IS_ML = False
         npars = len(p0)
@@ -87,7 +86,7 @@ class InteractiveModelFitter(object):
         self.fig = plt.figure()
         modelax = plt.subplot2grid((10, 4), (0, 0), rowspan=4, colspan=4)
 
-        if e_range:
+        if e_range is not None:
             e_range = validate_array(
                 'e_range', u.Quantity(e_range), physical_type='energy')
             energy = np.logspace(
@@ -110,7 +109,7 @@ class InteractiveModelFitter(object):
         if self.hasdata:
             e_unit = self.data['energy'].unit
             _plot_data_to_ax(self.data, modelax, sed=sed, e_unit=e_unit)
-            if not e_range:
+            if e_range is None:
                 # use data for model
                 energy = self.data['energy']
                 flux = self.data['flux']
@@ -120,11 +119,14 @@ class InteractiveModelFitter(object):
         model = _process_model(self.modelfn(p0, self.data_for_model))
 
         if self.hasdata:
-            if not np.all(
-                    self.data_for_model['energy'] == self.data['energy']):
+            if not np.array_equal(
+                    self.data_for_model['energy'].to(u.eV).value,
+                    self.data['energy'].to(u.eV).value
+            ):
                 # this will be slow, maybe interpolate already computed model?
                 model_for_lnprob = _process_model(
-                    self.modelfn(self.pars, self.data))
+                    self.modelfn(self.pars, self.data)
+                )
             else:
                 model_for_lnprob = model
             lnprob = lnprobmodel(model_for_lnprob, self.data)
@@ -144,8 +146,9 @@ class InteractiveModelFitter(object):
         self.f_unit, self.sedf = sed_conversion(energy, model.unit, sed)
 
         if self.hasdata:
-            datamin = (self.data['energy'][0] - self.data['energy_error_lo'][0]
-                       ).to(e_unit).value / 3
+            datamin = (
+                self.data['energy'][0] - self.data['energy_error_lo'][0]
+            ).to(e_unit).value / 3
             xmin = min(datamin, energy[0].to(e_unit).value)
             datamax = (
                 self.data['energy'][-1] + self.data['energy_error_hi'][-1]
@@ -244,8 +247,10 @@ class InteractiveModelFitter(object):
         model = _process_model(self.modelfn(self.pars, self.data_for_model))
         self.line.set_ydata((model * self.sedf).to(self.f_unit))
         if self.hasdata:
-            if not np.all(
-                    self.data_for_model['energy'] == self.data['energy']):
+            if not np.array_equal(
+                    self.data_for_model['energy'].to(u.eV).value,
+                    self.data['energy'].to(u.eV).value
+            ):
                 # this will be slow, maybe interpolate already computed model?
                 model = _process_model(self.modelfn(self.pars, self.data))
             lnprob = lnprobmodel(model, self.data)
@@ -268,5 +273,4 @@ class InteractiveModelFitter(object):
         self.P0_IS_ML = P0_IS_ML
 
     def close_fig(self, event):
-        import matplotlib.pyplot as plt
         plt.close(self.fig)
