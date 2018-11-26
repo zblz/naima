@@ -1,6 +1,16 @@
 0.9 (unreleased)
 ----------------
 
+0.8.2 (2018-11-26)
+------------------
+
+- Formatted source code with black.
+
+Bug fixes
+^^^^^^^^^
+
+- Fixed deprecated use of np.all and normed argument to matplotlib's hist.
+
 0.8.1 (2017-09-27)
 ------------------
 
