@@ -154,7 +154,7 @@ class BaseElectron(BaseRadiative):
         log10gmin = np.log10(self.Eemin / mec2).value
         log10gmax = np.log10(self.Eemax / mec2).value
         return np.logspace(log10gmin, log10gmax,
-                           self.nEed * (log10gmax - log10gmin))
+                           int(self.nEed * (log10gmax - log10gmin)))
 
     @property
     def _nelec(self):
@@ -189,10 +189,10 @@ class BaseElectron(BaseRadiative):
             if Eemin is None:
                 Eemin = self.Eemin
 
-            log10gmin = np.log10(Eemin / mec2)
-            log10gmax = np.log10(Eemax / mec2)
+            log10gmin = np.log10(Eemin / mec2).value
+            log10gmax = np.log10(Eemax / mec2).value
             gam = np.logspace(log10gmin, log10gmax,
-                              self.nEed * (log10gmax - log10gmin))
+                              int(self.nEed * (log10gmax - log10gmin)))
             nelec = self.particle_distribution(gam * mec2).to(1 /
                                                               mec2_unit).value
             We = trapz_loglog(gam * nelec, gam * mec2)
@@ -993,7 +993,8 @@ class BaseProton(BaseRadiative):
         return np.logspace(
             np.log10(self.Epmin.to('GeV').value),
             np.log10(self.Epmax.to('GeV').value),
-            self.nEpd * (np.log10(self.Epmax / self.Epmin)))
+            int(self.nEpd * (np.log10(self.Epmax / self.Epmin)))
+        )
 
     @property
     def _J(self):
@@ -1030,8 +1031,10 @@ class BaseProton(BaseRadiative):
 
             log10Epmin = np.log10(Epmin.to('GeV').value)
             log10Epmax = np.log10(Epmax.to('GeV').value)
-            Ep = np.logspace(log10Epmin, log10Epmax,
-                             self.nEpd * (log10Epmax - log10Epmin)) * u.GeV
+            Ep = np.logspace(
+                log10Epmin, log10Epmax,
+                int(self.nEpd * (log10Epmax - log10Epmin))
+            ) * u.GeV
             pdist = self.particle_distribution(Ep)
             Wp = trapz_loglog(Ep * pdist, Ep).to('erg')
 

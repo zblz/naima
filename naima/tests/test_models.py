@@ -75,8 +75,6 @@ def test_synchrotron_lum(particle_dists):
         assert lsy.unit == u.erg / u.s
         lsys.append(lsy.value)
 
-    print(lsys)
-    print(Wes)
     assert_allclose(lsys, lum_ref)
     assert_allclose(Wes, We_ref)
 
