@@ -4,8 +4,23 @@ import numpy as np
 from numpy.testing import assert_allclose
 from astropy.tests.helper import pytest
 from astropy.extern import six
+from astropy.modeling.blackbody import blackbody_nu
 
 from ..utils import trapz_loglog
+from ..models import (
+    Bremsstrahlung,
+    BrokenPowerLaw,
+    EblAbsorptionModel,
+    ExponentialCutoffBrokenPowerLaw,
+    ExponentialCutoffPowerLaw,
+    InverseCompton,
+    LogParabola,
+    PionDecay,
+    PowerLaw,
+    Synchrotron,
+    TableModel
+)
+from ..radiative import PionDecayKelner06
 
 try:
     import scipy
@@ -37,7 +52,6 @@ pdist_unit = 1 / u.Unit(m_e * c**2)
 
 @pytest.fixture
 def particle_dists():
-    from ..models import ExponentialCutoffPowerLaw, PowerLaw, BrokenPowerLaw
     ECPL = ExponentialCutoffPowerLaw(amplitude=1 * pdist_unit,
                                      e_0=e_0,
                                      alpha=alpha,
@@ -56,7 +70,6 @@ def test_synchrotron_lum(particle_dists):
     """
     test sync calculation
     """
-    from ..models import Synchrotron
 
     ECPL, PL, BPL = particle_dists
 
@@ -92,7 +105,6 @@ def test_bolometric_luminosity(particle_dists):
     """
     test sync calculation
     """
-    from ..models import Synchrotron
 
     ECPL, PL, BPL = particle_dists
 
@@ -108,7 +120,6 @@ def test_compute_We(particle_dists):
     """
     test sync calculation
     """
-    from ..models import Synchrotron, PionDecay
 
     ECPL, PL, BPL = particle_dists
 
@@ -135,7 +146,6 @@ def test_set_We(particle_dists):
     """
     test sync calculation
     """
-    from ..models import Synchrotron, PionDecay
 
     ECPL, PL, BPL = particle_dists
 
@@ -169,7 +179,6 @@ def test_bremsstrahlung_lum(particle_dists):
     """
     test sync calculation
     """
-    from ..models import Bremsstrahlung
 
     ECPL, PL, BPL = particle_dists
 
@@ -188,7 +197,6 @@ def test_inverse_compton_lum(particle_dists):
     """
     test IC calculation
     """
-    from ..models import InverseCompton
 
     ECPL, PL, BPL = particle_dists
 
@@ -217,7 +225,6 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
     """
     test IC calculation
     """
-    from ..models import InverseCompton
 
     ECPL, PL, BPL = particle_dists
 
@@ -243,12 +250,10 @@ def test_monochromatic_inverse_compton(particle_dists):
     """
     test IC monochromatic against khangulyan et al.
     """
-    from ..models import InverseCompton, PowerLaw
 
     PL = PowerLaw(1 / u.eV, 1 * u.TeV, 3)
 
     # compute a blackbody spectrum with 1 eV/cm3 at 30K
-    from astropy.modeling.blackbody import blackbody_nu
     Ephbb = np.logspace(-3.5, -1.5, 100) * u.eV
     lambdabb = Ephbb.to('AA', equivalencies=u.equivalencies.spectral())
     T = 30 * u.K
@@ -282,7 +287,6 @@ def test_flux_sed(particle_dists):
     """
     test IC calculation
     """
-    from ..models import InverseCompton, Synchrotron, PionDecay
 
     ECPL, PL, BPL = particle_dists
 
@@ -320,7 +324,6 @@ def test_ic_seed_input(particle_dists):
     """
     test initialization of different input formats for seed photon fields
     """
-    from ..models import InverseCompton
 
     ECPL, PL, BPL = particle_dists
 
@@ -350,7 +353,6 @@ def test_ic_seed_fluxes(particle_dists):
     """
     test per seed flux computation
     """
-    from ..models import InverseCompton
 
     _, PL, _ = particle_dists
 
@@ -381,7 +383,6 @@ def test_pion_decay(particle_dists):
     """
     test ProtonOZM
     """
-    from ..models import PionDecay
 
     ECPL, PL, BPL = particle_dists
 
@@ -448,7 +449,6 @@ def test_pion_decay_kelner(particle_dists):
     """
     test PionDecayKelner06
     """
-    from ..radiative import PionDecayKelner06 as PionDecay
 
     ECPL, PL, BPL = particle_dists
 
@@ -458,8 +458,7 @@ def test_pion_decay_kelner(particle_dists):
     lum_ref = 5.54580582494601e-13 * u.erg / u.s
 
     energy = np.logspace(9, 13, 20) * u.eV
-    pp = PionDecay(ECPL, **proton_properties)
-    Wp = pp.Wp.to('erg').value
+    pp = PionDecayKelner06(ECPL, **proton_properties)
     lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to('erg/s')
     assert (lpp.unit == u.erg / u.s)
 
@@ -469,8 +468,6 @@ def test_pion_decay_kelner(particle_dists):
 def test_inputs():
     """ test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw
     """
-
-    from ..models import LogParabola, ExponentialCutoffBrokenPowerLaw
 
     LP = LogParabola(1., e_0, 1.7, 0.2)
     LP._memoize = True
@@ -492,7 +489,6 @@ def test_inputs():
 
 
 def test_tablemodel():
-    from ..models import TableModel
 
     lemin, lemax = -4, 2
     # test an exponential cutoff PL with index 2, cutoff at 10 TeV
@@ -528,7 +524,6 @@ def test_eblabsorptionmodel():
     """
     test EblAbsorptionModel
     """
-    from ..models import EblAbsorptionModel, BrokenPowerLaw
 
     lemin, lemax = -4, 2
 
