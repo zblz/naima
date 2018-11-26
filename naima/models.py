@@ -6,6 +6,7 @@ import os
 import numpy as np
 import astropy.units as u
 from astropy.utils.data import get_pkg_data_filename
+from astropy.table import Table
 from .extern.validator import (validate_scalar, validate_array,
                                validate_physical_type)
 from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
@@ -19,8 +20,6 @@ __all__ = [
 
 
 def _validate_ene(ene):
-    from astropy.table import Table
-
     if isinstance(ene, dict) or isinstance(ene, Table):
         try:
             ene = validate_array(
