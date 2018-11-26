@@ -5,8 +5,6 @@ from __future__ import (absolute_import, division, print_function,
 import numpy as np
 import astropy.units as u
 from astropy.extern import six
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Button, Slider, CheckButtons
 
 from .core import lnprobmodel, _prefit
 from .plot import color_cycle, _plot_data_to_ax
@@ -68,6 +66,9 @@ class InteractiveModelFitter(object):
                  labels=None,
                  sed=True,
                  auto_update=True):
+
+        import matplotlib.pyplot as plt
+        from matplotlib.widgets import Button, Slider, CheckButtons
 
         self.pars = p0
         self.P0_IS_ML = False
@@ -273,4 +274,5 @@ class InteractiveModelFitter(object):
         self.P0_IS_ML = P0_IS_ML
 
     def close_fig(self, event):
+        import matplotlib.pyplot as plt
         plt.close(self.fig)
