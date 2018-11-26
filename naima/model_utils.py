@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 import numpy as np
 import hashlib
 from astropy import units as u
@@ -25,9 +29,10 @@ def memoize(func):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter(
-                        'ignore',
-                        getattr(np, 'VisibleDeprecationWarning', None))
-                    energy = u.Quantity(energy['energy'])
+                        "ignore",
+                        getattr(np, "VisibleDeprecationWarning", None),
+                    )
+                    energy = u.Quantity(energy["energy"])
             except (TypeError, ValueError, IndexError):
                 pass
 
@@ -41,20 +46,20 @@ def memoize(func):
             data = [hashlib.sha256(bstr).hexdigest()]
 
             data.append(energy.unit.to_string())
-            data.append(str(kwargs.get('distance', 0)))
+            data.append(str(kwargs.get("distance", 0)))
 
             if args:
                 data.append(str(args))
-            if hasattr(cls, 'particle_distribution'):
+            if hasattr(cls, "particle_distribution"):
                 models = [cls, cls.particle_distribution]
             else:
                 models = [cls]
             for model in models:
-                if hasattr(model, 'param_names'):
+                if hasattr(model, "param_names"):
                     for par in model.param_names:
                         data.append(str(getattr(model, par)))
 
-            token = u''.join(data)
+            token = "".join(data)
             digest = hashlib.sha256(token.encode()).hexdigest()
 
             if digest in cache:

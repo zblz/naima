@@ -10,33 +10,43 @@ from astropy.io import ascii
 
 try:
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+
     HAS_MATPLOTLIB = True
-except:
+except ImportError:
     HAS_MATPLOTLIB = False
 
 from ..models import ExponentialCutoffPowerLaw
 from ..model_fitter import InteractiveModelFitter
 
 # Read data
-fname = get_pkg_data_filename('data/CrabNebula_HESS_ipac.dat')
+fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
 data = ascii.read(fname)
 
-def modelfn(pars,data):
-    ECPL = ExponentialCutoffPowerLaw(10**pars[0] * u.Unit('1/(cm2 s TeV)'), 1*u.TeV,
-            pars[1], 10**pars[2] * u.TeV)
+
+def modelfn(pars, data):
+    ECPL = ExponentialCutoffPowerLaw(
+        10 ** pars[0] * u.Unit("1/(cm2 s TeV)"),
+        1 * u.TeV,
+        pars[1],
+        10 ** pars[2] * u.TeV,
+    )
     return ECPL(data)
 
-def modelfn2(pars, data):
-    return modelfn(pars, data), (1,2,3)*u.m
 
-labels = ['log10(norm)', 'index', 'log10(cutoff)']
+def modelfn2(pars, data):
+    return modelfn(pars, data), (1, 2, 3) * u.m
+
+
+labels = ["log10(norm)", "index", "log10(cutoff)"]
 p0 = np.array((-12, 2.7, np.log10(14)))
 
-e_range = [100*u.GeV, 100*u.TeV]
+e_range = [100 * u.GeV, 100 * u.TeV]
 
-@pytest.mark.skipif('not HAS_MATPLOTLIB')
+
+@pytest.mark.skipif("not HAS_MATPLOTLIB")
 def test_modelwidget_inputs():
     with warnings.catch_warnings():
         # Matplotlib warns a lot when unable to bring up the widget
@@ -59,7 +69,7 @@ def test_modelwidget_inputs():
         imf = InteractiveModelFitter(model, p0, labels=labels)
         plt.close('all')
 
-@pytest.mark.skipif('not HAS_MATPLOTLIB')
+@pytest.mark.skipif("not HAS_MATPLOTLIB")
 def test_modelwidget_funcs():
     with warnings.catch_warnings():
         # Matplotlib warns a lot when unable to bring up the widget
