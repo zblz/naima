@@ -1,6 +1,15 @@
 0.9 (unreleased)
 ----------------
 
+0.8.3 (2018-11-27)
+------------------
+
+Bug fixes
+^^^^^^^^^
+
+- Fixed plotting scalar blobs with units.
+- Fixed plotting vector blobs with same length as data but incompatible units.
+
 0.8.2 (2018-11-26)
 ------------------
 
