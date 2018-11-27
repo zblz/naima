@@ -881,12 +881,10 @@ def plot_fit(
     if e_range is None and not hasattr(sampler, "blobs"):
         e_range = data["energy"][[0, -1]] * np.array((1.0 / 3.0, 3.0))
 
-    if (
-        plotdata is None
-        and len(model_ML[0]) == len(data["energy"])
-        and model_ML[0].unit.is_equivalent(data["flux"].unit)
-    ):
-        plotdata = True
+    if plotdata is None and len(model_ML[0]) == len(data["energy"]):
+        model_unit, _ = sed_conversion(model_ML[0], model_ML[1].unit, sed)
+        data_unit, _ = sed_conversion(data["energy"], data["flux"].unit, sed)
+        plotdata = model_unit.is_equivalent(data_unit)
     elif plotdata is None:
         plotdata = False
 
