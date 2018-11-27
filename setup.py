@@ -102,6 +102,7 @@ install_requires = (
         "matplotlib",
         "scipy",
         "h5py",
+        "pyyaml",
     ],
 )
 
