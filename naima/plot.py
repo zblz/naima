@@ -1417,18 +1417,20 @@ def plot_distribution(samples, label, figure=None):
 
     histnbins = min(max(25, int(len(samples) / 100.0)), 100)
     xlabel = "" if label is None else label
+
+    if isinstance(samples, u.Quantity):
+        samples_nounit = samples.value
+    else:
+        samples_nounit = samples
+
     n, x, _ = ax.hist(
-        samples,
+        samples_nounit,
         histnbins,
         histtype="stepfilled",
         color=color_cycle[0],
         lw=0,
         density=True,
     )
-    if isinstance(samples, u.Quantity):
-        samples_nounit = samples.value
-    else:
-        samples_nounit = samples
 
     kde = stats.kde.gaussian_kde(samples_nounit)
     ax.plot(x, kde(x), color="k", label="KDE")
