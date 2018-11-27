@@ -1322,14 +1322,17 @@ def plot_data(
 
     try:
         data = validate_data_table(input_data)
-    except TypeError:
+    except TypeError as exc:
         if hasattr(input_data, "data"):
             data = input_data.data
         elif isinstance(input_data, dict) and "energy" in input_data.keys():
             data = input_data
         else:
-            log.warning("input_data format not know, no plotting data!")
-            return None
+            log.warning(
+                "input_data format unknown, no plotting data! "
+                "Data loading exception: {}".format(exc)
+            )
+            raise
 
     if figure is None:
         f = plt.figure()
