@@ -881,7 +881,11 @@ def plot_fit(
     if e_range is None and not hasattr(sampler, "blobs"):
         e_range = data["energy"][[0, -1]] * np.array((1.0 / 3.0, 3.0))
 
-    if len(model_ML[0]) == len(data["energy"]) and plotdata is None:
+    if (
+        plotdata is None
+        and len(model_ML[0]) == len(data["energy"])
+        and model_ML[0].unit.is_equivalent(data["flux"].unit)
+    ):
         plotdata = True
     elif plotdata is None:
         plotdata = False
