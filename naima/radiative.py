@@ -186,7 +186,7 @@ class BaseLorentzFactor(BaseRadiative):
         log10gmin = np.log10(self.gmin)
         log10gmax = np.log10(self.gmax)
         return np.logspace(
-            log10gmin, log10gmax, self.ngd * (log10gmax - log10gmin)
+            log10gmin, log10gmax, int(self.ngd * (log10gmax - log10gmin))
         )
 
     @property
@@ -225,7 +225,7 @@ class BaseLorentzFactor(BaseRadiative):
             log10gmin = np.log10(Emin / self.mc2).value
             log10gmax = np.log10(Emax / self.mc2).value
             gam = np.logspace(
-                log10gmin, log10gmax, self.ngd * (log10gmax - log10gmin)
+                log10gmin, log10gmax, int(self.ngd * (log10gmax - log10gmin))
             )
 
             pd = self.particle_distribution(gam * self.mc2)
@@ -1278,7 +1278,7 @@ class BaseProton(BaseRadiative):
         return np.logspace(
             np.log10(self.Epmin.to("GeV").value),
             np.log10(self.Epmax.to("GeV").value),
-            self.nEpd * (np.log10(self.Epmax / self.Epmin)),
+            int(self.nEpd * (np.log10(self.Epmax / self.Epmin))),
         )
 
     @property
@@ -1320,7 +1320,7 @@ class BaseProton(BaseRadiative):
                 np.logspace(
                     log10Epmin,
                     log10Epmax,
-                    self.nEpd * (log10Epmax - log10Epmin),
+                    int(self.nEpd * (log10Epmax - log10Epmin)),
                 )
                 * u.GeV
             )
@@ -1986,7 +1986,7 @@ class PionDecayKelner06(BaseRadiative):
             * self._sigma_inel(Ep0)
             * self._particle_distribution(Ep0)
         )
-        return qpi / np.sqrt(Epi ** 2 + self._m_pi ** 2)
+        return qpi / np.sqrt(Epi ** 2 - self._m_pi ** 2)
 
     def _calc_specpp_loE(self, Egamma):
         """

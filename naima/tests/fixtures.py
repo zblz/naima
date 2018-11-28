@@ -111,7 +111,7 @@ def lnprior(pars):
 
 
 # Run sampler
-@pytest.fixture
+@pytest.fixture(scope="module")
 def sampler():
     p0 = np.array((np.log(1.8e-12), 2.4, np.log10(15.0)))
     labels = ["log(norm)", "index", "log10(cutoff)"]
@@ -129,7 +129,7 @@ def sampler():
     return sampler
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def simple_sampler():
     p0 = np.array((np.log(1.8e-12), 2.4, np.log10(15.0)))
     labels = ["log(norm)", "index", "log10(cutoff)"]

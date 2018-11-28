@@ -115,7 +115,7 @@ def test_plot_data_reuse_fig(sampler):
     # change the energy units between calls
     data = sampler.data
     fig = plot_data(data, sed=True)
-    data["energy"] = (data["energy"] / 1000).to("keV")
+    data["energy"] = (data["energy"] * 1000).to("keV")
     plot_data(data, sed=True, figure=fig)
     plt.close("all")
 

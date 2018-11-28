@@ -179,7 +179,7 @@ def _plot_chain_func(sampler, p, last_step=False):
         histtype="stepfilled",
         color=color_cycle[0],
         lw=0,
-        normed=1,
+        density=True,
     )
     kde = stats.kde.gaussian_kde(dist)
     ax2.plot(x, kde(x), color="k", label="KDE")
@@ -881,8 +881,10 @@ def plot_fit(
     if e_range is None and not hasattr(sampler, "blobs"):
         e_range = data["energy"][[0, -1]] * np.array((1.0 / 3.0, 3.0))
 
-    if len(model_ML[0]) == len(data["energy"]) and plotdata is None:
-        plotdata = True
+    if plotdata is None and len(model_ML[0]) == len(data["energy"]):
+        model_unit, _ = sed_conversion(model_ML[0], model_ML[1].unit, sed)
+        data_unit, _ = sed_conversion(data["energy"], data["flux"].unit, sed)
+        plotdata = model_unit.is_equivalent(data_unit)
     elif plotdata is None:
         plotdata = False
 
@@ -1318,14 +1320,17 @@ def plot_data(
 
     try:
         data = validate_data_table(input_data)
-    except TypeError:
+    except TypeError as exc:
         if hasattr(input_data, "data"):
             data = input_data.data
         elif isinstance(input_data, dict) and "energy" in input_data.keys():
             data = input_data
         else:
-            log.warning("input_data format not know, no plotting data!")
-            return None
+            log.warning(
+                "input_data format unknown, no plotting data! "
+                "Data loading exception: {}".format(exc)
+            )
+            raise
 
     if figure is None:
         f = plt.figure()
@@ -1417,18 +1422,20 @@ def plot_distribution(samples, label, figure=None):
 
     histnbins = min(max(25, int(len(samples) / 100.0)), 100)
     xlabel = "" if label is None else label
-    n, x, _ = ax.hist(
-        samples,
-        histnbins,
-        histtype="stepfilled",
-        color=color_cycle[0],
-        lw=0,
-        normed=1,
-    )
+
     if isinstance(samples, u.Quantity):
         samples_nounit = samples.value
     else:
         samples_nounit = samples
+
+    n, x, _ = ax.hist(
+        samples_nounit,
+        histnbins,
+        histtype="stepfilled",
+        color=color_cycle[0],
+        lw=0,
+        density=True,
+    )
 
     kde = stats.kde.gaussian_kde(samples_nounit)
     ax.plot(x, kde(x), color="k", label="KDE")

@@ -125,7 +125,7 @@ def lnprob(pars, data, modelfunc, priorfunc):
 
             MODEL_IN_BLOB = False
             for blob in modelout[1:]:
-                if np.all(blob == model):
+                if np.array_equal(blob, model):
                     MODEL_IN_BLOB = True
 
             if MODEL_IN_BLOB:

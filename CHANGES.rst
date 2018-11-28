@@ -4,9 +4,33 @@
 - Added the `ProtonSynchrotron` class to compute synchrotron radiation from
   proton populations.
 
+0.8.3 (2018-11-27)
+------------------
+
 Bug fixes
 ^^^^^^^^^
-- Updated deprecated numpy usages.
+
+- Fixed plotting scalar blobs with units.
+- Fixed plotting vector blobs with same length as data but incompatible units.
+
+0.8.2 (2018-11-26)
+------------------
+
+- Formatted source code with black.
+
+Bug fixes
+^^^^^^^^^
+
+- Fixed deprecated use of np.all and normed argument to matplotlib's hist.
+
+0.8.1 (2017-09-27)
+------------------
+
+Bug fixes
+^^^^^^^^^
+
+- Fixed deprecated negative signs on numpy booleans.
+- Fixed wrong sign in delta functional approximation of Kelner PionDecay.
 
 0.8 (2016-12-21)
 ----------------

@@ -48,7 +48,7 @@ with open("README.rst", "rt") as f:
 builtins._ASTROPY_PACKAGE_NAME_ = PACKAGENAME
 
 # VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
-VERSION = "0.8.dev"
+VERSION = "0.9.dev"
 
 # Indicates if this version is a release version
 RELEASE = "dev" not in VERSION
@@ -94,24 +94,19 @@ for root, dirs, files in os.walk(PACKAGENAME):
             )
 package_info["package_data"][PACKAGENAME].extend(c_files)
 
-# Some dependencies with C extensions cannot be built on readthedocs
-on_rtd = os.environ.get("READTHEDOCS", None) == "True"
-if on_rtd:
-    install_requires = []
-else:
-    install_requires = (
-        [
-            "astropy>=1.0.2",
-            "emcee>=2.2.0",
-            "corner",
-            "matplotlib",
-            "scipy",
-            "h5py",
-            "numtraits",
-            "traitlets",
-        ],
-    )
-
+install_requires = (
+    [
+        "astropy>=1.0.2",
+        "corner",
+        "emcee>=2.2.0",
+        "h5py",
+        "matplotlib",
+        "numtraits",
+        "pyyaml",
+        "scipy",
+        "traitlets",
+    ],
+)
 
 setup(
     name=PACKAGENAME,

@@ -111,7 +111,7 @@ if __name__ == "__main__":
         results.write(f, format="ascii.fixed_width_two_line")
 
     alabaster_width = 660
-    alabaster_dpi = 100 * alabaster_width / 800
+    alabaster_dpi = 125 * alabaster_width / 800
 
     print("Plotting chains...")
     f = naima.plot_chain(sampler, 1)
@@ -125,6 +125,7 @@ if __name__ == "__main__":
     print("Plotting samples...")
     f = naima.plot_fit(sampler, 0, ML_info=False)
     f.axes[0].set_ylim(1e-13, 2e-10)
+    f.axes[0].set_xlim(left=1e-1)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
     f.savefig("RXJ1713_IC_model_samples.png", dpi=alabaster_dpi)
@@ -133,6 +134,7 @@ if __name__ == "__main__":
         sampler, 0, e_range=e_range, ML_info=False, n_samples=500
     )
     f.axes[0].set_ylim(1e-13, 2e-10)
+    f.axes[0].set_xlim(left=1e-1)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
     f.savefig("RXJ1713_IC_model_samples_erange.png", dpi=alabaster_dpi)
@@ -143,6 +145,7 @@ if __name__ == "__main__":
         sampler, 0, ML_info=False, confs=[3, 1], last_step=False
     )
     f.axes[0].set_ylim(1e-13, 2e-10)
+    f.axes[0].set_xlim(left=1e-1)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
     f.savefig("RXJ1713_IC_model_confs.png", dpi=alabaster_dpi)
@@ -151,6 +154,7 @@ if __name__ == "__main__":
         sampler, 0, e_range=e_range, ML_info=False, confs=[3, 1]
     )
     f.axes[0].set_ylim(1e-13, 2e-10)
+    f.axes[0].set_xlim(left=1e-1)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
     f.savefig("RXJ1713_IC_model_confs_erange.png", dpi=alabaster_dpi)
@@ -168,6 +172,7 @@ if __name__ == "__main__":
         label="Electron energy distribution",
         xlabel=r"Electron energy [$\mathrm{TeV}$]",
     )
+    f.axes[0].set_xlim(left=1e-1)
     f.tight_layout()
     f.savefig("RXJ1713_IC_pdist.png", dpi=alabaster_dpi)
     f = naima.plot_blob(sampler, 2, label=r"$W_e(E_e>1\,\mathrm{TeV})$")

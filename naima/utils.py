@@ -332,6 +332,9 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
     slice1[axis] = slice(None, -1)
     slice2[axis] = slice(1, None)
 
+    slice1 = tuple(slice1)
+    slice2 = tuple(slice2)
+
     if x.ndim == 1:
         shape = [1] * y.ndim
         shape[axis] = x.shape[0]
