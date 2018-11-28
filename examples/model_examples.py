@@ -15,21 +15,22 @@ import naima
 # Pion decay
 # ==========
 
-PionDecay_ECPL_p0 = np.array((46, 2.34, np.log10(80.)))
-PionDecay_ECPL_labels = ['log10(norm)', 'index', 'log10(cutoff)']
+PionDecay_ECPL_p0 = np.array((46, 2.34, np.log10(80.0)))
+PionDecay_ECPL_labels = ["log10(norm)", "index", "log10(cutoff)"]
 
 # Prepare an energy array for saving the particle distribution
 proton_energy = np.logspace(-3, 2, 50) * u.TeV
 
 
 def PionDecay_ECPL(pars, data):
-    amplitude = 10**pars[0] / u.TeV
+    amplitude = 10 ** pars[0] / u.TeV
     alpha = pars[1]
-    e_cutoff = 10**pars[2] * u.TeV
+    e_cutoff = 10 ** pars[2] * u.TeV
 
-    ECPL = naima.models.ExponentialCutoffPowerLaw(amplitude, 30 * u.TeV, alpha,
-                                                  e_cutoff)
-    PP = naima.models.PionDecay(ECPL, nh=1.0 * u.cm** -3)
+    ECPL = naima.models.ExponentialCutoffPowerLaw(
+        amplitude, 30 * u.TeV, alpha, e_cutoff
+    )
+    PP = naima.models.PionDecay(ECPL, nh=1.0 * u.cm ** -3)
 
     model = PP.flux(data, distance=1.0 * u.kpc)
     # Save a realization of the particle distribution to the metadata blob
@@ -46,26 +47,28 @@ def PionDecay_ECPL_lnprior(pars):
     logprob = naima.uniform_prior(pars[1], -1, 5)
     return logprob
 
+
 # Inverse Compton with the energy in electrons as the normalization parameter
 # ===========================================================================
 
 IC_We_p0 = np.array((40, 3.0, np.log10(30)))
-IC_We_labels = ['log10(We)', 'index', 'log10(cutoff)']
+IC_We_labels = ["log10(We)", "index", "log10(cutoff)"]
 
 
 def IC_We(pars, data):
     # Example of a model that is normalized though the total energy in electrons
 
     # Match parameters to ECPL properties, and give them the appropriate units
-    We = 10**pars[0] * u.erg
+    We = 10 ** pars[0] * u.erg
     alpha = pars[1]
-    e_cutoff = 10**pars[2] * u.TeV
+    e_cutoff = 10 ** pars[2] * u.TeV
 
     # Initialize instances of the particle distribution and radiative model
     # set a bogus normalization that will be changed in third line
-    ECPL = naima.models.ExponentialCutoffPowerLaw(1 / u.eV, 10. * u.TeV,
-                                                  alpha, e_cutoff)
-    IC = naima.models.InverseCompton(ECPL, seed_photon_fields=['CMB'])
+    ECPL = naima.models.ExponentialCutoffPowerLaw(
+        1 / u.eV, 10.0 * u.TeV, alpha, e_cutoff
+    )
+    IC = naima.models.InverseCompton(ECPL, seed_photon_fields=["CMB"])
     IC.set_We(We, Eemin=1 * u.TeV)
 
     # compute flux at the energies given in data['energy']
@@ -82,6 +85,7 @@ def IC_We_lnprior(pars):
     logprob = naima.uniform_prior(pars[1], -1, 5)
     return logprob
 
+
 #
 # FUNCTIONAL MODELS
 #
@@ -89,34 +93,37 @@ def IC_We_lnprior(pars):
 # ===========================
 
 ECPL_p0 = np.array((1e-12, 2.4, np.log10(15.0)))
-ECPL_labels = ['norm', 'index', 'log10(cutoff)']
+ECPL_labels = ["norm", "index", "log10(cutoff)"]
 
 
 def ECPL(pars, data):
     # Get the units of the flux data and match them in the model amplitude
-    amplitude = pars[0] * data['flux'].unit
+    amplitude = pars[0] * data["flux"].unit
     alpha = pars[1]
-    e_cutoff = (10**pars[2]) * u.TeV
-    ECPL = naima.models.ExponentialCutoffPowerLaw(amplitude, 1 * u.TeV, alpha,
-                                                  e_cutoff)
+    e_cutoff = (10 ** pars[2]) * u.TeV
+    ECPL = naima.models.ExponentialCutoffPowerLaw(
+        amplitude, 1 * u.TeV, alpha, e_cutoff
+    )
 
     return ECPL(data)
 
 
 def ECPL_lnprior(pars):
-    logprob = naima.uniform_prior(pars[0], 0., np.inf) \
-            + naima.uniform_prior(pars[1], -1, 5)
+    logprob = naima.uniform_prior(pars[0], 0.0, np.inf) + naima.uniform_prior(
+        pars[1], -1, 5
+    )
     return logprob
+
 
 # Log-Parabola or Curved Powerlaw
 # ===============================
 
-LP_p0 = np.array((1.5e-12, 2.7, 0.12,))
-LP_labels = ['norm', 'alpha', 'beta']
+LP_p0 = np.array((1.5e-12, 2.7, 0.12))
+LP_labels = ["norm", "alpha", "beta"]
 
 
 def LP(pars, data):
-    amplitude = pars[0] * data['flux'].unit
+    amplitude = pars[0] * data["flux"].unit
     alpha = pars[1]
     beta = pars[2]
     LP = naima.models.LogParabola(amplitude, 1 * u.TeV, alpha, beta)
@@ -124,6 +131,7 @@ def LP(pars, data):
 
 
 def LP_lnprior(pars):
-    logprob = naima.uniform_prior(pars[0], 0., np.inf) \
-                + naima.uniform_prior(pars[1], -1, 5)
+    logprob = naima.uniform_prior(pars[0], 0.0, np.inf) + naima.uniform_prior(
+        pars[1], -1, 5
+    )
     return logprob

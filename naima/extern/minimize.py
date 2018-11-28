@@ -7,20 +7,37 @@
 # minimize is a thin wrapper that behaves like scipy.optimize.minimize
 
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 import numpy
-from numpy import (atleast_1d, eye, mgrid, argmin, zeros, shape, squeeze,
-                           vectorize, asarray, sqrt, Inf, asfarray, isinf)
+from numpy import (
+    atleast_1d,
+    eye,
+    mgrid,
+    argmin,
+    zeros,
+    shape,
+    squeeze,
+    vectorize,
+    asarray,
+    sqrt,
+    Inf,
+    asfarray,
+    isinf,
+)
 
 # standard status messages of optimizers
-_status_message = {'success': 'Optimization terminated successfully.',
-                   'maxfev': 'Maximum number of function evaluations has '
-                              'been exceeded.',
-                   'maxiter': 'Maximum number of iterations has been '
-                              'exceeded.',
-                   'pr_loss': 'Desired error not necessarily achieved due '
-                              'to precision loss.'}
+_status_message = {
+    "success": "Optimization terminated successfully.",
+    "maxfev": "Maximum number of function evaluations has " "been exceeded.",
+    "maxiter": "Maximum number of iterations has been " "exceeded.",
+    "pr_loss": "Desired error not necessarily achieved due "
+    "to precision loss.",
+}
 
 
 def wrap_function(function, args):
@@ -34,20 +51,34 @@ def wrap_function(function, args):
 
     return ncalls, function_wrapper
 
+
 class OptimizeResult(dict):
     """ Represents the optimization result.
     """
+
     pass
+
 
 class OptimizeWarning(UserWarning):
     pass
 
 
-def minimize(func,x0,args=(),options={},method=None):
+def minimize(func, x0, args=(), options={}, method=None):
     return _minimize_neldermead(func, x0, args=args, **options)
 
-def _minimize_neldermead(func, x0, args=(), callback=None, xtol=1e-4, ftol=1e-4,
-        maxiter=None, maxfev=None, disp=False, return_all=False): # pragma: no cover
+
+def _minimize_neldermead(
+    func,
+    x0,
+    args=(),
+    callback=None,
+    xtol=1e-4,
+    ftol=1e-4,
+    maxiter=None,
+    maxfev=None,
+    disp=False,
+    return_all=False,
+):  # pragma: no cover
     """
     Minimization of scalar function of one or more variables using the
     Nelder-Mead algorithm.
@@ -98,7 +129,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None, xtol=1e-4, ftol=1e-4,
     for k in range(0, N):
         y = numpy.array(x0, copy=True)
         if y[k] != 0:
-            y[k] = (1 + nonzdelt)*y[k]
+            y[k] = (1 + nonzdelt) * y[k]
         else:
             y[k] = zdelt
 
@@ -113,9 +144,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None, xtol=1e-4, ftol=1e-4,
 
     iterations = 1
 
-    while (fcalls[0] < maxfun and iterations < maxiter):
-        if (numpy.max(numpy.ravel(numpy.abs((sim[1:] - sim[0]) / sim[0]))) <= xtol and
-                numpy.max(numpy.abs((fsim[0] - fsim[1:]) / fsim[0])) <= ftol):
+    while fcalls[0] < maxfun and iterations < maxiter:
+        if (
+            numpy.max(numpy.ravel(numpy.abs((sim[1:] - sim[0]) / sim[0])))
+            <= xtol
+            and numpy.max(numpy.abs((fsim[0] - fsim[1:]) / fsim[0])) <= ftol
+        ):
             break
 
         xbar = numpy.add.reduce(sim[:-1], 0) / N
@@ -179,25 +213,31 @@ def _minimize_neldermead(func, x0, args=(), callback=None, xtol=1e-4, ftol=1e-4,
 
     if fcalls[0] >= maxfun:
         warnflag = 1
-        msg = _status_message['maxfev']
+        msg = _status_message["maxfev"]
         if disp:
-            print('Warning: ' + msg)
+            print("Warning: " + msg)
     elif iterations >= maxiter:
         warnflag = 2
-        msg = _status_message['maxiter']
+        msg = _status_message["maxiter"]
         if disp:
-            print('Warning: ' + msg)
+            print("Warning: " + msg)
     else:
-        msg = _status_message['success']
+        msg = _status_message["success"]
         if disp:
             print(msg)
             print("         Current function value: %f" % fval)
             print("         Iterations: %d" % iterations)
             print("         Function evaluations: %d" % fcalls[0])
 
-    result = OptimizeResult(fun=fval, nit=iterations, nfev=fcalls[0],
-                            status=warnflag, success=(warnflag == 0),
-                            message=msg, x=x)
+    result = OptimizeResult(
+        fun=fval,
+        nit=iterations,
+        nfev=fcalls[0],
+        status=warnflag,
+        success=(warnflag == 0),
+        message=msg,
+        x=x,
+    )
     if retall:
-        result['allvecs'] = allvecs
+        result["allvecs"] = allvecs
     return result
