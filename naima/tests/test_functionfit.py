@@ -208,11 +208,19 @@ def test_interactive():
         # Matplotlib warns a lot when unable to bring up the widget
         warnings.simplefilter("ignore")
         sampler, pos = get_sampler(
-            data_table=data_table, p0=p0, labels=labels, model=cutoffexp,
-            prior=lnprior, nwalkers=10, nburn=5, threads=1, interactive=True)
+            data_table=data_table,
+            p0=p0,
+            labels=labels,
+            model=cutoffexp,
+            prior=lnprior,
+            nwalkers=10,
+            nburn=5,
+            threads=1,
+            interactive=True,
+        )
 
 
-@pytest.mark.skipif('not HAS_EMCEE')
+@pytest.mark.skipif("not HAS_EMCEE")
 def test_init_symmetric_dflux():
     # symmetric data_table errors
     sampler, pos = run_sampler(
