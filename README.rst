@@ -1,3 +1,5 @@
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzblz%2Fnaima.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzblz%2Fnaima?ref=badge_shield)
+
 naima
 =====
 
@@ -62,3 +64,7 @@ Code status
 	:target: https://coveralls.io/r/zblz/naima
 .. image:: http://img.shields.io/badge/benchmarked%20by-asv-green.svg
 	:target: http://zblz.github.io/naima-benchmarks
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fzblz%2Fnaima.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fzblz%2Fnaima?ref=badge_large)
