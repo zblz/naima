@@ -4,12 +4,13 @@ Installation
 Requirements
 ------------
 
-naima requires Python 2.7, 3.4, or 3.5 and the following packages to be
-installed: `Numpy <http://www.numpy.org>`_, `Scipy <http://www.scipy.org>`_,
-`Astropy`_, `Matplotlib <http://www.matplotlib.org>`_, `emcee
-<http://dan.iel.fm/emcee>`_, `corner <http://github.com/dfm/corner.py>`_, and
-`h5py <http://www.h5py.org>`_. These will be installed automatically if you
-follow one of the installation methods below.
+naima is tested on Python 2.7, 3.6, and 3.7 but also works in 3.4 and 3.5. It
+also requires the following packages to be installed: `Numpy
+<http://www.numpy.org>`_, `Scipy <http://www.scipy.org>`_, `Astropy`_,
+`Matplotlib <http://www.matplotlib.org>`_, `emcee <http://dan.iel.fm/emcee>`_,
+`corner <http://github.com/dfm/corner.py>`_, and `h5py <http://www.h5py.org>`_.
+These will be installed automatically if you follow one of the installation
+methods below.
 
 The :ref:`sherpamod` can be used if the Sherpa package is installed.
 
@@ -81,7 +82,6 @@ Macports can be used on Mac systems to install most dependencies::
     $ sudo port install $PY-pip $PY-scipy $PY-matplotlib $PY-emcee $PY-h5py \
         $PY-astropy
     $ pip install --user naima
-
 
 Installing the development version
 ++++++++++++++++++++++++++++++++++
