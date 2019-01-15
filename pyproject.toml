@@ -2,14 +2,15 @@
 line-length = 79
 exclude = '''
 /(
-    \.git
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | build
-  | dist
-  | \.eggs
-  | astropy_helpers
-)/
+    \.git/
+  | \.mypy_cache/
+  | \.tox/
+  | \.venv/
+  | _build/
+  | build/
+  | dist/
+  | \.eggs/
+  | astropy_helpers/
+  | naima/_astropy_init\.py
+)
 '''
