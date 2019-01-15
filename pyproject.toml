@@ -12,5 +12,6 @@ exclude = '''
   | \.eggs/
   | astropy_helpers/
   | naima/_astropy_init\.py
+  | ah_bootstrap\.py
 )
 '''
