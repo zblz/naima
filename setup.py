@@ -97,12 +97,14 @@ package_info["package_data"][PACKAGENAME].extend(c_files)
 install_requires = (
     [
         "astropy>=1.0.2",
-        "emcee>=2.2.0",
         "corner",
-        "matplotlib",
-        "scipy",
+        "emcee>=2.2.0",
         "h5py",
+        "matplotlib",
+        "numtraits",
         "pyyaml",
+        "scipy",
+        "traitlets",
     ],
 )
 

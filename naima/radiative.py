@@ -7,6 +7,10 @@ from __future__ import (
     unicode_literals,
 )
 import numpy as np
+
+from numtraits import NumericalTrait
+from traitlets import HasTraits, Int, observe
+
 from .extern.validator import (
     validate_scalar,
     validate_array,
@@ -95,6 +99,17 @@ class BaseRadiative(object):
                 physical_type="differential energy",
             )
 
+    def _spectrum(self, photon_energy):
+        """
+        Compute photon spectrum. Implemented in subclasses
+
+        Parameters
+        ----------
+        photon_energy : :class:`~astropy.units.Quantity` instance
+            Photon energy array.
+        """
+        raise NotImplementedError
+
     @memoize
     def flux(self, photon_energy, distance=1 * u.kpc):
         """Differential flux at a given distance from the source.
@@ -148,13 +163,18 @@ class BaseRadiative(object):
         return sed
 
 
-class BaseElectron(BaseRadiative):
-    """Implements gam and nelec properties in addition to the BaseRadiative methods
+class BaseLorentzFactor(BaseRadiative):
+    """
+    Implements gam and npart properties in addition to the BaseRadiative
+    methods
     """
 
-    def __init__(self, particle_distribution):
-        super(BaseElectron, self).__init__(particle_distribution)
-        self.param_names = ["Eemin", "Eemax", "nEed"]
+    def __init__(self, particle_distribution, mass):
+        super(BaseLorentzFactor, self).__init__(particle_distribution)
+        self.param_names = ["gmin", "gmax", "ngd"]
+        mass = validate_scalar("mass", mass, physical_type="mass")
+        self.mc2 = (mass * c ** 2).cgs
+        self.mc2_unit = u.Unit(self.mc2)
         self._memoize = True
         self._cache = {}
         self._queue = []
@@ -163,60 +183,132 @@ class BaseElectron(BaseRadiative):
     def _gam(self):
         """ Lorentz factor array
         """
-        log10gmin = np.log10(self.Eemin / mec2).value
-        log10gmax = np.log10(self.Eemax / mec2).value
+        log10gmin = np.log10(self.gmin)
+        log10gmax = np.log10(self.gmax)
         return np.logspace(
-            log10gmin, log10gmax, int(self.nEed * (log10gmax - log10gmin))
+            log10gmin, log10gmax, int(self.ngd * (log10gmax - log10gmin))
         )
 
     @property
-    def _nelec(self):
+    def _npart(self):
         """ Particles per unit lorentz factor
         """
-        pd = self.particle_distribution(self._gam * mec2)
-        return pd.to(1 / mec2_unit).value
+        pd = self.particle_distribution(self._gam * self.mc2)
+        return pd.to(1 / self.mc2_unit).value
 
     @property
-    def We(self):
-        """ Total energy in electrons used for the radiative calculation
+    def _W(self):
+        """ Total energy in particles used for the radiative calculation
         """
-        We = trapz_loglog(self._gam * self._nelec, self._gam * mec2)
-        return We
+        gam = self._gam
+        return trapz_loglog(gam * self._npart, gam * self.mc2)
 
-    def compute_We(self, Eemin=None, Eemax=None):
-        """ Total energy in electrons between energies Eemin and Eemax
+    def _compute_W(self, Emin=None, Emax=None):
+        """ Total energy in particles between energies Emin and Emax
 
         Parameters
         ----------
         Eemin : :class:`~astropy.units.Quantity` float, optional
-            Minimum electron energy for energy content calculation.
+            Minimum particle energy for energy content calculation.
 
         Eemax : :class:`~astropy.units.Quantity` float, optional
-            Maximum electron energy for energy content calculation.
+            Maximum particle energy for energy content calculation.
         """
-        if Eemin is None and Eemax is None:
-            We = self.We
+        if Emin is None and Emax is None:
+            W = self._W
         else:
-            if Eemax is None:
-                Eemax = self.Eemax
-            if Eemin is None:
-                Eemin = self.Eemin
+            if Emin is None:
+                Emin = self.gmin * self.mc2
+            if Emax is None:
+                Emax = self.gmax * self.mc2
 
-            log10gmin = np.log10(Eemin / mec2).value
-            log10gmax = np.log10(Eemax / mec2).value
+            log10gmin = np.log10(Emin / self.mc2).value
+            log10gmax = np.log10(Emax / self.mc2).value
             gam = np.logspace(
-                log10gmin, log10gmax, int(self.nEed * (log10gmax - log10gmin))
+                log10gmin, log10gmax, int(self.ngd * (log10gmax - log10gmin))
             )
-            nelec = (
-                self.particle_distribution(gam * mec2).to(1 / mec2_unit).value
-            )
-            We = trapz_loglog(gam * nelec, gam * mec2)
 
-        return We
+            pd = self.particle_distribution(gam * self.mc2)
+            npart = pd.to(1 / self.mc2_unit).value
+
+            W = trapz_loglog(gam * npart, gam * self.mc2)
+
+        return W
+
+    def _set_W(self, W, Emin=None, Emax=None, amplitude_name=None):
+        """ Normalize particle distribution so that the total energy in
+        particles between Emin and Emax is W
+
+        Parameters
+        ----------
+        W : :class:`~astropy.units.Quantity` float
+            Desired energy in particles.
+
+        Emin : :class:`~astropy.units.Quantity` float, optional
+            Minimum particle energy for energy content calculation.
+
+        Emax : :class:`~astropy.units.Quantity` float, optional
+            Maximum particle energy for energy content calculation.
+
+        amplitude_name : str, optional
+            Name of the amplitude parameter of the particle distribution. It
+            must be accesible as an attribute of the distribution function.
+            Defaults to ``amplitude``.
+        """
+
+        W = validate_scalar("W", W, physical_type="energy")
+        oldW = self._compute_W(Emin=Emin, Emax=Emax)
+        factor = (W / oldW).decompose()
+
+        if amplitude_name is None:
+            try:
+                self.particle_distribution.amplitude *= factor
+            except AttributeError:
+                log.error(
+                    "The particle distribution does not have an attribute"
+                    " called amplitude to modify its normalization: you can"
+                    " set the name with the amplitude_name parameter of set_W"
+                )
+        else:
+            oldampl = getattr(self.particle_distribution, amplitude_name)
+            setattr(
+                self.particle_distribution, amplitude_name, oldampl * factor
+            )
+
+
+class BaseElectron(BaseLorentzFactor, HasTraits):
+    """
+    Sets particle mass of BaseLorentzFactor to the electron mass
+    """
+
+    def __init__(self, particle_distribution):
+        super(BaseElectron, self).__init__(particle_distribution, mass=m_e)
+
+    Eemin = NumericalTrait(convertible_to=u.erg)
+    Eemax = NumericalTrait(convertible_to=u.erg)
+    nEed = Int()
+
+    @observe("Eemin")
+    def _handle_Eemin(self, change):
+        self.gmin = float(change["new"] / self.mc2)
+
+    @observe("Eemax")
+    def _handle_Eemax(self, change):
+        self.gmax = float(change["new"] / self.mc2)
+
+    @observe("nEed")
+    def _handle_nEed(self, change):
+        self.ngd = change["new"]
+
+    @property
+    def We(self):
+        """ Total energy in particles used for the radiative calculation
+        """
+        return self._W
 
     def set_We(self, We, Eemin=None, Eemax=None, amplitude_name=None):
-        """ Normalize particle distribution so that the total energy in electrons
-        between Eemin and Eemax is We
+        """ Normalize particle distribution so that the total energy in
+        electrons between `Eemin` and `Eemax` is `We`
 
         Parameters
         ----------
@@ -234,73 +326,95 @@ class BaseElectron(BaseRadiative):
             must be accesible as an attribute of the distribution function.
             Defaults to ``amplitude``.
         """
+        return self._set_W(
+            We, Emin=Eemin, Emax=Eemax, amplitude_name=amplitude_name
+        )
 
-        We = validate_scalar("We", We, physical_type="energy")
-        oldWe = self.compute_We(Eemin=Eemin, Eemax=Eemax)
+    def compute_We(self, Eemin=None, Eemax=None):
+        """ Total energy in electrons between energies Emin and Emax
 
-        if amplitude_name is None:
-            try:
-                self.particle_distribution.amplitude *= (
-                    We / oldWe
-                ).decompose()
-            except AttributeError:
-                log.error(
-                    "The particle distribution does not have an attribute"
-                    " called amplitude to modify its normalization: you can"
-                    " set the name with the amplitude_name parameter of set_We"
-                )
-        else:
-            oldampl = getattr(self.particle_distribution, amplitude_name)
-            setattr(
-                self.particle_distribution,
-                amplitude_name,
-                oldampl * (We / oldWe).decompose(),
-            )
+        Parameters
+        ----------
+        Eemin : :class:`~astropy.units.Quantity` float, optional
+            Minimum electron energy for energy content calculation.
+
+        Eemax : :class:`~astropy.units.Quantity` float, optional
+            Maximum electron energy for energy content calculation.
+        """
+        return self._compute_W(Emin=Eemin, Emax=Eemax)
 
 
-class Synchrotron(BaseElectron):
-    """Synchrotron emission from an electron population.
-
-    This class uses the approximation of the synchrotron emissivity in a
-    random magnetic field of Aharonian, Kelner, and Prosekin 2010, PhysRev D
-    82, 3002 (`arXiv:1006.1045 <http://arxiv.org/abs/1006.1045>`_).
-
-    Parameters
-    ----------
-    particle_distribution : function
-        Particle distribution function, taking electron energies as a
-        `~astropy.units.Quantity` array or float, and returning the particle
-        energy density in units of number of electrons per unit energy as a
-        `~astropy.units.Quantity` array or float.
-
-    B : :class:`~astropy.units.Quantity` float instance, optional
-        Isotropic magnetic field strength. Default: equipartition
-        with CMB (3.24e-6 G)
-
-    Other parameters
-    ----------------
-    Eemin : :class:`~astropy.units.Quantity` float instance, optional
-        Minimum electron energy for the electron distribution. Default is 1
-        GeV.
-
-    Eemax : :class:`~astropy.units.Quantity` float instance, optional
-        Maximum electron energy for the electron distribution. Default is 510
-        TeV.
-
-    nEed : scalar
-        Number of points per decade in energy for the electron energy and
-        distribution arrays. Default is 100.
+class BaseLorentzProton(BaseLorentzFactor, HasTraits):
+    """
+    Sets particle mass of BaseLorentzFactor to the proton mass
     """
 
-    def __init__(self, particle_distribution, B=3.24e-6 * u.G, **kwargs):
-        super(Synchrotron, self).__init__(particle_distribution)
-        self.B = validate_scalar("B", B, physical_type="magnetic flux density")
-        self.Eemin = 1 * u.GeV
-        self.Eemax = 1e9 * mec2
-        self.nEed = 100
-        self.param_names += ["B"]
-        self.__dict__.update(**kwargs)
+    def __init__(self, particle_distribution):
+        super(BaseLorentzProton, self).__init__(
+            particle_distribution, mass=m_p
+        )
 
+    Epmin = NumericalTrait(convertible_to=u.erg)
+    Epmax = NumericalTrait(convertible_to=u.erg)
+    nEpd = Int()
+
+    @observe("Epmin")
+    def _handle_Epmin(self, change):
+        self.gmin = float(change["new"] / self.mc2)
+
+    @observe("Epmax")
+    def _handle_Epmax(self, change):
+        self.gmax = float(change["new"] / self.mc2)
+
+    @observe("nEpd")
+    def _handle_nEpd(self, change):
+        self.ngd = change["new"]
+
+    @property
+    def Wp(self):
+        """ Total energy in particles used for the radiative calculation
+        """
+        return self._W
+
+    def set_Wp(self, Wp, Epmin=None, Epmax=None, amplitude_name=None):
+        """ Normalize particle distribution so that the total energy in
+        protons between `Epmin` and `Epmax` is `Wp`
+
+        Parameters
+        ----------
+        Wp : :class:`~astropy.units.Quantity` float
+            Desired energy in protons.
+
+        Epmin : :class:`~astropy.units.Quantity` float, optional
+            Minimum proton energy for energy content calculation.
+
+        Epmax : :class:`~astropy.units.Quantity` float, optional
+            Maximum proton energy for energy content calculation.
+
+        amplitude_name : str, optional
+            Name of the amplitude parameter of the particle distribution. It
+            must be accesible as an attribute of the distribution function.
+            Defaults to ``amplitude``.
+        """
+        return self._set_W(
+            Wp, Emin=Epmin, Emax=Epmax, amplitude_name=amplitude_name
+        )
+
+    def compute_Wp(self, Epmin=None, Epmax=None):
+        """ Total energy in protons between energies Emin and Emax
+
+        Parameters
+        ----------
+        Epmin : :class:`~astropy.units.Quantity` float, optional
+            Minimum proton energy for energy content calculation.
+
+        Epmax : :class:`~astropy.units.Quantity` float, optional
+            Maximum proton energy for energy content calculation.
+        """
+        return self._compute_W(Emin=Epmin, Emax=Epmax)
+
+
+class BaseSynchrotron(BaseLorentzFactor):
     def _spectrum(self, photon_energy):
         """Compute intrinsic synchrotron differential spectrum for energies in
         ``photon_energy``
@@ -342,8 +456,7 @@ class Synchrotron(BaseElectron):
         CS1_1 = (
             2
             * np.pi
-            * m_e.cgs.value
-            * c.cgs.value ** 2
+            * self.mc2.cgs.value
             * hbar.cgs.value
             * outspecene.to("erg").value
         )
@@ -357,19 +470,112 @@ class Synchrotron(BaseElectron):
             * self.B.to("G").value
             * self._gam ** 2
         )
-        Ec /= 2 * (m_e * c).cgs.value
+        Ec /= 2 * (self.mc2 / c).cgs.value
 
         EgEc = outspecene.to("erg").value / np.vstack(Ec)
         dNdE = CS1 * Gtilde(EgEc)
         # return units
         spec = (
-            trapz_loglog(np.vstack(self._nelec) * dNdE, self._gam, axis=0)
+            trapz_loglog(np.vstack(self._npart) * dNdE, self._gam, axis=0)
             / u.s
             / u.erg
         )
         spec = spec.to("1/(s eV)")
 
         return spec
+
+
+class ElectronSynchrotron(BaseElectron, BaseSynchrotron):
+    """Synchrotron emission from an electron population.
+
+    This class uses the approximation of the synchrotron emissivity in a
+    random magnetic field of Aharonian, Kelner, and Prosekin 2010, PhysRev D
+    82, 3002 (`arXiv:1006.1045 <http://arxiv.org/abs/1006.1045>`_).
+
+    Parameters
+    ----------
+    particle_distribution : function
+        Particle distribution function, taking electron energies as a
+        `~astropy.units.Quantity` array or float, and returning the particle
+        energy density in units of number of electrons per unit energy as a
+        `~astropy.units.Quantity` array or float.
+
+    B : :class:`~astropy.units.Quantity` float instance, optional
+        Isotropic magnetic field strength. Default: equipartition
+        with CMB (3.24e-6 G)
+
+    Other parameters
+    ----------------
+    Eemin : :class:`~astropy.units.Quantity` float instance, optional
+        Minimum electron energy for the electron distribution. Default is 1
+        GeV.
+
+    Eemax : :class:`~astropy.units.Quantity` float instance, optional
+        Maximum electron energy for the electron distribution. Default is 510
+        TeV.
+
+    nEed : scalar
+        Number of points per decade in energy for the electron energy and
+        distribution arrays. Default is 100.
+    """
+
+    def __init__(self, particle_distribution, B=3.24e-6 * u.G, **kwargs):
+        super(ElectronSynchrotron, self).__init__(particle_distribution)
+        self.B = validate_scalar("B", B, physical_type="magnetic flux density")
+        self.Eemin = 1 * u.GeV
+        self.Eemax = (1e9 * m_e * c ** 2).to(u.TeV)
+        self.nEed = 100
+        self.param_names += ["B"]
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+class Synchrotron(ElectronSynchrotron):
+    pass
+
+
+class ProtonSynchrotron(BaseLorentzProton, BaseSynchrotron):
+    """Synchrotron emission from a proton population.
+
+    This class uses the approximation of the synchrotron emissivity in a
+    random magnetic field of Aharonian, Kelner, and Prosekin 2010, PhysRev D
+    82, 3002 (`arXiv:1006.1045 <http://arxiv.org/abs/1006.1045>`_).
+
+    Parameters
+    ----------
+    particle_distribution : function
+        Particle distribution function, taking proton energies as a
+        `~astropy.units.Quantity` array or float, and returning the particle
+        energy density in units of number of protons per unit energy as a
+        `~astropy.units.Quantity` array or float.
+
+    B : :class:`~astropy.units.Quantity` float instance, optional
+        Isotropic magnetic field strength. Default: equipartition
+        with CMB (3.24e-6 G)
+
+    Other parameters
+    ----------------
+    Epmin : :class:`~astropy.units.Quantity` float instance, optional
+        Minimum proton energy for the proton distribution. Default is 1
+        GeV.
+
+    Epmax : :class:`~astropy.units.Quantity` float instance, optional
+        Maximum proton energy for the proton distribution. Default is 1 PeV.
+
+    nEpd : scalar
+        Number of points per decade in energy for the proton energy and
+        distribution arrays. Default is 100.
+    """
+
+    def __init__(self, particle_distribution, B=3.24e-6 * u.G, **kwargs):
+        super(ProtonSynchrotron, self).__init__(particle_distribution)
+        self.B = validate_scalar("B", B, physical_type="magnetic flux density")
+        self.Epmin = 1 * u.GeV
+        self.Epmax = 1 * u.PeV
+        self.nEpd = 100
+        self.param_names += ["B"]
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 def G12(x, a):
@@ -459,7 +665,8 @@ class InverseCompton(BaseElectron):
         self.Eemax = 1e9 * mec2
         self.nEed = 100
         self.param_names += ["seed_photon_fields"]
-        self.__dict__.update(**kwargs)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @staticmethod
     def _process_input_seed(seed_photon_fields):
@@ -735,7 +942,7 @@ class InverseCompton(BaseElectron):
                     Eph,
                 )
 
-            lum = uf * Eph * trapz_loglog(self._nelec * gamint, self._gam)
+            lum = uf * Eph * trapz_loglog(self._npart * gamint, self._gam)
         lum = lum * u.Unit("1/s")
 
         return lum / outspecene  # return differential spectrum in 1/s/eV
@@ -893,7 +1100,8 @@ class Bremsstrahlung(BaseElectron):
         self.weight_ee = np.sum(Z * X)
         self.weight_ep = np.sum(Z ** 2 * X)
         self.param_names += ["n0", "weight_ee", "weight_ep"]
-        self.__dict__.update(**kwargs)
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     @staticmethod
     def _sigma_1(gam, eps):
@@ -1009,7 +1217,7 @@ class Bremsstrahlung(BaseElectron):
         gam = np.vstack(self._gam)
         # compute integral with electron distribution
         emiss = c.cgs * trapz_loglog(
-            np.vstack(self._nelec) * self._sigma_ee(gam, Eph),
+            np.vstack(self._npart) * self._sigma_ee(gam, Eph),
             self._gam,
             axis=0,
         )
@@ -1026,7 +1234,7 @@ class Bremsstrahlung(BaseElectron):
         eps = (Eph / mec2).decompose().value
         # compute integral with electron distribution
         emiss = c.cgs * trapz_loglog(
-            np.vstack(self._nelec) * self._sigma_ep(gam, eps),
+            np.vstack(self._npart) * self._sigma_ep(gam, eps),
             self._gam,
             axis=0,
         ).to(u.cm ** 2 / Eph.unit)

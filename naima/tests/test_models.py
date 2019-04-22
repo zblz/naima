@@ -6,6 +6,8 @@ from astropy.tests.helper import pytest
 from astropy.extern import six
 from astropy.modeling.blackbody import blackbody_nu
 
+from traitlets import TraitError
+
 from ..utils import trapz_loglog
 from ..models import (
     Bremsstrahlung,
@@ -70,7 +72,7 @@ def particle_dists():
 
 
 @pytest.mark.skipif("not HAS_SCIPY")
-def test_synchrotron_lum(particle_dists):
+def test_electron_synchrotron_lum(particle_dists):
     """
     test sync calculation
     """
@@ -108,6 +110,65 @@ def test_synchrotron_lum(particle_dists):
 
 
 @pytest.mark.skipif("not HAS_SCIPY")
+def test_proton_synchrotron_lum(particle_dists):
+    """
+    test sync calculation
+    """
+    from ..models import ProtonSynchrotron
+
+    ECPL, PL, BPL = particle_dists
+
+    #  lum_ref = [0.00025231296225663107, 0.03316715765695228,
+    #             0.00044597089198025806]
+    #  We_ref = [5064124672.902273, 11551172166.866821, 926633861.2898524]
+
+    Wps = []
+    lsys = []
+    for pdist in particle_dists:
+        sy = ProtonSynchrotron(pdist, **proton_properties)
+
+        Wps.append(sy.Wp.to("erg").value)
+
+        lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to("erg/s")
+        assert lsy.unit == u.erg / u.s
+        lsys.append(lsy.value)
+
+    print(lsys)
+    print(Wps)
+    #  assert_allclose(lsys, lum_ref)
+    #  assert_allclose(Wes, We_ref)
+
+    sy = ProtonSynchrotron(ECPL, B=1 * u.G, **proton_properties)
+    sy.flux(data)
+    sy.flux(data2)
+
+    lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to("erg/s")
+    assert lsy.unit == u.erg / u.s
+    print(lsy)
+    #  assert_allclose(lsy.value, 31374131.90312505)
+
+
+@pytest.mark.skipif("not HAS_SCIPY")
+def test_synchrotron_traits(particle_dists):
+    from ..models import Synchrotron
+
+    ECPL, _, _ = particle_dists
+    sy = Synchrotron(ECPL, Eemin=1 * u.GeV, Eemax=1 * u.PeV)
+
+    sy.Eemin = 1 * u.TeV
+    assert sy.gmin == float(1 * u.TeV / (m_e * c ** 2))
+
+    sy.Eemax = 100 * u.TeV
+    assert sy.gmax == float(100 * u.TeV / (m_e * c ** 2))
+
+    sy.nEed = 10
+    assert sy.ngd == 10
+
+    with pytest.raises(TraitError):
+        sy.Eemin = 10 * u.m
+
+
+@pytest.mark.skipif("not HAS_SCIPY")
 def test_bolometric_luminosity(particle_dists):
     """
     test sync calculation
@@ -131,9 +192,7 @@ def test_compute_We(particle_dists):
     ECPL, PL, BPL = particle_dists
 
     sy = Synchrotron(ECPL, B=1 * u.G, **electron_properties)
-
     Eemin, Eemax = 10 * u.GeV, 100 * u.TeV
-
     sy.compute_We()
     sy.compute_We(Eemin=Eemin)
     sy.compute_We(Eemax=Eemax)
@@ -149,7 +208,9 @@ def test_compute_We(particle_dists):
 
 
 @pytest.mark.skipif("not HAS_SCIPY")
-def test_set_We(particle_dists):
+@pytest.mark.parametrize("Eemin", [1 * u.GeV, 10 * u.GeV, None])
+@pytest.mark.parametrize("Eemax", [100 * u.TeV, None])
+def test_set_We(particle_dists, Eemin, Eemax):
     """
     test sync calculation
     """
@@ -161,18 +222,15 @@ def test_set_We(particle_dists):
 
     W = 1e49 * u.erg
 
-    Eemax = 100 * u.TeV
-    for Eemin in [1 * u.GeV, 10 * u.GeV, None]:
-        for Eemax in [100 * u.TeV, None]:
-            sy.set_We(W, Eemin, Eemax)
-            assert_allclose(W, sy.compute_We(Eemin, Eemax))
-            sy.set_We(W, Eemin, Eemax, amplitude_name="amplitude")
-            assert_allclose(W, sy.compute_We(Eemin, Eemax))
+    sy.set_We(W, Eemin, Eemax)
+    assert_allclose(W, sy.compute_We(Eemin, Eemax))
+    sy.set_We(W, Eemin, Eemax, amplitude_name="amplitude")
+    assert_allclose(W, sy.compute_We(Eemin, Eemax))
 
-            pp.set_Wp(W, Eemin, Eemax)
-            assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
-            pp.set_Wp(W, Eemin, Eemax, amplitude_name="amplitude")
-            assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
+    pp.set_Wp(W, Eemin, Eemax)
+    assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
+    pp.set_Wp(W, Eemin, Eemax, amplitude_name="amplitude")
+    assert_allclose(W, pp.compute_Wp(Eemin, Eemax))
 
     with pytest.raises(AttributeError):
         sy.set_We(W, amplitude_name="norm")

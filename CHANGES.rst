@@ -1,6 +1,9 @@
 0.9 (unreleased)
 ----------------
 
+- Added the `ProtonSynchrotron` class to compute synchrotron radiation from
+  proton populations.
+
 0.8.3 (2018-11-27)
 ------------------
 

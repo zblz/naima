@@ -16,11 +16,20 @@ from .extern.validator import (
     validate_array,
     validate_physical_type,
 )
-from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
+from .radiative import (
+    Synchrotron,
+    ElectronSynchrotron,
+    ProtonSynchrotron,
+    InverseCompton,
+    PionDecay,
+    Bremsstrahlung,
+)
 from .model_utils import memoize
 
 __all__ = [
     "Synchrotron",
+    "ElectronSynchrotron",
+    "ProtonSynchrotron",
     "InverseCompton",
     "PionDecay",
     "Bremsstrahlung",

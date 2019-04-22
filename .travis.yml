@@ -26,8 +26,8 @@ env:
         - PYTHON_VERSION=3.6
         - NUMPY_VERSION=1.13
         - ASTROPY_VERSION=stable
-        - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme'
-        - PIP_DEPENDENCIES='emcee corner'
+        - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme traitlets'
+        - PIP_DEPENDENCIES='emcee corner numtraits'
 
     matrix:
         - PYTHON_VERSION=2.7 SETUP_CMD='egg_info'
