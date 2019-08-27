@@ -1,6 +1,12 @@
 0.9 (unreleased)
 ----------------
 
+0.8.4 (2019-08-27)
+------------------
+
+- Updated deprecated uses of numpy and astropy.Quantity logig
+- Updated tests for latest versions of dependencies
+
 0.8.3 (2018-11-27)
 ------------------
 
