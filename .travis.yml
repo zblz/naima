@@ -62,7 +62,7 @@ matrix:
         - os: osx
           env: SETUP_CMD='test --args="-v"'
         - os: windows
-          env: SETUP_CMD='test --args="-v"'
+          env: SETUP_CMD='test'
 
 before_install:
     # If there are matplotlib tests, comment these out to
