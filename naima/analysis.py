@@ -94,9 +94,7 @@ def save_diagnostic_plots(
 
     # Chains
 
-    for par, label in zip(
-        range(sampler.chain.shape[-1]), sampler.labels
-    ):
+    for par, label in zip(range(sampler.chain.shape[-1]), sampler.labels):
         try:
             log.info("Plotting chain of parameter {0}...".format(label))
             f = plot_chain(sampler, par, last_step=last_step)
@@ -147,9 +145,7 @@ def save_diagnostic_plots(
             "Model output {0}".format(idx) for idx in modelidxs[n:]
         ]
 
-    for modelidx, plot_sed, label in zip(
-        modelidxs, sed, blob_labels
-    ):
+    for modelidx, plot_sed, label in zip(modelidxs, sed, blob_labels):
 
         try:
             log.info("Plotting {0}...".format(label))
@@ -316,9 +312,7 @@ def save_results_table(
             elif ltype == "log":
                 new_dist = np.exp(dist)
 
-            quantiles = dict(
-                zip(quant, np.percentile(new_dist, quant))
-            )
+            quantiles = dict(zip(quant, np.percentile(new_dist, quant)))
             med = quantiles[50]
             lo, hi = med - quantiles[16], quantiles[84] - med
 
@@ -352,9 +346,7 @@ def save_results_table(
                 else:
                     dist = np.array(blobl)
 
-                quantiles = dict(
-                    zip(quant, np.percentile(dist, quant))
-                )
+                quantiles = dict(zip(quant, np.percentile(dist, quant)))
                 med = quantiles[50]
                 lo, hi = med - quantiles[16], quantiles[84] - med
 
