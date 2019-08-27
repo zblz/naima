@@ -3,7 +3,6 @@ from astropy import units as u
 import numpy as np
 from numpy.testing import assert_allclose
 from astropy.tests.helper import pytest
-from astropy.extern import six
 from astropy.modeling.blackbody import blackbody_nu
 
 from ..utils import trapz_loglog

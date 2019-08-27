@@ -4,7 +4,6 @@ import numpy as np
 import astropy.units as u
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
-from astropy.extern import six
 from astropy.io import ascii
 import os
 

@@ -3,7 +3,6 @@
 
 import numpy as np
 from astropy import units as u
-from astropy.extern import six
 
 
 def validate_physical_type(name, value, physical_type):
@@ -12,7 +11,7 @@ def validate_physical_type(name, value, physical_type):
             raise TypeError(
                 "{0} should be given as a Quantity object".format(name)
             )
-        if isinstance(physical_type, six.string_types):
+        if isinstance(physical_type, str):
             if value.unit.physical_type != physical_type:
                 raise TypeError(
                     "{0} should be given in units of {1}".format(

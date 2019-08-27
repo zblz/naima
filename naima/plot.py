@@ -8,7 +8,6 @@ from __future__ import (
 
 import numpy as np
 import astropy.units as u
-from astropy.extern import six
 from astropy import log
 from functools import partial
 from emcee import autocorr
@@ -51,7 +50,7 @@ def plot_chain(sampler, p=None, **kwargs):
     """
     if p is None:
         npars = sampler.chain.shape[-1]
-        for pp in six.moves.range(npars):
+        for pp in range(npars):
             _plot_chain_func(sampler, pp, **kwargs)
         fig = None
     else:
@@ -185,7 +184,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     ax2.plot(x, kde(x), color="k", label="KDE")
     quant = [16, 50, 84]
     xquant = np.percentile(dist, quant)
-    quantiles = dict(six.moves.zip(quant, xquant))
+    quantiles = dict(zip(quant, xquant))
 
     ax2.axvline(
         quantiles[50],
@@ -272,7 +271,7 @@ def _plot_chain_func(sampler, p, last_step=False):
             new_dist = np.exp(dist)
 
         quant = [16, 50, 84]
-        quantiles = dict(six.moves.zip(quant, np.percentile(new_dist, quant)))
+        quantiles = dict(zip(quant, np.percentile(new_dist, quant)))
 
         label_template = "\n" + " " * 10 + "{{label:>{0}}}".format(len(label))
 
@@ -523,7 +522,7 @@ def _calc_CI(
         ymin, ymax = [], []
         for fr, y in ((fmin, ymin), (fmax, ymax)):
             nf = int((fr * nwalkers))
-            for i in six.moves.range(len(modelx)):
+            for i in range(len(modelx)):
                 ysort = np.sort(model[:, i])
                 y.append(ysort[nf])
 
@@ -1383,7 +1382,7 @@ def plot_distribution(samples, label, figure=None):
     import matplotlib.pyplot as plt
 
     quant = [16, 50, 84]
-    quantiles = dict(six.moves.zip(quant, np.percentile(samples, quant)))
+    quantiles = dict(zip(quant, np.percentile(samples, quant)))
     std = np.std(samples)
 
     if isinstance(samples[0], u.Quantity):

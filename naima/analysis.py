@@ -10,7 +10,6 @@ import numpy as np
 import astropy.units as u
 from astropy.table import Table, QTable
 from astropy import log
-from astropy.extern import six
 from astropy.utils.exceptions import AstropyUserWarning
 import warnings
 import h5py
@@ -95,8 +94,8 @@ def save_diagnostic_plots(
 
     # Chains
 
-    for par, label in six.moves.zip(
-        six.moves.range(sampler.chain.shape[-1]), sampler.labels
+    for par, label in zip(
+        range(sampler.chain.shape[-1]), sampler.labels
     ):
         try:
             log.info("Plotting chain of parameter {0}...".format(label))
@@ -132,7 +131,7 @@ def save_diagnostic_plots(
 
     if modelidxs is None:
         nmodels = len(sampler.blobs[-1][0])
-        modelidxs = list(six.moves.range(nmodels))
+        modelidxs = list(range(nmodels))
 
     if isinstance(sed, bool):
         sed = [sed for idx in modelidxs]
@@ -148,7 +147,7 @@ def save_diagnostic_plots(
             "Model output {0}".format(idx) for idx in modelidxs[n:]
         ]
 
-    for modelidx, plot_sed, label in six.moves.zip(
+    for modelidx, plot_sed, label in zip(
         modelidxs, sed, blob_labels
     ):
 
@@ -303,7 +302,7 @@ def save_results_table(
     for p, label in enumerate(labels):
         dist = dists[:, p]
         xquant = np.percentile(dist, quant)
-        quantiles = dict(six.moves.zip(quant, xquant))
+        quantiles = dict(zip(quant, xquant))
         med = quantiles[50]
         lo, hi = med - quantiles[16], quantiles[84] - med
 
@@ -318,7 +317,7 @@ def save_results_table(
                 new_dist = np.exp(dist)
 
             quantiles = dict(
-                six.moves.zip(quant, np.percentile(new_dist, quant))
+                zip(quant, np.percentile(new_dist, quant))
             )
             med = quantiles[50]
             lo, hi = med - quantiles[16], quantiles[84] - med
@@ -354,7 +353,7 @@ def save_results_table(
                     dist = np.array(blobl)
 
                 quantiles = dict(
-                    six.moves.zip(quant, np.percentile(dist, quant))
+                    zip(quant, np.percentile(dist, quant))
                 )
                 med = quantiles[50]
                 lo, hi = med - quantiles[16], quantiles[84] - med

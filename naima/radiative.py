@@ -16,7 +16,6 @@ from .extern.validator import (
 from .utils import trapz_loglog
 from .model_utils import memoize
 
-from astropy.extern import six
 from collections import OrderedDict
 import os
 from astropy.utils.data import get_pkg_data_filename
@@ -482,7 +481,7 @@ class InverseCompton(BaseElectron):
 
         for idx, inseed in enumerate(seed_photon_fields):
             seed = {}
-            if isinstance(inseed, six.string_types):
+            if isinstance(inseed, str):
                 name = inseed
                 seed["type"] = "thermal"
                 if inseed == "CMB":
