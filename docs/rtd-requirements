@@ -1,7 +1,8 @@
-numpy
-matplotlib
+alabaster
 astropy
 Cython
-alabaster
 emcee
 h5py
+matplotlib
+numpy
+sphinx-astropy
