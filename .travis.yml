@@ -37,12 +37,6 @@ matrix:
 
     include:
 
-        # Try MacOS X
-        - os: osx
-          env: PYTHON_VERSION=2.7 SETUP_CMD='test --args="-v"'
-        - os: osx
-          env: SETUP_CMD='test --args="-v"'
-
         # Check for sphinx doc build warnings
         - os: linux
           env: SETUP_CMD='build_docs -w'
@@ -59,6 +53,14 @@ matrix:
                CONDA_CHANNELS='astropy-ci-extras sherpa'
                CONDA_DEPENDENCIES="$CONDA_DEPENDENCIES sherpa"
         - os: linux
+          env: SETUP_CMD='test --args="-v"'
+
+        # Try MacOS X and Windows
+        - os: osx
+          env: PYTHON_VERSION=2.7 SETUP_CMD='test --args="-v"'
+        - os: osx
+          env: SETUP_CMD='test --args="-v"'
+        - os: windows
           env: SETUP_CMD='test --args="-v"'
 
 before_install:
