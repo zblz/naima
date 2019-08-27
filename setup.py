@@ -96,11 +96,12 @@ package_info["package_data"][PACKAGENAME].extend(c_files)
 
 install_requires = (
     [
-        "astropy>=1.0.2,<4.0",
+        "astropy>=1.0.2",
         "emcee>=2.2.0",
         "corner",
         "matplotlib",
         "scipy",
+        "sherpa",
         "h5py",
         "pyyaml",
     ],
@@ -119,9 +120,6 @@ setup(
     long_description=LONG_DESCRIPTION,
     classifiers=[
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Development Status :: 5 - Production/Stable",
