@@ -870,10 +870,10 @@ class Bremsstrahlung(BaseElectron):
     Other parameters
     ----------------
     weight_ee : float
-        Weight of electron-electron bremsstrahlung. Defined as :math:`\sum_i
+        Weight of electron-electron bremsstrahlung. Defined as :math:`\\sum_i
         Z_i X_i`, default is 1.088.
     weight_ep : float
-        Weight of electron-proton bremsstrahlung. Defined as :math:`\sum_i
+        Weight of electron-proton bremsstrahlung. Defined as :math:`\\sum_i
         Z_i^2 X_i`, default is 1.263.
     """
 
@@ -1569,8 +1569,8 @@ class PionDecay(BaseProton):
     def _spectrum(self, photon_energy):
         """
         Compute differential spectrum from pp interactions using the
-        parametrization of Kafexhiu, E., Aharonian, F., Taylor, A.~M., and
-        Vila, G.~S.\ 2014, `arXiv:1406.7369
+        parametrization of Kafexhiu, E., Aharonian, F., Taylor, A.M., and
+        Vila, G.S. 2014, `arXiv:1406.7369
         <http://www.arxiv.org/abs/1406.7369>`_.
 
         Parameters

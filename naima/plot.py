@@ -110,9 +110,9 @@ def _latex_value_error(val, elo, ehi=0, tol=0.25):
             n = -int(np.floor(np.log10(e)))
             if e * 10 ** n < 2:
                 n += 1
-            string = "{0} \pm {1}".format(*[round2(x, n) for x in [val, e]])
+            string = "{0} \\pm {1}".format(*[round2(x, n) for x in [val, e]])
     else:
-        string = "{0} \pm {1}".format(*[round2(x, nlo) for x in [val, elo]])
+        string = "{0} \\pm {1}".format(*[round2(x, nlo) for x in [val, elo]])
     if order != 0:
         string = "(" + string + r")\times10^{{{0}}}".format(order)
 
@@ -242,7 +242,7 @@ def _plot_chain_func(sampler, p, last_step=False):
         + "Distribution properties for the {clen}:\n \
     $-$ median: ${median}$, std: ${std}$ \n \
     $-$ median with uncertainties based on \n \
-      the 16th and 84th percentiles ($\sim$1$\sigma$):\n".format(
+      the 16th and 84th percentiles ($\\sim$1$\\sigma$):\n".format(
             median=_latex_float(quantiles[50]),
             std=_latex_float(np.std(dist)),
             clen=clen,
@@ -1393,7 +1393,7 @@ def plot_distribution(samples, label, figure=None):
     if isinstance(std, u.Quantity):
         std = std.value
 
-    dist_props = "{label} distribution properties:\n \
+    dist_props = r"{label} distribution properties:\n \
     $-$ median: ${median}$ {unit}, std: ${std}$ {unit}\n \
     $-$ Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n\

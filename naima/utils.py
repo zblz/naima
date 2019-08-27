@@ -503,12 +503,12 @@ def estimate_B(
 
     .. math::
 
-        \\frac{L_\mathrm{xray}}{L_\gamma} =
-        \\frac{u_\mathrm{B}}{u_\mathrm{ph}} =
-        \\frac{B^2}{ 8 \pi u_\mathrm{ph}}
+        \\frac{L_\\mathrm{xray}}{L_\\gamma} =
+        \\frac{u_\\mathrm{B}}{u_\\mathrm{ph}} =
+        \\frac{B^2}{ 8 \\pi u_\\mathrm{ph}}
 
-    where :math:`L_\mathrm{xray}` is the X-ray luminosity, :math:`L_\gamma` is
-    the gamma-ray luminosity, and :math:`u_\mathrm{ph}` is the seed photon
+    where :math:`L_\\mathrm{xray}` is the X-ray luminosity, :math:`L_\\gamma`
+    is the gamma-ray luminosity, and :math:`u_\\mathrm{ph}` is the seed photon
     field energy density.
 
     Note that this assumes that the ratio of observed fluxes is equal to the
