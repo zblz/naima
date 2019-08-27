@@ -101,7 +101,6 @@ install_requires = (
         "corner",
         "matplotlib",
         "scipy",
-        "sherpa",
         "h5py",
         "pyyaml",
     ],

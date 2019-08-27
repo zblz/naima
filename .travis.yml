@@ -24,10 +24,10 @@ env:
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - PYTHON_VERSION=3.7
-        - NUMPY_VERSION=1.14
+        - NUMPY_VERSION=1.17
         - ASTROPY_VERSION=stable
-        - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme'
-        - PIP_DEPENDENCIES='emcee corner sherpa'
+        - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme sherpa'
+        - PIP_DEPENDENCIES='emcee corner'
 
     matrix:
         - PYTHON_VERSION=3.6 SETUP_CMD='egg_info'
