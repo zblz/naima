@@ -24,7 +24,7 @@ env:
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
         - PYTHON_VERSION=3.7
-        - NUMPY_VERSION=1.17
+        - NUMPY_VERSION=stable
         - ASTROPY_VERSION=stable
         - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme sherpa'
         - PIP_DEPENDENCIES='emcee corner sphinx-astropy'
