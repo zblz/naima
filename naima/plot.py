@@ -377,7 +377,7 @@ def _read_or_calc_samples(
     """Get samples from blob or compute them from chain and sampler.modelfn
     """
 
-    if not e_range:
+    if e_range is None:
         # return the results saved in blobs
         modelx, model = _process_blob(sampler, modelidx, last_step=last_step)
     else:
@@ -487,7 +487,7 @@ def _calc_CI(
     # 4 sigma -> 31574 samples
     # 5 sigma -> 3488555 samples
     # We limit it to 1000 samples and warn that it might not be enough
-    if e_range:
+    if e_range is not None:
         maxconf = np.max(confs)
         minsamples = min(100, int(1 / stats.norm.cdf(-maxconf) + 1))
         if minsamples > 1000:
@@ -1008,7 +1008,7 @@ def plot_fit(
         xmax = np.max(model_ML[0][hi])
         ax1.set_xlim(right=10 ** np.ceil(np.log10(xmax.to(e_unit).value)))
 
-    if e_range:
+    if e_range is not None:
         # ensure that xmin/xmax contains e_range
         xmin, xmax, ymin, ymax = ax1.axis()
         xmin = min(xmin, e_range[0].to(e_unit).value)

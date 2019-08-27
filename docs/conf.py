@@ -60,7 +60,7 @@ needs_sphinx = "1.3"
 
 # del intersphinx_mapping['h5py']
 
-intersphinx_mapping["emcee"] = ("http://dan.iel.fm/emcee/current/", None)
+intersphinx_mapping["emcee"] = ("https://emcee.readthedocs.io/en/stable/", None)
 
 
 # List of patterns, relative to source directory, that match files and
