@@ -46,7 +46,7 @@ naima can then be read with the `astropy.io.ascii` reader::
     >>> data_table = ascii.read('RXJ1713_HESS_2007.dat')
 
 The table column names, types, and units, will be read automatically from the
-file. 
+file.
 
 Multiple data tables
 --------------------
@@ -59,7 +59,6 @@ all be converted to the format of the first table in the list. However, this can
 be controlled with the ``data_sed`` argument of `get_sampler`, which will
 control whether all data tables are converted to an SED (``data_sed=True``) or
 to differential fluxes (``data_sed=False``).
-
 
 Data table examples
 -------------------
@@ -74,14 +73,12 @@ keywords are given after a slash without a space.
 
 .. literalinclude:: ../examples/RXJ1713_HESS_2007.dat
 
-
 Ecsv
 ++++
 
-The same table shown in :class:`~astropy.io.ascii.Ecsv` format. 
+The same table shown in :class:`~astropy.io.ascii.Ecsv` format.
 
 .. literalinclude:: ../examples/RXJ1713_HESS_2007.ecsv
-    :language: guess
 
 SExtractor
 ++++++++++
@@ -89,12 +86,9 @@ SExtractor
 And the same table shown in the :class:`~astropy.io.ascii.SExtractor` format
 
 .. literalinclude:: ../examples/RXJ1713_HESS_2007_sextractor.dat
-    :language: guess
-
 
 If the table is in :class:`~astropy.io.ascii.SExtractor` format, the
 confidence level of the upper limits can be added after reading the table as a
 keyword::
 
     >>> data_table.meta['keywords'] = {'cl':{'value':0.95}}
-
