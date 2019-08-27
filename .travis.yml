@@ -37,6 +37,10 @@ matrix:
 
     include:
 
+        # Windows (start early as it is significantly slower)
+        - os: windows
+          env: SETUP_CMD='test'
+
         # Check for sphinx doc build warnings
         - os: linux
           env: SETUP_CMD='build_docs -w'
@@ -55,13 +59,11 @@ matrix:
         - os: linux
           env: SETUP_CMD='test --args="-v"'
 
-        # Try MacOS X and Windows
+        # Try MacOS X
         - os: osx
           env: PYTHON_VERSION=2.7 SETUP_CMD='test --args="-v"'
         - os: osx
           env: SETUP_CMD='test --args="-v"'
-        - os: windows
-          env: SETUP_CMD='test'
 
 before_install:
     # If there are matplotlib tests, comment these out to
