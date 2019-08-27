@@ -39,7 +39,8 @@ matrix:
 
         # Check for sphinx doc build warnings
         - os: linux
-          env: SETUP_CMD='build_docs -w'
+          # env: SETUP_CMD='build_docs -w'
+          env: SETUP_CMD='build_docs'
 
         # Run examples, do it first as well as it may take some time
         - os: linux
