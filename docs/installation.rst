@@ -4,7 +4,7 @@ Installation
 Requirements
 ------------
 
-naima is tested on Python 2.7, 3.6, and 3.7 but also works in 3.4 and 3.5. It
+naima is tested on Python 3.6 and 3.7 but also works in 3.4 and 3.5. It
 also requires the following packages to be installed: `Numpy
 <http://www.numpy.org>`_, `Scipy <http://www.scipy.org>`_, `Astropy`_,
 `Matplotlib <http://www.matplotlib.org>`_, `emcee <http://dan.iel.fm/emcee>`_,
@@ -46,9 +46,10 @@ or only Naima::
 Using pip
 +++++++++
 
-You can install Naima in an existing Python installation through pip (you
-may need to use ``sudo`` if you want to install it system-wide, or the flag
-``--user`` to install only for the current user)::
+You can install Naima in an existing Python installation through pip. It is
+recommended to install it in its own virtual environment, otherwise you may need
+to use ``sudo`` if you want to install it system-wide, or the flag ``--user`` to
+install only for the current user::
 
     $ pip install naima
 
@@ -58,30 +59,6 @@ Naima or ``emcee`` that is not a problem, but if Numpy or matplotlib are
 installed this way the build can take quite a long time. You can bypass this
 problem by installing these libraries through your systemwide package manager:
 see below for how to do this for different systems.
-
-apt-get (Debian based)
-~~~~~~~~~~~~~~~~~~~~~~
-
-For Debian-based systems (including Ubuntu), this can be done for Python 2.7
-environments with::
-
-    $ sudo apt-get install python-matplotlib python-scipy python-astropy python-h5py
-    $ pip install naima
-
-for Python 3 environments, the name of the packages should be::
-
-    $ sudo apt-get install python3-matplotlib python-scipy python-astropy python-h5py
-    $ pip3 install naima
-
-Macports
-~~~~~~~~
-
-Macports can be used on Mac systems to install most dependencies::
-
-    $ export PY=py34 # change to py27 for Python 2.7
-    $ sudo port install $PY-pip $PY-scipy $PY-matplotlib $PY-emcee $PY-h5py \
-        $PY-astropy
-    $ pip install --user naima
 
 Installing the development version
 ++++++++++++++++++++++++++++++++++
