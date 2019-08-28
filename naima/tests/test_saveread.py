@@ -1,11 +1,19 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import numpy as np
+import os
 
 import astropy.units as u
+import numpy as np
+from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
-from astropy.io import ascii
-import os
+
+from ..analysis import read_run, save_run
+from ..core import run_sampler, uniform_prior
+from ..model_fitter import InteractiveModelFitter
+from ..models import ExponentialCutoffPowerLaw
+from ..plot import plot_chain, plot_data, plot_fit
+from ..utils import validate_data_table
+from .fixtures import simple_sampler as sampler
 
 try:
     import matplotlib
@@ -24,14 +32,6 @@ try:
 except:
     HAS_EMCEE = False
 
-from ..analysis import save_run, read_run
-from ..plot import plot_data, plot_fit, plot_chain
-from ..model_fitter import InteractiveModelFitter
-from ..utils import validate_data_table
-from ..core import run_sampler, uniform_prior
-from ..models import ExponentialCutoffPowerLaw
-
-from .fixtures import simple_sampler as sampler
 
 fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
 data_table = ascii.read(fname)

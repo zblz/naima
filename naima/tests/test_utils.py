@@ -1,16 +1,16 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import astropy.units as u
 import numpy as np
-from numpy.testing import assert_allclose
+from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
-import astropy.units as u
-from astropy.io import ascii
+from numpy.testing import assert_allclose
 
 from ..utils import (
-    validate_data_table,
-    generate_energy_edges,
     build_data_table,
     estimate_B,
+    generate_energy_edges,
+    validate_data_table,
 )
 
 # Read data

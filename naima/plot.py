@@ -1,13 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import numpy as np
-import astropy.units as u
-from astropy import log
 from functools import partial
+
+import astropy.units as u
+import numpy as np
+from astropy import log
 from emcee import autocorr
 
-from .utils import sed_conversion, validate_data_table
-from .extern.validator import validate_array
 from .extern.interruptible_pool import InterruptiblePool as Pool
+from .extern.validator import validate_array
+from .utils import sed_conversion, validate_data_table
 
 __all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob", "plot_corner"]
 

@@ -1,11 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-import numpy as np
-import astropy.units as u
-from astropy.table import Table, QTable
-from astropy import log
-import warnings
 import ast
+import warnings
+
+import astropy.units as u
+import numpy as np
+from astropy import log
+from astropy.table import QTable, Table
+
 from .extern.validator import validate_array, validate_scalar
 
 __all__ = [

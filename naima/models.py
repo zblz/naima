@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
-import numpy as np
+
 import astropy.units as u
-from astropy.utils.data import get_pkg_data_filename
+import numpy as np
 from astropy.table import Table
+from astropy.utils.data import get_pkg_data_filename
+
 from .extern.validator import (
-    validate_scalar,
     validate_array,
     validate_physical_type,
+    validate_scalar,
 )
-from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
 from .model_utils import memoize
+from .radiative import Bremsstrahlung, InverseCompton, PionDecay, Synchrotron
 
 __all__ = [
     "Synchrotron",

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import numpy as np
 import astropy.units as u
-
-from sherpa.models.parameter import Parameter
+import numpy as np
 from sherpa.models.model import ArithmeticModel, modelCacher1d
+from sherpa.models.parameter import Parameter
 
 from . import models
 from .utils import trapz_loglog

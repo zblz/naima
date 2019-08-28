@@ -1,11 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import numpy as np
 import astropy.units as u
+import numpy as np
 
-from .core import lnprobmodel, _prefit
-from .plot import color_cycle, _plot_data_to_ax
-from .utils import sed_conversion, validate_data_table
+from .core import _prefit, lnprobmodel
 from .extern.validator import validate_array
+from .plot import _plot_data_to_ax, color_cycle
+from .utils import sed_conversion, validate_data_table
 
 __all__ = ["InteractiveModelFitter"]
 

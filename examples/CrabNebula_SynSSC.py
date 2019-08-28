@@ -1,12 +1,12 @@
-import numpy as np
-from astropy.io import ascii
-from astropy.constants import c
 import astropy.units as u
 import naima
+import numpy as np
+from astropy.constants import c
+from astropy.io import ascii
 from naima.models import (
     ExponentialCutoffBrokenPowerLaw,
-    Synchrotron,
     InverseCompton,
+    Synchrotron,
 )
 
 ECBPL = ExponentialCutoffBrokenPowerLaw(

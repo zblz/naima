@@ -1,11 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from astropy import units as u
 import numpy as np
-from numpy.testing import assert_allclose
-from astropy.tests.helper import pytest
+from astropy import units as u
+from astropy.constants import c, hbar, m_e, sigma_sb
 from astropy.modeling.blackbody import blackbody_nu
+from astropy.table import QTable, Table
+from astropy.tests.helper import pytest
+from numpy.testing import assert_allclose
 
-from ..utils import trapz_loglog
 from ..models import (
     Bremsstrahlung,
     BrokenPowerLaw,
@@ -20,6 +21,7 @@ from ..models import (
     TableModel,
 )
 from ..radiative import PionDecayKelner06
+from ..utils import trapz_loglog
 
 try:
     import scipy
@@ -40,14 +42,12 @@ proton_properties = {"Epmax": 1 * u.PeV}
 
 energy = np.logspace(0, 15, 1000) * u.eV
 
-from astropy.table import QTable, Table
 
 data = QTable()
 data["energy"] = energy
 data2 = Table()
 data2["energy"] = energy
 
-from astropy.constants import m_e, c, sigma_sb, hbar
 
 pdist_unit = 1 / u.Unit(m_e * c ** 2)
 

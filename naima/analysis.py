@@ -1,12 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import numpy as np
-import astropy.units as u
-from astropy.table import Table, QTable
-from astropy import log
-from astropy.utils.exceptions import AstropyUserWarning
-import warnings
-import h5py
 import os
+import warnings
+
+import astropy.units as u
+import h5py
+import numpy as np
+from astropy import log
+from astropy.table import QTable, Table
+from astropy.utils.exceptions import AstropyUserWarning
 
 from .plot import find_ML
 

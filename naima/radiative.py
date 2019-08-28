@@ -1,26 +1,22 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import logging
+import os
+import warnings
+from collections import OrderedDict
+
 import numpy as np
+from astropy import units as u
+from astropy.constants import alpha, c, e, hbar, m_e, m_p, sigma_sb
+from astropy.utils.data import get_pkg_data_filename
+
 from .extern.validator import (
-    validate_scalar,
     validate_array,
     validate_physical_type,
+    validate_scalar,
 )
-
-from .utils import trapz_loglog
 from .model_utils import memoize
-
-from collections import OrderedDict
-import os
-from astropy.utils.data import get_pkg_data_filename
-import warnings
-import logging
-
-# Constants and units
-from astropy import units as u
-
-# import constant values from astropy.constants
-from astropy.constants import c, m_e, hbar, sigma_sb, e, m_p, alpha
+from .utils import trapz_loglog
 
 __all__ = [
     "Synchrotron",
@@ -776,9 +772,7 @@ class InverseCompton(BaseElectron):
             is required. If set to None it will return the sum of all
             contributions (default).
         """
-        model = super().flux(
-            photon_energy, distance=distance
-        )
+        model = super().flux(photon_energy, distance=distance)
 
         if seed is not None:
             # Test seed argument

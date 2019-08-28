@@ -1,16 +1,15 @@
 #!/usr/bin/env python
-import numpy as np
-import naima
 import astropy.units as u
+import naima
+import numpy as np
 from astropy.io import ascii
+from naima.models import ExponentialCutoffPowerLaw, InverseCompton
 
 ## Read data
 
 data = ascii.read("RXJ1713_HESS_2007.dat")
 
 ## Model definition
-
-from naima.models import InverseCompton, ExponentialCutoffPowerLaw
 
 
 def ElectronIC(pars, data):

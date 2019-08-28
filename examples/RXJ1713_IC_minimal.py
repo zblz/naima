@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-import numpy as np
-import naima
 import astropy.units as u
+import naima
+import numpy as np
 from astropy.io import ascii
-from naima.models import InverseCompton, ExponentialCutoffPowerLaw
+from naima.models import ExponentialCutoffPowerLaw, InverseCompton
 
 ## Read data
 

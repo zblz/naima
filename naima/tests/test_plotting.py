@@ -1,12 +1,17 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
 from glob import glob
-import numpy as np
 
 import astropy.units as u
+import numpy as np
+from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
-from astropy.io import ascii
+
+from ..analysis import save_diagnostic_plots, save_results_table
+from ..core import run_sampler, uniform_prior
+from ..plot import plot_chain, plot_data, plot_fit
+from .fixtures import sampler
 
 try:
     import matplotlib
@@ -25,11 +30,6 @@ try:
 except ImportError:
     HAS_EMCEE = False
 
-from ..analysis import save_diagnostic_plots, save_results_table
-from ..core import run_sampler, uniform_prior
-from ..plot import plot_chain, plot_fit, plot_data
-
-from .fixtures import sampler
 
 # Read data
 fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")

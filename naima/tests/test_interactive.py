@@ -1,11 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import warnings
 
-import numpy as np
 import astropy.units as u
+import numpy as np
+from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
-from astropy.io import ascii
+
+from ..model_fitter import InteractiveModelFitter
+from ..models import ExponentialCutoffPowerLaw
 
 try:
     import matplotlib
@@ -17,8 +20,6 @@ try:
 except ImportError:
     HAS_MATPLOTLIB = False
 
-from ..models import ExponentialCutoffPowerLaw
-from ..model_fitter import InteractiveModelFitter
 
 # Read data
 fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")

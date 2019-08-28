@@ -2,7 +2,12 @@
 # test infrastructure.
 import os
 
+from astropy.tests.helper import enable_deprecations_as_exceptions
 from astropy.version import version as astropy_version
+
+# This is to figure out the package version, rather than
+# using Astropy's
+from .version import astropy_helpers_version, version
 
 if astropy_version < "3.0":
     # With older versions of Astropy, we actually need to import the pytest
@@ -18,7 +23,6 @@ else:
         TESTED_VERSIONS,
     )
 
-from astropy.tests.helper import enable_deprecations_as_exceptions
 
 ## Uncomment the following line to treat all DeprecationWarnings as
 ## exceptions. For Astropy v2.0 or later, there are 2 additional keywords,
@@ -42,9 +46,6 @@ try:
 except KeyError:
     pass
 
-# This is to figure out the package version, rather than
-# using Astropy's
-from .version import version, astropy_helpers_version
 
 packagename = os.path.basename(os.path.dirname(__file__))
 TESTED_VERSIONS[packagename] = version
