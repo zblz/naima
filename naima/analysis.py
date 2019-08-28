@@ -365,10 +365,10 @@ def save_results_table(
                 if type(di[1]).__module__ == np.__name__:
                     try:
                         # convert arrays
-                        metadata[di[0]] = [np.asscalar(a) for a in di[1]]
+                        metadata[di[0]] = [a.item() for a in di[1]]
                     except TypeError:
                         # convert scalars
-                        metadata[di[0]] = np.asscalar(di[1])
+                        metadata[di[0]] = di[1].item()
         # Save it directly in meta for readability in ECSV
         t.meta.update(metadata)
 
