@@ -7,12 +7,6 @@
 # minimize is a thin wrapper that behaves like scipy.optimize.minimize
 
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
 import numpy
 from numpy import (
     atleast_1d,
