@@ -38,10 +38,6 @@ matrix:
 
     include:
 
-        # Windows (start early as it is significantly slower)
-        - os: windows
-          env: SETUP_CMD='test'
-
         # Check for sphinx doc build warnings
         - os: linux
           env: SETUP_CMD='build_docs -w'
