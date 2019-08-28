@@ -76,7 +76,7 @@ class InterruptiblePool(Pool):
         self, processes=None, initializer=None, initargs=(), **kwargs
     ):
         new_initializer = functools.partial(_initializer_wrapper, initializer)
-        super(InterruptiblePool, self).__init__(
+        super().__init__(
             processes, new_initializer, initargs, **kwargs
         )
 

@@ -67,7 +67,7 @@ def _validate_ene(ene):
     return ene
 
 
-class BaseRadiative(object):
+class BaseRadiative:
     """Base class for radiative models
 
     This class implements the flux, sed methods and subclasses must implement
@@ -152,7 +152,7 @@ class BaseElectron(BaseRadiative):
     """
 
     def __init__(self, particle_distribution):
-        super(BaseElectron, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.param_names = ["Eemin", "Eemax", "nEed"]
         self._memoize = True
         self._cache = {}
@@ -292,7 +292,7 @@ class Synchrotron(BaseElectron):
     """
 
     def __init__(self, particle_distribution, B=3.24e-6 * u.G, **kwargs):
-        super(Synchrotron, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.B = validate_scalar("B", B, physical_type="magnetic flux density")
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
@@ -452,7 +452,7 @@ class InverseCompton(BaseElectron):
     def __init__(
         self, particle_distribution, seed_photon_fields=["CMB"], **kwargs
     ):
-        super(InverseCompton, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.seed_photon_fields = self._process_input_seed(seed_photon_fields)
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
@@ -782,7 +782,7 @@ class InverseCompton(BaseElectron):
             is required. If set to None it will return the sum of all
             contributions (default).
         """
-        model = super(InverseCompton, self).flux(
+        model = super().flux(
             photon_energy, distance=distance
         )
 
@@ -834,7 +834,7 @@ class InverseCompton(BaseElectron):
             is required. If set to None it will return the sum of all
             contributions (default).
         """
-        sed = super(InverseCompton, self).sed(photon_energy, distance=distance)
+        sed = super().sed(photon_energy, distance=distance)
 
         if seed is not None:
             if distance != 0:
@@ -878,7 +878,7 @@ class Bremsstrahlung(BaseElectron):
     """
 
     def __init__(self, particle_distribution, n0=1 / u.cm ** 3, **kwargs):
-        super(Bremsstrahlung, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.n0 = n0
         self.Eemin = 100 * u.MeV
         self.Eemax = 1e9 * mec2
@@ -1056,7 +1056,7 @@ class BaseProton(BaseRadiative):
     """
 
     def __init__(self, particle_distribution):
-        super(BaseProton, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.param_names = ["Epmin", "Epmax", "nEpd"]
         self._memoize = True
         self._cache = {}
@@ -1227,7 +1227,7 @@ class PionDecay(BaseProton):
         nuclear_enhancement=True,
         **kwargs
     ):
-        super(PionDecay, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.nh = validate_scalar("nh", nh, physical_type="number density")
         self.nuclear_enhancement = nuclear_enhancement
         self.useLUT = True
@@ -1853,7 +1853,7 @@ class PionDecayKelner06(BaseRadiative):
         return density_factor * self.specpp.to("1/(s eV)")
 
 
-class LookupTable(object):
+class LookupTable:
     """
     Helper class for two-dimensional look up table
 

@@ -50,7 +50,7 @@ def _validate_ene(ene):
     return ene
 
 
-class PowerLaw(object):
+class PowerLaw:
     """
     One dimensional power law model.
 
@@ -110,7 +110,7 @@ class PowerLaw(object):
         return self._calc(e)
 
 
-class ExponentialCutoffPowerLaw(object):
+class ExponentialCutoffPowerLaw:
     """
     One dimensional power law model with an exponential cutoff.
 
@@ -183,7 +183,7 @@ class ExponentialCutoffPowerLaw(object):
         return self._calc(e)
 
 
-class BrokenPowerLaw(object):
+class BrokenPowerLaw:
     """
     One dimensional power law model with a break.
 
@@ -260,7 +260,7 @@ class BrokenPowerLaw(object):
         return self._calc(e)
 
 
-class ExponentialCutoffBrokenPowerLaw(object):
+class ExponentialCutoffBrokenPowerLaw:
     """
     One dimensional power law model with a break.
 
@@ -362,7 +362,7 @@ class ExponentialCutoffBrokenPowerLaw(object):
         return self._calc(e)
 
 
-class LogParabola(object):
+class LogParabola:
     """
     One dimensional log parabola model (sometimes called curved power law).
 
@@ -430,7 +430,7 @@ class LogParabola(object):
         return self._calc(e)
 
 
-class TableModel(object):
+class TableModel:
     """
     A model generated from a table of energy and value arrays.
 
@@ -547,7 +547,7 @@ class EblAbsorptionModel(TableModel):
         else:
             raise ValueError('Model should be one of: ["Dominguez"]')
 
-        super(EblAbsorptionModel, self).__init__(energy, taus)
+        super().__init__(energy, taus)
 
     def transmission(self, e):
         e = _validate_ene(e)

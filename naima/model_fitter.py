@@ -26,7 +26,7 @@ def _process_model(model):
         return model
 
 
-class InteractiveModelFitter(object):
+class InteractiveModelFitter:
     """
     Interactive model fitter using matplotlib widgets
 

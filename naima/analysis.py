@@ -503,7 +503,7 @@ def save_run(filename, sampler, compression=True, clobber=False):
     f.close()
 
 
-class _result(object):
+class _result:
     """
     Minimal emcee.EnsembleSampler like container for chain results
     """
