@@ -25,7 +25,7 @@ def cutoffexp(pars, input_data):
 
     data = input_data
 
-    x = data['energy'].copy()
+    x = data["energy"].copy()
     # take logarithmic mean of first and last data points as normalization
     # energy
     x0 = np.sqrt(x[0] * x[-1])
