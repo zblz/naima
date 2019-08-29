@@ -1,21 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
-
-import numpy as np
-import astropy.units as u
-from astropy.extern import six
-from astropy import log
 from functools import partial
+
+import astropy.units as u
+import numpy as np
+from astropy import log
 from emcee import autocorr
 
-from .utils import sed_conversion, validate_data_table
-from .extern.validator import validate_array
 from .extern.interruptible_pool import InterruptiblePool as Pool
+from .extern.validator import validate_array
+from .utils import sed_conversion, validate_data_table
 
 __all__ = ["plot_chain", "plot_fit", "plot_data", "plot_blob", "plot_corner"]
 
@@ -51,7 +44,7 @@ def plot_chain(sampler, p=None, **kwargs):
     """
     if p is None:
         npars = sampler.chain.shape[-1]
-        for pp in six.moves.range(npars):
+        for pp in range(npars):
             _plot_chain_func(sampler, pp, **kwargs)
         fig = None
     else:
@@ -111,9 +104,9 @@ def _latex_value_error(val, elo, ehi=0, tol=0.25):
             n = -int(np.floor(np.log10(e)))
             if e * 10 ** n < 2:
                 n += 1
-            string = "{0} \pm {1}".format(*[round2(x, n) for x in [val, e]])
+            string = "{0} \\pm {1}".format(*[round2(x, n) for x in [val, e]])
     else:
-        string = "{0} \pm {1}".format(*[round2(x, nlo) for x in [val, elo]])
+        string = "{0} \\pm {1}".format(*[round2(x, nlo) for x in [val, elo]])
     if order != 0:
         string = "(" + string + r")\times10^{{{0}}}".format(order)
 
@@ -185,7 +178,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     ax2.plot(x, kde(x), color="k", label="KDE")
     quant = [16, 50, 84]
     xquant = np.percentile(dist, quant)
-    quantiles = dict(six.moves.zip(quant, xquant))
+    quantiles = dict(zip(quant, xquant))
 
     ax2.axvline(
         quantiles[50],
@@ -243,7 +236,7 @@ def _plot_chain_func(sampler, p, last_step=False):
         + "Distribution properties for the {clen}:\n \
     $-$ median: ${median}$, std: ${std}$ \n \
     $-$ median with uncertainties based on \n \
-      the 16th and 84th percentiles ($\sim$1$\sigma$):\n".format(
+      the 16th and 84th percentiles ($\\sim$1$\\sigma$):\n".format(
             median=_latex_float(quantiles[50]),
             std=_latex_float(np.std(dist)),
             clen=clen,
@@ -272,7 +265,7 @@ def _plot_chain_func(sampler, p, last_step=False):
             new_dist = np.exp(dist)
 
         quant = [16, 50, 84]
-        quantiles = dict(six.moves.zip(quant, np.percentile(new_dist, quant)))
+        quantiles = dict(zip(quant, np.percentile(new_dist, quant)))
 
         label_template = "\n" + " " * 10 + "{{label:>{0}}}".format(len(label))
 
@@ -523,7 +516,7 @@ def _calc_CI(
         ymin, ymax = [], []
         for fr, y in ((fmin, ymin), (fmax, ymax)):
             nf = int((fr * nwalkers))
-            for i in six.moves.range(len(modelx)):
+            for i in range(len(modelx)):
                 ysort = np.sort(model[:, i])
                 y.append(ysort[nf])
 
@@ -1383,7 +1376,7 @@ def plot_distribution(samples, label, figure=None):
     import matplotlib.pyplot as plt
 
     quant = [16, 50, 84]
-    quantiles = dict(six.moves.zip(quant, np.percentile(samples, quant)))
+    quantiles = dict(zip(quant, np.percentile(samples, quant)))
     std = np.std(samples)
 
     if isinstance(samples[0], u.Quantity):
@@ -1394,7 +1387,7 @@ def plot_distribution(samples, label, figure=None):
     if isinstance(std, u.Quantity):
         std = std.value
 
-    dist_props = "{label} distribution properties:\n \
+    dist_props = r"{label} distribution properties:\n \
     $-$ median: ${median}$ {unit}, std: ${std}$ {unit}\n \
     $-$ Median with uncertainties based on \n \
       the 16th and 84th percentiles ($\sim$1$\sigma$):\n\

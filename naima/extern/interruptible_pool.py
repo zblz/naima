@@ -22,19 +22,12 @@ Contributed by Peter K. G. Williams <peter@newton.cx>.
 
 """
 
-from __future__ import (
-    division,
-    print_function,
-    absolute_import,
-    unicode_literals,
-)
-
 __all__ = ["InterruptiblePool"]
 
-import signal
 import functools
-from multiprocessing.pool import Pool
+import signal
 from multiprocessing import TimeoutError
+from multiprocessing.pool import Pool
 
 
 def _initializer_wrapper(actual_initializer, *rest):
@@ -76,9 +69,7 @@ class InterruptiblePool(Pool):
         self, processes=None, initializer=None, initargs=(), **kwargs
     ):
         new_initializer = functools.partial(_initializer_wrapper, initializer)
-        super(InterruptiblePool, self).__init__(
-            processes, new_initializer, initargs, **kwargs
-        )
+        super().__init__(processes, new_initializer, initargs, **kwargs)
 
     def map(self, func, iterable, chunksize=None):
         """

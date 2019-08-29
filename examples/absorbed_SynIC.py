@@ -1,19 +1,18 @@
 #!/usr/bin/env python
-import numpy as np
 import astropy.units as u
+import numpy as np
 from astropy.io import ascii
 
 import naima
-
-# Model definition
-
 from naima.models import (
-    InverseCompton,
-    Synchrotron,
-    ExponentialCutoffPowerLaw,
     BrokenPowerLaw,
     EblAbsorptionModel,
+    ExponentialCutoffPowerLaw,
+    InverseCompton,
+    Synchrotron,
 )
+
+# Model definition
 
 
 def ElectronEblAbsorbedSynIC(pars, data):

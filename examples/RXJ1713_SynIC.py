@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-import numpy as np
 import astropy.units as u
+import numpy as np
 from astropy.io import ascii
 
 import naima
+from naima.models import ExponentialCutoffPowerLaw, InverseCompton, Synchrotron
 
 ## Read data
 
@@ -13,8 +14,6 @@ soft_xray = ascii.read("RXJ1713_Suzaku-XIS.dat")[::5]
 vhe = ascii.read("RXJ1713_HESS_2007.dat")
 
 ## Model definition
-
-from naima.models import InverseCompton, Synchrotron, ExponentialCutoffPowerLaw
 
 
 def ElectronSynIC(pars, data):

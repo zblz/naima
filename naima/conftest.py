@@ -2,8 +2,14 @@
 # test infrastructure.
 import os
 
+from astropy.tests.helper import enable_deprecations_as_exceptions
 from astropy.version import version as astropy_version
-if astropy_version < '3.0':
+
+# This is to figure out the package version, rather than
+# using Astropy's
+from .version import astropy_helpers_version, version
+
+if astropy_version < "3.0":
     # With older versions of Astropy, we actually need to import the pytest
     # plugins themselves in order to make them discoverable by pytest.
     from astropy.tests.pytest_plugins import *
@@ -12,9 +18,11 @@ else:
     # automatically made available when Astropy is installed. This means it's
     # not necessary to import them here, but we still need to import global
     # variables that are used for configuration.
-    from astropy.tests.plugins.display import PYTEST_HEADER_MODULES, TESTED_VERSIONS
+    from astropy.tests.plugins.display import (
+        PYTEST_HEADER_MODULES,
+        TESTED_VERSIONS,
+    )
 
-from astropy.tests.helper import enable_deprecations_as_exceptions
 
 ## Uncomment the following line to treat all DeprecationWarnings as
 ## exceptions. For Astropy v2.0 or later, there are 2 additional keywords,
@@ -33,15 +41,12 @@ enable_deprecations_as_exceptions()
 # the tests. Making it pass for KeyError is essential in some cases when
 # the package uses other astropy affiliated packages.
 try:
-    PYTEST_HEADER_MODULES['Astropy'] = 'astropy'
-    del PYTEST_HEADER_MODULES['h5py']
+    PYTEST_HEADER_MODULES["Astropy"] = "astropy"
+    del PYTEST_HEADER_MODULES["h5py"]
 except KeyError:
     pass
 
-# This is to figure out the package version, rather than
-# using Astropy's
-from .version import version, astropy_helpers_version
 
 packagename = os.path.basename(os.path.dirname(__file__))
 TESTED_VERSIONS[packagename] = version
-TESTED_VERSIONS['astropy_helpers'] = astropy_helpers_version
+TESTED_VERSIONS["astropy_helpers"] = astropy_helpers_version

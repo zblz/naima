@@ -1,17 +1,12 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
-import numpy as np
-from astropy import log
-import astropy.units as u
 import warnings
 
-from .utils import validate_data_table, sed_conversion
+import astropy.units as u
+import numpy as np
+from astropy import log
+
+from .utils import sed_conversion, validate_data_table
 
 __all__ = [
     "normal_prior",

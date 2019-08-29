@@ -10,19 +10,16 @@ properties of their parent relativistic particle distributions.
 """
 
 # Affiliated packages may add whatever they like to this file, but
-# should keep this content at the top.
-# ----------------------------------------------------------------------------
+from . import models
 from ._astropy_init import *
-
-# ----------------------------------------------------------------------------
-
+from .analysis import *
 from .core import *
+from .model_fitter import *
 from .plot import *
 from .utils import *
-from .analysis import *
-from .model_fitter import *
 
-from . import models
+# ----------------------------------------------------------------------------
+
 
 try:
     import sherpa

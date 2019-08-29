@@ -1,10 +1,9 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import numpy as np
-
 import astropy.units as u
-from astropy.utils.data import get_pkg_data_filename
+import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
+from astropy.utils.data import get_pkg_data_filename
 
 from ..core import run_sampler, uniform_prior
 

@@ -1,19 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
-
-import numpy as np
 import astropy.units as u
-from astropy.extern import six
+import numpy as np
 
-from .core import lnprobmodel, _prefit
-from .plot import color_cycle, _plot_data_to_ax
-from .utils import sed_conversion, validate_data_table
+from .core import _prefit, lnprobmodel
 from .extern.validator import validate_array
+from .plot import _plot_data_to_ax, color_cycle
+from .utils import sed_conversion, validate_data_table
 
 __all__ = ["InteractiveModelFitter"]
 
@@ -27,7 +19,7 @@ def _process_model(model):
         return model
 
 
-class InteractiveModelFitter(object):
+class InteractiveModelFitter:
     """
     Interactive model fitter using matplotlib widgets
 
@@ -199,7 +191,7 @@ class InteractiveModelFitter(object):
             )
         self.parsliders = []
         slider_props = {"facecolor": color_cycle[-1], "alpha": 0.5}
-        for label, parax, valinit in six.moves.zip(labels, paraxes, p0):
+        for label, parax, valinit in zip(labels, paraxes, p0):
             # Attempt to estimate reasonable parameter ranges from label
             pmin, pmax = valinit / 10, valinit * 3
             if "log" in label:

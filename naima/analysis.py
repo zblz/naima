@@ -1,20 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
-
-import numpy as np
-import astropy.units as u
-from astropy.table import Table, QTable
-from astropy import log
-from astropy.extern import six
-from astropy.utils.exceptions import AstropyUserWarning
-import warnings
-import h5py
 import os
+import warnings
+
+import astropy.units as u
+import h5py
+import numpy as np
+from astropy import log
+from astropy.table import QTable, Table
+from astropy.utils.exceptions import AstropyUserWarning
 
 from .plot import find_ML
 
@@ -95,9 +88,7 @@ def save_diagnostic_plots(
 
     # Chains
 
-    for par, label in six.moves.zip(
-        six.moves.range(sampler.chain.shape[-1]), sampler.labels
-    ):
+    for par, label in zip(range(sampler.chain.shape[-1]), sampler.labels):
         try:
             log.info("Plotting chain of parameter {0}...".format(label))
             f = plot_chain(sampler, par, last_step=last_step)
@@ -132,7 +123,7 @@ def save_diagnostic_plots(
 
     if modelidxs is None:
         nmodels = len(sampler.blobs[-1][0])
-        modelidxs = list(six.moves.range(nmodels))
+        modelidxs = list(range(nmodels))
 
     if isinstance(sed, bool):
         sed = [sed for idx in modelidxs]
@@ -148,9 +139,7 @@ def save_diagnostic_plots(
             "Model output {0}".format(idx) for idx in modelidxs[n:]
         ]
 
-    for modelidx, plot_sed, label in six.moves.zip(
-        modelidxs, sed, blob_labels
-    ):
+    for modelidx, plot_sed, label in zip(modelidxs, sed, blob_labels):
 
         try:
             log.info("Plotting {0}...".format(label))
@@ -303,7 +292,7 @@ def save_results_table(
     for p, label in enumerate(labels):
         dist = dists[:, p]
         xquant = np.percentile(dist, quant)
-        quantiles = dict(six.moves.zip(quant, xquant))
+        quantiles = dict(zip(quant, xquant))
         med = quantiles[50]
         lo, hi = med - quantiles[16], quantiles[84] - med
 
@@ -317,9 +306,7 @@ def save_results_table(
             elif ltype == "log":
                 new_dist = np.exp(dist)
 
-            quantiles = dict(
-                six.moves.zip(quant, np.percentile(new_dist, quant))
-            )
+            quantiles = dict(zip(quant, np.percentile(new_dist, quant)))
             med = quantiles[50]
             lo, hi = med - quantiles[16], quantiles[84] - med
 
@@ -353,9 +340,7 @@ def save_results_table(
                 else:
                     dist = np.array(blobl)
 
-                quantiles = dict(
-                    six.moves.zip(quant, np.percentile(dist, quant))
-                )
+                quantiles = dict(zip(quant, np.percentile(dist, quant)))
                 med = quantiles[50]
                 lo, hi = med - quantiles[16], quantiles[84] - med
 
@@ -374,10 +359,10 @@ def save_results_table(
                 if type(di[1]).__module__ == np.__name__:
                     try:
                         # convert arrays
-                        metadata[di[0]] = [np.asscalar(a) for a in di[1]]
+                        metadata[di[0]] = [a.item() for a in di[1]]
                     except TypeError:
                         # convert scalars
-                        metadata[di[0]] = np.asscalar(di[1])
+                        metadata[di[0]] = di[1].item()
         # Save it directly in meta for readability in ECSV
         t.meta.update(metadata)
 
@@ -512,7 +497,7 @@ def save_run(filename, sampler, compression=True, clobber=False):
     f.close()
 
 
-class _result(object):
+class _result:
     """
     Minimal emcee.EnsembleSampler like container for chain results
     """
@@ -577,14 +562,13 @@ def read_run(filename, modelfn=None):
             rank = np.ndim(ds[0])
             blobrank.append(rank)
             if rank <= 1:
-                blobs.append(u.Quantity(ds.value, unit=ds.attrs["unit"]))
+                blobs.append(u.Quantity(ds[()], unit=ds.attrs["unit"]))
             else:
                 blob = []
                 for j in range(np.ndim(ds[0])):
                     blob.append(
                         u.Quantity(
-                            ds.value[:, j, :],
-                            unit=ds.attrs["unit{0}".format(j)],
+                            ds[:, j, :], unit=ds.attrs["unit{0}".format(j)]
                         )
                     )
                 blobs.append(blob)

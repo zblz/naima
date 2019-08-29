@@ -29,6 +29,8 @@ import datetime
 import os
 import sys
 
+from astropy_helpers.sphinx.conf import *
+
 try:
     import astropy_helpers
 except ImportError:
@@ -41,8 +43,6 @@ except ImportError:
     # If that doesn't work trying to import from astropy_helpers below will
     # still blow up
 
-# Load all of the global Astropy configuration
-from astropy_helpers.sphinx.conf import *
 
 # Get configuration information from setup.cfg
 try:
@@ -60,7 +60,10 @@ needs_sphinx = "1.3"
 
 # del intersphinx_mapping['h5py']
 
-intersphinx_mapping["emcee"] = ("https://emcee.readthedocs.io/en/stable/", None)
+intersphinx_mapping["emcee"] = (
+    "https://emcee.readthedocs.io/en/stable/",
+    None,
+)
 
 
 # List of patterns, relative to source directory, that match files and

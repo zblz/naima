@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-import numpy as np
-import naima
 import os
 import sys
+
 import astropy.units as u
+import naima
+import numpy as np
 from astropy.io import ascii
+from naima.models import ExponentialCutoffPowerLaw, InverseCompton
 
 # Model definition
-
-from naima.models import InverseCompton, ExponentialCutoffPowerLaw
 
 
 def ElectronIC(pars, data):

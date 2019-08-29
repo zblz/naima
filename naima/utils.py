@@ -1,17 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
 
-import numpy as np
-import astropy.units as u
-from astropy.table import Table, QTable
-from astropy import log
-import warnings
 import ast
+import warnings
+
+import astropy.units as u
+import numpy as np
+from astropy import log
+from astropy.table import QTable, Table
+
 from .extern.validator import validate_array, validate_scalar
 
 __all__ = [
@@ -503,12 +499,12 @@ def estimate_B(
 
     .. math::
 
-        \\frac{L_\mathrm{xray}}{L_\gamma} =
-        \\frac{u_\mathrm{B}}{u_\mathrm{ph}} =
-        \\frac{B^2}{ 8 \pi u_\mathrm{ph}}
+        \\frac{L_\\mathrm{xray}}{L_\\gamma} =
+        \\frac{u_\\mathrm{B}}{u_\\mathrm{ph}} =
+        \\frac{B^2}{ 8 \\pi u_\\mathrm{ph}}
 
-    where :math:`L_\mathrm{xray}` is the X-ray luminosity, :math:`L_\gamma` is
-    the gamma-ray luminosity, and :math:`u_\mathrm{ph}` is the seed photon
+    where :math:`L_\\mathrm{xray}` is the X-ray luminosity, :math:`L_\\gamma`
+    is the gamma-ray luminosity, and :math:`u_\\mathrm{ph}` is the seed photon
     field energy density.
 
     Note that this assumes that the ratio of observed fluxes is equal to the

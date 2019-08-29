@@ -1,23 +1,19 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
 import os
-import numpy as np
+
 import astropy.units as u
-from astropy.utils.data import get_pkg_data_filename
+import numpy as np
 from astropy.table import Table
+from astropy.utils.data import get_pkg_data_filename
+
 from .extern.validator import (
-    validate_scalar,
     validate_array,
     validate_physical_type,
+    validate_scalar,
 )
-from .radiative import Synchrotron, InverseCompton, PionDecay, Bremsstrahlung
 from .model_utils import memoize
+from .radiative import Bremsstrahlung, InverseCompton, PionDecay, Synchrotron
 
 __all__ = [
     "Synchrotron",
@@ -50,7 +46,7 @@ def _validate_ene(ene):
     return ene
 
 
-class PowerLaw(object):
+class PowerLaw:
     """
     One dimensional power law model.
 
@@ -110,7 +106,7 @@ class PowerLaw(object):
         return self._calc(e)
 
 
-class ExponentialCutoffPowerLaw(object):
+class ExponentialCutoffPowerLaw:
     """
     One dimensional power law model with an exponential cutoff.
 
@@ -183,7 +179,7 @@ class ExponentialCutoffPowerLaw(object):
         return self._calc(e)
 
 
-class BrokenPowerLaw(object):
+class BrokenPowerLaw:
     """
     One dimensional power law model with a break.
 
@@ -260,7 +256,7 @@ class BrokenPowerLaw(object):
         return self._calc(e)
 
 
-class ExponentialCutoffBrokenPowerLaw(object):
+class ExponentialCutoffBrokenPowerLaw:
     """
     One dimensional power law model with a break.
 
@@ -362,7 +358,7 @@ class ExponentialCutoffBrokenPowerLaw(object):
         return self._calc(e)
 
 
-class LogParabola(object):
+class LogParabola:
     """
     One dimensional log parabola model (sometimes called curved power law).
 
@@ -430,7 +426,7 @@ class LogParabola(object):
         return self._calc(e)
 
 
-class TableModel(object):
+class TableModel:
     """
     A model generated from a table of energy and value arrays.
 
@@ -547,7 +543,7 @@ class EblAbsorptionModel(TableModel):
         else:
             raise ValueError('Model should be one of: ["Dominguez"]')
 
-        super(EblAbsorptionModel, self).__init__(energy, taus)
+        super().__init__(energy, taus)
 
     def transmission(self, e):
         e = _validate_ene(e)

@@ -1,17 +1,10 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
-
-import numpy as np
 import astropy.units as u
+import numpy as np
 
-from sherpa.models.parameter import Parameter
 from sherpa.models.model import ArithmeticModel, modelCacher1d
+from sherpa.models.parameter import Parameter
 
 from . import models
 from .utils import trapz_loglog
@@ -139,7 +132,7 @@ class InverseCompton(SherpaModelECPL):
             name, "uNIR", 0.0, min=0, frozen=True, units="eV/cm3"
         )  # , 0.2eV/cm3 typical in outer disk
         # add ECPL params
-        super(InverseCompton, self).__init__(name=name)
+        super().__init__(name=name)
         # Initialize model
         ArithmeticModel.__init__(
             self,
@@ -206,7 +199,7 @@ class Synchrotron(SherpaModelECPL):
         self.name = name
         self.B = Parameter(name, "B", 1, min=0, max=10, frozen=True, units="G")
         # add ECPL params
-        super(Synchrotron, self).__init__(name=name)
+        super().__init__(name=name)
         # Initialize model
         ArithmeticModel.__init__(
             self,
@@ -252,7 +245,7 @@ class Bremsstrahlung(SherpaModelECPL):
             name, "weight_ep", 1.263, min=0, max=10, frozen=True
         )
         # add ECPL params
-        super(Bremsstrahlung, self).__init__(name=name)
+        super().__init__(name=name)
         # Initialize model
         ArithmeticModel.__init__(
             self,
@@ -308,7 +301,7 @@ class PionDecay(SherpaModelECPL):
         self.name = name
         self.nh = Parameter(name, "nH", 1, min=0, frozen=True, units="1/cm3")
         # add ECPL params
-        super(PionDecay, self).__init__(name=name)
+        super().__init__(name=name)
         # Initialize model
         ArithmeticModel.__init__(
             self,

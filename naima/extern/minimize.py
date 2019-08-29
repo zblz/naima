@@ -7,27 +7,21 @@
 # minimize is a thin wrapper that behaves like scipy.optimize.minimize
 
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
 import numpy
 from numpy import (
+    Inf,
+    argmin,
+    asarray,
+    asfarray,
     atleast_1d,
     eye,
+    isinf,
     mgrid,
-    argmin,
-    zeros,
     shape,
+    sqrt,
     squeeze,
     vectorize,
-    asarray,
-    sqrt,
-    Inf,
-    asfarray,
-    isinf,
+    zeros,
 )
 
 # standard status messages of optimizers

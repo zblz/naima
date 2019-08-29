@@ -1,33 +1,22 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+import logging
+import os
+import warnings
+from collections import OrderedDict
+
 import numpy as np
+from astropy import units as u
+from astropy.constants import alpha, c, e, hbar, m_e, m_p, sigma_sb
+from astropy.utils.data import get_pkg_data_filename
+
 from .extern.validator import (
-    validate_scalar,
     validate_array,
     validate_physical_type,
+    validate_scalar,
 )
-
-from .utils import trapz_loglog
 from .model_utils import memoize
-
-from astropy.extern import six
-from collections import OrderedDict
-import os
-from astropy.utils.data import get_pkg_data_filename
-import warnings
-import logging
-
-# Constants and units
-from astropy import units as u
-
-# import constant values from astropy.constants
-from astropy.constants import c, m_e, hbar, sigma_sb, e, m_p, alpha
+from .utils import trapz_loglog
 
 __all__ = [
     "Synchrotron",
@@ -68,7 +57,7 @@ def _validate_ene(ene):
     return ene
 
 
-class BaseRadiative(object):
+class BaseRadiative:
     """Base class for radiative models
 
     This class implements the flux, sed methods and subclasses must implement
@@ -153,7 +142,7 @@ class BaseElectron(BaseRadiative):
     """
 
     def __init__(self, particle_distribution):
-        super(BaseElectron, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.param_names = ["Eemin", "Eemax", "nEed"]
         self._memoize = True
         self._cache = {}
@@ -293,7 +282,7 @@ class Synchrotron(BaseElectron):
     """
 
     def __init__(self, particle_distribution, B=3.24e-6 * u.G, **kwargs):
-        super(Synchrotron, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.B = validate_scalar("B", B, physical_type="magnetic flux density")
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
@@ -453,7 +442,7 @@ class InverseCompton(BaseElectron):
     def __init__(
         self, particle_distribution, seed_photon_fields=["CMB"], **kwargs
     ):
-        super(InverseCompton, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.seed_photon_fields = self._process_input_seed(seed_photon_fields)
         self.Eemin = 1 * u.GeV
         self.Eemax = 1e9 * mec2
@@ -482,7 +471,7 @@ class InverseCompton(BaseElectron):
 
         for idx, inseed in enumerate(seed_photon_fields):
             seed = {}
-            if isinstance(inseed, six.string_types):
+            if isinstance(inseed, str):
                 name = inseed
                 seed["type"] = "thermal"
                 if inseed == "CMB":
@@ -783,9 +772,7 @@ class InverseCompton(BaseElectron):
             is required. If set to None it will return the sum of all
             contributions (default).
         """
-        model = super(InverseCompton, self).flux(
-            photon_energy, distance=distance
-        )
+        model = super().flux(photon_energy, distance=distance)
 
         if seed is not None:
             # Test seed argument
@@ -835,7 +822,7 @@ class InverseCompton(BaseElectron):
             is required. If set to None it will return the sum of all
             contributions (default).
         """
-        sed = super(InverseCompton, self).sed(photon_energy, distance=distance)
+        sed = super().sed(photon_energy, distance=distance)
 
         if seed is not None:
             if distance != 0:
@@ -871,15 +858,15 @@ class Bremsstrahlung(BaseElectron):
     Other parameters
     ----------------
     weight_ee : float
-        Weight of electron-electron bremsstrahlung. Defined as :math:`\sum_i
+        Weight of electron-electron bremsstrahlung. Defined as :math:`\\sum_i
         Z_i X_i`, default is 1.088.
     weight_ep : float
-        Weight of electron-proton bremsstrahlung. Defined as :math:`\sum_i
+        Weight of electron-proton bremsstrahlung. Defined as :math:`\\sum_i
         Z_i^2 X_i`, default is 1.263.
     """
 
     def __init__(self, particle_distribution, n0=1 / u.cm ** 3, **kwargs):
-        super(Bremsstrahlung, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.n0 = n0
         self.Eemin = 100 * u.MeV
         self.Eemax = 1e9 * mec2
@@ -1057,7 +1044,7 @@ class BaseProton(BaseRadiative):
     """
 
     def __init__(self, particle_distribution):
-        super(BaseProton, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.param_names = ["Epmin", "Epmax", "nEpd"]
         self._memoize = True
         self._cache = {}
@@ -1228,7 +1215,7 @@ class PionDecay(BaseProton):
         nuclear_enhancement=True,
         **kwargs
     ):
-        super(PionDecay, self).__init__(particle_distribution)
+        super().__init__(particle_distribution)
         self.nh = validate_scalar("nh", nh, physical_type="number density")
         self.nuclear_enhancement = nuclear_enhancement
         self.useLUT = True
@@ -1570,8 +1557,8 @@ class PionDecay(BaseProton):
     def _spectrum(self, photon_energy):
         """
         Compute differential spectrum from pp interactions using the
-        parametrization of Kafexhiu, E., Aharonian, F., Taylor, A.~M., and
-        Vila, G.~S.\ 2014, `arXiv:1406.7369
+        parametrization of Kafexhiu, E., Aharonian, F., Taylor, A.M., and
+        Vila, G.S. 2014, `arXiv:1406.7369
         <http://www.arxiv.org/abs/1406.7369>`_.
 
         Parameters
@@ -1854,7 +1841,7 @@ class PionDecayKelner06(BaseRadiative):
         return density_factor * self.specpp.to("1/(s eV)")
 
 
-class LookupTable(object):
+class LookupTable:
     """
     Helper class for two-dimensional look up table
 

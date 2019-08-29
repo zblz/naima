@@ -1,18 +1,18 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import warnings
 
+import astropy.units as u
 import numpy as np
+from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
-import astropy.units as u
-from astropy.io import ascii
 
 from ..core import (
-    run_sampler,
     get_sampler,
-    uniform_prior,
-    normal_prior,
     lnprob,
+    normal_prior,
+    run_sampler,
+    uniform_prior,
 )
 
 try:
