@@ -562,13 +562,13 @@ def read_run(filename, modelfn=None):
             rank = np.ndim(ds[0])
             blobrank.append(rank)
             if rank <= 1:
-                blobs.append(u.Quantity(ds.value, unit=ds.attrs["unit"]))
+                blobs.append(u.Quantity(ds[()], unit=ds.attrs["unit"]))
             else:
                 blob = []
                 for j in range(np.ndim(ds[0])):
                     blob.append(
                         u.Quantity(
-                            ds.value[:, j, :],
+                            ds[:, j, :],
                             unit=ds.attrs["unit{0}".format(j)],
                         )
                     )
