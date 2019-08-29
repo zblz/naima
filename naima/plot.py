@@ -394,12 +394,13 @@ def _read_or_calc_samples(
         # init pool and select parameters
         chain = sampler.chain[-1] if last_step else sampler.flatchain
         pars = chain[np.random.randint(len(chain), size=n_samples)]
+        args = ((p, data) for p in pars)
         blobs = []
 
-        p = Pool(threads)
-        modelouts = p.map(partial(sampler.modelfn, data=data), pars)
-        p.close()
-        p.terminate()
+        pool = Pool(threads)
+        modelouts = pool.starmap(sampler.modelfn, args)
+        pool.close()
+        pool.terminate()
 
         for modelout in modelouts:
             if isinstance(modelout, np.ndarray):

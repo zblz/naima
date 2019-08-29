@@ -12,7 +12,7 @@ fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
 data_table = ascii.read(fname)
 
 # Model definition
-def cutoffexp(pars, data):
+def cutoffexp(pars, input_data):
     """
     Powerlaw with exponential cutoff
 
@@ -22,6 +22,8 @@ def cutoffexp(pars, data):
         - 2: log10(cutoff energy)
         - 3: cutoff exponent (beta)
     """
+
+    data = input_data
 
     x = data["energy"].copy()
     # take logarithmic mean of first and last data points as normalization
