@@ -568,8 +568,7 @@ def read_run(filename, modelfn=None):
                 for j in range(np.ndim(ds[0])):
                     blob.append(
                         u.Quantity(
-                            ds[:, j, :],
-                            unit=ds.attrs["unit{0}".format(j)],
+                            ds[:, j, :], unit=ds.attrs["unit{0}".format(j)]
                         )
                     )
                 blobs.append(blob)
