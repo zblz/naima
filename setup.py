@@ -97,7 +97,7 @@ package_info["package_data"][PACKAGENAME].extend(c_files)
 install_requires = (
     [
         "astropy>=1.0.2",
-        "emcee>=2.2.0",
+        "emcee>=2.2.0,<3.0",
         "corner",
         "matplotlib",
         "scipy",
