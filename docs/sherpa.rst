@@ -12,16 +12,20 @@ or with pip.
 
 The `standalone Python version of sherpa
 <https://sherpa.readthedocs.io/>`_  can be installed using Anaconda along with
-Naima as follows::
+Naima as follows
+
+.. code-block:: shell
 
     $ export PATH=PATH_TO_ANACONDA/bin:$PATH
     $ conda config --add channels sherpa --add channels astropy
     $ conda install sherpa naima
 
-where ``PATH_TO_ANACONDA`` is the path where you have installed Anaconda. 
+where ``PATH_TO_ANACONDA`` is the path where you have installed Anaconda.
 
 Sherpa can also be installed using pip, as long as NumPy is already
-installed::
+installed
+
+.. code-block:: shell
 
     $ pip install sherpa
 
@@ -38,7 +42,9 @@ distribution:
 
 Once within a python session or script, these models can be accesed through
 `naima.sherpa_models` and added to an analysis session with the sherpa command
-`set_model`. You can see the available parameters with `show_model`::
+`set_model`. You can see the available parameters with `show_model`
+
+.. code-block:: ipython3
 
     >>> from sherpa.astro.ui import *
     >>> dataspace1d(0.1,10,0.1) # Data would be loaded at this step, here we fake it
@@ -60,7 +66,6 @@ Once within a python session or script, these models can be accesed through
        IC.uNIR      frozen            0            0  3.40282e+38     eV/cm3
        IC.distance  frozen            1            0        1e+06        kpc
        IC.verbose   frozen            0            0  3.40282e+38
-
 
 Initially, only the amplitude and index of the particle distribution are free
 parameters, see the `sherpa`_ documentation for information of how to modify the
