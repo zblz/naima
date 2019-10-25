@@ -42,6 +42,7 @@ distribute-*.tar.gz
 *.pickle
 *_results.*
 *.hdf5
+.tox
 
 # Mac OSX
 .DS_Store

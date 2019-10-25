@@ -1,85 +1,32 @@
-# set language to C because python is not supported in Mac. Does not make a
-# difference because we install python through conda
-language: c
-
-branches:
-    only:
-        - master
-
-# Setting sudo to false opts in to Travis-CI container-based builds.
-sudo: false
-
-# The apt packages below are needed for sphinx builds, which can no longer
-# be installed with sudo apt-get.
-addons:
-    apt:
-        packages:
-            - graphviz
-            - texlive-latex-extra
-            - dvipng
-
-env:
-    global:
-        # The following versions are the 'default' for tests, unless
-        # overidden underneath. They are defined here in order to save having
-        # to repeat them for all configurations.
-        - PYTHON_VERSION=3.7
-        - NUMPY_VERSION=stable
-        - ASTROPY_VERSION=stable
-        - CONDA_CHANNELS='sherpa'
-        - CONDA_DEPENDENCIES='pytest pip Cython jinja2 pyyaml scipy matplotlib h5py mock sphinx_rtd_theme sherpa'
-        - PIP_DEPENDENCIES='emcee corner sphinx-astropy'
-
-    matrix:
-        - PYTHON_VERSION=3.6 SETUP_CMD='egg_info'
-        - PYTHON_VERSION=3.7 SETUP_CMD='egg_info'
+language: python
+cache: pip
+dist: xenial
 
 matrix:
-
-    include:
-
-        # Check for sphinx doc build warnings
-        - os: linux
-          env: SETUP_CMD='build_docs -w'
-
-        # Run examples, do it first as well as it may take some time
-        - os: linux
-          env: SETUP_CMD='examples'
-
-        - os: linux
-          env: PYTHON_VERSION=3.6 SETUP_CMD='test --args="-v"'
-        - os: linux
-          env: SETUP_CMD='test --coverage --args="-v"'
-
-        # Try MacOS X
-        - os: osx
-          env: SETUP_CMD='test --args="-v"'
-
-before_install:
-    # If there are matplotlib tests, comment these out to
-    # Make sure that interactive matplotlib backends work
-    #- export DISPLAY=:99.0
-    #- sh -e /etc/init.d/xvfb start
+  include:
+    - name: Lint
+      python: 3.7
+      # env: TOXENV=black,flake8,isort
+      env: TOXENV=black
+    - name: Build docs
+      python: 3.7
+      env: TOXENV=build_docs
+    - name: Run examples
+      python: 3.7
+      env: TOXENV=examples
+    - os: osx
+      language: shell
+      osx_image: xcode11.2  # Python 3.7.4
+      env: TOXENV=py37
+    - os: linux
+      python: 3.6
+      env: TOXENV=py36
+    - os: linux
+      python: 3.7
+      env: TOXENV=py37
 
 install:
-    - git clone git://github.com/astropy/ci-helpers.git
-    - source ci-helpers/travis/setup_conda.sh
+  - pip3 install tox
 
 script:
-   - |
-     if [[ $SETUP_CMD == 'examples' ]]; then
-         python setup.py install
-         cd examples
-         echo 'backend : Agg' > matplotlibrc
-         for script in RXJ1713*.py; do
-             echo ''
-             echo "Running example $script..."
-             time python $script
-         done
-     else
-         python setup.py $SETUP_CMD
-     fi
-
-after_success:
-    # Uncomment line below if coveralls.io is set up for this package.
-    - if [[ $SETUP_CMD == *coverage* ]]; then coveralls --rcfile='naima/tests/coveragerc'; fi
+  - tox
