@@ -9,16 +9,17 @@ properties of their parent relativistic particle distributions.
 
 """
 
-# Affiliated packages may add whatever they like to this file, but
 from . import models
 from .analysis import *
 from .core import *
 from .model_fitter import *
 from .plot import *
 from .utils import *
-from .version import __version__
 
-# ----------------------------------------------------------------------------
+from .version import get_version
+
+__version__ = get_version()
+del get_version
 
 
 try:
