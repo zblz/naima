@@ -8,10 +8,8 @@ from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 
-from ..analysis import save_diagnostic_plots, save_results_table
-from ..core import run_sampler, uniform_prior
-from ..plot import plot_chain, plot_data, plot_fit
-from .fixtures import sampler
+from naima.analysis import save_diagnostic_plots, save_results_table
+from naima.plot import plot_chain, plot_data, plot_fit
 
 try:
     import matplotlib

@@ -7,7 +7,7 @@ from astropy.table import QTable, Table
 from astropy.tests.helper import pytest
 from numpy.testing import assert_allclose
 
-from ..models import (
+from naima.models import (
     Bremsstrahlung,
     BrokenPowerLaw,
     EblAbsorptionModel,
@@ -20,8 +20,8 @@ from ..models import (
     Synchrotron,
     TableModel,
 )
-from ..radiative import PionDecayKelner06
-from ..utils import trapz_loglog
+from naima.radiative import PionDecayKelner06
+from naima.utils import trapz_loglog
 
 try:
     import scipy
@@ -454,7 +454,7 @@ def test_pion_decay_no_nuc_enh(particle_dists):
     """
     test PionDecayKelner06
     """
-    from ..radiative import PionDecay
+    from naima.radiative import PionDecay
 
     ECPL, PL, BPL = particle_dists
 
@@ -542,7 +542,7 @@ def test_tablemodel():
     assert_allclose(tm(e3).value, 0.0)
 
     # use tablemodel as pdist
-    from ..radiative import Synchrotron, InverseCompton, PionDecay
+    from naima.radiative import Synchrotron, InverseCompton, PionDecay
 
     SY = Synchrotron(tm)
     _ = SY.flux(e / 10)

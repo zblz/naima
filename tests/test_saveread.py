@@ -7,13 +7,10 @@ from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 
-from ..analysis import read_run, save_run
-from ..core import run_sampler, uniform_prior
-from ..model_fitter import InteractiveModelFitter
-from ..models import ExponentialCutoffPowerLaw
-from ..plot import plot_chain, plot_data, plot_fit
-from ..utils import validate_data_table
-from .fixtures import simple_sampler as sampler
+from naima.analysis import read_run, save_run
+from naima.model_fitter import InteractiveModelFitter
+from naima.plot import plot_chain, plot_data, plot_fit
+from naima.utils import validate_data_table
 
 try:
     import matplotlib

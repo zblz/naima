@@ -2,7 +2,7 @@
 import numpy as np
 from astropy.tests.helper import pytest
 
-from ..utils import trapz_loglog
+from naima.utils import trapz_loglog
 
 try:
     from sherpa import ui
@@ -31,7 +31,7 @@ def test_electron_models():
     test import
     """
 
-    from ..sherpa_models import InverseCompton, Synchrotron, Bremsstrahlung
+    from naima.sherpa_models import InverseCompton, Synchrotron, Bremsstrahlung
 
     for modelclass in [InverseCompton, Synchrotron, Bremsstrahlung]:
         model = modelclass()
@@ -42,13 +42,13 @@ def test_electron_models():
         print(model)
 
         # point calc
-        output = model.calc([p.val for p in model.pars], energies)
+        model.calc([p.val for p in model.pars], energies)
 
         # test as well ECPL
         model.cutoff = 100
 
         # integrated
-        output = model.calc([p.val for p in model.pars], elo, xhi=ehi)
+        model.calc([p.val for p in model.pars], elo, xhi=ehi)
 
         if modelclass is InverseCompton:
             # Perform a fit to fake data
@@ -77,7 +77,7 @@ def test_proton_model():
     test import
     """
 
-    from ..sherpa_models import PionDecay
+    from naima.sherpa_models import PionDecay
 
     model = PionDecay()
 
@@ -88,7 +88,7 @@ def test_proton_model():
     output = model.calc([p.val for p in model.pars], energies)
 
     # integrated
-    output = model.calc([p.val for p in model.pars], elo, xhi=ehi)
+    model.calc([p.val for p in model.pars], elo, xhi=ehi)
 
     # test as well ECPL
     model.cutoff = 1000
