@@ -1,10 +1,16 @@
-0.9 (unreleased)
-----------------
+0.10.0 (unreleased)
+-----------------
+
+0.9.0 (2019-11-08)
+------------------
+
+- Dropped Python 2 support. If you need to use naima in Python 2, please use
+  version 0.8.4.
 
 0.8.4 (2019-08-27)
 ------------------
 
-- Updated deprecated uses of numpy and astropy.Quantity logig
+- Updated deprecated uses of numpy and astropy.Quantity logic
 - Updated tests for latest versions of dependencies
 
 0.8.3 (2018-11-27)
