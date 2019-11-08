@@ -29,17 +29,23 @@ The `Anaconda python distribution <http://continuum.io/downloads>`_ allows to
 easily set up a fully working scientific Python distribution in any Linux or Mac
 machine, even without root access. Once Anaconda is set up, Naima and all of
 its dependencies can be installed in an Anaconda distribution through the
-Astropy conda channel::
+Astropy conda channel
+
+.. code-block:: shell
 
     $ conda config --add channels astropy
     $ conda install naima
 
 To update to the latest version, you can either update all packages in the conda
-distribution::
+distribution
+
+.. code-block:: shell
 
     $ conda update --all
 
-or only Naima::
+or only Naima
+
+.. code-block:: shell
 
     $ conda update naima
 
@@ -49,7 +55,9 @@ Using pip
 You can install Naima in an existing Python installation through pip. It is
 recommended to install it in its own virtual environment, otherwise you may need
 to use ``sudo`` if you want to install it system-wide, or the flag ``--user`` to
-install only for the current user::
+install only for the current user
+
+.. code-block:: shell
 
     $ pip install naima
 
@@ -64,7 +72,9 @@ Installing the development version
 ++++++++++++++++++++++++++++++++++
 
 To install from the latest development source, install Naima from the
-`github repository`_ through pip::
+`github repository`_ through pip
+
+.. code-block:: shell
 
     $ pip install git+http://github.com/zblz/naima.git#egg=naima
 

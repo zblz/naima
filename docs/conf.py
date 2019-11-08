@@ -28,37 +28,33 @@
 import datetime
 import os
 import sys
+from pkg_resources import get_distribution
 
-from astropy_helpers.sphinx.conf import *
 
 try:
-    import astropy_helpers
+    from sphinx_astropy.conf.v1 import *  # noqa
 except ImportError:
-    # Building from inside the docs/ directory?
-    if os.path.basename(os.getcwd()) == "docs":
-        a_h_path = os.path.abspath(os.path.join("..", "astropy_helpers"))
-        if os.path.isdir(a_h_path):
-            sys.path.insert(1, a_h_path)
-
-    # If that doesn't work trying to import from astropy_helpers below will
-    # still blow up
-
+    print(
+        "ERROR: the documentation requires the sphinx-astropy package "
+        "to be installed"
+    )
+    sys.exit(1)
 
 # Get configuration information from setup.cfg
-try:
-    from ConfigParser import ConfigParser
-except ImportError:
-    from configparser import ConfigParser
+from configparser import ConfigParser
+
 conf = ConfigParser()
 conf.read([os.path.join(os.path.dirname(__file__), "..", "setup.cfg")])
 setup_cfg = dict(conf.items("metadata"))
 
 # -- General configuration ----------------------------------------------------
 
+# By default, highlight as Python 3.
+highlight_language = "python3"
+
 # If your documentation needs a minimal Sphinx version, state it here.
 needs_sphinx = "1.3"
 
-# del intersphinx_mapping['h5py']
 
 intersphinx_mapping["emcee"] = (
     "https://emcee.readthedocs.io/en/stable/",
@@ -78,7 +74,7 @@ rst_epilog += """
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
-project = setup_cfg["package_name"]
+project = setup_cfg["name"]
 author = setup_cfg["author"]
 copyright = "{0}, {1}".format(
     datetime.datetime.now().year, setup_cfg["author"]
@@ -88,13 +84,12 @@ copyright = "{0}, {1}".format(
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-__import__(setup_cfg["package_name"])
-package = sys.modules[setup_cfg["package_name"]]
+package_version = get_distribution(setup_cfg["name"]).version
 
 # The short X.Y version.
-version = package.__version__.split("-", 1)[0]
+version = package_version.split("-", 1)[0]
 # The full version, including alpha/beta/rc tags.
-release = package.__version__
+release = package_version
 
 
 # -- Options for HTML output ---------------------------------------------------
@@ -175,9 +170,9 @@ man_pages = [
 ## -- Options for the edit_on_github extension ----------------------------------------
 
 if eval(setup_cfg.get("edit_on_github")):
-    extensions += ["astropy_helpers.sphinx.ext.edit_on_github"]
+    extensions += ["sphinx_astropy.ext.edit_on_github"]
 
-    versionmod = __import__(setup_cfg["package_name"] + ".version")
+    versionmod = __import__(setup_cfg["name"] + ".version")
     edit_on_github_project = setup_cfg["github_project"]
     if versionmod.version.release:
         edit_on_github_branch = "v" + versionmod.version.version

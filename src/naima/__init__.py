@@ -11,12 +11,12 @@ properties of their parent relativistic particle distributions.
 
 # Affiliated packages may add whatever they like to this file, but
 from . import models
-from ._astropy_init import *
 from .analysis import *
 from .core import *
 from .model_fitter import *
 from .plot import *
 from .utils import *
+from .version import __version__
 
 # ----------------------------------------------------------------------------
 
