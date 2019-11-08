@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     use_scm_version={
@@ -9,6 +9,9 @@ setup(
         "local_scheme": "dirty-tag",
     },
     setup_requires=["setuptools_scm"],
+    packages=find_packages("src"),
+    package_dir={"": "src"},
+    package_data={"naima": ["data/*.npz"]},
     install_requires=[
         "astropy>=1.0.2",
         "emcee>=2.2.0,<3.0",
