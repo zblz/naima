@@ -44,7 +44,7 @@ Once within a python session or script, these models can be accesed through
 `naima.sherpa_models` and added to an analysis session with the sherpa command
 `set_model`. You can see the available parameters with `show_model`
 
-.. code-block:: ipython3
+.. code-block:: pycon
 
     >>> from sherpa.astro.ui import *
     >>> dataspace1d(0.1,10,0.1) # Data would be loaded at this step, here we fake it
