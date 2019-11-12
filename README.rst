@@ -56,7 +56,7 @@ Naima is released under a 3-clause BSD style license - see the
 Code status
 ^^^^^^^^^^^
 
-.. image:: http://img.shields.io/travis/zblz/naima.svg
+.. image:: http://img.shields.io/travis/zblz/naima/master
 	:target: https://travis-ci.org/zblz/naima
 .. image:: http://img.shields.io/coveralls/zblz/naima.svg
 	:target: https://coveralls.io/r/zblz/naima
