@@ -7,8 +7,8 @@ from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 
-from ..model_fitter import InteractiveModelFitter
-from ..models import ExponentialCutoffPowerLaw
+from naima.model_fitter import InteractiveModelFitter
+from naima.models import ExponentialCutoffPowerLaw
 
 try:
     import matplotlib

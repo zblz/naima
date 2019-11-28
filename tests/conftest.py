@@ -5,7 +5,7 @@ from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 
-from ..core import run_sampler, uniform_prior
+from naima.core import run_sampler, uniform_prior
 
 # Read data
 fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")

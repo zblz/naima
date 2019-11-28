@@ -6,7 +6,7 @@ from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 from numpy.testing import assert_allclose
 
-from ..utils import (
+from naima.utils import (
     build_data_table,
     estimate_B,
     generate_energy_edges,

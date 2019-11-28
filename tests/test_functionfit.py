@@ -7,7 +7,7 @@ from astropy.io import ascii
 from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 
-from ..core import (
+from naima.core import (
     get_sampler,
     lnprob,
     normal_prior,
