@@ -35,10 +35,11 @@ data_table = ascii.read(fname)
 
 
 @pytest.mark.skipif("not HAS_EMCEE")
-def test_roundtrip(sampler):
-    save_run("test_chain.h5", sampler, clobber=True)
-    assert os.path.exists("test_chain.h5")
-    nresult = read_run("test_chain.h5")
+def test_roundtrip(tmpdir, sampler):
+    path = os.path.join(tmpdir, "test_chain.h5")
+    save_run(path, sampler, clobber=True)
+    assert os.path.exists(path)
+    nresult = read_run(path)
 
     assert np.allclose(sampler.chain, nresult.chain)
     assert np.allclose(sampler.flatchain, nresult.flatchain)
@@ -81,9 +82,10 @@ def test_roundtrip(sampler):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_plot_fit(sampler):
-    save_run("test_chain.h5", sampler, clobber=True)
-    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
+def test_plot_fit(tmpdir, sampler):
+    path = os.path.join(tmpdir, "test_chain.h5")
+    save_run(path, sampler, clobber=True)
+    nresult = read_run(path, modelfn=sampler.modelfn)
 
     plot_data(nresult)
     plot_fit(nresult, 0)
@@ -93,9 +95,10 @@ def test_plot_fit(sampler):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_plot_chain(sampler):
-    save_run("test_chain.h5", sampler, clobber=True)
-    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
+def test_plot_chain(tmpdir, sampler):
+    path = os.path.join(tmpdir, "test_chain.h5")
+    save_run(path, sampler, clobber=True)
+    nresult = read_run(path, modelfn=sampler.modelfn)
 
     for i in range(nresult.chain.shape[2]):
         plot_chain(nresult, i)
@@ -103,9 +106,10 @@ def test_plot_chain(sampler):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_imf(sampler):
-    save_run("test_chain.h5", sampler, clobber=True)
-    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
+def test_imf(tmpdir, sampler):
+    path = os.path.join(tmpdir, "test_chain.h5")
+    save_run(path, sampler, clobber=True)
+    nresult = read_run(path, modelfn=sampler.modelfn)
 
     imf = InteractiveModelFitter(
         nresult.modelfn, nresult.chain[-1][-1], nresult.data
