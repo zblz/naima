@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eu
+
 DIR=$(dirname "${BASH_SOURCE[0]}" )
 
 pushd $DIR
