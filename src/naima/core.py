@@ -106,8 +106,8 @@ def lnprob(pars, data, modelfunc, priorfunc):
     else:
         lnprob_priors = priorfunc(pars)
 
-    # If prior is -np.inf, avoid calling the function as invalid calls may be made,
-    # and the result will be discarded anyway
+    # If prior is -np.inf, avoid calling the function as invalid calls may be
+    # made, and the result will be discarded anyway
     if not np.isinf(lnprob_priors):
         modelout = modelfunc(pars, data)
 
@@ -120,8 +120,14 @@ def lnprob(pars, data, modelfunc, priorfunc):
 
             MODEL_IN_BLOB = False
             for blob in modelout[1:]:
-                if np.array_equal(blob, model):
-                    MODEL_IN_BLOB = True
+                try:
+                    if np.array_equal(blob, model):
+                        MODEL_IN_BLOB = True
+                except (TypeError, u.UnitConversionError):
+                    # np.array_equal will fail if there is no
+                    # __array_function__ implementation in one of the types, or
+                    # if they are of incompatible types
+                    pass
 
             if MODEL_IN_BLOB:
                 blob = modelout[1:]

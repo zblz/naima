@@ -209,9 +209,9 @@ def test_inverse_compton_lum(particle_dists):
     ECPL, PL, BPL = particle_dists
 
     lum_ref = [
-        0.00027822017772343816,
-        0.004821189282097695,
-        0.00012916583207749083,
+        0.0002782201669858555,
+        0.004821189222961136,
+        0.00012916582897424096,
     ]
 
     lums = []
@@ -228,7 +228,7 @@ def test_inverse_compton_lum(particle_dists):
     ic.flux(data2)
 
     lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s")
-    assert_allclose(lic.value, 0.0005833034007064158)
+    assert_allclose(lic.value, 0.0005833030059049264)
 
 
 @pytest.mark.skipif("not HAS_SCIPY")
@@ -241,7 +241,7 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
 
     angles = [45, 90, 135] * u.deg
 
-    lum_ref = [48901.427779, 111356.569043, 149800.431109]
+    lum_ref = [48901.363932, 111356.423781, 149800.235776]
 
     lums = []
     for angle in angles:
