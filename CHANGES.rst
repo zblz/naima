@@ -1,6 +1,12 @@
 0.10.0 (unreleased)
 -----------------
 
+0.9.1 (2020-01-31)
+------------------
+
+- Fix exceptions thrown by `np.array_equal` for some combinations of model and
+  blob outputs.
+
 0.9.0 (2019-11-08)
 ------------------
 
