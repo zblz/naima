@@ -1382,16 +1382,15 @@ def plot_distribution(samples, label, figure=None):
 
     if isinstance(samples[0], u.Quantity):
         unit = samples[0].unit
+        std = std.value
+        quantiles = {k: v.value for k, v in quantiles.items()}
     else:
         unit = ""
 
-    if isinstance(std, u.Quantity):
-        std = std.value
-
-    dist_props = r"{label} distribution properties:\n \
+    dist_props = "{label} distribution properties:\n \
     $-$ median: ${median}$ {unit}, std: ${std}$ {unit}\n \
     $-$ Median with uncertainties based on \n \
-      the 16th and 84th percentiles ($\sim$1$\sigma$):\n\
+      the 16th and 84th percentiles ($\\sim$1$\\sigma$):\n\
           {label} = {value_error} {unit}".format(
         label=label,
         median=_latex_float(quantiles[50]),
