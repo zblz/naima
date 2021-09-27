@@ -3,6 +3,7 @@
 import warnings
 
 import astropy.units as u
+import emcee
 import numpy as np
 from astropy import log
 
@@ -148,18 +149,20 @@ def lnprob(pars, data, modelfunc, priorfunc):
 
 
 def _run_mcmc(sampler, pos, nrun):
-    for i, out in enumerate(sampler.sample(pos, iterations=nrun)):
+    for i, state in enumerate(
+        sampler.sample(pos, iterations=nrun, store=True)
+    ):
         progress = 100.0 * float(i) / float(nrun)
         if progress % 5 < (5.0 / float(nrun)):
             print(
                 "\nProgress of the run: {0:.0f} percent"
                 " ({1} of {2} steps)".format(int(progress), i, nrun)
             )
-            npars = out[0].shape[-1]
             paravg, parstd = [], []
+            npars = sampler.get_chain().shape[-1]
             for npar in range(npars):
-                paravg.append(np.median(out[0][:, npar]))
-                parstd.append(np.std(out[0][:, npar]))
+                paravg.append(np.median(state.coords[:, npar]))
+                parstd.append(np.std(state.coords[:, npar]))
             print(
                 "                           "
                 + (" ".join(["{%i:-^15}" % i for i in range(npars)])).format(
@@ -180,10 +183,10 @@ def _run_mcmc(sampler, pos, nrun):
             )
             print(
                 "  Last ensemble lnprob :  avg: {0:.3f}, max: {1:.3f}".format(
-                    np.average(out[1]), np.max(out[1])
+                    np.average(state.log_prob), np.max(state.log_prob)
                 )
             )
-    return sampler, out[0]
+    return sampler, state
 
 
 def _prefit(p0, data, model, prior):
@@ -362,8 +365,6 @@ def get_sampler(
     --------
     emcee.EnsembleSampler
     """
-    import emcee
-
     if data_table is None:
         raise TypeError("Data table is missing!")
     else:
@@ -512,15 +513,15 @@ def get_sampler(
                 nwalkers, nburn
             )
         )
-        sampler, pos = _run_mcmc(sampler, p0, nburn)
+        sampler, state = _run_mcmc(sampler, p0, nburn)
     else:
-        pos = p0
+        state = emcee.State(p0)
 
     sampler.run_info["p0_burn_median"] = [
-        float(p) for p in np.median(pos, axis=0)
+        float(p) for p in np.median(state.coords, axis=0)
     ]
 
-    return sampler, pos
+    return sampler, state
 
 
 def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
