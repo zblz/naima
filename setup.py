@@ -21,5 +21,5 @@ setup(
         "h5py",
         "pyyaml",
     ],
-    python_requires=">=3.5",
+    python_requires=">=3.7",
 )
