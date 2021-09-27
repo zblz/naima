@@ -203,13 +203,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     # Print distribution parameters on lower-left
 
     try:
-        try:
-            ac = sampler.get_autocorr_time()[p]
-        except AttributeError:
-            ac = autocorr.integrated_time(
-                np.mean(chain, axis=0), axis=0, fast=False
-            )[p]
-        autocorr_message = "{0:.1f}".format(ac)
+        autocorr_message = "{0:.1f}".format(autocorr.integrated_time(chain)[p])
     except autocorr.AutocorrError:
         # Raised when chain is too short for meaningful auto-correlation
         # estimation
