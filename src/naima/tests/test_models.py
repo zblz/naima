@@ -2,7 +2,7 @@
 import numpy as np
 from astropy import units as u
 from astropy.constants import c, hbar, m_e, sigma_sb
-from astropy.modeling.blackbody import blackbody_nu
+from astropy.modeling.physical_models import BlackBody
 from astropy.table import QTable, Table
 from astropy.tests.helper import pytest
 from numpy.testing import assert_allclose
@@ -272,7 +272,8 @@ def test_monochromatic_inverse_compton(particle_dists):
     lambdabb = Ephbb.to("AA", equivalencies=u.equivalencies.spectral())
     T = 30 * u.K
     w = 1 * u.eV / u.cm ** 3
-    bb = (blackbody_nu(lambdabb, T) * 2 * u.sr / c.cgs / Ephbb / hbar).to(
+
+    bb = (BlackBody(T)(lambdabb) * 2 * u.sr / c.cgs / Ephbb / hbar).to(
         "1/(cm3 eV)"
     )
     Ebbmax = Ephbb[np.argmax(Ephbb ** 2 * bb)]

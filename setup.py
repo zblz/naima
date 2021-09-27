@@ -13,7 +13,7 @@ setup(
     package_dir={"": "src"},
     package_data={"naima": ["data/*.npz"]},
     install_requires=[
-        "astropy>=1.0.2",
+        "astropy>=4.3",
         "emcee>=2.2.0,<3.0",
         "corner",
         "matplotlib",

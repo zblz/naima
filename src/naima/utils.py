@@ -176,9 +176,10 @@ def _validate_single_data_table(data_table, group=0):
         energy_hi = validate_column(data_table, "energy_hi", "energy")
         data["energy_error_hi"] = energy_hi - data["energy"]
     else:
-        data["energy_error_lo"], data[
-            "energy_error_hi"
-        ] = generate_energy_edges(data["energy"], groups=data["group"])
+        (
+            data["energy_error_lo"],
+            data["energy_error_hi"],
+        ) = generate_energy_edges(data["energy"], groups=data["group"])
 
     # Upper limit flags
     if "ul" in data_table.keys():
@@ -236,48 +237,56 @@ def sed_conversion(energy, model_unit, sed):
     """
 
     model_pt = model_unit.physical_type
+    is_integral = model_pt in {
+        u.get_physical_type("power"),
+        u.get_physical_type("energy"),
+        u.get_physical_type("energy flux"),
+    }
+    is_differential = model_pt in {
+        u.get_physical_type("differential flux"),
+        u.get_physical_type("differential power"),
+        u.get_physical_type("differential energy"),
+        u.get_physical_type("differential number density"),
+    }
 
     ones = np.ones(energy.shape)
 
-    if sed:
-        # SED
-        f_unit = u.Unit("erg/s")
-        if model_pt == "power" or model_pt == "flux" or model_pt == "energy":
-            sedf = ones
-        elif "differential" in model_pt:
-            sedf = energy ** 2
-        else:
-            raise u.UnitsError(
-                "Model physical type ({0}) is not supported".format(model_pt),
-                "Supported physical types are: power, flux, differential"
-                " power, differential flux",
-            )
-
-        if "flux" in model_pt:
-            f_unit /= u.cm ** 2
-        elif "energy" in model_pt:
-            # particle energy distributions
-            f_unit = u.erg
+    if (sed and is_integral) or (not sed and is_differential):
+        sedf = ones
+    elif sed and is_differential:
+        sedf = energy ** 2
+    elif not sed and is_integral:
+        sedf = 1 / (energy ** 2)
     else:
-        # Differential spectrum
-        f_unit = u.Unit("1/(s TeV)")
-        if "differential" in model_pt:
-            sedf = ones
-        elif model_pt == "power" or model_pt == "flux" or model_pt == "energy":
-            # From SED to differential
-            sedf = 1 / (energy ** 2)
-        else:
-            raise u.UnitsError(
-                "Model physical type ({0}) is not supported".format(model_pt),
-                "Supported physical types are: power, flux, differential"
-                " power, differential flux",
-            )
+        raise u.UnitsError(
+            "Model physical type ({0}) is not supported".format(model_pt),
+            "Supported physical types are: power, flux, differential"
+            " power, differential flux",
+        )
 
-        if "flux" in model_pt:
-            f_unit /= u.cm ** 2
-        elif "energy" in model_pt:
-            # particle energy distributions
+    is_energy_flux = model_pt in {
+        u.get_physical_type("energy"),
+        u.get_physical_type("differential energy"),
+    }
+    is_particle_flux = model_pt in {
+        u.get_physical_type("energy flux"),
+        u.get_physical_type("differential flux"),
+    }
+
+    if sed:
+        if is_energy_flux:
+            f_unit = u.erg
+        elif is_particle_flux:
+            f_unit = u.erg / u.s / u.cm ** 2
+        else:
+            f_unit = u.erg / u.s
+    else:
+        if is_energy_flux:
             f_unit = u.Unit("1/TeV")
+        elif is_particle_flux:
+            f_unit = u.Unit("1/(s TeV cm2)")
+        else:
+            f_unit = u.Unit("1/(s TeV)")
 
     log.debug(
         "Converted from {0} ({1}) into {2} ({3}) for sed={4}".format(
@@ -491,7 +500,7 @@ def build_data_table(
 def estimate_B(
     xray_table, vhe_table, photon_energy_density=0.261 * u.eV / u.cm ** 3
 ):
-    """ Estimate magnetic field from synchrotron to Inverse Compton luminosity
+    """Estimate magnetic field from synchrotron to Inverse Compton luminosity
     ratio
 
     Estimate the magnetic field from the ratio of X-ray to gamma-ray emission
