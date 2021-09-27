@@ -138,8 +138,7 @@ class BaseRadiative:
 
 
 class BaseElectron(BaseRadiative):
-    """Implements gam and nelec properties in addition to the BaseRadiative methods
-    """
+    """Implements gam and nelec properties"""
 
     def __init__(self, particle_distribution):
         super().__init__(particle_distribution)
@@ -150,8 +149,7 @@ class BaseElectron(BaseRadiative):
 
     @property
     def _gam(self):
-        """ Lorentz factor array
-        """
+        """Lorentz factor array"""
         log10gmin = np.log10(self.Eemin / mec2).value
         log10gmax = np.log10(self.Eemax / mec2).value
         return np.logspace(
@@ -160,20 +158,18 @@ class BaseElectron(BaseRadiative):
 
     @property
     def _nelec(self):
-        """ Particles per unit lorentz factor
-        """
+        """Particles per unit lorentz factor"""
         pd = self.particle_distribution(self._gam * mec2)
         return pd.to(1 / mec2_unit).value
 
     @property
     def We(self):
-        """ Total energy in electrons used for the radiative calculation
-        """
+        """Total energy in electrons used for the radiative calculation"""
         We = trapz_loglog(self._gam * self._nelec, self._gam * mec2)
         return We
 
     def compute_We(self, Eemin=None, Eemax=None):
-        """ Total energy in electrons between energies Eemin and Eemax
+        """Total energy in electrons between energies Eemin and Eemax
 
         Parameters
         ----------
@@ -204,7 +200,7 @@ class BaseElectron(BaseRadiative):
         return We
 
     def set_We(self, We, Eemin=None, Eemax=None, amplitude_name=None):
-        """ Normalize particle distribution so that the total energy in electrons
+        """Normalize particle distribution so that the total energy in electrons
         between Eemin and Eemax is We
 
         Parameters
@@ -1012,11 +1008,14 @@ class Bremsstrahlung(BaseElectron):
         gam = np.vstack(self._gam)
         eps = (Eph / mec2).decompose().value
         # compute integral with electron distribution
-        emiss = c.cgs * trapz_loglog(
-            np.vstack(self._nelec) * self._sigma_ep(gam, eps),
-            self._gam,
-            axis=0,
-        ).to(u.cm ** 2 / Eph.unit)
+        emiss = (
+            c.cgs
+            * trapz_loglog(
+                np.vstack(self._nelec) * self._sigma_ep(gam, eps),
+                self._gam,
+                axis=0,
+            ).to(u.cm ** 2 / Eph.unit)
+        )
         return emiss
 
     def _spectrum(self, photon_energy):
@@ -1040,8 +1039,7 @@ class Bremsstrahlung(BaseElectron):
 
 
 class BaseProton(BaseRadiative):
-    """Implements compute_Wp at arbitrary energies
-    """
+    """Implements compute_Wp at arbitrary energies"""
 
     def __init__(self, particle_distribution):
         super().__init__(particle_distribution)
@@ -1052,8 +1050,7 @@ class BaseProton(BaseRadiative):
 
     @property
     def _Ep(self):
-        """ Proton energy array in GeV
-        """
+        """Proton energy array in GeV"""
         return np.logspace(
             np.log10(self.Epmin.to("GeV").value),
             np.log10(self.Epmax.to("GeV").value),
@@ -1062,20 +1059,18 @@ class BaseProton(BaseRadiative):
 
     @property
     def _J(self):
-        """ Particles per unit proton energy in particles per GeV
-        """
+        """Particles per unit proton energy in particles per GeV"""
         pd = self.particle_distribution(self._Ep * u.GeV)
         return pd.to("1/GeV").value
 
     @property
     def Wp(self):
-        """Total energy in protons
-        """
+        """Total energy in protons"""
         Wp = trapz_loglog(self._Ep * self._J, self._Ep) * u.GeV
         return Wp.to("erg")
 
     def compute_Wp(self, Epmin=None, Epmax=None):
-        """ Total energy in protons between energies Epmin and Epmax
+        """Total energy in protons between energies Epmin and Epmax
 
         Parameters
         ----------
@@ -1109,7 +1104,7 @@ class BaseProton(BaseRadiative):
         return Wp
 
     def set_Wp(self, Wp, Epmin=None, Epmax=None, amplitude_name=None):
-        """ Normalize particle distribution so that the total energy in protons
+        """Normalize particle distribution so that the total energy in protons
         between Epmin and Epmax is Wp
 
         Parameters
@@ -1737,17 +1732,14 @@ class PionDecayKelner06(BaseRadiative):
         from scipy.integrate import quad
 
         Egamma = Egamma.to("TeV").value
-        specpp = (
-            c.cgs.value
-            * quad(
-                self._photon_integrand,
-                0.0,
-                1.0,
-                args=Egamma,
-                epsrel=1e-3,
-                epsabs=0,
-            )[0]
-        )
+        specpp = c.cgs.value * quad(
+            self._photon_integrand,
+            0.0,
+            1.0,
+            args=Egamma,
+            epsrel=1e-3,
+            epsabs=0,
+        )[0]
 
         return specpp * u.Unit("1/(s TeV)")
 
@@ -1787,8 +1779,7 @@ class PionDecayKelner06(BaseRadiative):
 
     @property
     def Wp(self):
-        """Total energy in protons above 1.22 GeV threshold (erg).
-        """
+        """Total energy in protons above 1.22 GeV threshold (erg)."""
         from scipy.integrate import quad
 
         Eth = 1.22e-3

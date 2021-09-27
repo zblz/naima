@@ -1,6 +1,4 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from functools import partial
-
 import astropy.units as u
 import numpy as np
 from astropy import log
@@ -54,8 +52,7 @@ def plot_chain(sampler, p=None, **kwargs):
 
 
 def _latex_float(f, format=".3g"):
-    """ http://stackoverflow.com/a/13490601
-    """
+    """http://stackoverflow.com/a/13490601"""
     float_str = "{{0:{0}}}".format(format).format(f)
     if "e" in float_str:
         base, exponent = float_str.split("e")
@@ -196,8 +193,8 @@ def _plot_chain_func(sampler, p, last_step=False):
         lw=0,
     )
     # ax2.legend()
-    for l in ax2.get_xticklabels():
-        l.set_rotation(45)
+    for xlabel in ax2.get_xticklabels():
+        xlabel.set_rotation(45)
     ax2.set_xlabel(xlabel)
     ax2.xaxis.set_label_coords(0.5, -0.1)
     ax2.set_title("posterior distribution")
@@ -228,18 +225,15 @@ def _plot_chain_func(sampler, p, last_step=False):
     )
     if autocorr_message is not None:
         chain_props += "Autocorrelation time: {0}\n".format(autocorr_message)
-    chain_props += (
-        "Mean acceptance fraction: {0:.3f}\n".format(
-            np.mean(sampler.acceptance_fraction)
-        )
-        + "Distribution properties for the {clen}:\n \
+    chain_props += "Mean acceptance fraction: {0:.3f}\n".format(
+        np.mean(sampler.acceptance_fraction)
+    ) + "Distribution properties for the {clen}:\n \
     $-$ median: ${median}$, std: ${std}$ \n \
     $-$ median with uncertainties based on \n \
       the 16th and 84th percentiles ($\\sim$1$\\sigma$):\n".format(
-            median=_latex_float(quantiles[50]),
-            std=_latex_float(np.std(dist)),
-            clen=clen,
-        )
+        median=_latex_float(quantiles[50]),
+        std=_latex_float(np.std(dist)),
+        clen=clen,
     )
 
     info_line = (
@@ -366,8 +360,7 @@ def _read_or_calc_samples(
     e_npoints=100,
     threads=None,
 ):
-    """Get samples from blob or compute them from chain and sampler.modelfn
-    """
+    """Get samples from blob or compute them from chain and sampler.modelfn"""
 
     if e_range is None:
         # return the results saved in blobs
@@ -415,8 +408,7 @@ def _read_or_calc_samples(
 
 
 def _calc_ML(sampler, modelidx=0, e_range=None, e_npoints=100):
-    """Get ML model from blob or compute them from chain and sampler.modelfn
-    """
+    """Get ML model from blob or compute them from chain and sampler.modelfn"""
 
     ML, MLp, MLerr, ML_model = find_ML(sampler, modelidx)
 
@@ -468,8 +460,7 @@ def _calc_CI(
     e_npoints=100,
     threads=None,
 ):
-    """Calculate confidence interval.
-    """
+    """Calculate confidence interval."""
     from scipy import stats
 
     # If we are computing the samples for the confidence intervals, we need at
@@ -1086,7 +1077,7 @@ def _plot_data_to_ax(
     ulim_opts={},
     errorbar_opts={},
 ):
-    """ Plots data errorbars and upper limits onto ax.
+    """Plots data errorbars and upper limits onto ax.
     X label is left to plot_data and plot_fit because they depend on whether
     residuals are plotted.
     """
@@ -1371,7 +1362,7 @@ def plot_data(
 
 
 def plot_distribution(samples, label, figure=None):
-    """ Plot a distribution and print statistics about it"""
+    """Plot a distribution and print statistics about it"""
 
     import matplotlib.pyplot as plt
     from scipy import stats
@@ -1450,8 +1441,8 @@ def plot_distribution(samples, label, figure=None):
         lw=0,
     )
     # ax.legend()
-    for l in ax.get_xticklabels():
-        l.set_rotation(45)
+    for xlabel in ax.get_xticklabels():
+        xlabel.set_rotation(45)
     # [l.set_rotation(45) for l in ax.get_yticklabels()]
     if unit != "":
         xlabel += " [{0}]".format(unit)

@@ -8,7 +8,7 @@ from astropy import units as u
 
 
 def memoize(func):
-    """ Cache decorator for functions inside model classes """
+    """Cache decorator for functions inside model classes"""
 
     def model(cls, energy, *args, **kwargs):
         try:

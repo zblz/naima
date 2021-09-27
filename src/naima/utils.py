@@ -437,13 +437,15 @@ def build_data_table(
     flux : :class:`~astropy.units.Quantity` array instance
         Observed flux array [physical type ``flux`` or ``differential flux``]
 
-    flux_error, flux_error_hi, flux_error_lo : :class:`~astropy.units.Quantity` array instance
+    flux_error, flux_error_hi, flux_error_lo : :class:`~astropy.units.Quantity`
+    array instance
         68% CL gaussian uncertainty of the flux [physical type ``flux`` or
         ``differential flux``]. Either ``flux_error`` (symmetrical uncertainty)
         or ``flux_error_hi`` and ``flux_error_lo`` (asymmetrical uncertainties)
         must be provided.
 
-    energy_width, energy_lo, energy_hi : :class:`~astropy.units.Quantity` array instance, optional
+    energy_width, energy_lo, energy_hi : :class:`~astropy.units.Quantity` array
+    instance, optional
         Width of the energy bins [physical type ``energy``]. Either
         ``energy_width`` (bin width) or ``energy_lo`` and ``energy_hi``
         (Energies of the lower and upper bin edges) can be provided. If none

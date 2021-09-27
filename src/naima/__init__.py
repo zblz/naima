@@ -9,6 +9,7 @@ properties of their parent relativistic particle distributions.
 
 """
 
+# flake8: noqa
 from . import models
 from .analysis import *
 from .core import *

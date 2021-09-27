@@ -12,7 +12,7 @@ from astropy.utils.exceptions import AstropyUserWarning
 from .plot import find_ML
 
 try:
-    import yaml
+    import yaml  # noqa
 
     HAS_PYYAML = True
 except ImportError:
@@ -471,7 +471,7 @@ def save_run(filename, sampler, compression=True, clobber=False):
             except TypeError:
                 try:
                     data.attrs[key] = str(val)
-                except:
+                except Exception:
                     warnings.warn(
                         "Attribute `{0}` of type {1} of the data table"
                         " of the sampler cannot be written to HDF5 files"

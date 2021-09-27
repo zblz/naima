@@ -77,7 +77,7 @@ def cutoffexp(pars, data):
     return (
         N
         * (x / x0) ** -gamma
-        * np.exp(-(x / ecut) ** beta)
+        * np.exp(-((x / ecut) ** beta))
         * u.Unit("1/(cm2 s TeV)")
     )
 

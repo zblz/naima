@@ -28,8 +28,7 @@ u.def_physical_type(u.Unit("1/(eV cm3)"), "differential number density")
 
 
 def uniform_prior(value, umin, umax):
-    """Uniform prior distribution.
-    """
+    """Uniform prior distribution."""
     if umin <= value <= umax:
         return 0.0
     else:
@@ -37,14 +36,12 @@ def uniform_prior(value, umin, umax):
 
 
 def normal_prior(value, mean, sigma):
-    """Normal prior distribution.
-    """
+    """Normal prior distribution."""
     return -0.5 * (2 * np.pi * sigma) - (value - mean) ** 2 / (2.0 * sigma)
 
 
 def log_uniform_prior(value, umin=0, umax=None):
-    """Log-uniform prior distribution.
-    """
+    """Log-uniform prior distribution."""
     if value > 0 and value >= umin:
         if umax is not None:
             if value <= umax:
@@ -80,7 +77,7 @@ def lnprobmodel(model, data):
     # use different errors for model above or below data
     sign = difference > 0
     loerr, hierr = 1 * ~sign, 1 * sign
-    logprob = -difference ** 2 / (
+    logprob = -(difference ** 2) / (
         2.0
         * (
             loerr * data["flux_error_lo"][notul]
@@ -411,14 +408,14 @@ def get_sampler(
         )
 
     if guess:
-        normNames = ["norm", "Norm", "ampl", "Ampl", "We", "Wp"]
+        normNames = ["norm", "ampl", "we", "wp"]
         normNameslog = ["log({0}".format(name) for name in normNames]
         normNameslog10 = ["log10({0}".format(name) for name in normNames]
         normNames += normNameslog + normNameslog10
         idxs = []
-        for l in normNames:
+        for normName in normNames:
             for l2 in labels:
-                if l2.startswith(l):
+                if l2.lower().startswith(normName):
                     # check with startswith to include normalization,
                     # amplitude, etc.
                     idxs.append(labels.index(l2))

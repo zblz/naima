@@ -172,7 +172,7 @@ class InteractiveModelFitter:
                 modelax.set_ylabel(r"$dN/dE$ [{0}]".format(unit))
             modelax.set_xlim(energy[0].value, energy[-1].value)
 
-        self.line, = modelax.loglog(
+        (self.line,) = modelax.loglog(
             energy.to(e_unit),
             (model * self.sedf).to(self.f_unit),
             lw=2,

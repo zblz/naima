@@ -26,8 +26,7 @@ def _mergex(xlo, xhi):
 
 
 class SherpaModel(ArithmeticModel):
-    """ Base class for Sherpa models
-    """
+    """Base class for Sherpa models"""
 
     def guess(self, dep, *args, **kwargs):
         # guess normalization from total flux
@@ -71,8 +70,7 @@ class SherpaModel(ArithmeticModel):
 
 
 class SherpaModelECPL(SherpaModel):
-    """ Base class for Sherpa models with a PL or ECPL particle distribution
-    """
+    """Base class for Sherpa models with a PL or ECPL particle distribution"""
 
     def __init__(self, name="Model"):
         self.name = name
@@ -93,7 +91,7 @@ class SherpaModelECPL(SherpaModel):
 
     @staticmethod
     def _pdist(p):
-        """ Return PL or ECPL instance based on parameters p """
+        """Return PL or ECPL instance based on parameters p"""
         index, ref, ampl, cutoff, beta = p[:5]
         if cutoff == 0.0:
             pdist = models.PowerLaw(
@@ -111,7 +109,7 @@ class SherpaModelECPL(SherpaModel):
 
 
 class InverseCompton(SherpaModelECPL):
-    """ Sherpa model for Inverse Compton emission from a Power Law or
+    """Sherpa model for Inverse Compton emission from a Power Law or
     Exponential Cutoff PowerLaw particle distribution
 
     See the :ref:`radiative`, `naima.models.InverseCompton` and
@@ -187,7 +185,7 @@ class InverseCompton(SherpaModelECPL):
 
 
 class Synchrotron(SherpaModelECPL):
-    """ Sherpa model for Synchrotron emission from a Power Law or Exponential
+    """Sherpa model for Synchrotron emission from a Power Law or Exponential
     Cutoff PowerLaw particle distribution
 
     See the :ref:`radiative`, `naima.models.Synchrotron` and
@@ -225,7 +223,7 @@ class Synchrotron(SherpaModelECPL):
 
 
 class Bremsstrahlung(SherpaModelECPL):
-    """ Sherpa model for Bremsstrahlung emission from a Power Law or Exponential
+    """Sherpa model for Bremsstrahlung emission from a Power Law or Exponential
     Cutoff PowerLaw particle distribution
 
     See the :ref:`radiative`, `naima.models.Bremsstrahlung` and
@@ -289,7 +287,7 @@ class Bremsstrahlung(SherpaModelECPL):
 
 
 class PionDecay(SherpaModelECPL):
-    """ Sherpa model for Pion Decay emission from a Power Law or Exponential
+    """Sherpa model for Pion Decay emission from a Power Law or Exponential
     Cutoff PowerLaw particle distribution
 
     See the :ref:`radiative`, `naima.models.PionDecay` and

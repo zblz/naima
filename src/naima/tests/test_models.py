@@ -497,8 +497,7 @@ def test_pion_decay_kelner(particle_dists):
 
 
 def test_inputs():
-    """ test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw
-    """
+    """test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw"""
 
     LP = LogParabola(1.0, e_0, 1.7, 0.2)
     LP._memoize = True
