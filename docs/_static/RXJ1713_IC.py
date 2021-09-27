@@ -3,9 +3,10 @@ import os
 import sys
 
 import astropy.units as u
-import naima
 import numpy as np
 from astropy.io import ascii
+
+import naima
 from naima.models import ExponentialCutoffPowerLaw, InverseCompton
 
 # Model definition

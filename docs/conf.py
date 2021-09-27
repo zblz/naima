@@ -28,8 +28,8 @@
 import datetime
 import os
 import sys
-from pkg_resources import get_distribution
 
+from pkg_resources import get_distribution
 
 try:
     from sphinx_astropy.conf.v1 import *  # noqa

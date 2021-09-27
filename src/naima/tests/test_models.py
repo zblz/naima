@@ -2,7 +2,7 @@
 import numpy as np
 from astropy import units as u
 from astropy.constants import c, hbar, m_e, sigma_sb
-from astropy.modeling.blackbody import blackbody_nu
+from astropy.modeling.physical_models import BlackBody
 from astropy.table import QTable, Table
 from astropy.tests.helper import pytest
 from numpy.testing import assert_allclose
@@ -272,7 +272,8 @@ def test_monochromatic_inverse_compton(particle_dists):
     lambdabb = Ephbb.to("AA", equivalencies=u.equivalencies.spectral())
     T = 30 * u.K
     w = 1 * u.eV / u.cm ** 3
-    bb = (blackbody_nu(lambdabb, T) * 2 * u.sr / c.cgs / Ephbb / hbar).to(
+
+    bb = (BlackBody(T)(lambdabb) * 2 * u.sr / c.cgs / Ephbb / hbar).to(
         "1/(cm3 eV)"
     )
     Ebbmax = Ephbb[np.argmax(Ephbb ** 2 * bb)]
@@ -496,8 +497,7 @@ def test_pion_decay_kelner(particle_dists):
 
 
 def test_inputs():
-    """ test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw
-    """
+    """test input validation with LogParabola and ExponentialCutoffBrokenPowerLaw"""
 
     LP = LogParabola(1.0, e_0, 1.7, 0.2)
     LP._memoize = True
@@ -542,7 +542,7 @@ def test_tablemodel():
     assert_allclose(tm(e3).value, 0.0)
 
     # use tablemodel as pdist
-    from ..radiative import Synchrotron, InverseCompton, PionDecay
+    from ..radiative import InverseCompton, PionDecay, Synchrotron
 
     SY = Synchrotron(tm)
     _ = SY.flux(e / 10)

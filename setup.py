@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     use_scm_version={
@@ -13,7 +13,7 @@ setup(
     package_dir={"": "src"},
     package_data={"naima": ["data/*.npz"]},
     install_requires=[
-        "astropy>=1.0.2",
+        "astropy>=4.3",
         "emcee>=2.2.0,<3.0",
         "corner",
         "matplotlib",
@@ -21,5 +21,5 @@ setup(
         "h5py",
         "pyyaml",
     ],
-    python_requires=">=3.5",
+    python_requires=">=3.7",
 )

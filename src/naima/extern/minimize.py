@@ -47,8 +47,7 @@ def wrap_function(function, args):
 
 
 class OptimizeResult(dict):
-    """ Represents the optimization result.
-    """
+    """Represents the optimization result."""
 
     pass
 

@@ -39,7 +39,7 @@ def cutoffexp(pars, input_data):
     flux = (
         N
         * (x / x0) ** -gamma
-        * np.exp(-(x / ecut) ** beta)
+        * np.exp(-((x / ecut) ** beta))
         * u.Unit("1/(cm2 s TeV)")
     )
 
@@ -49,12 +49,12 @@ def cutoffexp(pars, input_data):
         * x.unit
     )
     model = (
-        N * (ene / x0) ** -gamma * np.exp(-(ene / ecut) ** beta)
+        N * (ene / x0) ** -gamma * np.exp(-((ene / ecut) ** beta))
     ) * u.Unit("1/(cm2 s TeV)")
 
     # save a particle energy distribution
     model_part = (
-        N * (ene / x0) ** -gamma * np.exp(-(ene / ecut) ** beta)
+        N * (ene / x0) ** -gamma * np.exp(-((ene / ecut) ** beta))
     ) * u.Unit("1/(TeV)")
 
     # save a broken powerlaw in luminosity units
