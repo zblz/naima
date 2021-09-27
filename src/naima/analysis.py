@@ -70,8 +70,9 @@ def save_diagnostic_plots(
         Whether to save plots to multipage pdf.
     """
 
-    from .plot import plot_chain, plot_blob, plot_corner
     from matplotlib import pyplot as plt
+
+    from .plot import plot_blob, plot_chain, plot_corner
 
     # This function should never be interactive
     old_interactive = plt.rcParams["interactive"]

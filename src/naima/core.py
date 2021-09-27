@@ -461,8 +461,9 @@ def get_sampler(
     if interactive:
         try:
             log.info("Launching interactive model fitter, close when finished")
-            from .model_fitter import InteractiveModelFitter
             import matplotlib.pyplot as plt
+
+            from .model_fitter import InteractiveModelFitter
 
             iprev = plt.rcParams["interactive"]
             plt.rcParams["interactive"] = False

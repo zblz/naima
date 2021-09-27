@@ -543,7 +543,7 @@ def test_tablemodel():
     assert_allclose(tm(e3).value, 0.0)
 
     # use tablemodel as pdist
-    from ..radiative import Synchrotron, InverseCompton, PionDecay
+    from ..radiative import InverseCompton, PionDecay, Synchrotron
 
     SY = Synchrotron(tm)
     _ = SY.flux(e / 10)

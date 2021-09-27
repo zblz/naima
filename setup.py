@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     use_scm_version={

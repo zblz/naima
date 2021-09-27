@@ -118,7 +118,6 @@ def _plot_chain_func(sampler, p, last_step=False):
     label = sampler.labels[p]
 
     import matplotlib.pyplot as plt
-
     from scipy import stats
 
     if len(chain.shape) > 2:
@@ -1048,6 +1047,7 @@ def _plot_ulims(
     )
 
     from distutils.version import LooseVersion
+
     import matplotlib
 
     mpl_version = LooseVersion(matplotlib.__version__)
@@ -1373,8 +1373,8 @@ def plot_data(
 def plot_distribution(samples, label, figure=None):
     """ Plot a distribution and print statistics about it"""
 
-    from scipy import stats
     import matplotlib.pyplot as plt
+    from scipy import stats
 
     quant = [16, 50, 84]
     quantiles = dict(zip(quant, np.percentile(samples, quant)))

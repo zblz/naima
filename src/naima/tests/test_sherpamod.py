@@ -31,7 +31,7 @@ def test_electron_models():
     test import
     """
 
-    from ..sherpa_models import InverseCompton, Synchrotron, Bremsstrahlung
+    from ..sherpa_models import Bremsstrahlung, InverseCompton, Synchrotron
 
     for modelclass in [InverseCompton, Synchrotron, Bremsstrahlung]:
         model = modelclass()

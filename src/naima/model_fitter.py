@@ -67,7 +67,7 @@ class InteractiveModelFitter:
     ):
 
         import matplotlib.pyplot as plt
-        from matplotlib.widgets import Button, Slider, CheckButtons
+        from matplotlib.widgets import Button, CheckButtons, Slider
 
         self.pars = p0
         self.P0_IS_ML = False

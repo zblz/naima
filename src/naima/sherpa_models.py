@@ -2,7 +2,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import astropy.units as u
 import numpy as np
-
 from sherpa.models.model import ArithmeticModel, modelCacher1d
 from sherpa.models.parameter import Parameter
 
