@@ -463,7 +463,11 @@ def save_run(filename, sampler, compression=True, clobber=False):
                 blobdataset.attrs["unit"] = units[0]
 
         write_table_hdf5(
-            sampler.data, group, path="data", compression=compression
+            sampler.data,
+            group,
+            path="data",
+            serialize_meta=True,
+            compression=compression,
         )
 
         # add all run info to group attributes
