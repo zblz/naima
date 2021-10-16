@@ -186,7 +186,7 @@ def _validate_single_data_table(data_table, group=0):
         # Check if it is a integer or boolean flag
         ul_col = data_table["ul"]
         if ul_col.dtype.type is np.int_ or ul_col.dtype.type is np.bool_:
-            data["ul"] = np.array(ul_col, dtype=np.bool)
+            data["ul"] = np.array(ul_col, dtype=bool)
         elif ul_col.dtype.type is np.str_:
             strbool = True
             for ul in ul_col:
@@ -194,7 +194,7 @@ def _validate_single_data_table(data_table, group=0):
                     strbool = False
             if strbool:
                 data["ul"] = np.array(
-                    [ast.literal_eval(ul) for ul in ul_col], dtype=np.bool
+                    [ast.literal_eval(ul) for ul in ul_col], dtype=bool
                 )
             else:
                 raise TypeError("UL column is in wrong format")
@@ -488,7 +488,7 @@ def build_data_table(
         raise TypeError("Flux error not provided!")
 
     if ul is not None:
-        ul = np.array(ul, dtype=np.int)
+        ul = np.array(ul, dtype=int)
         table["ul"] = ul
 
     table.meta["comments"] = ["Table generated with naima.build_data_table"]
