@@ -60,7 +60,7 @@ def save_diagnostic_plots(
         Sampler instance from which chains, blobs and data are read.
 
     modelidxs : iterable of integers, optional
-        Model numbers to be plotted. Default: All returned in sampler.blobs
+        Model numbers to be plotted. Default: All returned in sampler.get_blobs
 
     blob_labels : list of strings, optional
         Label for each of the outputs of the model. They will be used as title
@@ -89,7 +89,9 @@ def save_diagnostic_plots(
 
     # Chains
 
-    for par, label in zip(range(sampler.chain.shape[-1]), sampler.labels):
+    for par, label in zip(
+        range(sampler.get_chain().shape[-1]), sampler.labels
+    ):
         try:
             log.info("Plotting chain of parameter {0}...".format(label))
             f = plot_chain(sampler, par, last_step=last_step)
@@ -123,7 +125,7 @@ def save_diagnostic_plots(
     # Fit
 
     if modelidxs is None:
-        nmodels = len(sampler.blobs[-1][0])
+        nmodels = len(sampler.get_blobs()[-1][0])
         modelidxs = list(range(nmodels))
 
     if isinstance(sed, bool):
@@ -249,9 +251,9 @@ def save_results_table(
     labels = sampler.labels
 
     if last_step:
-        dists = sampler.chain[:, -1, :]
+        dists = sampler.get_chain()[:, -1, :]
     else:
-        dists = sampler.flatchain
+        dists = sampler.get_chain(flat=True)
 
     quant = [16, 50, 84]
     # Do we need more info on the distributions?
@@ -314,9 +316,10 @@ def save_results_table(
             t.add_row((nlabel, med, lo, hi))
 
     if include_blobs:
-        nblobs = len(sampler.blobs[-1][0])
+        blobs = sampler.get_blobs()
+        nblobs = len(blobs[-1][0])
         for idx in range(nblobs):
-            blob0 = sampler.blobs[-1][0][idx]
+            blob0 = blobs[-1][0][idx]
 
             IS_SCALAR = False
             if isinstance(blob0, u.Quantity):
@@ -329,10 +332,10 @@ def save_results_table(
 
             if IS_SCALAR:
                 if last_step:
-                    blobl = [m[idx] for m in sampler.blobs[-1]]
+                    blobl = [m[idx] for m in blobs[-1]]
                 else:
                     blobl = []
-                    for step in sampler.blobs:
+                    for step in blobs:
                         for walkerblob in step:
                             blobl.append(walkerblob[idx])
                 if unit:

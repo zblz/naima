@@ -203,7 +203,7 @@ def test_prefit():
 
 
 @pytest.mark.skipif("not HAS_EMCEE or not HAS_SCIPY or not HAS_MATPLOTLIB")
-@pytest.mark.xfail("interactive to be deprecated")
+@pytest.mark.xfail(reason="interactive to be deprecated")
 def test_interactive():
     with warnings.catch_warnings():
         # Matplotlib warns a lot when unable to bring up the widget
