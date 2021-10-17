@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import multiprocessing
 import warnings
 
 import astropy.units as u
@@ -261,7 +262,7 @@ def get_sampler(
     interactive=False,
     prefit=False,
     labels=None,
-    threads=4,
+    threads=None,
     data_sed=None,
 ):
     """Generate a new MCMC sampler.
@@ -333,7 +334,8 @@ def get_sampler(
         Labels for the parameters included in the position vector ``p0``. If
         not provided ``['par1','par2', ... ,'parN']`` will be used.
     threads : int, optional
-        Number of threads to use for sampling. Default is 4.
+        Number of parallel processes to use for sampling. Default is the number
+        of CPU cores.
     guess : bool, optional
         Whether to attempt to guess the normalization (first) parameter of the
         model. Default is True.
@@ -483,7 +485,11 @@ def get_sampler(
         p0, P0_IS_ML = _prefit(p0, data, model, prior)
 
     sampler = emcee.EnsembleSampler(
-        nwalkers, len(p0), lnprob, args=[data, model, prior], threads=threads
+        nwalkers,
+        len(p0),
+        lnprob,
+        args=[data, model, prior],
+        pool=multiprocessing.Pool(threads),
     )
 
     # Add data and parameters properties to sampler
