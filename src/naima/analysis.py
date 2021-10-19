@@ -591,7 +591,7 @@ def read_run(filename, modelfn=None):
             steplist.append(walkerblob)
         result.blobs.append(steplist)
 
-    result.blobs = np.array(result.blobs)
+    result.blobs = np.array(result.blobs, dtype=np.dtype("object"))
 
     # run info
     result.run_info = dict(f["mcmc"].attrs)

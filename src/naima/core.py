@@ -490,6 +490,7 @@ def get_sampler(
         lnprob,
         args=[data, model, prior],
         pool=multiprocessing.Pool(threads),
+        blobs_dtype=np.dtype("object"),
     )
 
     # Add data and parameters properties to sampler
