@@ -511,7 +511,9 @@ def get_sampler(
     # the parameters have been fit to their ML values, or to 10% otherwise
     spread = 0.005 if P0_IS_ML else 0.1
     p0var = np.array([spread * pp for pp in p0])
-    p0 = emcee.utils.sample_ball(p0, p0var, nwalkers)
+    p0 = np.vstack(
+        [p0 + p0var * np.random.normal(size=len(p0)) for i in range(nwalkers)]
+    )
 
     if nburn > 0:
         print(

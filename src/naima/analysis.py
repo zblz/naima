@@ -422,7 +422,7 @@ def save_run(filename, sampler, compression=True, clobber=False):
         )
 
         # blobs
-        blob = sampler.blobs[-1][0]
+        blob = sampler.get_blobs()[-1][0]
         for idx, item in enumerate(blob):
             if isinstance(item, u.Quantity):
                 # scalar or array quantity
@@ -448,7 +448,7 @@ def save_run(filename, sampler, compression=True, clobber=False):
             # traverse blobs list. This will probably be slow and there should
             # be a better way
             blob = []
-            for step in sampler.blobs:
+            for step in sampler.get_blobs():
                 for walkerblob in step:
                     blob.append(walkerblob[idx])
             blob = u.Quantity(blob).value

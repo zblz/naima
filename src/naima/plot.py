@@ -41,7 +41,7 @@ def plot_chain(sampler, p=None, **kwargs):
         Figure
     """
     if p is None:
-        npars = sampler.chain.shape[-1]
+        npars = sampler.get_chain().shape[-1]
         for pp in range(npars):
             _plot_chain_func(sampler, pp, **kwargs)
         fig = None
