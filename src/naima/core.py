@@ -124,7 +124,7 @@ def lnprob(pars, data, modelfunc, priorfunc):
     else:
         total_lnprob = lnprob_priors
 
-    return total_lnprob, *blob
+    return (total_lnprob, *blob)
 
 
 # Sampler funcs
