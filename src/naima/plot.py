@@ -1439,14 +1439,12 @@ def plot_distribution(samples, label, figure=None):
         label="68% CI",
         lw=0,
     )
-    # ax.legend()
-    for xlabel in ax.get_xticklabels():
-        xlabel.set_rotation(45)
-    # [l.set_rotation(45) for l in ax.get_yticklabels()]
+    for xticklabel in ax.get_xticklabels():
+        xticklabel.set_rotation(45)
     if unit != "":
         xlabel += " [{0}]".format(unit)
     ax.set_xlabel(xlabel)
-    ax.set_title("posterior distribution of {0}".format(label))
+    ax.set_title("Posterior distribution of {0}".format(label))
     ax.set_ylim(top=n.max() * 1.05)
 
     return f
