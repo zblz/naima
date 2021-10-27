@@ -2,6 +2,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import multiprocessing
 import warnings
+from collections.abc import Iterable
 
 import astropy.units as u
 import emcee
@@ -105,45 +106,27 @@ def lnprob(pars, data, modelfunc, priorfunc):
     else:
         lnprob_priors = priorfunc(pars)
 
-    # If prior is -np.inf, avoid calling the function as invalid calls may be
-    # made, and the result will be discarded anyway
-    if not np.isinf(lnprob_priors):
-        modelout = modelfunc(pars, data)
+    modelout = modelfunc(pars, data)
 
-        # Save blobs or save model if no blobs given
-        # If model is not in blobs, save model+blobs
-        if (type(modelout) == tuple or type(modelout) == list) and (
-            type(modelout) != np.ndarray
-        ):
-            model = modelout[0]
-
-            MODEL_IN_BLOB = False
-            for blob in modelout[1:]:
-                try:
-                    if np.array_equal(blob, model):
-                        MODEL_IN_BLOB = True
-                except (TypeError, u.UnitConversionError):
-                    # np.array_equal will fail if there is no
-                    # __array_function__ implementation in one of the types, or
-                    # if they are of incompatible types
-                    pass
-
-            if MODEL_IN_BLOB:
-                blob = modelout[1:]
-            else:
-                blob = modelout
-        else:
-            model = modelout
-            blob = (modelout,)
-
-        lnprob_model = lnprobmodel(model, data)
+    # Save blobs or save model if no blobs given
+    if isinstance(modelout, Iterable) and not isinstance(
+        modelout, np.ndarray
+    ):
+        model = modelout[0]
+        blob = modelout
     else:
-        lnprob_model = 0.0
-        blob = None
+        model = modelout
+        # Avoid squeezing of the model output in order to retain units by
+        # adding a second dummy object blob
+        blob = (modelout, np.nan)
 
-    total_lnprob = lnprob_model + lnprob_priors
+    if not np.isinf(lnprob_priors):
+        lnprob_model = lnprobmodel(model, data)
+        total_lnprob = lnprob_model + lnprob_priors
+    else:
+        total_lnprob = lnprob_priors
 
-    return total_lnprob, blob
+    return total_lnprob, *blob
 
 
 # Sampler funcs
@@ -490,7 +473,7 @@ def get_sampler(
         lnprob,
         args=[data, model, prior],
         pool=multiprocessing.Pool(threads),
-        blobs_dtype=np.dtype("object"),
+        blobs_dtype=np.dtype(object),
     )
 
     # Add data and parameters properties to sampler
