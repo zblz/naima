@@ -98,6 +98,12 @@ def simple_cutoffexp(pars, data):
     return flux, model, model4, model5
 
 
+def noblob_cutoffexp(pars, data):
+    # no blobs
+    flux = cutoffexp(pars, data)[0]
+    return flux
+
+
 # Prior definition
 def lnprior(pars):
     """
@@ -139,6 +145,24 @@ def simple_sampler():
         p0=p0,
         labels=labels,
         model=simple_cutoffexp,
+        prior=lnprior,
+        nwalkers=10,
+        nburn=2,
+        nrun=2,
+        threads=1,
+    )
+    return sampler
+
+
+@pytest.fixture(scope="module")
+def noblob_sampler():
+    p0 = np.array((np.log(1.8e-12), 2.4, np.log10(15.0)))
+    labels = ["log(norm)", "index", "log10(cutoff)"]
+    sampler, pos = run_sampler(
+        data_table=data_table,
+        p0=p0,
+        labels=labels,
+        model=noblob_cutoffexp,
         prior=lnprior,
         nwalkers=10,
         nburn=2,

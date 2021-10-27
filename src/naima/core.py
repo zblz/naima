@@ -109,9 +109,7 @@ def lnprob(pars, data, modelfunc, priorfunc):
     modelout = modelfunc(pars, data)
 
     # Save blobs or save model if no blobs given
-    if isinstance(modelout, Iterable) and not isinstance(
-        modelout, np.ndarray
-    ):
+    if isinstance(modelout, Iterable) and not isinstance(modelout, np.ndarray):
         model = modelout[0]
         blob = modelout
     else:

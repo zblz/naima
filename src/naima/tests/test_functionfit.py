@@ -91,6 +91,11 @@ def cutoffexp_sed(pars, data):
     return N * (x / x0) ** -gamma * np.exp(-(x / ecut)) * u.Unit("erg/(cm2 s)")
 
 
+def cutoffexp_blob(pars, data):
+    model = cutoffexp(pars, data)
+    return model, np.sum(model)
+
+
 def cutoffexp_wrong(pars, data):
     return data["energy"] * u.m
 
@@ -334,4 +339,26 @@ def test_data_table_in_list():
         nwalkers=10,
         nburn=2,
         threads=1,
+    )
+
+
+def test_blob_shape():
+    kwargs = dict(
+        data_table=data_table,
+        p0=p0,
+        labels=labels,
+        prior=lnprior,
+        nwalkers=10,
+        nburn=5,
+        threads=1,
+    )
+
+    sampler, _ = get_sampler(model=cutoffexp, **kwargs)
+    sampler_blobs, _ = get_sampler(model=cutoffexp_blob, **kwargs)
+
+    # The blobs should contain the model with the same shape in both samplers
+    # as the first blob
+    assert (
+        sampler.get_blobs(flat=True)[0, 0].shape
+        == sampler_blobs.get_blobs(flat=True)[0, 0].shape
     )
