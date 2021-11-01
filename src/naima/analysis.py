@@ -494,21 +494,22 @@ class _result:
     Minimal emcee.EnsembleSampler like container for chain results
     """
 
-    def get_chain(self, flat=False):
+    def get_value(self, name, flat=False):
+        v = getattr(self, name)
         if flat:
-            s = self.chain.shape
-            return self.chain.reshape(s[0] * s[1], s[2])
-        else:
-            return self.chain
+            s = list(v.shape[1:])
+            s[0] = np.prod(v.shape[:2])
+            return v.reshape(s)
+        return v
 
-    def get_log_prob(self, flat=False):
-        if flat:
-            return self.log_prob.flatten()
-        else:
-            return self.log_prob
+    def get_chain(self, **kwargs):
+        return self.get_value("chain", **kwargs)
 
-    def get_blobs(self):
-        return self.blobs
+    def get_log_prob(self, **kwargs):
+        return self.get_value("log_prob", **kwargs)
+
+    def get_blobs(self, **kwargs):
+        return self.get_value("_blobs", **kwargs)
 
 
 def read_run(filename, modelfn=None):
@@ -550,7 +551,7 @@ def read_run(filename, modelfn=None):
     result.log_prob = np.array(f["mcmc/log_prob"])
 
     # blobs
-    result.blobs = []
+    result_blobs = []
     nsteps, nwalkers, nblobs = result.chain.shape
     blobs = []
     blobrank = []
@@ -589,9 +590,9 @@ def read_run(filename, modelfn=None):
                         blob.append(blobs[j][k][n])
                     walkerblob.append(blob)
             steplist.append(walkerblob)
-        result.blobs.append(steplist)
+        result_blobs.append(steplist)
 
-    result.blobs = np.array(result.blobs, dtype=np.dtype("object"))
+    result._blobs = np.array(result_blobs, dtype=np.dtype("object"))
 
     # run info
     result.run_info = dict(f["mcmc"].attrs)
