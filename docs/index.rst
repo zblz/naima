@@ -85,3 +85,5 @@ of `astropy`_, so you can check the `astropy Developer Documentation
 need information on how to make a code contribution.
 
 .. _github repository: https://github.com/zblz/naima
+
+.. include:: ../CHANGES.rst
