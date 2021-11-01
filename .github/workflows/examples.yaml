@@ -1,4 +1,4 @@
-name: Run examples
+name: Examples and docs
 
 on:
   push:
@@ -22,3 +22,16 @@ jobs:
         run: pip install tox
       - name: Run examples
         run: tox -e examples
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Tox
+        run: pip install tox
+      - name: Build docs
+        run: tox -e build_docs
