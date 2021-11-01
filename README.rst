@@ -24,15 +24,17 @@ Chain Monte Carlo.
 Documentation
 ^^^^^^^^^^^^^
 
-Documentation is at `naima.readthedocs.org
-<http://naima.readthedocs.org>`_.
+Documentation is at `naima.readthedocs.io
+<http://naima.readthedocs.io>`_.
 
 Attribution
 ^^^^^^^^^^^
 
 If you find ``naima`` useful in your research, you can cite `Zabalza (2015)
 <http://arxiv.org/abs/1509.03319>`_ to acknowledge its use. The BibTeX entry for
-the paper is::
+the paper is:
+
+.. code-block:: bibtex
 
     @ARTICLE{naima,
        author = {{Zabalza}, V.},
@@ -45,20 +47,16 @@ the paper is::
        adsurl = {http://adsabs.harvard.edu/abs/2015arXiv150903319Z},
     }
 
-
 License
 ^^^^^^^
 
 Naima is released under a 3-clause BSD style license - see the
 `LICENSE.rst <https://github.com/zblz/naima/blob/master/LICENSE.rst>`_ file.
 
-
 Code status
 ^^^^^^^^^^^
 
-.. image:: http://img.shields.io/travis/zblz/naima/master
-	:target: https://travis-ci.org/zblz/naima
-.. image:: http://img.shields.io/coveralls/zblz/naima.svg
-	:target: https://coveralls.io/r/zblz/naima
+.. image:: http://img.shields.io/github/workflow/status/zblz/naima/Tests
+	:target: https://github.com/zblz/naima/actions/workflows/tests.yaml
 .. image:: http://img.shields.io/badge/benchmarked%20by-asv-green.svg
 	:target: http://zblz.github.io/naima-benchmarks

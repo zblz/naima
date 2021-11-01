@@ -12,7 +12,7 @@ package.
 
 .. comment: - Code: http://www.github.com/zblz/naima
 
-.. comment: - Documentation: http://naima.readthedocs.org
+.. comment: - Documentation: http://naima.readthedocs.io
 
 .. comment: split here
 
