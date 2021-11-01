@@ -67,6 +67,8 @@ These spectra can then be analysed or plotted:
 
     import naima
     import astropy.units as u
+    import matplotlib.pyplot as plt
+    import numpy as np
 
     # Define models
     ECPL = naima.models.ExponentialCutoffPowerLaw(1e36*u.Unit('1/eV'),
@@ -241,6 +243,8 @@ from Synchrotron and Inverse Compton can then be plotted:
                               InverseCompton)
     from astropy.constants import c
     import astropy.units as u
+    import matplotlib.pyplot as plt
+    import numpy as np
 
     ECPL = ExponentialCutoffPowerLaw(1e36*u.Unit('1/eV'), 1*u.TeV, 2.1, 13*u.TeV)
     SYN = Synchrotron(ECPL, B=100*u.uG)
