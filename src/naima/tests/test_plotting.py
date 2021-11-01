@@ -11,7 +11,7 @@ from astropy.utils.data import get_pkg_data_filename
 from ..analysis import save_diagnostic_plots, save_results_table
 from ..core import run_sampler, uniform_prior
 from ..plot import plot_chain, plot_data, plot_fit
-from .fixtures import sampler
+from .fixtures import noblob_sampler, sampler
 
 try:
     import matplotlib
@@ -156,3 +156,9 @@ def test_diagnostic_plots(sampler):
         "test_function_2", sampler, sed=True, blob_labels=blob_labels[:4]
     )
     save_diagnostic_plots("test_function_3", sampler, pdf=True)
+
+
+@pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+def test_diagnostic_plots_noblobs(noblob_sampler):
+    # Diagnostic plots
+    save_diagnostic_plots("test_function_noblob", noblob_sampler)

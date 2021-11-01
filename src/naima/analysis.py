@@ -1,13 +1,13 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
-import warnings
+from pathlib import Path
 
 import astropy.units as u
 import h5py
 import numpy as np
 from astropy import log
-from astropy.table import QTable, Table
-from astropy.utils.exceptions import AstropyUserWarning
+from astropy.io.misc.hdf5 import read_table_hdf5, write_table_hdf5
+from astropy.table import Table
 
 from .plot import find_ML
 
@@ -60,7 +60,7 @@ def save_diagnostic_plots(
         Sampler instance from which chains, blobs and data are read.
 
     modelidxs : iterable of integers, optional
-        Model numbers to be plotted. Default: All returned in sampler.blobs
+        Model numbers to be plotted. Default: All returned in sampler.get_blobs
 
     blob_labels : list of strings, optional
         Label for each of the outputs of the model. They will be used as title
@@ -89,7 +89,9 @@ def save_diagnostic_plots(
 
     # Chains
 
-    for par, label in zip(range(sampler.chain.shape[-1]), sampler.labels):
+    for par, label in zip(
+        range(sampler.get_chain().shape[-1]), sampler.labels
+    ):
         try:
             log.info("Plotting chain of parameter {0}...".format(label))
             f = plot_chain(sampler, par, last_step=last_step)
@@ -123,7 +125,7 @@ def save_diagnostic_plots(
     # Fit
 
     if modelidxs is None:
-        nmodels = len(sampler.blobs[-1][0])
+        nmodels = len(sampler.get_blobs()[-1][0])
         modelidxs = list(range(nmodels))
 
     if isinstance(sed, bool):
@@ -249,9 +251,9 @@ def save_results_table(
     labels = sampler.labels
 
     if last_step:
-        dists = sampler.chain[:, -1, :]
+        dists = sampler.get_chain()[:, -1, :]
     else:
-        dists = sampler.flatchain
+        dists = sampler.get_chain(flat=True)
 
     quant = [16, 50, 84]
     # Do we need more info on the distributions?
@@ -314,9 +316,10 @@ def save_results_table(
             t.add_row((nlabel, med, lo, hi))
 
     if include_blobs:
-        nblobs = len(sampler.blobs[-1][0])
+        blobs = sampler.get_blobs()
+        nblobs = len(blobs[-1][0])
         for idx in range(nblobs):
-            blob0 = sampler.blobs[-1][0][idx]
+            blob0 = blobs[-1][0][idx]
 
             IS_SCALAR = False
             if isinstance(blob0, u.Quantity):
@@ -329,10 +332,10 @@ def save_results_table(
 
             if IS_SCALAR:
                 if last_step:
-                    blobl = [m[idx] for m in sampler.blobs[-1]]
+                    blobl = [m[idx] for m in blobs[-1]]
                 else:
                     blobl = []
-                    for step in sampler.blobs:
+                    for step in blobs:
                         for walkerblob in step:
                             blobl.append(walkerblob[idx])
                 if unit:
@@ -397,8 +400,9 @@ def save_run(filename, sampler, compression=True, clobber=False):
         Whether to overwrite the output filename if it exists.
     """
 
-    if filename.split(".")[-1] not in ["h5", "hdf5"]:
-        filename += "_chain.h5"
+    filename = Path(filename)
+    if filename.suffix not in {".hdf5", ".h5"}:
+        raise ValueError("Filename must end in .hdf5 or .h5 suffix")
 
     if os.path.exists(filename) and not clobber:
         log.warning(
@@ -406,96 +410,83 @@ def save_run(filename, sampler, compression=True, clobber=False):
         )
         return
 
-    f = h5py.File(filename, "w")
-    group = f.create_group("sampler")
-    group.create_dataset("chain", data=sampler.chain, compression=compression)
-    group.create_dataset(
-        "lnprobability", data=sampler.lnprobability, compression=compression
-    )
+    with h5py.File(filename, "w") as f:
+        group = f.create_group("mcmc")
+        group.create_dataset(
+            "chain", data=sampler.get_chain(), compression=compression
+        )
+        group.create_dataset(
+            "log_prob",
+            data=sampler.get_log_prob(),
+            compression=compression,
+        )
 
-    # blobs
-    blob = sampler.blobs[-1][0]
-    for idx, item in enumerate(blob):
-        if isinstance(item, u.Quantity):
-            # scalar or array quantity
-            units = [item.unit.to_string()]
-        elif isinstance(item, float):
-            units = [""]
-        elif isinstance(item, tuple) or isinstance(item, list):
-            arearrs = np.all([isinstance(x, np.ndarray) for x in item])
-            if arearrs:
+        # blobs
+        blob = sampler.get_blobs()[-1][0]
+        for idx, item in enumerate(blob):
+            if isinstance(item, u.Quantity):
+                # scalar or array quantity
+                units = [item.unit.to_string()]
+            elif isinstance(item, float):
+                units = [""]
+            elif (
+                isinstance(item, tuple) or isinstance(item, list)
+            ) and np.all([isinstance(x, np.ndarray) for x in item]):
                 units = []
                 for x in item:
                     if isinstance(x, u.Quantity):
                         units.append(x.unit.to_string())
                     else:
                         units.append("")
-        else:
-            log.warning(
-                "blob number {0} has unknown format and cannot be saved "
-                "in HDF5 file"
+            else:
+                log.warning(
+                    "blob number {0} has unknown format and cannot be saved "
+                    "in HDF5 file"
+                )
+                continue
+
+            # traverse blobs list. This will probably be slow and there should
+            # be a better way
+            blob = []
+            for step in sampler.get_blobs():
+                for walkerblob in step:
+                    blob.append(walkerblob[idx])
+            blob = u.Quantity(blob).value
+
+            blobdataset = group.create_dataset(
+                "blob{0}".format(idx), data=blob, compression=compression
             )
-            continue
+            if len(units) > 1:
+                for j, unit in enumerate(units):
+                    blobdataset.attrs["unit{0}".format(j)] = unit
+            else:
+                blobdataset.attrs["unit"] = units[0]
 
-        # traverse blobs list. This will probably be slow and there should be a
-        # better way
-        blob = []
-        for step in sampler.blobs:
-            for walkerblob in step:
-                blob.append(walkerblob[idx])
-        blob = u.Quantity(blob).value
-
-        blobdataset = group.create_dataset(
-            "blob{0}".format(idx), data=blob, compression=compression
-        )
-        if len(units) > 1:
-            for j, unit in enumerate(units):
-                blobdataset.attrs["unit{0}".format(j)] = unit
-        else:
-            blobdataset.attrs["unit"] = units[0]
-
-    if hasattr(sampler, "data"):
-        data = group.create_dataset(
-            "data",
-            data=Table(sampler.data).as_array(),
+        write_table_hdf5(
+            sampler.data,
+            group,
+            path="data",
+            serialize_meta=True,
             compression=compression,
         )
 
-        for col in sampler.data.colnames:
-            f["sampler/data"].attrs[col + "unit"] = str(sampler.data[col].unit)
-
-        for key in sampler.data.meta:
-            val = sampler.data.meta[key]
-            try:
-                data.attrs[key] = val
-            except TypeError:
+        # add all run info to group attributes
+        if hasattr(sampler, "run_info"):
+            for key in sampler.run_info.keys():
+                val = sampler.run_info[key]
                 try:
-                    data.attrs[key] = str(val)
-                except Exception:
-                    warnings.warn(
-                        "Attribute `{0}` of type {1} of the data table"
-                        " of the sampler cannot be written to HDF5 files"
-                        "- skipping".format(key, type(val)),
-                        AstropyUserWarning,
-                    )
+                    group.attrs[key] = val
+                except TypeError:
+                    group.attrs[key] = str(val)
 
-    # add all run info to group attributes
-    if hasattr(sampler, "run_info"):
-        for key in sampler.run_info.keys():
-            val = sampler.run_info[key]
-            try:
-                group.attrs[key] = val
-            except TypeError:
-                group.attrs[key] = str(val)
+        # add other sampler info to the attrs
+        group.attrs["acceptance_fraction"] = np.mean(
+            sampler.acceptance_fraction
+        )
 
-    # add other sampler info to the attrs
-    group.attrs["acceptance_fraction"] = np.mean(sampler.acceptance_fraction)
-
-    # add labels as individual attrs (there might be a better way)
-    for i, label in enumerate(sampler.labels):
-        group.attrs["label{0}".format(i)] = label
-
-    f.close()
+        # add labels as individual attrs (there might be a better way)
+        for i, label in enumerate(sampler.labels):
+            group.attrs["label{0}".format(i)] = label
 
 
 class _result:
@@ -503,14 +494,22 @@ class _result:
     Minimal emcee.EnsembleSampler like container for chain results
     """
 
-    @property
-    def flatchain(self):
-        s = self.chain.shape
-        return self.chain.reshape(s[0] * s[1], s[2])
+    def get_value(self, name, flat=False):
+        v = getattr(self, name)
+        if flat:
+            s = list(v.shape[1:])
+            s[0] = np.prod(v.shape[:2])
+            return v.reshape(s)
+        return v
 
-    @property
-    def flatlnprobability(self):
-        return self.lnprobability.flatten()
+    def get_chain(self, **kwargs):
+        return self.get_value("chain", **kwargs)
+
+    def get_log_prob(self, **kwargs):
+        return self.get_value("log_prob", **kwargs)
+
+    def get_blobs(self, **kwargs):
+        return self.get_value("_blobs", **kwargs)
 
 
 def read_run(filename, modelfn=None):
@@ -548,18 +547,18 @@ def read_run(filename, modelfn=None):
 
     f = h5py.File(filename, "r")
     # chain and lnprobability
-    result.chain = np.array(f["sampler/chain"])
-    result.lnprobability = np.array(f["sampler/lnprobability"])
+    result.chain = np.array(f["mcmc/chain"])
+    result.log_prob = np.array(f["mcmc/log_prob"])
 
     # blobs
-    result.blobs = []
-    shape = result.chain.shape[:2]
+    result_blobs = []
+    nsteps, nwalkers, nblobs = result.chain.shape
     blobs = []
     blobrank = []
     for i in range(100):
         # first read each of the blobs and convert to Quantities
         try:
-            ds = f["sampler/blob{0}".format(i)]
+            ds = f["mcmc/blob{0}".format(i)]
             rank = np.ndim(ds[0])
             blobrank.append(rank)
             if rank <= 1:
@@ -577,10 +576,10 @@ def read_run(filename, modelfn=None):
             break
 
     # Now organize in an awful list of lists of arrays
-    for step in range(shape[1]):
+    for step in range(nsteps):
         steplist = []
-        for walker in range(shape[0]):
-            n = step * shape[0] + walker
+        for walker in range(nwalkers):
+            n = step * nwalkers + walker
             walkerblob = []
             for j in range(len(blobs)):
                 if blobrank[j] <= 1:
@@ -591,22 +590,19 @@ def read_run(filename, modelfn=None):
                         blob.append(blobs[j][k][n])
                     walkerblob.append(blob)
             steplist.append(walkerblob)
-        result.blobs.append(steplist)
+        result_blobs.append(steplist)
+
+    result._blobs = np.array(result_blobs, dtype=np.dtype("object"))
 
     # run info
-    result.run_info = dict(f["sampler"].attrs)
-    result.acceptance_fraction = f["sampler"].attrs["acceptance_fraction"]
+    result.run_info = dict(f["mcmc"].attrs)
+    result.acceptance_fraction = f["mcmc"].attrs["acceptance_fraction"]
     # labels
     result.labels = []
-    for i in range(result.chain.shape[2]):
-        result.labels.append(f["sampler"].attrs["label{0}".format(i)])
+    for i in range(nblobs):
+        result.labels.append(f["mcmc"].attrs["label{0}".format(i)])
 
     # data
-    data = Table(np.array(f["sampler/data"]))
-    data.meta.update(f["sampler/data"].attrs)
-    for col in data.colnames:
-        if f["sampler/data"].attrs[col + "unit"] != "None":
-            data[col].unit = f["sampler/data"].attrs[col + "unit"]
-    result.data = QTable(data)
+    result.data = read_table_hdf5(f["mcmc"], "data")
 
     return result

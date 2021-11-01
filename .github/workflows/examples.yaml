@@ -1,4 +1,4 @@
-name: Tests
+name: Examples and docs
 
 on:
   push:
@@ -10,27 +10,8 @@ on:
 
 jobs:
 
-  test:
+  examples:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python: [3.7, 3.8, 3.9]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python }}
-      - name: Install Tox
-        run: pip install tox
-      - name: Run tests
-        run: tox -e py
-
-  lint:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        linter: [flake8, black, isort]
     steps:
       - uses: actions/checkout@v2
       - name: Setup Python
@@ -39,5 +20,18 @@ jobs:
           python-version: 3.9
       - name: Install Tox
         run: pip install tox
-      - name: Run linter
-        run: tox -e ${{ matrix.linter }}
+      - name: Run examples
+        run: tox -e examples
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: Install Tox
+        run: pip install tox
+      - name: Build docs
+        run: tox -e build_docs

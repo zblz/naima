@@ -92,7 +92,7 @@ if __name__ == "__main__":
     )
 
     ## Save run results to HDF5 file (can be read later with naima.read_run)
-    naima.save_run("RXJ1713_SynIC", sampler)
+    naima.save_run("RXJ1713_SynIC.hdf5", sampler)
 
     ## Diagnostic plots
     naima.save_diagnostic_plots(

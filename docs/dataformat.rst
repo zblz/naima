@@ -40,10 +40,12 @@ ASCII tables in the :class:`~astropy.io.ascii.Ecsv`,
 :class:`~astropy.io.ascii.Ipac`, and :class:`~astropy.io.ascii.Daophot` formats,
 and everything except the ``cl`` keyword from tables in the
 :class:`~astropy.io.ascii.SExtractor` format.  A data table to be used with
-naima can then be read with the `astropy.io.ascii` reader::
+naima can then be read with the `astropy.io.ascii` reader:
+
+.. code-block:: pycon
 
     >>> from astropy.io import ascii
-    >>> data_table = ascii.read('RXJ1713_HESS_2007.dat')
+    >>> data_table = ascii.read("RXJ1713_HESS_2007.dat")
 
 The table column names, types, and units, will be read automatically from the
 file.
@@ -89,6 +91,8 @@ And the same table shown in the :class:`~astropy.io.ascii.SExtractor` format
 
 If the table is in :class:`~astropy.io.ascii.SExtractor` format, the
 confidence level of the upper limits can be added after reading the table as a
-keyword::
+keyword:
 
-    >>> data_table.meta['keywords'] = {'cl':{'value':0.95}}
+.. code-block:: pycon
+
+    >>> data_table.meta["keywords"] = {"cl": {"value": 0.95}}

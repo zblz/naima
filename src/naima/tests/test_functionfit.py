@@ -16,14 +16,14 @@ from ..core import (
 )
 
 try:
-    import emcee
+    import emcee  # noqa
 
     HAS_EMCEE = True
 except ImportError:
     HAS_EMCEE = False
 
 try:
-    import scipy
+    import scipy  # noqa
 
     HAS_SCIPY = True
 except ImportError:
@@ -89,6 +89,11 @@ def cutoffexp_sed(pars, data):
     gamma = pars[1]
     ecut = pars[2] * u.TeV
     return N * (x / x0) ** -gamma * np.exp(-(x / ecut)) * u.Unit("erg/(cm2 s)")
+
+
+def cutoffexp_blob(pars, data):
+    model = cutoffexp(pars, data)
+    return model, np.sum(model)
 
 
 def cutoffexp_wrong(pars, data):
@@ -203,6 +208,7 @@ def test_prefit():
 
 
 @pytest.mark.skipif("not HAS_EMCEE or not HAS_SCIPY or not HAS_MATPLOTLIB")
+@pytest.mark.xfail(reason="interactive to be deprecated")
 def test_interactive():
     with warnings.catch_warnings():
         # Matplotlib warns a lot when unable to bring up the widget
@@ -333,4 +339,26 @@ def test_data_table_in_list():
         nwalkers=10,
         nburn=2,
         threads=1,
+    )
+
+
+def test_blob_shape():
+    kwargs = dict(
+        data_table=data_table,
+        p0=p0,
+        labels=labels,
+        prior=lnprior,
+        nwalkers=10,
+        nburn=5,
+        threads=1,
+    )
+
+    sampler, _ = get_sampler(model=cutoffexp, **kwargs)
+    sampler_blobs, _ = get_sampler(model=cutoffexp_blob, **kwargs)
+
+    # The blobs should contain the model with the same shape in both samplers
+    # as the first blob
+    assert (
+        sampler.get_blobs(flat=True)[0, 0].shape
+        == sampler_blobs.get_blobs(flat=True)[0, 0].shape
     )

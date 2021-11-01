@@ -53,7 +53,7 @@ if __name__ == "__main__":
     )
     ## Save run results
     out_root = "RXJ1713_IC_minimal"
-    naima.save_run(out_root, sampler)
+    naima.save_run(out_root + ".hdf5", sampler)
 
     ## Save diagnostic plots and results table
     naima.save_diagnostic_plots(out_root, sampler, sed=False)

@@ -8,12 +8,10 @@ from astropy.tests.helper import pytest
 from astropy.utils.data import get_pkg_data_filename
 
 from ..analysis import read_run, save_run
-from ..core import run_sampler, uniform_prior
 from ..model_fitter import InteractiveModelFitter
-from ..models import ExponentialCutoffPowerLaw
 from ..plot import plot_chain, plot_data, plot_fit
 from ..utils import validate_data_table
-from .fixtures import simple_sampler as sampler
+from .fixtures import simple_sampler as sampler  # noqa
 
 try:
     import matplotlib
@@ -22,14 +20,14 @@ try:
     import matplotlib.pyplot as plt
 
     HAS_MATPLOTLIB = True
-except:
+except ImportError:
     HAS_MATPLOTLIB = False
 
 try:
-    import emcee
+    import emcee  # noqa
 
     HAS_EMCEE = True
-except:
+except ImportError:
     HAS_EMCEE = False
 
 
@@ -38,31 +36,34 @@ data_table = ascii.read(fname)
 
 
 @pytest.mark.skipif("not HAS_EMCEE")
-def test_roundtrip(sampler):
-    save_run("test_chain.h5", sampler, clobber=True)
-    assert os.path.exists("test_chain.h5")
-    nresult = read_run("test_chain.h5")
+def test_roundtrip(sampler, tmp_path):
+    filename = tmp_path / "naima_test_sampler.hdf5"
+    save_run(filename, sampler)
+    assert os.path.exists(filename)
+    nresult = read_run(filename)
 
-    assert np.allclose(sampler.chain, nresult.chain)
-    assert np.allclose(sampler.flatchain, nresult.flatchain)
-    assert np.allclose(sampler.lnprobability, nresult.lnprobability)
-    assert np.allclose(sampler.flatlnprobability, nresult.flatlnprobability)
+    assert np.allclose(sampler.get_chain(), nresult.get_chain())
+    assert np.allclose(
+        sampler.get_chain(flat=True), nresult.get_chain(flat=True)
+    )
+    assert np.allclose(sampler.get_log_prob(), nresult.get_log_prob())
+    assert np.allclose(
+        sampler.get_log_prob(flat=True), nresult.get_log_prob(flat=True)
+    )
 
-    nwalkers, nsteps = sampler.chain.shape[:2]
-    j, k = int(nsteps / 2), int(nwalkers / 2)
-    for l in range(len(sampler.blobs[j][k])):
-        b0 = sampler.blobs[j][k][l]
-        b1 = nresult.blobs[j][k][l]
+    nwalkers, nsteps = sampler.get_chain().shape[:2]
+    sampler_blobs = sampler.get_blobs()
+    new_blobs = nresult.get_blobs()
+    assert sampler_blobs.shape == new_blobs.shape
+    j, k = nwalkers // 2, nsteps // 2
+    for l in range(len(sampler_blobs[j][k])):
+        b0 = sampler_blobs[j][k][l]
+        b1 = new_blobs[j][k][l]
         if isinstance(b0, tuple) or isinstance(b0, list):
-            for m in range(len(b0)):
-                assert b0[m].unit == b1[m].unit
-                assert np.allclose(b0[m].value, b1[m].value)
+            for b0m, b1m in zip(b0, b1):
+                assert np.allclose(b0m, b1m)
         else:
-            if isinstance(b0, u.Quantity):
-                assert b0.unit == b1.unit
-                assert np.allclose(b0.value, b1.value)
-            else:
-                assert np.allclose(b0, b1)
+            assert np.allclose(b0, b1)
 
     for key in sampler.run_info.keys():
         assert np.all(sampler.run_info[key] == nresult.run_info[key])
@@ -84,9 +85,10 @@ def test_roundtrip(sampler):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_plot_fit(sampler):
-    save_run("test_chain.h5", sampler, clobber=True)
-    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
+def test_plot_fit(sampler, tmp_path):
+    filename = tmp_path / "naima_test_sampler.hdf5"
+    save_run(filename, sampler, clobber=True)
+    nresult = read_run(filename, modelfn=sampler.modelfn)
 
     plot_data(nresult)
     plot_fit(nresult, 0)
@@ -96,22 +98,24 @@ def test_plot_fit(sampler):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_plot_chain(sampler):
-    save_run("test_chain.h5", sampler, clobber=True)
-    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
+def test_plot_chain(sampler, tmp_path):
+    filename = tmp_path / "naima_test_sampler.hdf5"
+    save_run(filename, sampler, clobber=True)
+    nresult = read_run(filename, modelfn=sampler.modelfn)
 
-    for i in range(nresult.chain.shape[2]):
+    for i in range(nresult.get_chain().shape[2]):
         plot_chain(nresult, i)
     plt.close("all")
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_imf(sampler):
-    save_run("test_chain.h5", sampler, clobber=True)
-    nresult = read_run("test_chain.h5", modelfn=sampler.modelfn)
+def test_imf(sampler, tmp_path):
+    filename = tmp_path / "naima_test_sampler.hdf5"
+    save_run(filename, sampler, clobber=True)
+    nresult = read_run(filename, modelfn=sampler.modelfn)
 
     imf = InteractiveModelFitter(
-        nresult.modelfn, nresult.chain[-1][-1], nresult.data
+        nresult.modelfn, nresult.get_chain()[-1][-1], nresult.data
     )
     imf.do_fit("test")
     from naima.core import lnprobmodel

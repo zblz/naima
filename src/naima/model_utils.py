@@ -33,7 +33,7 @@ def memoize(func):
 
             try:
                 # tostring is 10 times faster than str(array).encode()
-                bstr = energy.value.tostring()
+                bstr = energy.value.tobytes()
             except AttributeError:
                 # scalar Quantity
                 bstr = str(energy.value).encode()

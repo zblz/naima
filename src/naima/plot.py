@@ -41,7 +41,7 @@ def plot_chain(sampler, p=None, **kwargs):
         Figure
     """
     if p is None:
-        npars = sampler.chain.shape[-1]
+        npars = sampler.get_chain().shape[-1]
         for pp in range(npars):
             _plot_chain_func(sampler, pp, **kwargs)
         fig = None
@@ -111,14 +111,15 @@ def _latex_value_error(val, elo, ehi=0, tol=0.25):
 
 
 def _plot_chain_func(sampler, p, last_step=False):
-    chain = sampler.chain
+    chain = sampler.get_chain()
     label = sampler.labels[p]
 
     import matplotlib.pyplot as plt
     from scipy import stats
 
     if len(chain.shape) > 2:
-        traces = chain[:, :, p]
+        # transpose from (step, walker) to (walker, step)
+        traces = chain[:, :, p].T
         if last_step:
             # keep only last step
             dist = traces[:, -1]
@@ -193,8 +194,8 @@ def _plot_chain_func(sampler, p, last_step=False):
         lw=0,
     )
     # ax2.legend()
-    for xlabel in ax2.get_xticklabels():
-        xlabel.set_rotation(45)
+    for xticklabel in ax2.get_xticklabels():
+        xticklabel.set_rotation(45)
     ax2.set_xlabel(xlabel)
     ax2.xaxis.set_label_coords(0.5, -0.1)
     ax2.set_title("posterior distribution")
@@ -203,13 +204,7 @@ def _plot_chain_func(sampler, p, last_step=False):
     # Print distribution parameters on lower-left
 
     try:
-        try:
-            ac = sampler.get_autocorr_time()[p]
-        except AttributeError:
-            ac = autocorr.integrated_time(
-                np.mean(chain, axis=0), axis=0, fast=False
-            )[p]
-        autocorr_message = "{0:.1f}".format(ac)
+        autocorr_message = "{0:.1f}".format(autocorr.integrated_time(chain)[p])
     except autocorr.AutocorrError:
         # Raised when chain is too short for meaningful auto-correlation
         # estimation
@@ -290,11 +285,11 @@ def _process_blob(sampler, modelidx, last_step=False, energy=None):
 
     # Allow process blob to be used by _calc_samples and _calc_ML by sending
     # only blobs, not full sampler
-    if hasattr(sampler, "blobs"):
-        blob0 = sampler.blobs[-1][0][modelidx]
-        blobs = sampler.blobs
+    try:
+        blobs = sampler.get_blobs()
+        blob0 = blobs[-1][0][modelidx]
         energy = sampler.data["energy"]
-    else:
+    except AttributeError:
         blobs = [sampler]
         blob0 = sampler[0][modelidx]
         last_step = True
@@ -384,7 +379,11 @@ def _read_or_calc_samples(
             "flux": np.zeros(energy.shape) * sampler.data["flux"].unit,
         }
         # init pool and select parameters
-        chain = sampler.chain[-1] if last_step else sampler.flatchain
+        chain = (
+            sampler.get_chain()[-1]
+            if last_step
+            else sampler.get_chain(flat=True)
+        )
         pars = chain[np.random.randint(len(chain), size=n_samples)]
         args = ((p, data) for p in pars)
         blobs = []
@@ -689,12 +688,12 @@ def find_ML(sampler, modelidx):
     Find Maximum Likelihood parameters as those in the chain with a highest log
     probability.
     """
-    index = np.unravel_index(
-        np.argmax(sampler.lnprobability), sampler.lnprobability.shape
-    )
-    MLp = sampler.chain[index]
-    if modelidx is not None and hasattr(sampler, "blobs"):
-        blob = sampler.blobs[index[1]][index[0]][modelidx]
+    lnprobability = sampler.get_log_prob()
+    index = np.unravel_index(np.argmax(lnprobability), lnprobability.shape)
+    MLp = sampler.get_chain()[index]
+    blobs = sampler.get_blobs()
+    if modelidx is not None and blobs is not None:
+        blob = blobs[index][modelidx]
         if isinstance(blob, u.Quantity):
             modelx = sampler.data["energy"].copy()
             model_ML = blob.copy()
@@ -714,10 +713,10 @@ def find_ML(sampler, modelidx):
         modelx, model_ML = None, None
 
     MLerr = []
-    for dist in sampler.flatchain.T:
+    for dist in sampler.get_chain(flat=True).T:
         hilo = np.percentile(dist, [16.0, 84.0])
         MLerr.append((hilo[1] - hilo[0]) / 2.0)
-    ML = sampler.lnprobability[index]
+    ML = lnprobability[index]
 
     return ML, MLp, MLerr, (modelx, model_ML)
 
@@ -1440,14 +1439,12 @@ def plot_distribution(samples, label, figure=None):
         label="68% CI",
         lw=0,
     )
-    # ax.legend()
-    for xlabel in ax.get_xticklabels():
-        xlabel.set_rotation(45)
-    # [l.set_rotation(45) for l in ax.get_yticklabels()]
+    for xticklabel in ax.get_xticklabels():
+        xticklabel.set_rotation(45)
     if unit != "":
         xlabel += " [{0}]".format(unit)
     ax.set_xlabel(xlabel)
-    ax.set_title("posterior distribution of {0}".format(label))
+    ax.set_title("Posterior distribution of {0}".format(label))
     ax.set_ylim(top=n.max() * 1.05)
 
     return f
@@ -1492,7 +1489,7 @@ def plot_corner(sampler, show_ML=True, **kwargs):
 
         corner_opts.update(kwargs)
 
-        f = corner(sampler.flatchain, **corner_opts)
+        f = corner(sampler.get_chain(flat=True), **corner_opts)
     except ImportError:
         log.warning(
             "The corner package is not installed;" " corner plot not available"
