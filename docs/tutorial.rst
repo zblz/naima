@@ -10,7 +10,6 @@ unit system used in Naima. We load the spectral data with
     from astropy.io import ascii
     data = ascii.read('RXJ1713_HESS_2007.dat')
 
-
 Building the model and prior functions
 --------------------------------------
 
@@ -107,7 +106,7 @@ the sampling::
     >> imf = InteractiveModelFitter(model, p0, data=data, labels=labels)
     >> # interactive fitting done
     >> p0 = imf.pars
-    
+
 Note that the ``data`` argument can be omitted and an energy range specified through the
 ``e_range`` argument to inspect the behaviour of the model independently of the
 data::
@@ -130,14 +129,12 @@ The ``nwalkers`` parameter specifies how many *walkers* will be used in the
 sampling procedure, ``nburn`` specifies how many steps to be run as *burn-in*,
 and ``nrun`` specifies how many steps to run after the *burn-in* and save these
 samples in the sampler object. For details on these parameters, see the
-`documentation of the emcee package <http://dan.iel.fm/emcee/current/>`_.
-
+`documentation of the emcee package <https://emcee.readthedocs.io>`_.
 
 .. _plotting:
 
 Inspecting and analysing results of the run
 -------------------------------------------
-
 
 The results stored in the sampler object can be analysed through the plotting
 procedures of Naima: `~naima.plot_chain`, `~naima.plot_fit`, and
@@ -146,7 +143,7 @@ generate a collection of plots that illustrate the results and the stability of
 the fitting procedure. These are `~naima.save_diagnostic_plots`::
 
     naima.save_diagnostic_plots('RXJ1713_IC', sampler,
-                                blob_labels=['Spectrum', 
+                                blob_labels=['Spectrum',
                                              'Electron energy distribution',
                                              '$W_e (E_e>1$ TeV)'])
 
@@ -160,7 +157,7 @@ parameter vectori ``p0``, the parameter vector with the maximum likelihood
 ``ML_pars`` and the maximum value of the negative log-likelihood
 ``MaxLogLikelihood``. The table itself shows the median and upper and lower
 uncertainties (50th, 84th, and 16th percentiles of the posterior distribution)
-for the parameters sampled: 
+for the parameters sampled:
 
 .. literalinclude:: _static/RXJ1713_IC_results_table.txt
 
@@ -194,7 +191,6 @@ though a `corner plot <https://github.com/dfm/corner.py>`_ with
 likelihood parameter vector can be indicated with cross:
 
 .. image:: _static/RXJ1713_IC_corner.png
-
 
 Plotting functions: fit
 +++++++++++++++++++++++
@@ -233,7 +229,6 @@ results in 740 samples for a :math:`3\sigma` confidence level:
 
 .. image:: _static/RXJ1713_IC_model_confs_erange.png
 
-
 .. _saving:
 
 Saving and retrieving the results of the sampling run
@@ -244,16 +239,16 @@ be saved with `naima.save_run`. This function will save the results of the run
 to an HDF5 file that can be archived and analysed after the fact. The sampler
 properties saved to the HDF5 file are:
 
-- parameter vector chain: ``sampler.chain``
+- parameter vector chain: ``sampler.get_chain()``
 - log-probability for all the parameter vectors in the chain:
-  ``sampler.lnprobability``
+  ``sampler.get_log_prob()``
+- metadata blobs: ``sampler.get_blobs()``
 - parameter labels: ``sampler.labels``
 - data table: ``sampler.data``
-- metadata blobs: ``sampler.blobs``
 
 Note that only metadata blobs that can be converted into a numpy array will be
 stored. Blobs consisting of other classes, or with different lengths within the
-same blob, will raise a warning and be discarded on the `naima.save_run` call.
+same blob, will raise a warning and may be discarded on the `naima.save_run` call.
 
 The saved sampler can be retrieved with the `naima.read_run` function, which
 will return an `~emcee.EnsembleSampler`-like object. However, the model function
@@ -275,10 +270,10 @@ Saving additional information --- Metadata blobs
 If we wish to save additional information at each of the model computations,
 extra information can be returned from the model call. This extra information
 (known as metadata blobs; see details in the `emcee documentation
-<http://dan.iel.fm/emcee/current/user/advanced/#arbitrary-metadata-blobs>`_) is
-stored in the sampler object returned from the fitting and can be accessed
-later. There are three formats for the data stored as a metadata blob that will
-be understood by the plotting routines of Naima:
+<https://emcee.readthedocs.io/en/stable/user/blobs/>`_) is stored in the sampler
+object returned from the fitting procedure and can be accessed later. There are
+three formats for the data stored as a metadata blob that will be understood by
+the plotting routines of Naima:
 
 - A `~astropy.units.Quantity` scalar. A histogram and distribution properties
   (median, 16th and 84th percentiles, etc.) will be plotted.
@@ -291,7 +286,7 @@ be understood by the plotting routines of Naima:
 
 When fitting a radiative output to a spectrum, information on the particle
 distribution (e.g., the actual particle distribution, or the total energy in
-relativistic particles) can be saved as a metadata blob.  Below is an example
+relativistic particles) can be saved as a metadata blob. Below is an example
 that does precisely this with an Inverse Compton emission model::
 
     from naima.models import ExponentialCutoffPowerLaw, InverseCompton
@@ -320,11 +315,10 @@ that does precisely this with an Inverse Compton emission model::
         # subsequent objects will be stored as metadata blobs
         return IC(data), (electron_e, electron_dist), We
 
-
-The additional quantities we have stored can the be accesed in the
-`sampler.blobs` list. The function `~naima.plot_blob` allows to plot them and
-extract distribution properties. For the blobs that are a tuple or have the same
-length as ``data['energy']``, they will be plotted as spectra:
+The additional quantities we have stored can the be accesed via the
+`sampler.get_blobs` method. The function `~naima.plot_blob` allows to plot them
+and extract distribution properties. For the blobs that are a tuple or have the
+same length as ``data['energy']``, they will be plotted as spectra:
 
 .. image:: _static/RXJ1713_IC_pdist.png
 
@@ -333,5 +327,3 @@ we returned as the third object, a histogram and distribution properties will be
 plotted:
 
 .. image:: _static/RXJ1713_IC_We.png
-
-

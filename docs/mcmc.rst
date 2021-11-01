@@ -11,10 +11,10 @@ be found in `MacKay (2003)
 <http://www.inference.phy.cam.ac.uk/mackay/itila/book.html>`_, and
 `Foreman-Mackey et al. (2013) <http://arxiv.org/abs/1202.3665>`_. It is also
 advisable to consult `the documentation for the emcee package
-<http://dan.iel.fm/emcee/current/>`_, which is used for the MCMC sampling.
+<https://emcee.readthedocs.io>`_, which is used for the MCMC sampling.
 
 If you use the MCMC fitting in your research, please cite the ``emcee`` package
-through the publication `Foreman-Mackey, 
+through the publication `Foreman-Mackey,
 D., Hogg, D.W., Lang, D., & Goodman, J. 2013, PASP, 125, 306
 <http://adsabs.harvard.edu/abs/2013PASP..125..306F>`_.
 
@@ -25,7 +25,7 @@ the future).  Under this assumption, the likelihood of observed data given the
 spectral model :math:`S(\vec{p};E)`, for a parameter vector :math:`\vec{p}`, is
 
 .. math::
-    \mathcal{L} = \prod^N_{i=1} \frac{1}{\sqrt{2 \pi \sigma^2_i}} 
+    \mathcal{L} = \prod^N_{i=1} \frac{1}{\sqrt{2 \pi \sigma^2_i}}
                 \exp\left(-\frac{(S(\vec{p};E_i) - F_i)^2}{2\sigma^2_i}\right),
 
 where :math:`(F_i,\sigma_i)` are the flux measurement and uncertainty at an
@@ -56,10 +56,10 @@ constrain a parameter to be within a certain range, a uniform prior can be used
 log-space (e.g., normalizations, cutoff energies, etc.) you can either sample
 the logarithm of the parameter or use a log-uniform prior
 (`naima.log_uniform_prior`).
-    
+
 The combination of the prior and data likelihood functions is passed onto the
 `emcee.EnsembleSampler`, and the MCMC run is started. `emcee
-<http://dan.iel.fm/emcee/current/>`_ uses an affine-invariant MCMC sampler
+<https://emcee.readthedocs.io>`_ uses an affine-invariant MCMC sampler
 (`Goodman & Weare 2010 <http://msp.org/camcos/2010/5-1/p04.xhtml>`_) that has
 the advantage of being able to sample complex parameter spaces without any
 tuning required. In addition, having multiple simultaneous *walkers* improves
@@ -74,7 +74,6 @@ with the model spectrum, and any metadata blobs provided by the model function
 (see :ref:`blobs`). These can then be accessed through the sampler object, and
 Naima provides several convenience functions to analyse the results and
 compare them to the input spectrum: see :ref:`plotting`.
-
 
 Overcoming the Gaussian error assumption
 ----------------------------------------
@@ -98,12 +97,11 @@ correct, Gaussian, independent errors.
 - An alternative approach to avoid bin correlation would be to call an external
   program that can do forward-folding comparison of models. However, doing this
   requires a full set of Instrument Response Functions that might not be
-  available for all published data. 
+  available for all published data.
 - A proper Poisson statistic could also be used is the fit was performed in
   counts space rather than in flux space. For this, the effective area and
   exposure in each bin would be required to convert between the model flux and
   the expected counts.
-
 
 How to select which model best fits the data?
 ---------------------------------------------
