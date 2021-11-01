@@ -47,9 +47,9 @@ Once within a python session or script, these models can be accesed through
 .. code-block:: pycon
 
     >>> from sherpa.astro.ui import *
-    >>> dataspace1d(0.1,10,0.1) # Data would be loaded at this step, here we fake it
+    >>> dataspace1d(0.1, 10, 0.1)  # Data would be loaded at this step, here we fake it
     >>> from naima.sherpa_models import InverseCompton
-    >>> set_model(InverseCompton('IC'))
+    >>> set_model(InverseCompton("IC"))
     >>> show_model()
     Model: 1
     IC

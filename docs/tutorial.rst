@@ -5,10 +5,13 @@ The first step in fitting a model to an observed spectrum is to read the
 spectrum into the appropriate format. See :ref:`dataformat`  for an explanation
 of the format and an example, and :ref:`units`  for a brief explanation of the
 unit system used in Naima. We load the spectral data with
-`astropy.io.ascii`::
+`astropy.io.ascii`:
+
+.. code-block:: python
 
     from astropy.io import ascii
-    data = ascii.read('RXJ1713_HESS_2007.dat')
+
+    data = ascii.read("RXJ1713_HESS_2007.dat")
 
 Building the model and prior functions
 --------------------------------------
@@ -33,21 +36,29 @@ Building the model function from one of the radiative models is easy. In the
 following example, the three model parameters in the ``pars`` array are the
 amplitude, the spectral index, and the logarith or the cutoff energy. We first
 add the necessary units for the radiative model and then compute and return the
-model flux for the energies contained in the data table::
+model flux for the energies contained in the data table:
+
+.. code-block:: python
 
     from naima.models import ExponentialCutoffPowerLaw, InverseCompton
     import astropy.units as u
 
+
     def model(pars, data):
         amplitude = pars[0] / u.eV
         alpha = pars[1]
-        e_cutoff = (10**pars[2]) * u.TeV
+        e_cutoff = (10 ** pars[2]) * u.TeV
 
-        ECPL = ExponentialCutoffPowerLaw(amplitude, 10*u.TeV, alpha, e_cutoff)
-        IC = InverseCompton(ECPL, seed_photon_fields=['CMB',
-                            ['FIR', 26.5 * u.K, 0.415 * u.eV / u.cm**3]])
+        ECPL = ExponentialCutoffPowerLaw(amplitude, 10 * u.TeV, alpha, e_cutoff)
+        IC = InverseCompton(
+            ECPL,
+            seed_photon_fields=[
+                "CMB",
+                ["FIR", 26.5 * u.K, 0.415 * u.eV / u.cm ** 3],
+            ],
+        )
 
-        return IC.flux(data, distance=1.0*u.kpc)
+        return IC.flux(data, distance=1.0 * u.kpc)
 
 In addition, we must build a function to return the prior function, i.e., a
 function that encodes any previous knowledge you have about the parameters, such
@@ -56,23 +67,27 @@ functions are included with Naima: `~naima.normal_prior`, and
 `~naima.uniform_prior`, and `~naima.loguniform_prior`.  `~naima.uniform_prior`
 can be used to set parameter limits. Following the example above, we might want
 to limit the amplitude to be positive, and the spectral index to be between -1
-and 5::
+and 5:
+
+.. code-block:: python
 
     from naima import uniform_prior
 
+
     def lnprior(pars):
-        lnprior = uniform_prior(pars[0], 0., np.inf) \
-                + uniform_prior(pars[1], -1, 5)
+        lnprior = uniform_prior(pars[0], 0.0, np.inf) + uniform_prior(pars[1], -1, 5)
         return lnprior
 
 Selecting a starting point for the sampling
 -------------------------------------------
 
 Before starting the MCMC run, we must provide the procedure with initial
-estimates of the parameters and their names::
+estimates of the parameters and their names:
+
+.. code-block:: python
 
     p0 = np.array((1e33, 3.0, np.log10(30)))
-    labels = ['norm', 'index', 'log10(cutoff)']
+    labels = ["norm", "index", "log10(cutoff)"]
 
 This example is relatively simple, but for more complicated models (in
 particular those with more than one emission channel, such as Synchrotron and
@@ -101,7 +116,9 @@ through the class `naima.InteractiveModelFitter` from an interactive Python
 interpreter.
 The parameter vector shown in the interactive window can be accessed through the
 ``imf.pars`` attribute, and then copied to a new ``p0`` variable to be used in
-the sampling::
+the sampling:
+
+.. code-block:: pycon
 
     >> imf = InteractiveModelFitter(model, p0, data=data, labels=labels)
     >> # interactive fitting done
@@ -109,9 +126,11 @@ the sampling::
 
 Note that the ``data`` argument can be omitted and an energy range specified through the
 ``e_range`` argument to inspect the behaviour of the model independently of the
-data::
+data:
 
-    >> imf = InteractiveModelFitter(model, p0, e_range=[1*u.GeV, 100*u.TeV])
+.. code-block:: pycon
+
+    >> imf = InteractiveModelFitter(model, p0, e_range=[1 * u.GeV, 100 * u.TeV])
 
 .. _sampling:
 
@@ -119,11 +138,21 @@ Sampling the posterior distribution function
 --------------------------------------------
 
 All the objects above can then be provided to `~naima.run_sampler`, the main
-fitting function in Naima::
+fitting function in Naima:
 
-    sampler, pos = naima.run_sampler(data_table = data, p0=p0, label=labels,
-                    model=model_function, prior=lnprior,
-                    nwalkers=128, nburn=50, nrun=10, threads=4)
+.. code-block:: python
+
+    sampler, pos = naima.run_sampler(
+        data_table=data,
+        p0=p0,
+        label=labels,
+        model=model_function,
+        prior=lnprior,
+        nwalkers=128,
+        nburn=50,
+        nrun=10,
+        threads=4,
+    )
 
 The ``nwalkers`` parameter specifies how many *walkers* will be used in the
 sampling procedure, ``nburn`` specifies how many steps to be run as *burn-in*,
@@ -140,16 +169,22 @@ The results stored in the sampler object can be analysed through the plotting
 procedures of Naima: `~naima.plot_chain`, `~naima.plot_fit`, and
 `~naima.plot_data`. In addition, two convenience functions can be used to
 generate a collection of plots that illustrate the results and the stability of
-the fitting procedure. These are `~naima.save_diagnostic_plots`::
+the fitting procedure. These are `~naima.save_diagnostic_plots` and
+`~naima.save_results_table`:
 
-    naima.save_diagnostic_plots('RXJ1713_IC', sampler,
-                                blob_labels=['Spectrum',
-                                             'Electron energy distribution',
-                                             '$W_e (E_e>1$ TeV)'])
+.. code-block:: python
 
-and `~naima.save_results_table`::
+    naima.save_diagnostic_plots(
+        "RXJ1713_IC",
+        sampler,
+        blob_labels=[
+            "Spectrum",
+            "Electron energy distribution",
+            "$W_e (E_e>1$ TeV)",
+        ],
+    )
 
-    naima.save_results_table('RXJ1713_naima_fit', sampler)
+    naima.save_results_table("RXJ1713_naima_fit", sampler)
 
 The saved table will include information in the metadata about the run such as
 the number of walkers ``n_walkers`` and steps ``n_run`` sampled, the initial
@@ -287,25 +322,33 @@ the plotting routines of Naima:
 When fitting a radiative output to a spectrum, information on the particle
 distribution (e.g., the actual particle distribution, or the total energy in
 relativistic particles) can be saved as a metadata blob. Below is an example
-that does precisely this with an Inverse Compton emission model::
+that does precisely this with an Inverse Compton emission model:
+
+.. code-block:: python
 
     from naima.models import ExponentialCutoffPowerLaw, InverseCompton
     import astropy.units as u
     import numpy as np
 
+
     def model_function(pars, data):
         amplitude = pars[0] * (1 / u.eV)
         alpha = pars[1]
-        e_cutoff = (10**pars[2]) * u.TeV
+        e_cutoff = (10 ** pars[2]) * u.TeV
         e_0 = 10 * u.TeV
 
         ECPL = ExponentialCutoffPowerLaw(amplitude, e_0, alpha, e_cutoff)
-        IC = InverseCompton(ECPL, seed_photon_fields=['CMB',
-                            ['FIR', 26.5 * u.K, 0.415 * u.eV / u.cm**3]])
+        IC = InverseCompton(
+            ECPL,
+            seed_photon_fields=[
+                "CMB",
+                ["FIR", 26.5 * u.K, 0.415 * u.eV / u.cm ** 3],
+            ],
+        )
 
         # The total enegy in electrons of model IC can be accessed through the
         # attribute We or obtained for a given range with compute_We
-        We = IC.compute_We(Eemin = 1*u.TeV)
+        We = IC.compute_We(Eemin=1 * u.TeV)
 
         # We can also save the particle distribution between 100 MeV and 100 TeV
         electron_e = np.logspace(11, 15, 100) * u.eV

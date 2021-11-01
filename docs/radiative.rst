@@ -19,17 +19,23 @@ distribution function the units of their amplitude must be in particles per unit
 energy (i.e., convertible to ``1/eV``).  If you have computed a particle
 distribution from a physical code and wish to compute its radiative output, you
 can use the `~naima.models.TableModel` class to define a distribution function
-from an array of energies and an array of particle numbers per unit energy. 
+from an array of energies and an array of particle numbers per unit energy.
 
 Here is an example of how you can use the Exponential Cutoff Power Law model as
 particle distribution function for an inverse Compton model (see below in `IC`_
-for details about the inverse Compton model).::
+for details about the inverse Compton model).
 
-    >>> ECPL = naima.models.ExponentialCutoffPowerLaw(1e36*u.Unit('1/eV'), 1*u.TeV, 2.1, 13*u.TeV)
-    >>> IC = naima.models.InverseCompton(ECPL, seed_photon_fields=['CMB'])
+.. code-block:: pycon
+
+    >>> ECPL = naima.models.ExponentialCutoffPowerLaw(
+    ...     1e36 * u.Unit("1/eV"), 1 * u.TeV, 2.1, 13 * u.TeV
+    ... )
+    >>> IC = naima.models.InverseCompton(ECPL, seed_photon_fields=["CMB"])
 
 The parameters of the particle distribution can be accessed through the
-``particle_distribution`` attribute of the radiative model, e.g.::
+``particle_distribution`` attribute of the radiative model, e.g.:
+
+.. code-block:: pycon
 
     >>> IC.particle_distribution.index = 1.8
     >>> print(ECPL.index)
@@ -37,19 +43,23 @@ The parameters of the particle distribution can be accessed through the
 
 In addition, the same particle distribution instance can be used for several
 radiative models simultaneously, for example when computing the synchrotron and
-IC emission from an electron population::
+IC emission from an electron population:
 
-    >>> SYN = naima.models.Synchrotron(ECPL, B=100*u.uG)
+.. code-block:: pycon
+
+    >>> SYN = naima.models.Synchrotron(ECPL, B=100 * u.uG)
     >>> SYN.particle_distribution is IC.particle_distribution
     True
 
 Once instantiated, the emission spectra from radiative models can be obtained
 through the ``flux`` (differential flux) and ``sed`` (spectral energy
-distribution) methods::
+distribution) methods:
 
-    >>> spectrum_energy = np.logspace(-1,14,1000)*u.eV
-    >>> sed_IC = IC.sed(spectrum_energy, distance=1.5*u.kpc)
-    >>> sed_SYN = SYN.sed(spectrum_energy, distance=1.5*u.kpc)
+.. code-block:: pycon
+
+    >>> spectrum_energy = np.logspace(-1, 14, 1000) * u.eV
+    >>> sed_IC = IC.sed(spectrum_energy, distance=1.5 * u.kpc)
+    >>> sed_SYN = SYN.sed(spectrum_energy, distance=1.5 * u.kpc)
 
 These spectra can then be analysed or plotted:
 
@@ -89,7 +99,6 @@ These spectra can then be analysed or plotted:
     plt.ylim(1e-13, 1e-6)
     plt.tight_layout()
     plt.legend(loc='lower left')
-
 
 .. _IC:
 
@@ -142,7 +151,7 @@ list of items, each of which can be either:
            photon direction as a :class:`~astropy.units.Quantity` float
            instance. If this is provided, the anisotropic IC differential
            cross-section will be used.
-    
+
       To compute IC on a blackbody seed photon field, the 2nd item above should
       be set to the temperature of the blackbody and the 3rd to its total energy
       density. If the energy density is set to 0, its blackbody energy density
@@ -158,7 +167,7 @@ list of items, each of which can be either:
       If the spectrum is featureless in a certain energy range, consider
       omitting this range from the input arrays for speed. The 2nd and 3rd items
       in the list should then be:
-     
+
         2. A :class:`~astropy.units.Quantity` array with the seed photon
            energies.
         3. A :class:`~astropy.units.Quantity` array with the energy densities at
@@ -182,7 +191,6 @@ each photon field with the following keys: ``T``, ``u``, ``isotropic``, and
 ``theta``, standing for temperature, energy density, whether it is isotropic or
 not, and interaction angle for anisotropic fields, respectively.
 
-
 Synchroton Self Compton
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -194,30 +202,31 @@ the particle population and then pass it as seed photon field for IC
 computation. The first step is to compute the synchrotron photon density in the
 source, so we need to set the source volume. As an example, we assume a
 spherical source of radius 2 parsec. The synchrotron photon density, assuming a
-uniform emitter, is computed as::
+uniform emitter, is computed as:
 
-    from naima.models import (ExponentialCutoffPowerLaw, Synchrotron,
-                              InverseCompton)
+.. code-block:: python
+
+    from naima.models import ExponentialCutoffPowerLaw, Synchrotron, InverseCompton
     from astropy.constants import c
 
-    ECPL = ExponentialCutoffPowerLaw(1e36*u.Unit('1/eV'), 1*u.TeV, 2.1, 13*u.TeV)
-    SYN = Synchrotron(ECPL, B=100*u.uG)
+    ECPL = ExponentialCutoffPowerLaw(1e36 * u.Unit("1/eV"), 1 * u.TeV, 2.1, 13 * u.TeV)
+    SYN = Synchrotron(ECPL, B=100 * u.uG)
 
     # Define energy array for synchrotron seed photon field and compute
     # Synchroton luminosity by setting distance to 0. The energy range should
     # capture most of the synchrotron output.
-    Esy = np.logspace(-6, 5, 100)*u.eV
-    Lsy = SYN.flux(Esy, distance=0*u.cm)
+    Esy = np.logspace(-6, 5, 100) * u.eV
+    Lsy = SYN.flux(Esy, distance=0 * u.cm)
 
     # Define source radius and compute photon density
     R = 2 * u.pc
-    phn_sy = Lsy / (4 * np.pi * R**2 * c) * 2.24
+    phn_sy = Lsy / (4 * np.pi * R ** 2 * c) * 2.24
 
     # Create IC instance with CMB and synchrotron seed photon fields:
 
-    IC = InverseCompton(ECPL, seed_photon_fields=['CMB', 'FIR', 'NIR',
-                                                  ['SSC', Esy, phn_sy]])
-
+    IC = InverseCompton(
+        ECPL, seed_photon_fields=["CMB", "FIR", "NIR", ["SSC", Esy, phn_sy]]
+    )
 
 Note the factor 2.24 in the computation of the synchrotron photon density, which
 comes from geometrical considerations of a uniform spherical emitter (see
@@ -266,7 +275,6 @@ from Synchrotron and Inverse Compton can then be plotted:
         plt.loglog(spectrum_energy,sed,lw=1,
                 ls=ls,c='0.25')#,label='IC ({0})'.format(seed))
 
-
     plt.loglog(spectrum_energy,sed_IC,lw=2,
             label='IC (total)',c=naima.plot.color_cycle[0])
     plt.loglog(spectrum_energy,sed_SYN,lw=2,label='Sync',c=naima.plot.color_cycle[1])
@@ -277,7 +285,6 @@ from Synchrotron and Inverse Compton can then be plotted:
     plt.ylim(1e-12, 1e-6)
     plt.tight_layout()
     plt.legend(loc='lower left')
-
 
 One of the only galactic sources where SSC is a relevant emission channel at
 gamma-rays is the Crab Nebula. With naima we can attempt a simple model to
@@ -321,7 +328,7 @@ over the entire range of emission energy.
 To acknowledge the use of this implementation in your research, please cite
 `Aharonian, F.A., Kelner,
 S.R., & Prosekin, A.Y. 2010, Physical Review D, 82, 043002
-<http://adsabs.harvard.edu/abs/2010PhRvD..82d3002A>`_. 
+<http://adsabs.harvard.edu/abs/2010PhRvD..82d3002A>`_.
 
 .. _Aharonian et al. (2010; Appendix D):
         http://adsabs.harvard.edu/abs/2010PhRvD..82d3002A
@@ -375,11 +382,9 @@ Carlo results) through the `hiEmodel` parameter.
 
 To acknowledge the use of this implementation in your research, please cite
 `Kafexhiu, E., Aharonian, F., Taylor, A.M., & Vila, G.S. 2014, Physical Review
-D, 90, 123014 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_. 
+D, 90, 123014 <http://adsabs.harvard.edu/abs/2014PhRvD..90l3014K>`_.
 
-
-.. _Blumenthal & Gould 1970: 
+.. _Blumenthal & Gould 1970:
         http://ukads.nottingham.ac.uk/abs/1970RvMP...42..237B
-.. _Blumenthal & Gould (1970): 
+.. _Blumenthal & Gould (1970):
         http://ukads.nottingham.ac.uk/abs/1970RvMP...42..237B
-

@@ -57,7 +57,9 @@ details.
 If you find Naima useful in your research, you can cite `Zabalza (2015)
 <http://arxiv.org/abs/1509.03319>`_ (`arXiv <http://arxiv.org/abs/1509.03319>`_,
 `ADS <http://adsabs.harvard.edu/abs/2015arXiv150903319Z>`_) to acknowledge its
-use. The BibTeX entry for the paper is::
+use. The BibTeX entry for the paper is:
+
+.. code-block:: bibtex
 
     @ARTICLE{naima,
        author = {{Zabalza}, V.},
