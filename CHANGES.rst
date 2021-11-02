@@ -1,7 +1,7 @@
 Changelog
 ---------
 
-0.10.0 (unreleased)
+0.10.0 (2021-11-02)
 ^^^^^^^^^^^^^^^^^^^
 
 - Updated emcee dependency to version 3. The interface to access the chain,
