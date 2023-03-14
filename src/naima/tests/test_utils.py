@@ -154,7 +154,6 @@ def test_build_data_table():
 
 
 def test_estimate_B():
-
     fname = get_pkg_data_filename("data/CrabNebula_Fake_Xray.dat")
     xray = ascii.read(fname)
 

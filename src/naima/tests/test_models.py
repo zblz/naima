@@ -49,7 +49,7 @@ data2 = Table()
 data2["energy"] = energy
 
 
-pdist_unit = 1 / u.Unit(m_e * c ** 2)
+pdist_unit = 1 / u.Unit(m_e * c**2)
 
 
 @pytest.fixture
@@ -191,7 +191,7 @@ def test_bremsstrahlung_lum(particle_dists):
     # avoid low-energy (E<2MeV) where there are problems with cross-section
     energy2 = np.logspace(8, 14, 100) * u.eV
 
-    brems = Bremsstrahlung(ECPL, n0=1 * u.cm ** -3, Eemin=m_e * c ** 2)
+    brems = Bremsstrahlung(ECPL, n0=1 * u.cm**-3, Eemin=m_e * c**2)
     lbrems = trapz_loglog(brems.flux(energy2, 0) * energy2, energy2).to(
         "erg/s"
     )
@@ -248,7 +248,7 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
         ic = InverseCompton(
             PL,
             seed_photon_fields=[
-                ["Star", 20000 * u.K, 0.1 * u.erg / u.cm ** 3, angle]
+                ["Star", 20000 * u.K, 0.1 * u.erg / u.cm**3, angle]
             ],
             **electron_properties
         )
@@ -271,15 +271,15 @@ def test_monochromatic_inverse_compton(particle_dists):
     Ephbb = np.logspace(-3.5, -1.5, 100) * u.eV
     lambdabb = Ephbb.to("AA", equivalencies=u.equivalencies.spectral())
     T = 30 * u.K
-    w = 1 * u.eV / u.cm ** 3
+    w = 1 * u.eV / u.cm**3
 
     bb = (BlackBody(T)(lambdabb) * 2 * u.sr / c.cgs / Ephbb / hbar).to(
         "1/(cm3 eV)"
     )
-    Ebbmax = Ephbb[np.argmax(Ephbb ** 2 * bb)]
+    Ebbmax = Ephbb[np.argmax(Ephbb**2 * bb)]
 
     ar = (4 * sigma_sb / c).to("erg/(cm3 K4)")
-    bb *= (w / (ar * T ** 4)).decompose()
+    bb *= (w / (ar * T**4)).decompose()
 
     eopts = {"Eemax": 10000 * u.GeV, "Eemin": 10 * u.GeV, "nEed": 1000}
     IC_khang = InverseCompton(PL, seed_photon_fields=[["bb", T, w]], **eopts)
@@ -290,7 +290,7 @@ def test_monochromatic_inverse_compton(particle_dists):
         PL, seed_photon_fields=[["bb2", Ephbb, bb]], **eopts
     )
     IC_bb_ene = InverseCompton(
-        PL, seed_photon_fields=[["bb2", Ephbb, Ephbb ** 2 * bb]], **eopts
+        PL, seed_photon_fields=[["bb2", Ephbb, Ephbb**2 * bb]], **eopts
     )
 
     Eph = np.logspace(-1, 1, 3) * u.GeV
@@ -342,7 +342,7 @@ def test_flux_sed(particle_dists):
 
     # check SED
     sed1 = ic.sed(energy, d1).to("erg/(s cm2)").value
-    sed0 = (ic.flux(energy, 0) * energy ** 2).to("erg/s").value
+    sed0 = (ic.flux(energy, 0) * energy**2).to("erg/s").value
 
     assert_allclose(sed1, sed0 / (4 * np.pi * (d1.to("cm").value) ** 2))
 
@@ -364,14 +364,14 @@ def test_ic_seed_input(particle_dists):
     test_seeds = [
         ["test", 5000 * u.K, 0],
         ["array", Eph, phn],
-        ["array-energy", Eph, Eph ** 2 * phn],
+        ["array-energy", Eph, Eph**2 * phn],
         ["mono", Eph[0], phn[0] * Eph[0] ** 2],
         ["mono-array", Eph[:1], phn[:1] * Eph[:1] ** 2],
         # from docs:
-        ["NIR", 50 * u.K, 1.5 * u.eV / u.cm ** 3],
-        ["star", 25000 * u.K, 3 * u.erg / u.cm ** 3, 120 * u.deg],
-        ["X-ray", [1, 10] * u.keV, [1, 1e-2] * 1 / (u.eV * u.cm ** 3)],
-        ["UV", 50 * u.eV, 15 * u.eV / u.cm ** 3],
+        ["NIR", 50 * u.K, 1.5 * u.eV / u.cm**3],
+        ["star", 25000 * u.K, 3 * u.erg / u.cm**3, 120 * u.deg],
+        ["X-ray", [1, 10] * u.keV, [1, 1e-2] * 1 / (u.eV * u.cm**3)],
+        ["UV", 50 * u.eV, 15 * u.eV / u.cm**3],
     ]
 
     for seed in test_seeds:
@@ -391,8 +391,8 @@ def test_ic_seed_fluxes(particle_dists):
         seed_photon_fields=[
             "CMB",
             ["test", 5000 * u.K, 0],
-            ["test2", 5000 * u.K, 10 * u.eV / u.cm ** 3],
-            ["test3", 5000 * u.K, 10 * u.eV / u.cm ** 3, 90 * u.deg],
+            ["test2", 5000 * u.K, 10 * u.eV / u.cm**3],
+            ["test3", 5000 * u.K, 10 * u.eV / u.cm**3, 90 * u.deg],
         ],
     )
 
@@ -520,7 +520,6 @@ def test_inputs():
 
 
 def test_tablemodel():
-
     lemin, lemax = -4, 2
     # test an exponential cutoff PL with index 2, cutoff at 10 TeV
     e = np.logspace(lemin, lemax, 50) * u.TeV

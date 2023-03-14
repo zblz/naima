@@ -74,18 +74,18 @@ def round2(x, n):
 def _latex_value_error(val, elo, ehi=0, tol=0.25):
     order = int(np.log10(abs(val)))
     if order > 2 or order < -2:
-        val /= 10 ** order
-        elo /= 10 ** order
-        ehi /= 10 ** order
+        val /= 10**order
+        elo /= 10**order
+        ehi /= 10**order
     else:
         order = 0
     nlo = -int(np.floor(np.log10(elo)))
-    if elo * 10 ** nlo < 2:
+    if elo * 10**nlo < 2:
         nlo += 1
     if ehi:
         # elo = round(elo,nlo)
         nhi = -int(np.floor(np.log10(ehi)))
-        if ehi * 10 ** nhi < 2:
+        if ehi * 10**nhi < 2:
             nhi += 1
         # ehi = round(ehi,nhi)
         if np.abs(elo - ehi) / ((elo + ehi) / 2.0) > tol:
@@ -99,7 +99,7 @@ def _latex_value_error(val, elo, ehi=0, tol=0.25):
         else:
             e = (elo + ehi) / 2.0
             n = -int(np.floor(np.log10(e)))
-            if e * 10 ** n < 2:
+            if e * 10**n < 2:
                 n += 1
             string = "{0} \\pm {1}".format(*[round2(x, n) for x in [val, e]])
     else:
@@ -220,15 +220,18 @@ def _plot_chain_func(sampler, p, last_step=False):
     )
     if autocorr_message is not None:
         chain_props += "Autocorrelation time: {0}\n".format(autocorr_message)
-    chain_props += "Mean acceptance fraction: {0:.3f}\n".format(
-        np.mean(sampler.acceptance_fraction)
-    ) + "Distribution properties for the {clen}:\n \
+    chain_props += (
+        "Mean acceptance fraction: {0:.3f}\n".format(
+            np.mean(sampler.acceptance_fraction)
+        )
+        + "Distribution properties for the {clen}:\n \
     $-$ median: ${median}$, std: ${std}$ \n \
     $-$ median with uncertainties based on \n \
       the 16th and 84th percentiles ($\\sim$1$\\sigma$):\n".format(
-        median=_latex_float(quantiles[50]),
-        std=_latex_float(np.std(dist)),
-        clen=clen,
+            median=_latex_float(quantiles[50]),
+            std=_latex_float(np.std(dist)),
+            clen=clen,
+        )
     )
 
     info_line = (
@@ -248,7 +251,7 @@ def _plot_chain_func(sampler, p, last_step=False):
         nlabel = label.split("(")[-1].split(")")[0]
         ltype = label.split("(")[0]
         if ltype == "log10":
-            new_dist = 10 ** dist
+            new_dist = 10**dist
         elif ltype == "log":
             new_dist = np.exp(dist)
 
@@ -982,7 +985,7 @@ def plot_fit(
             ndecades = 20
         # restrict y axis to ndecades to avoid autoscaling deep exponentials
         xmin, xmax, ymin, ymax = ax1.axis()
-        ymin = max(ymin, ymax / 10 ** ndecades)
+        ymin = max(ymin, ymax / 10**ndecades)
         ax1.set_ylim(bottom=ymin)
         # scale x axis to largest model_ML x point within ndecades decades of
         # maximum
