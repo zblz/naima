@@ -56,7 +56,7 @@ Naima is released under a 3-clause BSD style license - see the
 Code status
 ^^^^^^^^^^^
 
-.. image:: http://img.shields.io/github/workflow/status/zblz/naima/Tests
-	:target: https://github.com/zblz/naima/actions/workflows/tests.yaml
-.. image:: http://img.shields.io/badge/benchmarked%20by-asv-green.svg
-	:target: http://zblz.github.io/naima-benchmarks
+.. image:: https://img.shields.io/github/actions/workflow/status/zblz/naima/tests.yaml?branch=main
+        :target: https://github.com/zblz/naima/actions/workflows/tests.yaml
+.. image:: https://img.shields.io/badge/benchmarked%20by-asv-green.svg
+        :target: http://zblz.github.io/naima-benchmarks
