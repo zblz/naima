@@ -200,8 +200,8 @@ class BaseElectron(BaseRadiative):
         return We
 
     def set_We(self, We, Eemin=None, Eemax=None, amplitude_name=None):
-        """Normalize particle distribution so that the total energy in electrons
-        between Eemin and Eemax is We
+        """Normalize particle distribution so that the total energy in
+        electrons between Eemin and Eemax is We
 
         Parameters
         ----------
