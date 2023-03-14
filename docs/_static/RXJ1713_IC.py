@@ -13,7 +13,6 @@ from naima.models import ExponentialCutoffPowerLaw, InverseCompton
 
 
 def ElectronIC(pars, data):
-
     # Match parameters to ECPL properties, and give them the appropriate units
     amplitude = pars[0] / u.eV
     alpha = pars[1]
@@ -25,7 +24,7 @@ def ElectronIC(pars, data):
         ECPL,
         seed_photon_fields=[
             "CMB",
-            ["FIR", 26.5 * u.K, 0.415 * u.eV / u.cm ** 3],
+            ["FIR", 26.5 * u.K, 0.415 * u.eV / u.cm**3],
         ],
     )
 
@@ -63,7 +62,6 @@ def lnprior(pars):
 
 
 if __name__ == "__main__":
-
     # Set initial parameters and labels
 
     p0 = np.array((1e30, 3.0, np.log10(30)))

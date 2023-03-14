@@ -11,6 +11,7 @@ from ..core import run_sampler, uniform_prior
 fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
 data_table = ascii.read(fname)
 
+
 # Model definition
 def cutoffexp(pars, input_data):
     """
@@ -66,7 +67,7 @@ def cutoffexp(pars, input_data):
         * u.Unit("1/(cm2 s TeV)")
     )
 
-    model1 = (_model1 * (x ** 2) * 4 * np.pi * (2 * u.kpc) ** 2).to("erg/s")
+    model1 = (_model1 * (x**2) * 4 * np.pi * (2 * u.kpc) ** 2).to("erg/s")
 
     # save a model with no units to check that it is dealt with gracefully
     model2 = 1e-10 * np.ones(len(x))

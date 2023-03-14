@@ -143,7 +143,6 @@ def save_diagnostic_plots(
         ]
 
     for modelidx, plot_sed, label in zip(modelidxs, sed, blob_labels):
-
         try:
             log.info("Plotting {0}...".format(label))
             f = plot_blob(
@@ -305,7 +304,7 @@ def save_results_table(
             nlabel = label.split("(")[-1].split(")")[0]
             ltype = label.split("(")[0]
             if ltype == "log10":
-                new_dist = 10 ** dist
+                new_dist = 10**dist
             elif ltype == "log":
                 new_dist = np.exp(dist)
 

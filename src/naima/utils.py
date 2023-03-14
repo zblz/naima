@@ -112,7 +112,6 @@ def validate_data_table(data_table, sed=None):
 
 
 def _validate_single_data_table(data_table, group=0):
-
     data = QTable()
 
     flux_types = ["flux", "differential flux", "power", "differential power"]
@@ -254,9 +253,9 @@ def sed_conversion(energy, model_unit, sed):
     if (sed and is_integral) or (not sed and is_differential):
         sedf = ones
     elif sed and is_differential:
-        sedf = energy ** 2
+        sedf = energy**2
     elif not sed and is_integral:
-        sedf = 1 / (energy ** 2)
+        sedf = 1 / (energy**2)
     else:
         raise u.UnitsError(
             "Model physical type ({0}) is not supported".format(model_pt),
@@ -277,7 +276,7 @@ def sed_conversion(energy, model_unit, sed):
         if is_energy_flux:
             f_unit = u.erg
         elif is_particle_flux:
-            f_unit = u.erg / u.s / u.cm ** 2
+            f_unit = u.erg / u.s / u.cm**2
         else:
             f_unit = u.erg / u.s
     else:
@@ -500,7 +499,7 @@ def build_data_table(
 
 
 def estimate_B(
-    xray_table, vhe_table, photon_energy_density=0.261 * u.eV / u.cm ** 3
+    xray_table, vhe_table, photon_energy_density=0.261 * u.eV / u.cm**3
 ):
     """Estimate magnetic field from synchrotron to Inverse Compton luminosity
     ratio

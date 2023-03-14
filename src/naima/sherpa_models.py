@@ -169,9 +169,9 @@ class InverseCompton(SherpaModelECPL):
         # Build seedspec definition
         seedspec = ["CMB"]
         if uFIR > 0.0:
-            seedspec.append(["FIR", TFIR * u.K, uFIR * u.eV / u.cm ** 3])
+            seedspec.append(["FIR", TFIR * u.K, uFIR * u.eV / u.cm**3])
         if uNIR > 0.0:
-            seedspec.append(["NIR", TNIR * u.K, uNIR * u.eV / u.cm ** 3])
+            seedspec.append(["NIR", TNIR * u.K, uNIR * u.eV / u.cm**3])
 
         ic = models.InverseCompton(
             self._pdist(p),
@@ -278,7 +278,7 @@ class Bremsstrahlung(SherpaModelECPL):
         ) = p
         brems = models.Bremsstrahlung(
             self._pdist(p),
-            n0=n0 / u.cm ** 3,
+            n0=n0 / u.cm**3,
             weight_ee=weight_ee,
             weight_ep=weight_ep,
         )

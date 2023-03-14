@@ -20,7 +20,7 @@ __all__ = [
 ]
 
 # Define phsyical types used in plot and utils.validate_data_table
-u.def_physical_type(u.erg / u.cm ** 2 / u.s, "flux")
+u.def_physical_type(u.erg / u.cm**2 / u.s, "flux")
 u.def_physical_type(u.Unit("1/(s cm2 erg)"), "differential flux")
 u.def_physical_type(u.Unit("1/(s erg)"), "differential power")
 u.def_physical_type(u.Unit("1/TeV"), "differential energy")
@@ -61,7 +61,6 @@ def log_uniform_prior(value, umin=0, umax=None):
 
 
 def lnprobmodel(model, data):
-
     # Check if conversion is required
     model_is_sed = model.unit.physical_type in ["power", "flux"]
     data_is_sed = data["flux"].unit.physical_type in ["power", "flux"]
@@ -80,7 +79,7 @@ def lnprobmodel(model, data):
     # use different errors for model above or below data
     sign = difference > 0
     loerr, hierr = 1 * ~sign, 1 * sign
-    logprob = -(difference ** 2) / (
+    logprob = -(difference**2) / (
         2.0
         * (
             loerr * data["flux_error_lo"][notul]
@@ -100,7 +99,6 @@ def lnprobmodel(model, data):
 
 
 def lnprob(pars, data, modelfunc, priorfunc):
-
     if priorfunc is None:
         lnprob_priors = 0.0
     else:
@@ -405,7 +403,6 @@ def get_sampler(
                     idxs.append(labels.index(l2))
 
         if len(idxs) == 1:
-
             nunit, sedf = sed_conversion(data["energy"], spec.unit, False)
             currFlux = np.trapz(
                 data["energy"] * (spec * sedf).to(nunit), data["energy"]

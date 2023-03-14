@@ -65,7 +65,6 @@ class InteractiveModelFitter:
         sed=True,
         auto_update=True,
     ):
-
         import matplotlib.pyplot as plt
         from matplotlib.widgets import Button, CheckButtons, Slider
 

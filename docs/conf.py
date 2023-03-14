@@ -154,7 +154,7 @@ htmlhelp_basename = project + "doc"
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ("index", project + ".tex", project + u" Documentation", author, "manual")
+    ("index", project + ".tex", project + " Documentation", author, "manual")
 ]
 
 
@@ -163,7 +163,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ("index", project.lower(), project + u" Documentation", [author], 1)
+    ("index", project.lower(), project + " Documentation", [author], 1)
 ]
 
 

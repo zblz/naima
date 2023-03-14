@@ -28,7 +28,6 @@ def validate_physical_type(name, value, physical_type):
 
 
 def validate_scalar(name, value, domain=None, physical_type=None):
-
     validate_physical_type(name, value, physical_type)
 
     if not physical_type:
@@ -63,7 +62,6 @@ def validate_scalar(name, value, domain=None, physical_type=None):
 def validate_array(
     name, value, domain=None, ndim=1, shape=None, physical_type=None
 ):
-
     validate_physical_type(name, value, physical_type)
 
     # First convert to a Numpy array:
