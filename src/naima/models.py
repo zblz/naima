@@ -462,7 +462,7 @@ class TableModel:
             logy = np.log10(self._values)
 
         self._interplogy = interp1d(
-            loge, logy, fill_value=-np.Inf, bounds_error=False, kind="cubic"
+            loge, logy, fill_value=-np.inf, bounds_error=False, kind="cubic"
         )
 
     def __call__(self, e):

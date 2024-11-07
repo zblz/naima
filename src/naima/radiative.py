@@ -1787,7 +1787,7 @@ class PionDecayKelner06(BaseRadiative):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             Wp = quad(
-                lambda x: x * self._particle_distribution(x), Eth, np.Inf
+                lambda x: x * self._particle_distribution(x), Eth, np.inf
             )[0]
 
         return (Wp * u.TeV).to("erg")

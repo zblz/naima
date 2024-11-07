@@ -1,17 +1,26 @@
-[tool.black]
-line-length = 79
-exclude = '''
-/(
-    \.git/
-  | \.mypy_cache/
-  | \.tox/
-  | \.venv/
-  | _build/
-  | build/
-  | dist/
-  | \.eggs/
-  | astropy_helpers/
-  | naima/_astropy_init\.py
-  | ah_bootstrap\.py
-)
-'''
+[project]
+name = "naima"
+description = "Derivation of non-thermal particle distributions through MCMC spectral fitting"
+readme = "README.rst"
+license = "MIT"
+requires-python = ">=3.12"
+dynamic = ["version"]
+dependencies = [
+        "astropy>=6.0",
+        "emcee",
+        "corner",
+        "matplotlib>=1.4.0",
+        "scipy",
+        "h5py",
+        "pyyaml",
+]
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/naima/version.py"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"

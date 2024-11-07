@@ -55,3 +55,5 @@ docs/api/
 
 .idea
 *.h5
+
+src/naima/version.py

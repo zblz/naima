@@ -16,10 +16,7 @@ from .core import *
 from .model_fitter import *
 from .plot import *
 from .utils import *
-from .version import get_version
-
-__version__ = get_version()
-del get_version
+from .version import __version__
 
 
 try:
