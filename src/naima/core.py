@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import multiprocessing
+from multiprocessing import Pool
 import warnings
 from collections.abc import Iterable
 
@@ -20,7 +20,7 @@ __all__ = [
 ]
 
 # Define phsyical types used in plot and utils.validate_data_table
-u.def_physical_type(u.erg / u.cm ** 2 / u.s, "flux")
+u.def_physical_type(u.erg / u.cm**2 / u.s, "flux")
 u.def_physical_type(u.Unit("1/(s cm2 erg)"), "differential flux")
 u.def_physical_type(u.Unit("1/(s erg)"), "differential power")
 u.def_physical_type(u.Unit("1/TeV"), "differential energy")
@@ -61,15 +61,12 @@ def log_uniform_prior(value, umin=0, umax=None):
 
 
 def lnprobmodel(model, data):
-
     # Check if conversion is required
     model_is_sed = model.unit.physical_type in ["power", "flux"]
     data_is_sed = data["flux"].unit.physical_type in ["power", "flux"]
 
     if model_is_sed != data_is_sed:
-        unit, sed_factor = sed_conversion(
-            data["energy"], model.unit, data_is_sed
-        )
+        unit, sed_factor = sed_conversion(data["energy"], model.unit, data_is_sed)
         model = (model * sed_factor).to(data["flux"].unit)
 
     ul = data["ul"]
@@ -80,12 +77,9 @@ def lnprobmodel(model, data):
     # use different errors for model above or below data
     sign = difference > 0
     loerr, hierr = 1 * ~sign, 1 * sign
-    logprob = -(difference ** 2) / (
+    logprob = -(difference**2) / (
         2.0
-        * (
-            loerr * data["flux_error_lo"][notul]
-            + hierr * data["flux_error_hi"][notul]
-        )
+        * (loerr * data["flux_error_lo"][notul] + hierr * data["flux_error_hi"][notul])
         ** 2
     )
 
@@ -100,7 +94,6 @@ def lnprobmodel(model, data):
 
 
 def lnprob(pars, data, modelfunc, priorfunc):
-
     if priorfunc is None:
         lnprob_priors = 0.0
     else:
@@ -131,14 +124,13 @@ def lnprob(pars, data, modelfunc, priorfunc):
 
 
 def _run_mcmc(sampler, pos, nrun):
-    for i, state in enumerate(
-        sampler.sample(pos, iterations=nrun, store=True)
-    ):
+    for i, state in enumerate(sampler.sample(pos, iterations=nrun, store=True)):
         progress = 100.0 * float(i) / float(nrun)
         if progress % 5 < (5.0 / float(nrun)):
             print(
-                "\nProgress of the run: {0:.0f} percent"
-                " ({1} of {2} steps)".format(int(progress), i, nrun)
+                "\nProgress of the run: {0:.0f} percent" " ({1} of {2} steps)".format(
+                    int(progress), i, nrun
+                )
             )
             paravg, parstd = [], []
             npars = sampler.get_chain().shape[-1]
@@ -153,15 +145,11 @@ def _run_mcmc(sampler, pos, nrun):
             )
             print(
                 "  Last ensemble median : "
-                + (" ".join(["{%i:^15.3g}" % i for i in range(npars)])).format(
-                    *paravg
-                )
+                + (" ".join(["{%i:^15.3g}" % i for i in range(npars)])).format(*paravg)
             )
             print(
                 "  Last ensemble std    : "
-                + (" ".join(["{%i:^15.3g}" % i for i in range(npars)])).format(
-                    *parstd
-                )
+                + (" ".join(["{%i:^15.3g}" % i for i in range(npars)])).format(*parstd)
             )
             print(
                 "  Last ensemble lnprob :  avg: {0:.3f}, max: {1:.3f}".format(
@@ -184,13 +172,9 @@ def _prefit(p0, data, model, prior):
     def nll(*args):
         return -lnprob(*args)[0]
 
-    log.info(
-        "Finding Maximum Likelihood parameters through Nelder-Mead fitting..."
-    )
+    log.info("Finding Maximum Likelihood parameters through Nelder-Mead fitting...")
     log.info("   Initial parameters: {0}".format(p0))
-    log.info(
-        "   Initial lnprob(p0): {0:.3f}".format(-nll(p0, data, model, prior))
-    )
+    log.info("   Initial lnprob(p0): {0:.3f}".format(-nll(p0, data, model, prior)))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         result = minimize(
@@ -365,8 +349,8 @@ def get_sampler(
 
     # Check that the model returns fluxes in same physical type as data
     modelout = model(p0, data)
-    if (type(modelout) == tuple or type(modelout) == list) and (
-        type(modelout) != np.ndarray
+    if (type(modelout) is tuple or type(modelout) is list) and (
+        type(modelout) is not np.ndarray
     ):
         spec = modelout[0]
     else:
@@ -405,15 +389,12 @@ def get_sampler(
                     idxs.append(labels.index(l2))
 
         if len(idxs) == 1:
-
             nunit, sedf = sed_conversion(data["energy"], spec.unit, False)
-            currFlux = np.trapz(
+            currFlux = np.trapezoid(
                 data["energy"] * (spec * sedf).to(nunit), data["energy"]
             )
-            nunit, sedf = sed_conversion(
-                data["energy"], data["flux"].unit, False
-            )
-            dataFlux = np.trapz(
+            nunit, sedf = sed_conversion(data["energy"], data["flux"].unit, False)
+            dataFlux = np.trapezoid(
                 data["energy"] * (data["flux"] * sedf).to(nunit),
                 data["energy"],
             )
@@ -433,9 +414,7 @@ def get_sampler(
         elif len(idxs) > 1:
             log.warning(
                 "More than one label starting with [{0}] found:"
-                " not applying normalization guess.".format(
-                    ",".join(normNames)
-                )
+                " not applying normalization guess.".format(",".join(normNames))
             )
 
     P0_IS_ML = False
@@ -448,9 +427,7 @@ def get_sampler(
 
             iprev = plt.rcParams["interactive"]
             plt.rcParams["interactive"] = False
-            imf = InteractiveModelFitter(
-                model, p0, data, labels=labels, sed=True
-            )
+            imf = InteractiveModelFitter(model, p0, data, labels=labels, sed=True)
             p0 = imf.pars
             P0_IS_ML = imf.P0_IS_ML
             plt.rcParams["interactive"] = iprev
@@ -470,7 +447,7 @@ def get_sampler(
         len(p0),
         lnprob,
         args=[data, model, prior],
-        pool=multiprocessing.Pool(threads),
+        pool=Pool(threads),
         blobs_dtype=np.dtype(object),
     )
 
@@ -498,11 +475,7 @@ def get_sampler(
     )
 
     if nburn > 0:
-        print(
-            "Burning in the {0} walkers with {1} steps...".format(
-                nwalkers, nburn
-            )
-        )
+        print("Burning in the {0} walkers with {1} steps...".format(nwalkers, nburn))
         sampler, state = _run_mcmc(sampler, p0, nburn)
     else:
         state = emcee.State(p0)

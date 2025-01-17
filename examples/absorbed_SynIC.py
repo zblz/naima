@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 import astropy.units as u
 import numpy as np
-from astropy.io import ascii
 
 import naima
 from naima.models import (
     BrokenPowerLaw,
     EblAbsorptionModel,
-    ExponentialCutoffPowerLaw,
     InverseCompton,
     Synchrotron,
 )

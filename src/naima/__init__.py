@@ -8,6 +8,7 @@ MCMC fitting of non-thermal X-ray, GeV, and TeV spectra to constrain the
 properties of their parent relativistic particle distributions.
 
 """
+from importlib.util import find_spec
 
 # flake8: noqa
 from . import models
@@ -19,9 +20,5 @@ from .utils import *
 from .version import __version__
 
 
-try:
-    import sherpa
-
+if find_spec("sherpa") is not None:
     from . import sherpa_models
-except ImportError:
-    pass

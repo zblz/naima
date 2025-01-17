@@ -5,13 +5,13 @@ import astropy.units as u
 import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
-from astropy.utils.data import get_pkg_data_filename
+from pathlib import Path
 
-from ..analysis import read_run, save_run
-from ..model_fitter import InteractiveModelFitter
-from ..plot import plot_chain, plot_data, plot_fit
-from ..utils import validate_data_table
-from .fixtures import simple_sampler as sampler  # noqa
+from naima.analysis import read_run, save_run
+from naima.model_fitter import InteractiveModelFitter
+from naima.plot import plot_chain, plot_data, plot_fit
+from naima.utils import validate_data_table
+
 
 try:
     import matplotlib
@@ -31,25 +31,22 @@ except ImportError:
     HAS_EMCEE = False
 
 
-fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
-data_table = ascii.read(fname)
+fname = Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"
+data_table = ascii.read(str(fname))
 
 
 @pytest.mark.skipif("not HAS_EMCEE")
-def test_roundtrip(sampler, tmp_path):
+def test_roundtrip(simple_sampler, tmp_path):
+    sampler = simple_sampler
     filename = tmp_path / "naima_test_sampler.hdf5"
     save_run(filename, sampler)
     assert os.path.exists(filename)
     nresult = read_run(filename)
 
     assert np.allclose(sampler.get_chain(), nresult.get_chain())
-    assert np.allclose(
-        sampler.get_chain(flat=True), nresult.get_chain(flat=True)
-    )
+    assert np.allclose(sampler.get_chain(flat=True), nresult.get_chain(flat=True))
     assert np.allclose(sampler.get_log_prob(), nresult.get_log_prob())
-    assert np.allclose(
-        sampler.get_log_prob(flat=True), nresult.get_log_prob(flat=True)
-    )
+    assert np.allclose(sampler.get_log_prob(flat=True), nresult.get_log_prob(flat=True))
 
     nwalkers, nsteps = sampler.get_chain().shape[:2]
     sampler_blobs = sampler.get_blobs()
@@ -85,10 +82,10 @@ def test_roundtrip(sampler, tmp_path):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_plot_fit(sampler, tmp_path):
+def test_plot_fit(simple_sampler, tmp_path):
     filename = tmp_path / "naima_test_sampler.hdf5"
-    save_run(filename, sampler, clobber=True)
-    nresult = read_run(filename, modelfn=sampler.modelfn)
+    save_run(filename, simple_sampler, clobber=True)
+    nresult = read_run(filename, modelfn=simple_sampler.modelfn)
 
     plot_data(nresult)
     plot_fit(nresult, 0)
@@ -98,10 +95,10 @@ def test_plot_fit(sampler, tmp_path):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_plot_chain(sampler, tmp_path):
+def test_plot_chain(simple_sampler, tmp_path):
     filename = tmp_path / "naima_test_sampler.hdf5"
-    save_run(filename, sampler, clobber=True)
-    nresult = read_run(filename, modelfn=sampler.modelfn)
+    save_run(filename, simple_sampler, clobber=True)
+    nresult = read_run(filename, modelfn=simple_sampler.modelfn)
 
     for i in range(nresult.get_chain().shape[2]):
         plot_chain(nresult, i)
@@ -109,10 +106,10 @@ def test_plot_chain(sampler, tmp_path):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_imf(sampler, tmp_path):
+def test_imf(simple_sampler, tmp_path):
     filename = tmp_path / "naima_test_sampler.hdf5"
-    save_run(filename, sampler, clobber=True)
-    nresult = read_run(filename, modelfn=sampler.modelfn)
+    save_run(filename, simple_sampler, clobber=True)
+    nresult = read_run(filename, modelfn=simple_sampler.modelfn)
 
     imf = InteractiveModelFitter(
         nresult.modelfn, nresult.get_chain()[-1][-1], nresult.data

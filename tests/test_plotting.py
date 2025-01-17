@@ -1,17 +1,16 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
 from glob import glob
+from importlib.util import find_spec
+from pathlib import Path
 
 import astropy.units as u
 import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
-from astropy.utils.data import get_pkg_data_filename
 
-from ..analysis import save_diagnostic_plots, save_results_table
-from ..core import run_sampler, uniform_prior
-from ..plot import plot_chain, plot_data, plot_fit
-from .fixtures import noblob_sampler, sampler
+from naima.analysis import save_diagnostic_plots, save_results_table
+from naima.plot import plot_chain, plot_data, plot_fit
 
 try:
     import matplotlib
@@ -23,19 +22,14 @@ try:
 except ImportError:
     HAS_MATPLOTLIB = False
 
-try:
-    import emcee
-
-    HAS_EMCEE = True
-except ImportError:
-    HAS_EMCEE = False
+HAS_EMCEE = find_spec("emcee") is not None
 
 
 # Read data
-fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
+fname = Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"
 data_table = ascii.read(fname)
 
-fname2 = get_pkg_data_filename("data/CrabNebula_Fake_Xray.dat")
+fname2 = Path(__file__).parent / "data/CrabNebula_Fake_Xray.dat"
 data_table2 = ascii.read(fname2)
 data_list = [data_table2, data_table]
 

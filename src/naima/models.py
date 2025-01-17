@@ -311,9 +311,7 @@ class ExponentialCutoffBrokenPowerLaw:
     _cache = {}
     _queue = []
 
-    def __init__(
-        self, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0
-    ):
+    def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0):
         self.amplitude = amplitude
         self.e_0 = validate_scalar(
             "e_0", e_0, domain="positive", physical_type="energy"
@@ -334,7 +332,7 @@ class ExponentialCutoffBrokenPowerLaw:
         K = np.where(e < e_break, 1, (e_break / e_0) ** (alpha_2 - alpha_1))
         alpha = np.where(e < e_break, alpha_1, alpha_2)
         ee2 = e / e_cutoff
-        return amplitude * K * (e / e_0) ** -alpha * np.exp(-(ee2 ** beta))
+        return amplitude * K * (e / e_0) ** -alpha * np.exp(-(ee2**beta))
 
     @memoize
     def _calc(self, e):
@@ -406,7 +404,7 @@ class LogParabola:
 
         ee = e / e_0
         eeponent = -alpha - beta * np.log(ee)
-        return amplitude * ee ** eeponent
+        return amplitude * ee**eeponent
 
     @memoize
     def _calc(self, e):
@@ -499,7 +497,6 @@ class EblAbsorptionModel(TableModel):
     """
 
     def __init__(self, redshift, ebl_absorption_model="Dominguez"):
-
         # check that the redshift is a positive scalar
         if not isinstance(redshift, u.Quantity):
             redshift *= u.dimensionless_unscaled
@@ -532,11 +529,10 @@ class EblAbsorptionModel(TableModel):
                 # Set maximum value of the log(Tau) to 150, as it is high
                 # enough.  This solves later overflow problems.
                 table_values[table_values > 150.0] = 150.0
-                taus = 10 ** table_values * u.dimensionless_unscaled
+                taus = 10**table_values * u.dimensionless_unscaled
             elif self.redshift < 0.01:
                 taus = (
-                    10 ** np.zeros(len(taus_table["energy"]))
-                    * u.dimensionless_unscaled
+                    10 ** np.zeros(len(taus_table["energy"])) * u.dimensionless_unscaled
                 )
         else:
             raise ValueError('Model should be one of: ["Dominguez"]')

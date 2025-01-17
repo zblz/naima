@@ -18,6 +18,12 @@ dependencies = [
 [tool.hatch.version]
 source = "vcs"
 
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["naima"]
+
 [tool.hatch.build.hooks.vcs]
 version-file = "src/naima/version.py"
 

@@ -30,9 +30,7 @@ def validate_column(data_table, key, pt, domain="positive"):
             domain=domain,
         )
     except KeyError:
-        raise TypeError(
-            'Data table does not contain required column "{0}"'.format(key)
-        )
+        raise TypeError('Data table does not contain required column "{0}"'.format(key))
 
     return array
 
@@ -62,8 +60,7 @@ def validate_data_table(data_table, sed=None):
                 )
     except TypeError:
         raise TypeError(
-            "Argument passed to validate_data_table is not a table and "
-            "not a list"
+            "Argument passed to validate_data_table is not a table and " "not a list"
         )
 
     def dt_sed_conversion(dt, sed):
@@ -112,7 +109,6 @@ def validate_data_table(data_table, sed=None):
 
 
 def _validate_single_data_table(data_table, group=0):
-
     data = QTable()
 
     flux_types = ["flux", "differential flux", "power", "differential power"]
@@ -126,16 +122,9 @@ def _validate_single_data_table(data_table, group=0):
         dflux = validate_column(data_table, "flux_error", flux_types)
         data["flux_error_lo"] = dflux
         data["flux_error_hi"] = dflux
-    elif (
-        "flux_error_lo" in data_table.keys()
-        and "flux_error_hi" in data_table.keys()
-    ):
-        data["flux_error_lo"] = validate_column(
-            data_table, "flux_error_lo", flux_types
-        )
-        data["flux_error_hi"] = validate_column(
-            data_table, "flux_error_hi", flux_types
-        )
+    elif "flux_error_lo" in data_table.keys() and "flux_error_hi" in data_table.keys():
+        data["flux_error_lo"] = validate_column(data_table, "flux_error_lo", flux_types)
+        data["flux_error_hi"] = validate_column(data_table, "flux_error_hi", flux_types)
     else:
         raise TypeError(
             "Data table does not contain required column"
@@ -162,13 +151,9 @@ def _validate_single_data_table(data_table, group=0):
         "energy_error_lo" in data_table.keys()
         and "energy_error_hi" in data_table.keys()
     ):
-        energy_error_lo = validate_column(
-            data_table, "energy_error_lo", "energy"
-        )
+        energy_error_lo = validate_column(data_table, "energy_error_lo", "energy")
         data["energy_error_lo"] = energy_error_lo
-        energy_error_hi = validate_column(
-            data_table, "energy_error_hi", "energy"
-        )
+        energy_error_hi = validate_column(data_table, "energy_error_hi", "energy")
         data["energy_error_hi"] = energy_error_hi
     elif "energy_lo" in data_table.keys() and "energy_hi" in data_table.keys():
         energy_lo = validate_column(data_table, "energy_lo", "energy")
@@ -204,17 +189,13 @@ def _validate_single_data_table(data_table, group=0):
         data["ul"] = np.array([False] * len(data["energy"]))
 
     if "flux_ul" in data_table.keys():
-        data["flux"][data["ul"]] = u.Quantity(data_table["flux_ul"])[
-            data["ul"]
-        ]
+        data["flux"][data["ul"]] = u.Quantity(data_table["flux_ul"])[data["ul"]]
 
     HAS_CL = False
     if "keywords" in data_table.meta.keys():
         if "cl" in data_table.meta["keywords"].keys():
             HAS_CL = True
-            CL = validate_scalar(
-                "cl", data_table.meta["keywords"]["cl"]["value"]
-            )
+            CL = validate_scalar("cl", data_table.meta["keywords"]["cl"]["value"])
             data["cl"] = [CL] * len(data["energy"])
 
     if not HAS_CL:
@@ -254,9 +235,9 @@ def sed_conversion(energy, model_unit, sed):
     if (sed and is_integral) or (not sed and is_differential):
         sedf = ones
     elif sed and is_differential:
-        sedf = energy ** 2
+        sedf = energy**2
     elif not sed and is_integral:
-        sedf = 1 / (energy ** 2)
+        sedf = 1 / (energy**2)
     else:
         raise u.UnitsError(
             "Model physical type ({0}) is not supported".format(model_pt),
@@ -277,7 +258,7 @@ def sed_conversion(energy, model_unit, sed):
         if is_energy_flux:
             f_unit = u.erg
         elif is_particle_flux:
-            f_unit = u.erg / u.s / u.cm ** 2
+            f_unit = u.erg / u.s / u.cm**2
         else:
             f_unit = u.erg / u.s
     else:
@@ -354,10 +335,7 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
         # normal powerlaw integration
         trapzs = np.where(
             np.abs(b + 1.0) > 1e-10,
-            (
-                y[slice1]
-                * (x[slice2] * (x[slice2] / x[slice1]) ** b - x[slice1])
-            )
+            (y[slice1] * (x[slice2] * (x[slice2] / x[slice1]) ** b - x[slice1]))
             / (b + 1),
             x[slice1] * y[slice1] * np.log(x[slice2] / x[slice1]),
         )
@@ -499,9 +477,7 @@ def build_data_table(
     return table
 
 
-def estimate_B(
-    xray_table, vhe_table, photon_energy_density=0.261 * u.eV / u.cm ** 3
-):
+def estimate_B(xray_table, vhe_table, photon_energy_density=0.261 * u.eV / u.cm**3):
     """Estimate magnetic field from synchrotron to Inverse Compton luminosity
     ratio
 
@@ -555,8 +531,8 @@ def estimate_B(
 
     uph = (photon_energy_density.to("erg/cm3")).value
 
-    B0 = (
-        np.sqrt((xray_lum / vhe_lum).decompose().value * 8 * np.pi * uph) * u.G
-    ).to("uG")
+    B0 = (np.sqrt((xray_lum / vhe_lum).decompose().value * 8 * np.pi * uph) * u.G).to(
+        "uG"
+    )
 
     return B0

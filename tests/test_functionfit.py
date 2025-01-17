@@ -1,13 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from pathlib import Path
 import warnings
+from importlib.util import find_spec
 
 import astropy.units as u
 import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
-from astropy.utils.data import get_pkg_data_filename
 
-from ..core import (
+from naima.core import (
     get_sampler,
     lnprob,
     normal_prior,
@@ -15,39 +16,27 @@ from ..core import (
     uniform_prior,
 )
 
-try:
-    import emcee  # noqa
+HAS_EMCEE = find_spec("emcee") is not None
 
-    HAS_EMCEE = True
-except ImportError:
-    HAS_EMCEE = False
+HAS_SCIPY = find_spec("scipy") is not None
+HAS_MATPLOTLIB = find_spec("matplotlib") is not None
 
-try:
-    import scipy  # noqa
-
-    HAS_SCIPY = True
-except ImportError:
-    HAS_SCIPY = False
-
-try:
+if HAS_MATPLOTLIB:
     import matplotlib
 
     matplotlib.use("Agg")
-    HAS_MATPLOTLIB = True
-except ImportError:
-    HAS_MATPLOTLIB = False
 
 # Read data
-fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
-data_table = ascii.read(fname)
+fname = Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"
+data_table = ascii.read(str(fname))
 
 # Read fake SED
-fname0 = get_pkg_data_filename("data/Fake_ipac_sed.dat")
-data_table_sed = ascii.read(fname0)
+fname0 = Path(__file__).parent / "data/Fake_ipac_sed.dat"
+data_table_sed = ascii.read(str(fname0))
 
 # Read spectrum with symmetric flux errors
-fname2 = get_pkg_data_filename("data/CrabNebula_HESS_ipac_symmetric.dat")
-data_table2 = ascii.read(fname2)
+fname2 = Path(__file__).parent / "data/CrabNebula_HESS_ipac_symmetric.dat"
+data_table2 = ascii.read(str(fname2))
 
 # Model definition
 
@@ -75,10 +64,7 @@ def cutoffexp(pars, data):
     beta = 1.0
 
     return (
-        N
-        * (x / x0) ** -gamma
-        * np.exp(-((x / ecut) ** beta))
-        * u.Unit("1/(cm2 s TeV)")
+        N * (x / x0) ** -gamma * np.exp(-((x / ecut) ** beta)) * u.Unit("1/(cm2 s TeV)")
     )
 
 

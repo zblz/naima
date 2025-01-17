@@ -56,9 +56,7 @@ class SherpaModel(ArithmeticModel):
         if xhi is None:
             photons = (model * Eph).to("1/(s cm2)").value
         else:
-            photons = (
-                trapz_loglog(model, Eph, intervals=True).to("1/(s cm2)").value
-            )
+            photons = trapz_loglog(model, Eph, intervals=True).to("1/(s cm2)").value
 
         if p[-1]:
             print(
@@ -80,9 +78,7 @@ class SherpaModelECPL(SherpaModel):
         self.ampl = Parameter(
             name, "ampl", 100, min=0, max=1e60, hard_max=1e100, units="1e30/eV"
         )
-        self.cutoff = Parameter(
-            name, "cutoff", 0, min=0, frozen=True, units="TeV"
-        )
+        self.cutoff = Parameter(name, "cutoff", 0, min=0, frozen=True, units="TeV")
         self.beta = Parameter(name, "beta", 1, min=0, max=10, frozen=True)
         self.distance = Parameter(
             name, "distance", 1, min=0, max=1e6, frozen=True, units="kpc"
@@ -94,9 +90,7 @@ class SherpaModelECPL(SherpaModel):
         """Return PL or ECPL instance based on parameters p"""
         index, ref, ampl, cutoff, beta = p[:5]
         if cutoff == 0.0:
-            pdist = models.PowerLaw(
-                ampl * 1e30 * u.Unit("1/eV"), ref * u.TeV, index
-            )
+            pdist = models.PowerLaw(ampl * 1e30 * u.Unit("1/eV"), ref * u.TeV, index)
         else:
             pdist = models.ExponentialCutoffPowerLaw(
                 ampl * 1e30 * u.Unit("1/eV"),
@@ -122,9 +116,7 @@ class InverseCompton(SherpaModelECPL):
         self.uFIR = Parameter(
             name, "uFIR", 0.0, min=0, frozen=True, units="eV/cm3"
         )  # , 0.2eV/cm3 typical in outer disk
-        self.TNIR = Parameter(
-            name, "TNIR", 3000, min=0, frozen=True, units="K"
-        )
+        self.TNIR = Parameter(name, "TNIR", 3000, min=0, frozen=True, units="K")
         self.uNIR = Parameter(
             name, "uNIR", 0.0, min=0, frozen=True, units="eV/cm3"
         )  # , 0.2eV/cm3 typical in outer disk
@@ -169,9 +161,9 @@ class InverseCompton(SherpaModelECPL):
         # Build seedspec definition
         seedspec = ["CMB"]
         if uFIR > 0.0:
-            seedspec.append(["FIR", TFIR * u.K, uFIR * u.eV / u.cm ** 3])
+            seedspec.append(["FIR", TFIR * u.K, uFIR * u.eV / u.cm**3])
         if uNIR > 0.0:
-            seedspec.append(["NIR", TNIR * u.K, uNIR * u.eV / u.cm ** 3])
+            seedspec.append(["NIR", TNIR * u.K, uNIR * u.eV / u.cm**3])
 
         ic = models.InverseCompton(
             self._pdist(p),
@@ -232,15 +224,9 @@ class Bremsstrahlung(SherpaModelECPL):
 
     def __init__(self, name="Bremsstrahlung"):
         self.name = name
-        self.n0 = Parameter(
-            name, "n0", 1, min=0, max=1e20, frozen=True, units="1/cm3"
-        )
-        self.weight_ee = Parameter(
-            name, "weight_ee", 1.088, min=0, max=10, frozen=True
-        )
-        self.weight_ep = Parameter(
-            name, "weight_ep", 1.263, min=0, max=10, frozen=True
-        )
+        self.n0 = Parameter(name, "n0", 1, min=0, max=1e20, frozen=True, units="1/cm3")
+        self.weight_ee = Parameter(name, "weight_ee", 1.088, min=0, max=10, frozen=True)
+        self.weight_ep = Parameter(name, "weight_ep", 1.263, min=0, max=10, frozen=True)
         # add ECPL params
         super().__init__(name=name)
         # Initialize model
@@ -278,7 +264,7 @@ class Bremsstrahlung(SherpaModelECPL):
         ) = p
         brems = models.Bremsstrahlung(
             self._pdist(p),
-            n0=n0 / u.cm ** 3,
+            n0=n0 / u.cm**3,
             weight_ee=weight_ee,
             weight_ep=weight_ep,
         )

@@ -4,7 +4,7 @@ import numpy as np
 from astropy import log
 from emcee import autocorr
 
-from .extern.interruptible_pool import InterruptiblePool as Pool
+from multiprocessing import Pool
 from .extern.validator import validate_array
 from .utils import sed_conversion, validate_data_table
 
@@ -166,7 +166,7 @@ def _plot_chain_func(sampler, p, last_step=False):
         lw=0,
         density=True,
     )
-    kde = stats.kde.gaussian_kde(dist)
+    kde = stats.gaussian_kde(dist)
     ax2.plot(x, kde(x), color="k", label="KDE")
     quant = [16, 50, 84]
     xquant = np.percentile(dist, quant)
@@ -378,10 +378,8 @@ def _read_or_calc_samples(
         args = ((p, data) for p in pars)
         blobs = []
 
-        pool = Pool(threads)
-        modelouts = pool.starmap(sampler.modelfn, args)
-        pool.close()
-        pool.terminate()
+        with Pool(threads) as pool:
+            modelouts = pool.starmap(sampler.modelfn, args)
 
         for modelout in modelouts:
             if isinstance(modelout, np.ndarray):
@@ -1361,7 +1359,7 @@ def plot_distribution(samples, label, figure=None):
         density=True,
     )
 
-    kde = stats.kde.gaussian_kde(samples_nounit)
+    kde = stats.gaussian_kde(samples_nounit)
     ax.plot(x, kde(x), color="k", label="KDE")
 
     ax.axvline(

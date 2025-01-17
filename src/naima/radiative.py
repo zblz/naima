@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import logging
+from multiprocessing import Pool
 import os
 import warnings
 from collections import OrderedDict
@@ -32,11 +33,11 @@ log.setLevel(logging.INFO)
 
 e = e.gauss
 
-mec2 = (m_e * c ** 2).cgs
+mec2 = (m_e * c**2).cgs
 mec2_unit = u.Unit(mec2)
 
 ar = (4 * sigma_sb / c).to("erg/(cm3 K4)")
-r0 = (e ** 2 / mec2).to("cm")
+r0 = (e**2 / mec2).to("cm")
 
 
 def _validate_ene(ene):
@@ -101,9 +102,7 @@ class BaseRadiative:
         spec = self._spectrum(photon_energy)
 
         if distance != 0:
-            distance = validate_scalar(
-                "distance", distance, physical_type="length"
-            )
+            distance = validate_scalar("distance", distance, physical_type="length")
             spec /= 4 * np.pi * distance.to("cm") ** 2
             out_unit = "1/(s cm2 eV)"
         else:
@@ -130,9 +129,7 @@ class BaseRadiative:
 
         photon_energy = _validate_ene(photon_energy)
 
-        sed = (self.flux(photon_energy, distance) * photon_energy ** 2.0).to(
-            out_unit
-        )
+        sed = (self.flux(photon_energy, distance) * photon_energy**2.0).to(out_unit)
 
         return sed
 
@@ -192,9 +189,7 @@ class BaseElectron(BaseRadiative):
             gam = np.logspace(
                 log10gmin, log10gmax, int(self.nEed * (log10gmax - log10gmin))
             )
-            nelec = (
-                self.particle_distribution(gam * mec2).to(1 / mec2_unit).value
-            )
+            nelec = self.particle_distribution(gam * mec2).to(1 / mec2_unit).value
             We = trapz_loglog(gam * nelec, gam * mec2)
 
         return We
@@ -225,9 +220,7 @@ class BaseElectron(BaseRadiative):
 
         if amplitude_name is None:
             try:
-                self.particle_distribution.amplitude *= (
-                    We / oldWe
-                ).decompose()
+                self.particle_distribution.amplitude *= (We / oldWe).decompose()
             except AttributeError:
                 log.error(
                     "The particle distribution does not have an attribute"
@@ -312,9 +305,9 @@ class Synchrotron(BaseElectron):
             Invoking crbt only once reduced time by ~40%
             """
             cb = cbrt(x)
-            gt1 = 1.808 * cb / np.sqrt(1 + 3.4 * cb ** 2.0)
-            gt2 = 1 + 2.210 * cb ** 2.0 + 0.347 * cb ** 4.0
-            gt3 = 1 + 1.353 * cb ** 2.0 + 0.217 * cb ** 4.0
+            gt1 = 1.808 * cb / np.sqrt(1 + 3.4 * cb**2.0)
+            gt2 = 1 + 2.210 * cb**2.0 + 0.347 * cb**4.0
+            gt3 = 1 + 1.353 * cb**2.0 + 0.217 * cb**4.0
             return gt1 * (gt2 / gt3) * np.exp(-x)
 
         log.debug("calc_sy: Starting synchrotron computation with AKB2010...")
@@ -323,34 +316,26 @@ class Synchrotron(BaseElectron):
         # astropy units do not convert correctly for gyroradius calculation
         # when using cgs (SI is fine, see
         # https://github.com/astropy/astropy/issues/1687)
-        CS1_0 = np.sqrt(3) * e.value ** 3 * self.B.to("G").value
+        CS1_0 = np.sqrt(3) * e.value**3 * self.B.to("G").value
         CS1_1 = (
             2
             * np.pi
             * m_e.cgs.value
-            * c.cgs.value ** 2
+            * c.cgs.value**2
             * hbar.cgs.value
             * outspecene.to("erg").value
         )
         CS1 = CS1_0 / CS1_1
 
         # Critical energy, erg
-        Ec = (
-            3
-            * e.value
-            * hbar.cgs.value
-            * self.B.to("G").value
-            * self._gam ** 2
-        )
+        Ec = 3 * e.value * hbar.cgs.value * self.B.to("G").value * self._gam**2
         Ec /= 2 * (m_e * c).cgs.value
 
         EgEc = outspecene.to("erg").value / np.vstack(Ec)
         dNdE = CS1 * Gtilde(EgEc)
         # return units
         spec = (
-            trapz_loglog(np.vstack(self._nelec) * dNdE, self._gam, axis=0)
-            / u.s
-            / u.erg
+            trapz_loglog(np.vstack(self._nelec) * dNdE, self._gam, axis=0) / u.s / u.erg
         )
         spec = spec.to("1/(s eV)")
 
@@ -362,10 +347,10 @@ def G12(x, a):
     Eqs 20, 24, 25 of Khangulyan et al (2014)
     """
     alpha, a, beta, b = a
-    pi26 = np.pi ** 2 / 6.0
+    pi26 = np.pi**2 / 6.0
     G = (pi26 + x) * np.exp(-x)
-    tmp = 1 + b * x ** beta
-    g = 1.0 / (a * x ** alpha / tmp + 1.0)
+    tmp = 1 + b * x**beta
+    g = 1.0 / (a * x**alpha / tmp + 1.0)
     return G * g
 
 
@@ -374,11 +359,11 @@ def G34(x, a):
     Eqs 20, 24, 25 of Khangulyan et al (2014)
     """
     alpha, a, beta, b, c = a
-    pi26 = np.pi ** 2 / 6.0
+    pi26 = np.pi**2 / 6.0
     tmp = (1 + c * x) / (1 + pi26 * c * x)
     G = pi26 * tmp * np.exp(-x)
-    tmp = 1 + b * x ** beta
-    g = 1.0 / (a * x ** alpha / tmp + 1.0)
+    tmp = 1 + b * x**beta
+    g = 1.0 / (a * x**alpha / tmp + 1.0)
     return G * g
 
 
@@ -435,9 +420,7 @@ class InverseCompton(BaseElectron):
         distribution arrays. Default is 300.
     """
 
-    def __init__(
-        self, particle_distribution, seed_photon_fields=["CMB"], **kwargs
-    ):
+    def __init__(self, particle_distribution, seed_photon_fields=["CMB"], **kwargs):
         super().__init__(particle_distribution)
         self.seed_photon_fields = self._process_input_seed(seed_photon_fields)
         self.Eemin = 1 * u.GeV
@@ -454,13 +437,13 @@ class InverseCompton(BaseElectron):
 
         Tcmb = 2.72548 * u.K  # 0.00057 K
         Tfir = 30 * u.K
-        ufir = 0.5 * u.eV / u.cm ** 3
+        ufir = 0.5 * u.eV / u.cm**3
         Tnir = 3000 * u.K
-        unir = 1.0 * u.eV / u.cm ** 3
+        unir = 1.0 * u.eV / u.cm**3
 
         # Allow for seed_photon_fields definitions of the type 'CMB-NIR-FIR' or
         # 'CMB'
-        if type(seed_photon_fields) != list:
+        if type(seed_photon_fields) is not list:
             seed_photon_fields = seed_photon_fields.split("-")
 
         result = OrderedDict()
@@ -472,7 +455,7 @@ class InverseCompton(BaseElectron):
                 seed["type"] = "thermal"
                 if inseed == "CMB":
                     seed["T"] = Tcmb
-                    seed["u"] = ar * Tcmb ** 4
+                    seed["u"] = ar * Tcmb**4
                     seed["isotropic"] = True
                 elif inseed == "FIR":
                     seed["T"] = Tfir
@@ -488,9 +471,7 @@ class InverseCompton(BaseElectron):
                         "CMB, FIR or NIR".format(inseed)
                     )
                     raise TypeError
-            elif type(inseed) == list and (
-                len(inseed) == 3 or len(inseed) == 4
-            ):
+            elif type(inseed) is list and (len(inseed) == 3 or len(inseed) == 4):
                 isotropic = len(inseed) == 3
 
                 if isotropic:
@@ -515,7 +496,7 @@ class InverseCompton(BaseElectron):
                     )
                     seed["T"] = T
                     if uu == 0:
-                        seed["u"] = ar * T ** 4
+                        seed["u"] = ar * T**4
                     else:
                         # pressure has same physical type as energy density
                         validate_scalar(
@@ -556,8 +537,7 @@ class InverseCompton(BaseElectron):
                         )
             else:
                 raise TypeError(
-                    "Unable to process seed photon"
-                    " field: {0}".format(inseed)
+                    "Unable to process seed photon" " field: {0}".format(inseed)
                 )
 
             result[name] = seed
@@ -565,9 +545,7 @@ class InverseCompton(BaseElectron):
         return result
 
     @staticmethod
-    def _iso_ic_on_planck(
-        electron_energy, soft_photon_temperature, gamma_energy
-    ):
+    def _iso_ic_on_planck(electron_energy, soft_photon_temperature, gamma_energy):
         """
         IC cross-section for isotropic interaction with a blackbody photon
         spectrum following Eq. 14 of Khangulyan, Aharonian, and Kelner 2014,
@@ -586,7 +564,7 @@ class InverseCompton(BaseElectron):
         z = gamma_energy / electron_energy
         x = z / (1 - z) / (4.0 * electron_energy * soft_photon_temperature)
         # Eq. 14
-        cross_section = z ** 2 / (2 * (1 - z)) * G34(x, a3) + G34(x, a4)
+        cross_section = z**2 / (2 * (1 - z)) * G34(x, a3) + G34(x, a4)
         tmp = (soft_photon_temperature / electron_energy) ** 2
         # r0 = (e**2 / m_e / c**2).to('cm')
         # (2 * r0 ** 2 * m_e ** 3 * c ** 4 / (pi * hbar ** 3)).cgs
@@ -616,15 +594,10 @@ class InverseCompton(BaseElectron):
         a1 = [0.857, 0.153, 1.840, 0.254]
         a2 = [0.691, 1.330, 1.668, 0.534]
         z = gamma_energy / electron_energy
-        ttheta = (
-            2.0
-            * electron_energy
-            * soft_photon_temperature
-            * (1.0 - np.cos(theta))
-        )
+        ttheta = 2.0 * electron_energy * soft_photon_temperature * (1.0 - np.cos(theta))
         x = z / (1 - z) / ttheta
         # Eq. 11
-        cross_section = z ** 2 / (2 * (1 - z)) * G12(x, a1) + G12(x, a2)
+        cross_section = z**2 / (2 * (1 - z)) * G12(x, a1) + G12(x, a2)
         tmp = (soft_photon_temperature / electron_energy) ** 2
         # r0 = (e**2 / m_e / c**2).to('cm')
         # (2 * r0 ** 2 * m_e ** 3 * c ** 4 / (pi * hbar ** 3)).cgs
@@ -659,19 +632,15 @@ class InverseCompton(BaseElectron):
             + (1.0 / 2.0) * (b * q) ** 2 * (1 - q) / (1 + b * q)
         )
 
-        gamint = (
-            fic
-            * heaviside(1 - q)
-            * heaviside(q - 1.0 / (4 * electron_energy ** 2))
-        )
+        gamint = fic * heaviside(1 - q) * heaviside(q - 1.0 / (4 * electron_energy**2))
         gamint[np.isnan(gamint)] = 0.0
 
         if phn.size > 1:
-            phn = phn.to(1 / (mec2_unit * u.cm ** 3)).value
+            phn = phn.to(1 / (mec2_unit * u.cm**3)).value
             gamint = trapz_loglog(gamint * phn / photE0, photE0, axis=0)  # 1/s
         else:
-            phn = phn.to(mec2_unit / u.cm ** 3).value
-            gamint *= phn / photE0 ** 2
+            phn = phn.to(mec2_unit / u.cm**3).value
+            gamint *= phn / photE0**2
             gamint = gamint.squeeze()
 
         # gamint /= mec2.to('erg').value
@@ -681,14 +650,12 @@ class InverseCompton(BaseElectron):
         sigt = 6.652458734983284e-25
         c = 29979245800.0
 
-        gamint *= (3.0 / 4.0) * sigt * c / electron_energy ** 2
+        gamint *= (3.0 / 4.0) * sigt * c / electron_energy**2
 
         return gamint
 
     def _calc_specic(self, seed, outspecene):
-        log.debug(
-            "_calc_specic: Computing IC on {0} seed photons...".format(seed)
-        )
+        log.debug("_calc_specic: Computing IC on {0} seed photons...".format(seed))
 
         Eph = (outspecene / mec2).decompose().value
         # Catch numpy RuntimeWarnings of overflowing exp (which are then
@@ -697,17 +664,11 @@ class InverseCompton(BaseElectron):
             warnings.simplefilter("ignore")
             if self.seed_photon_fields[seed]["type"] == "thermal":
                 T = self.seed_photon_fields[seed]["T"]
-                uf = (
-                    self.seed_photon_fields[seed]["u"] / (ar * T ** 4)
-                ).decompose()
+                uf = (self.seed_photon_fields[seed]["u"] / (ar * T**4)).decompose()
                 if self.seed_photon_fields[seed]["isotropic"]:
-                    gamint = self._iso_ic_on_planck(
-                        self._gam, T.to("K").value, Eph
-                    )
+                    gamint = self._iso_ic_on_planck(self._gam, T.to("K").value, Eph)
                 else:
-                    theta = (
-                        self.seed_photon_fields[seed]["theta"].to("rad").value
-                    )
+                    theta = self.seed_photon_fields[seed]["theta"].to("rad").value
                     gamint = self._ani_ic_on_planck(
                         self._gam, T.to("K").value, Eph, theta
                     )
@@ -744,9 +705,7 @@ class InverseCompton(BaseElectron):
 
         for seed in self.seed_photon_fields:
             # Call actual computation, detached to allow changes in subclasses
-            self.specic.append(
-                self._calc_specic(seed, outspecene).to("1/(s eV)")
-            )
+            self.specic.append(self._calc_specic(seed, outspecene).to("1/(s eV)"))
 
         return np.sum(u.Quantity(self.specic), axis=0)
 
@@ -788,9 +747,7 @@ class InverseCompton(BaseElectron):
                 )
 
             if distance != 0:
-                distance = validate_scalar(
-                    "distance", distance, physical_type="length"
-                )
+                distance = validate_scalar("distance", distance, physical_type="length")
                 dfac = 4 * np.pi * distance.to("cm") ** 2
                 out_unit = "1/(s cm2 eV)"
             else:
@@ -828,7 +785,7 @@ class InverseCompton(BaseElectron):
 
             sed = (
                 self.flux(photon_energy, distance=distance, seed=seed)
-                * photon_energy ** 2.0
+                * photon_energy**2.0
             ).to(out_unit)
 
         return sed
@@ -861,7 +818,7 @@ class Bremsstrahlung(BaseElectron):
         Z_i^2 X_i`, default is 1.263.
     """
 
-    def __init__(self, particle_distribution, n0=1 / u.cm ** 3, **kwargs):
+    def __init__(self, particle_distribution, n0=1 / u.cm**3, **kwargs):
         super().__init__(particle_distribution)
         self.n0 = n0
         self.Eemin = 100 * u.MeV
@@ -874,7 +831,7 @@ class Bremsstrahlung(BaseElectron):
         N = np.sum(Y)
         X = Y / N
         self.weight_ee = np.sum(Z * X)
-        self.weight_ep = np.sum(Z ** 2 * X)
+        self.weight_ep = np.sum(Z**2 * X)
         self.param_names += ["n0", "weight_ee", "weight_ep"]
         self.__dict__.update(**kwargs)
 
@@ -885,7 +842,7 @@ class Bremsstrahlung(BaseElectron):
         Eq. A2 of Baring et al. (1999)
         Return in units of cm2 / mec2
         """
-        s1 = 4 * r0 ** 2 * alpha / eps / mec2_unit
+        s1 = 4 * r0**2 * alpha / eps / mec2_unit
         s2 = 1 + (1.0 / 3.0 - eps / gam) * (1 - eps / gam)
         s3 = np.log(2 * gam * (gam - eps) / eps) - 1.0 / 2.0
         s3[np.where(gam < eps)] = 0.0
@@ -898,17 +855,17 @@ class Bremsstrahlung(BaseElectron):
         Eq. A3 of Baring et al. (1999)
         Return in units of cm2 / mec2
         """
-        s0 = r0 ** 2 * alpha / (3 * eps) / mec2_unit
+        s0 = r0**2 * alpha / (3 * eps) / mec2_unit
 
-        s1_1 = 16 * (1 - eps + eps ** 2) * np.log(gam / eps)
-        s1_2 = -1 / eps ** 2 + 3 / eps - 4 - 4 * eps - 8 * eps ** 2
+        s1_1 = 16 * (1 - eps + eps**2) * np.log(gam / eps)
+        s1_2 = -1 / eps**2 + 3 / eps - 4 - 4 * eps - 8 * eps**2
         s1_3 = -2 * (1 - 2 * eps) * np.log(1 - 2 * eps)
-        s1_4 = 1 / (4 * eps ** 3) - 1 / (2 * eps ** 2) + 3 / eps - 2 + 4 * eps
+        s1_4 = 1 / (4 * eps**3) - 1 / (2 * eps**2) + 3 / eps - 2 + 4 * eps
         s1 = s1_1 + s1_2 + s1_3 * s1_4
 
         s2_1 = 2 / eps
-        s2_2 = (4 - 1 / eps + 1 / (4 * eps ** 2)) * np.log(2 * gam)
-        s2_3 = -2 + 2 / eps - 5 / (8 * eps ** 2)
+        s2_2 = (4 - 1 / eps + 1 / (4 * eps**2)) * np.log(2 * gam)
+        s2_3 = -2 + 2 / eps - 5 / (8 * eps**2)
         s2 = s2_1 * (s2_2 + s2_3)
 
         return s0 * np.where(eps <= 0.5, s1, s2) * heaviside(gam - eps)
@@ -918,9 +875,7 @@ class Bremsstrahlung(BaseElectron):
         Eq. A1, A4 of Baring et al. (1999)
         Use for Ee > 2 MeV
         """
-        A = 1 - 8 / 3 * (gam - 1) ** 0.2 / (gam + 1) * (eps / gam) ** (
-            1.0 / 3.0
-        )
+        A = 1 - 8 / 3 * (gam - 1) ** 0.2 / (gam + 1) * (eps / gam) ** (1.0 / 3.0)
 
         return (self._sigma_1(gam, eps) + self._sigma_2(gam, eps)) * A
 
@@ -929,13 +884,13 @@ class Bremsstrahlung(BaseElectron):
         """
         Eqs. A6, A7 of Baring et al. (1999)
         """
-        beta = np.sqrt(1 - gam ** -2)
-        B = 1 + 0.5 * (gam ** 2 - 1)
+        beta = np.sqrt(1 - gam**-2)
+        B = 1 + 0.5 * (gam**2 - 1)
         C = 10 * x * gam * beta * (2 + gam * beta)
-        C /= 1 + x ** 2 * (gam ** 2 - 1)
+        C /= 1 + x**2 * (gam**2 - 1)
 
-        F_1 = (17 - 3 * x ** 2 / (2 - x) ** 2 - C) * np.sqrt(1 - x)
-        F_2 = 12 * (2 - x) - 7 * x ** 2 / (2 - x) - 3 * x ** 4 / (2 - x) ** 3
+        F_1 = (17 - 3 * x**2 / (2 - x) ** 2 - C) * np.sqrt(1 - x)
+        F_2 = 12 * (2 - x) - 7 * x**2 / (2 - x) - 3 * x**4 / (2 - x) ** 3
         F_3 = np.log((1 + np.sqrt(1 - x)) / np.sqrt(x))
 
         return B * F_1 + F_2 * F_3
@@ -945,17 +900,17 @@ class Bremsstrahlung(BaseElectron):
         Eq. A5 of Baring et al. (1999)
         Use for Ee < 2 MeV
         """
-        s0 = 4 * r0 ** 2 * alpha / (15 * eps)
-        x = 4 * eps / (gam ** 2 - 1)
+        s0 = 4 * r0**2 * alpha / (15 * eps)
+        x = 4 * eps / (gam**2 - 1)
         sigma_nonrel = s0 * self._F(x, gam)
-        sigma_nonrel[np.where(eps >= 0.25 * (gam ** 2 - 1.0))] = 0.0
+        sigma_nonrel[np.where(eps >= 0.25 * (gam**2 - 1.0))] = 0.0
         sigma_nonrel[np.where(gam * np.ones_like(eps) < 1.0)] = 0.0
         return sigma_nonrel / mec2_unit
 
     def _sigma_ee(self, gam, Eph):
         eps = (Eph / mec2).decompose().value
         # initialize shape and units of cross section
-        sigma = np.zeros_like(gam * eps) * u.Unit(u.cm ** 2 / Eph.unit)
+        sigma = np.zeros_like(gam * eps) * u.Unit(u.cm**2 / Eph.unit)
         gam_trans = (2 * u.MeV / mec2).decompose().value
         # Non relativistic below 2 MeV
         if np.any(gam <= gam_trans):
@@ -970,7 +925,7 @@ class Bremsstrahlung(BaseElectron):
                 warnings.simplefilter("ignore")
                 sigma[rel_matrix] = self._sigma_ee_rel(gam, eps)[rel_matrix]
 
-        return sigma.to(u.cm ** 2 / Eph.unit)
+        return sigma.to(u.cm**2 / Eph.unit)
 
     def _sigma_ep(self, gam, eps):
         """
@@ -1008,14 +963,11 @@ class Bremsstrahlung(BaseElectron):
         gam = np.vstack(self._gam)
         eps = (Eph / mec2).decompose().value
         # compute integral with electron distribution
-        emiss = (
-            c.cgs
-            * trapz_loglog(
-                np.vstack(self._nelec) * self._sigma_ep(gam, eps),
-                self._gam,
-                axis=0,
-            ).to(u.cm ** 2 / Eph.unit)
-        )
+        emiss = c.cgs * trapz_loglog(
+            np.vstack(self._nelec) * self._sigma_ep(gam, eps),
+            self._gam,
+            axis=0,
+        ).to(u.cm**2 / Eph.unit)
         return emiss
 
     def _spectrum(self, photon_energy):
@@ -1031,8 +983,7 @@ class Bremsstrahlung(BaseElectron):
         Eph = _validate_ene(photon_energy)
 
         spec = self.n0 * (
-            self.weight_ee * self._emiss_ee(Eph)
-            + self.weight_ep * self._emiss_ep(Eph)
+            self.weight_ee * self._emiss_ee(Eph) + self.weight_ep * self._emiss_ep(Eph)
         )
 
         return spec
@@ -1129,9 +1080,7 @@ class BaseProton(BaseRadiative):
 
         if amplitude_name is None:
             try:
-                self.particle_distribution.amplitude *= (
-                    Wp / oldWp
-                ).decompose()
+                self.particle_distribution.amplitude *= (Wp / oldWp).decompose()
             except AttributeError:
                 log.error(
                     "The particle distribution does not have an attribute"
@@ -1206,9 +1155,9 @@ class PionDecay(BaseProton):
     def __init__(
         self,
         particle_distribution,
-        nh=1.0 / u.cm ** 3,
+        nh=1.0 / u.cm**3,
         nuclear_enhancement=True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(particle_distribution)
         self.nh = validate_scalar("nh", nh, physical_type="number density")
@@ -1259,7 +1208,7 @@ class PionDecay(BaseProton):
     # energy at which each of the hiE models start being valid
     _Etrans = {"Pythia8": 50, "SIBYLL": 100, "QGSJET": 100, "Geant4": 100}
     #
-    _m_p = (m_p * c ** 2).to("GeV").value
+    _m_p = (m_p * c**2).to("GeV").value
     _m_pi = 0.1349766  # GeV/c2
     _Tth = 0.27966184
 
@@ -1279,7 +1228,7 @@ class PionDecay(BaseProton):
 
         """
         L = np.log(Tp / self._Tth)
-        sigma = 30.7 - 0.96 * L + 0.18 * L ** 2
+        sigma = 30.7 - 0.96 * L + 0.18 * L**2
         sigma *= (1 - (self._Tth / Tp) ** 1.9) ** 3
         return sigma * 1e-27  # convert from mbarn to cm-2
 
@@ -1293,23 +1242,19 @@ class PionDecay(BaseProton):
         Mres = 1.1883  # GeV
         Gres = 0.2264  # GeV
         s = 2 * m_p * (Tp + 2 * m_p)  # center of mass energy
-        gamma = np.sqrt(Mres ** 2 * (Mres ** 2 + Gres ** 2))
+        gamma = np.sqrt(Mres**2 * (Mres**2 + Gres**2))
         K = np.sqrt(8) * Mres * Gres * gamma
-        K /= np.pi * np.sqrt(Mres ** 2 + gamma)
+        K /= np.pi * np.sqrt(Mres**2 + gamma)
 
         fBW = m_p * K
-        fBW /= (
-            (np.sqrt(s) - m_p) ** 2 - Mres ** 2
-        ) ** 2 + Mres ** 2 * Gres ** 2
+        fBW /= ((np.sqrt(s) - m_p) ** 2 - Mres**2) ** 2 + Mres**2 * Gres**2
 
-        mu = np.sqrt(
-            (s - m_pi ** 2 - 4 * m_p ** 2) ** 2 - 16 * m_pi ** 2 * m_p ** 2
-        )
+        mu = np.sqrt((s - m_pi**2 - 4 * m_p**2) ** 2 - 16 * m_pi**2 * m_p**2)
         mu /= 2 * m_pi * np.sqrt(s)
 
         sigma0 = 7.66e-3  # mb
 
-        sigma1pi = sigma0 * mu ** 1.95 * (1 + mu + mu ** 5) * fBW ** 1.86
+        sigma1pi = sigma0 * mu**1.95 * (1 + mu + mu**5) * fBW**1.86
 
         # two pion production
         sigma2pi = 5.7  # mb
@@ -1326,7 +1271,7 @@ class PionDecay(BaseProton):
         """
         m_p = self._m_p
         Qp = (Tp - self._Tth) / m_p
-        multip = -6e-3 + 0.237 * Qp - 0.023 * Qp ** 2
+        multip = -6e-3 + 0.237 * Qp - 0.023 * Qp**2
         return self._sigma_inel(Tp) * multip
 
     def _sigma_pi_hiE(self, Tp, a):
@@ -1336,7 +1281,7 @@ class PionDecay(BaseProton):
         m_p = self._m_p
         csip = (Tp - 3.0) / m_p
         m1 = a[0] * csip ** a[3] * (1 + np.exp(-a[1] * csip ** a[4]))
-        m2 = 1 - np.exp(-a[2] * csip ** 0.25)
+        m2 = 1 - np.exp(-a[2] * csip**0.25)
         multip = m1 * m2
         return self._sigma_inel(Tp) * multip
 
@@ -1382,10 +1327,10 @@ class PionDecay(BaseProton):
         m_pi = self._m_pi
         # Eq 10
         s = 2 * m_p * (Tp + 2 * m_p)  # center of mass energy
-        EpiCM = (s - 4 * m_p ** 2 + m_pi ** 2) / (2 * np.sqrt(s))
-        PpiCM = np.sqrt(EpiCM ** 2 - m_pi ** 2)
+        EpiCM = (s - 4 * m_p**2 + m_pi**2) / (2 * np.sqrt(s))
+        PpiCM = np.sqrt(EpiCM**2 - m_pi**2)
         gCM = (Tp + 2 * m_p) / np.sqrt(s)
-        betaCM = np.sqrt(1 - gCM ** -2)
+        betaCM = np.sqrt(1 - gCM**-2)
         EpimaxLAB = gCM * (EpiCM + PpiCM * betaCM)
 
         return EpimaxLAB
@@ -1394,7 +1339,7 @@ class PionDecay(BaseProton):
         m_pi = self._m_pi
         EpimaxLAB = self._calc_EpimaxLAB(Tp)
         gpiLAB = EpimaxLAB / m_pi
-        betapiLAB = np.sqrt(1 - gpiLAB ** -2)
+        betapiLAB = np.sqrt(1 - gpiLAB**-2)
         Egmax = (m_pi / 2) * gpiLAB * (1 + betapiLAB)
 
         return Egmax
@@ -1426,26 +1371,26 @@ class PionDecay(BaseProton):
         m_pi = self._m_pi
         # Eq 9
         Egmax = self._calc_Egmax(Tp)
-        Yg = Egamma + m_pi ** 2 / (4 * Egamma)
-        Ygmax = Egmax + m_pi ** 2 / (4 * Egmax)
+        Yg = Egamma + m_pi**2 / (4 * Egamma)
+        Ygmax = Egmax + m_pi**2 / (4 * Egmax)
         Xg = (Yg - m_pi) / (Ygmax - m_pi)
         # zero out invalid fields (Egamma > Egmax -> Xg > 1)
         Xg[np.where(Xg > 1)] = 1.0
         # Eq 11
         C = lamb * m_pi / Ygmax
-        F = (1 - Xg ** alpha) ** beta
+        F = (1 - Xg**alpha) ** beta
         F /= (1 + Xg / C) ** gamma
         #
         return F
 
     def _kappa(self, Tp):
         thetap = Tp / self._m_p
-        return 3.29 - thetap ** -1.5 / 5.0
+        return 3.29 - thetap**-1.5 / 5.0
 
     def _mu(self, Tp):
         q = (Tp - 1.0) / self._m_p
         x = 5.0 / 4.0
-        return x * q ** x * np.exp(-x * q)
+        return x * q**x * np.exp(-x * q)
 
     def _F(self, Tp, Egamma):
         F = np.zeros_like(Tp)
@@ -1542,9 +1487,7 @@ class PionDecay(BaseProton):
             self.diffsigma = LookupTable(filename)
         except IOError:
             warnings.warn(
-                "LUT {0} not found, reverting to useLUT = False".format(
-                    LUT_fname
-                )
+                "LUT {0} not found, reverting to useLUT = False".format(LUT_fname)
             )
             self.diffsigma = self._diffsigma
             self.useLUT = False
@@ -1635,11 +1578,7 @@ class PionDecayKelner06(BaseRadiative):
     _queue = []
 
     def __init__(
-        self,
-        particle_distribution,
-        nh=1.0 / u.cm ** 3,
-        Etrans=0.1 * u.TeV,
-        **kwargs
+        self, particle_distribution, nh=1.0 / u.cm**3, Etrans=0.1 * u.TeV, **kwargs
     ):
         self.particle_distribution = particle_distribution
         self.nh = validate_scalar("nh", nh, physical_type="number density")
@@ -1666,10 +1605,10 @@ class PionDecayKelner06(BaseRadiative):
             Eprot [TeV]
         """
         L = np.log(Ep)
-        B = 1.30 + 0.14 * L + 0.011 * L ** 2  # Eq59
-        beta = (1.79 + 0.11 * L + 0.008 * L ** 2) ** -1  # Eq60
-        k = (0.801 + 0.049 * L + 0.014 * L ** 2) ** -1  # Eq61
-        xb = x ** beta
+        B = 1.30 + 0.14 * L + 0.011 * L**2  # Eq59
+        beta = (1.79 + 0.11 * L + 0.008 * L**2) ** -1  # Eq60
+        k = (0.801 + 0.049 * L + 0.014 * L**2) ** -1  # Eq61
+        xb = x**beta
 
         F1 = B * (np.log(x) / x) * ((1 - xb) / (1 + k * xb * (1 - xb))) ** 4
         F2 = (
@@ -1698,7 +1637,7 @@ class PionDecayKelner06(BaseRadiative):
 
         """
         L = np.log(Ep)
-        sigma = 34.3 + 1.88 * L + 0.25 * L ** 2
+        sigma = 34.3 + 1.88 * L + 0.25 * L**2
         if Ep <= 0.1:
             Eth = 1.22e-3
             sigma *= (1 - (Eth / Ep) ** 4) ** 2 * heaviside(Ep - Eth)
@@ -1732,21 +1671,24 @@ class PionDecayKelner06(BaseRadiative):
         from scipy.integrate import quad
 
         Egamma = Egamma.to("TeV").value
-        specpp = c.cgs.value * quad(
-            self._photon_integrand,
-            0.0,
-            1.0,
-            args=Egamma,
-            epsrel=1e-3,
-            epsabs=0,
-        )[0]
+        specpp = (
+            c.cgs.value
+            * quad(
+                self._photon_integrand,
+                0.0,
+                1.0,
+                args=Egamma,
+                epsrel=1e-3,
+                epsabs=0,
+            )[0]
+        )
 
         return specpp * u.Unit("1/(s TeV)")
 
     # variables for delta integrand
     _c = c.cgs.value
     _Kpi = 0.17
-    _mp = (m_p * c ** 2).to("TeV").value
+    _mp = (m_p * c**2).to("TeV").value
     _m_pi = 1.349766e-4  # TeV/c2
 
     def _delta_integrand(self, Epi):
@@ -1757,7 +1699,7 @@ class PionDecayKelner06(BaseRadiative):
             * self._sigma_inel(Ep0)
             * self._particle_distribution(Ep0)
         )
-        return qpi / np.sqrt(Epi ** 2 - self._m_pi ** 2)
+        return qpi / np.sqrt(Epi**2 - self._m_pi**2)
 
     def _calc_specpp_loE(self, Egamma):
         """
@@ -1766,13 +1708,10 @@ class PionDecayKelner06(BaseRadiative):
         from scipy.integrate import quad
 
         Egamma = Egamma.to("TeV").value
-        Epimin = Egamma + self._m_pi ** 2 / (4 * Egamma)
+        Epimin = Egamma + self._m_pi**2 / (4 * Egamma)
 
         result = (
-            2
-            * quad(
-                self._delta_integrand, Epimin, np.inf, epsrel=1e-3, epsabs=0
-            )[0]
+            2 * quad(self._delta_integrand, Epimin, np.inf, epsrel=1e-3, epsabs=0)[0]
         )
 
         return result * u.Unit("1/(s TeV)")
@@ -1786,9 +1725,7 @@ class PionDecayKelner06(BaseRadiative):
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            Wp = quad(
-                lambda x: x * self._particle_distribution(x), Eth, np.inf
-            )[0]
+            Wp = quad(lambda x: x * self._particle_distribution(x), Eth, np.inf)[0]
 
         return (Wp * u.TeV).to("erg")
 
@@ -1810,9 +1747,7 @@ class PionDecayKelner06(BaseRadiative):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.nhat = 1.0  # initial value, works for index~2.1
-            if np.any(outspecene < self.Etrans) and np.any(
-                outspecene >= self.Etrans
-            ):
+            if np.any(outspecene < self.Etrans) and np.any(outspecene >= self.Etrans):
                 # compute value of nhat so that delta functional matches
                 # accurate calculation at 0.1TeV
                 full = self._calc_specpp_hiE(self.Etrans)
@@ -1855,7 +1790,7 @@ class LookupTable:
         X = f_lut.f.X
         Y = f_lut.f.Y
         lut = f_lut.f.lut
-        self.int_lut = RectBivariateSpline(X, Y, 10 ** lut, kx=3, ky=3, s=0)
+        self.int_lut = RectBivariateSpline(X, Y, 10**lut, kx=3, ky=3, s=0)
         self.fname = filename
 
     def __call__(self, X, Y):
@@ -1881,9 +1816,6 @@ def generate_lut_pp(
     hiEmodel=None,
     nuclear_enhancement=True,
 ):  # pragma: no cover
-    from emcee.interruptible_pool import InterruptiblePool as Pool
-
-    pool = Pool()
     if hiEmodel is None:
         hiEmodel = ["Geant4", "Pythia8", "SIBYLL", "QGSJET"]
     elif type(hiEmodel) is str:
@@ -1896,7 +1828,8 @@ def generate_lut_pp(
         out_file = out_base + model + ".npz"
         print("Saving LUT for model {0} in {1}...".format(model, out_file))
         args = [(Ep, eg, model, nuclear_enhancement) for eg in Eg]
-        diffsigma_list = pool.map(_calc_lut_pp, args)
+        with Pool() as pool:
+            diffsigma_list = pool.map(_calc_lut_pp, args)
 
         diffsigma = np.array(diffsigma_list).T
 

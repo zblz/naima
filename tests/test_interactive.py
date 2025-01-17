@@ -1,14 +1,14 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import warnings
+from pathlib import Path
 
 import astropy.units as u
 import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
-from astropy.utils.data import get_pkg_data_filename
 
-from ..model_fitter import InteractiveModelFitter
-from ..models import ExponentialCutoffPowerLaw
+from naima.model_fitter import InteractiveModelFitter
+from naima.models import ExponentialCutoffPowerLaw
 
 try:
     import matplotlib
@@ -22,7 +22,7 @@ except ImportError:
 
 
 # Read data
-fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
+fname = Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"
 data = ascii.read(fname)
 
 
@@ -63,9 +63,7 @@ def test_modelwidget_inputs():
             imf = InteractiveModelFitter(model, p0, labels=labs)
         for sed in [True, False]:
             for dt in [data, None]:
-                imf = InteractiveModelFitter(
-                    model, p0, data=dt, labels=labels, sed=sed
-                )
+                imf = InteractiveModelFitter(model, p0, data=dt, labels=labels, sed=sed)
         p0[1] = -2.7
         imf = InteractiveModelFitter(model, p0, labels=labels)
         labels[0] = "norm"
@@ -88,8 +86,6 @@ def test_modelwidget_funcs():
         imf.update_if_auto("test")
         imf.close_fig("test")
 
-        imf = InteractiveModelFitter(
-            modelfn, p0, labels=labels, auto_update=False
-        )
+        imf = InteractiveModelFitter(modelfn, p0, labels=labels, auto_update=False)
         imf.update("test")
         plt.close("all")
