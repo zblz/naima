@@ -31,7 +31,7 @@ def PionDecay_ECPL(pars, data):
     ECPL = naima.models.ExponentialCutoffPowerLaw(
         amplitude, 30 * u.TeV, alpha, e_cutoff
     )
-    PP = naima.models.PionDecay(ECPL, nh=1.0 * u.cm ** -3)
+    PP = naima.models.PionDecay(ECPL, nh=1.0 * u.cm**-3)
 
     model = PP.flux(data, distance=1.0 * u.kpc)
     # Save a realization of the particle distribution to the metadata blob
@@ -102,9 +102,7 @@ def ECPL(pars, data):
     amplitude = pars[0] * data["flux"].unit
     alpha = pars[1]
     e_cutoff = (10 ** pars[2]) * u.TeV
-    ECPL = naima.models.ExponentialCutoffPowerLaw(
-        amplitude, 1 * u.TeV, alpha, e_cutoff
-    )
+    ECPL = naima.models.ExponentialCutoffPowerLaw(amplitude, 1 * u.TeV, alpha, e_cutoff)
 
     return ECPL(data)
 

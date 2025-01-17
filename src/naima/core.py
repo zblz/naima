@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from multiprocessing import Pool
 import warnings
 from collections.abc import Iterable
+from multiprocessing import Pool
 
 import astropy.units as u
 import emcee
@@ -128,7 +128,7 @@ def _run_mcmc(sampler, pos, nrun):
         progress = 100.0 * float(i) / float(nrun)
         if progress % 5 < (5.0 / float(nrun)):
             print(
-                "\nProgress of the run: {0:.0f} percent" " ({1} of {2} steps)".format(
+                "\nProgress of the run: {0:.0f} percent ({1} of {2} steps)".format(
                     int(progress), i, nrun
                 )
             )

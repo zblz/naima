@@ -14,11 +14,11 @@ from naima.utils import (
 )
 
 # Read data
-fname = Path(__file__).parent/"data/CrabNebula_HESS_ipac.dat"
+fname = Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"
 data_table = ascii.read(fname)
 
 # Read spectrum with symmetric flux errors
-fname_sym = Path(__file__).parent/"data/CrabNebula_HESS_ipac_symmetric.dat"
+fname_sym = Path(__file__).parent / "data/CrabNebula_HESS_ipac_symmetric.dat"
 data_table_sym = ascii.read(fname_sym)
 
 

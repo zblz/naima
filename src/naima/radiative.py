@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import logging
-from multiprocessing import Pool
 import os
 import warnings
 from collections import OrderedDict
+from multiprocessing import Pool
 
 import numpy as np
 from astropy import units as u
@@ -537,7 +537,7 @@ class InverseCompton(BaseElectron):
                         )
             else:
                 raise TypeError(
-                    "Unable to process seed photon" " field: {0}".format(inseed)
+                    "Unable to process seed photon field: {0}".format(inseed)
                 )
 
             result[name] = seed

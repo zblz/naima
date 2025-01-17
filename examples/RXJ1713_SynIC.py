@@ -17,7 +17,6 @@ vhe = ascii.read("RXJ1713_HESS_2007.dat")
 
 
 def ElectronSynIC(pars, data):
-
     # Match parameters to ECPL properties, and give them the appropriate units
     amplitude = 10 ** pars[0] / u.eV
     alpha = pars[1]
@@ -32,16 +31,14 @@ def ElectronSynIC(pars, data):
         ECPL,
         seed_photon_fields=[
             "CMB",
-            ["FIR", 26.5 * u.K, 0.415 * u.eV / u.cm ** 3],
+            ["FIR", 26.5 * u.K, 0.415 * u.eV / u.cm**3],
         ],
         Eemin=100 * u.GeV,
     )
     SYN = Synchrotron(ECPL, B=B)
 
     # compute flux at the energies given in data['energy']
-    model = IC.flux(data, distance=1.0 * u.kpc) + SYN.flux(
-        data, distance=1.0 * u.kpc
-    )
+    model = IC.flux(data, distance=1.0 * u.kpc) + SYN.flux(data, distance=1.0 * u.kpc)
 
     # The first array returned will be compared to the observed spectrum for
     # fitting. All subsequent objects will be stored in the sampler metadata
@@ -68,7 +65,6 @@ def lnprior(pars):
 
 
 if __name__ == "__main__":
-
     ## Set initial parameters and labels
     # Estimate initial magnetic field and get value in uG
     B0 = 2 * naima.estimate_B(soft_xray, vhe).to("uG").value

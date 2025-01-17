@@ -80,7 +80,7 @@ def save_diagnostic_plots(
 
     if pdf:
         plt.rc("pdf", fonttype=42)
-        log.info("Saving diagnostic plots in file " "{0}_plots.pdf".format(outname))
+        log.info("Saving diagnostic plots in file {0}_plots.pdf".format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
 
         outpdf = PdfPages("{0}_plots.pdf".format(outname))
@@ -101,7 +101,7 @@ def save_diagnostic_plots(
             plt.close(f)
         except Exception as e:
             log.warning(
-                "plot_chain failed for paramter" " {0} ({1}): {2}".format(label, par, e)
+                "plot_chain failed for paramter {0} ({1}): {2}".format(label, par, e)
             )
 
     # Corner plot
@@ -218,8 +218,9 @@ def save_results_table(
     if not HAS_PYYAML and format == "ascii.ecsv":
         format = "ascii.ipac"
         log.warning(
-            "PyYAML package is required for ECSV format,"
-            " falling back to {0}...".format(format)
+            "PyYAML package is required for ECSV format, falling back to {0}...".format(
+                format
+            )
         )
     elif format not in ["ascii.ecsv", "ascii.ipac"]:
         log.warning(

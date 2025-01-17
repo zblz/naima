@@ -32,7 +32,6 @@ def lnprior(pars):
 
 
 if __name__ == "__main__":
-
     ## Set initial parameters and labels
     p0 = np.array((1e30, 3.0, np.log10(30)))
     labels = ["norm", "index", "log10(cutoff)"]

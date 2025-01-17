@@ -1,10 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from multiprocessing import Pool
+
 import astropy.units as u
 import numpy as np
 from astropy import log
 from emcee import autocorr
 
-from multiprocessing import Pool
 from .extern.validator import validate_array
 from .utils import sed_conversion, validate_data_table
 
@@ -1430,7 +1431,7 @@ def plot_corner(sampler, show_ML=True, **kwargs):
 
         f = corner(sampler.get_chain(flat=True), **corner_opts)
     except ImportError:
-        log.warning("The corner package is not installed;" " corner plot not available")
+        log.warning("The corner package is not installed; corner plot not available")
         f = None
 
     plt.rcParams["lines.linewidth"] = oldlw

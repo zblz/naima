@@ -60,7 +60,7 @@ def validate_data_table(data_table, sed=None):
                 )
     except TypeError:
         raise TypeError(
-            "Argument passed to validate_data_table is not a table and " "not a list"
+            "Argument passed to validate_data_table is not a table and not a list"
         )
 
     def dt_sed_conversion(dt, sed):

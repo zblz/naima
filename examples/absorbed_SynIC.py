@@ -14,7 +14,6 @@ from naima.models import (
 
 
 def ElectronEblAbsorbedSynIC(pars, data):
-
     # Match parameters to ECPL properties, and give them the appropriate units
     amplitude = 10 ** pars[0] / u.eV
     e_break = (10 ** pars[1]) * u.TeV
@@ -45,7 +44,6 @@ def ElectronEblAbsorbedSynIC(pars, data):
 
 
 if __name__ == "__main__":
-
     # Some random values for a "beautiful double peak structure
     p0 = np.array((31.0, 1.0, 0.35, 1.5, 2.3, 0.06))
 
