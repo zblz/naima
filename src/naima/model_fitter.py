@@ -11,9 +11,9 @@ __all__ = ["InteractiveModelFitter"]
 
 
 def _process_model(model):
-    if (
-        isinstance(model, tuple) or isinstance(model, list)
-    ) and not isinstance(model, np.ndarray):
+    if (isinstance(model, tuple) or isinstance(model, list)) and not isinstance(
+        model, np.ndarray
+    ):
         return model[0]
     else:
         return model
@@ -65,7 +65,6 @@ class InteractiveModelFitter:
         sed=True,
         auto_update=True,
     ):
-
         import matplotlib.pyplot as plt
         from matplotlib.widgets import Button, CheckButtons, Slider
 
@@ -130,9 +129,7 @@ class InteractiveModelFitter:
                 self.data["energy"].to(u.eV).value,
             ):
                 # this will be slow, maybe interpolate already computed model?
-                model_for_lnprob = _process_model(
-                    self.modelfn(self.pars, self.data)
-                )
+                model_for_lnprob = _process_model(self.modelfn(self.pars, self.data))
             else:
                 model_for_lnprob = model
             lnprob = lnprobmodel(model_for_lnprob, self.data)
@@ -147,20 +144,18 @@ class InteractiveModelFitter:
                 transform=modelax.transAxes,
                 size=20,
             )
-            self.lnprobtxt.set_text(
-                r"$\ln\mathcal{{L}} = {0:.1f}$".format(lnprob)
-            )
+            self.lnprobtxt.set_text(r"$\ln\mathcal{{L}} = {0:.1f}$".format(lnprob))
 
         self.f_unit, self.sedf = sed_conversion(energy, model.unit, sed)
 
         if self.hasdata:
-            datamin = (
-                self.data["energy"][0] - self.data["energy_error_lo"][0]
-            ).to(e_unit).value / 3
+            datamin = (self.data["energy"][0] - self.data["energy_error_lo"][0]).to(
+                e_unit
+            ).value / 3
             xmin = min(datamin, energy[0].to(e_unit).value)
-            datamax = (
-                self.data["energy"][-1] + self.data["energy_error_hi"][-1]
-            ).to(e_unit).value * 3
+            datamax = (self.data["energy"][-1] + self.data["energy_error_hi"][-1]).to(
+                e_unit
+            ).value * 3
             xmax = max(datamax, energy[-1].to(e_unit).value)
             modelax.set_xlim(xmin, xmax)
         else:
@@ -180,15 +175,11 @@ class InteractiveModelFitter:
             zorder=10,
         )
 
-        modelax.set_xlabel(
-            "Energy [{0}]".format(energy.unit.to_string("latex_inline"))
-        )
+        modelax.set_xlabel("Energy [{0}]".format(energy.unit.to_string("latex_inline")))
 
         paraxes = []
         for n in range(npars):
-            paraxes.append(
-                plt.subplot2grid((2 * npars, 10), (npars + n, 0), colspan=7)
-            )
+            paraxes.append(plt.subplot2grid((2 * npars, 10), (npars + n, 0), colspan=7))
         self.parsliders = []
         slider_props = {"facecolor": color_cycle[-1], "alpha": 0.5}
         for label, parax, valinit in zip(labels, paraxes, p0):
@@ -211,21 +202,13 @@ class InteractiveModelFitter:
                 pmin, pmax = valinit / 100, valinit * 100
 
             slider = Slider(
-                parax,
-                label,
-                pmin,
-                pmax,
-                valinit=valinit,
-                valfmt="%.4g",
-                **slider_props
+                parax, label, pmin, pmax, valinit=valinit, valfmt="%.4g", **slider_props
             )
             slider.on_changed(self.update_if_auto)
             self.parsliders.append(slider)
 
         autoupdateax = plt.subplot2grid((8, 4), (4, 3), colspan=1, rowspan=1)
-        auto_update_check = CheckButtons(
-            autoupdateax, ("Auto update",), (auto_update,)
-        )
+        auto_update_check = CheckButtons(autoupdateax, ("Auto update",), (auto_update,))
         auto_update_check.on_clicked(self.update_autoupdate)
         self.autoupdate = auto_update
 
@@ -269,9 +252,7 @@ class InteractiveModelFitter:
             lnprob = lnprobmodel(model, self.data)
             if isinstance(lnprob, u.Quantity):
                 lnprob = lnprob.decompose().value
-            self.lnprobtxt.set_text(
-                r"$\ln\mathcal{{L}} = {0:.1f}$".format(lnprob)
-            )
+            self.lnprobtxt.set_text(r"$\ln\mathcal{{L}} = {0:.1f}$".format(lnprob))
         self.fig.canvas.draw_idle()
 
     def do_fit(self, event):

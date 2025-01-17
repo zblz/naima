@@ -3,10 +3,10 @@ import astropy.units as u
 import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
-from astropy.utils.data import get_pkg_data_filename
+from pathlib import Path
 from numpy.testing import assert_allclose
 
-from ..utils import (
+from naima.utils import (
     build_data_table,
     estimate_B,
     generate_energy_edges,
@@ -14,31 +14,30 @@ from ..utils import (
 )
 
 # Read data
-fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
+fname = Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"
 data_table = ascii.read(fname)
 
 # Read spectrum with symmetric flux errors
-fname_sym = get_pkg_data_filename("data/CrabNebula_HESS_ipac_symmetric.dat")
+fname_sym = Path(__file__).parent / "data/CrabNebula_HESS_ipac_symmetric.dat"
 data_table_sym = ascii.read(fname_sym)
 
 
 def test_validate_energy_error_types():
     for etype in ["edges", "error", "width", "errors"]:
-        fname = get_pkg_data_filename(
-            "data/CrabNebula_HESS_ipac_energy_{0}.dat".format(etype)
-        )
+        fname = Path(__file__).parent / f"data/CrabNebula_HESS_ipac_energy_{etype}.dat"
+
         dt = ascii.read(fname)
         validate_data_table(dt)
 
 
 def test_sed():
-    fname = get_pkg_data_filename("data/Fake_ipac_sed.dat")
+    fname = Path(__file__).parent / "data/Fake_ipac_sed.dat"
     validate_data_table(ascii.read(fname))
     validate_data_table([ascii.read(fname)])
 
 
 def test_concatenation():
-    fname0 = get_pkg_data_filename("data/Fake_ipac_sed.dat")
+    fname0 = Path(__file__).parent / "data/Fake_ipac_sed.dat"
     dt0 = ascii.read(fname0)
 
     for sed in [True, False]:
@@ -113,14 +112,14 @@ def test_build_data_table():
 
     dene = generate_energy_edges(ene)
 
-    table = build_data_table(
+    build_data_table(
         ene,
         flux,
         flux_error_hi=flux_error_hi,
         flux_error_lo=flux_error_lo,
         ul=ul,
     )
-    table = build_data_table(
+    build_data_table(
         ene,
         flux,
         flux_error_hi=flux_error_hi,
@@ -128,10 +127,8 @@ def test_build_data_table():
         ul=ul,
         cl=0.99,
     )
-    table = build_data_table(
-        ene, flux, flux_error=flux_error_hi, energy_width=dene[0]
-    )
-    table = build_data_table(
+    build_data_table(ene, flux, flux_error=flux_error_hi, energy_width=dene[0])
+    build_data_table(
         ene,
         flux,
         flux_error=flux_error_hi,
@@ -141,7 +138,7 @@ def test_build_data_table():
 
     # no flux_error
     with pytest.raises(TypeError):
-        table = build_data_table(ene, flux)
+        build_data_table(ene, flux)
 
     # errors in energy physical type validation
     with pytest.raises(TypeError):
@@ -154,8 +151,7 @@ def test_build_data_table():
 
 
 def test_estimate_B():
-
-    fname = get_pkg_data_filename("data/CrabNebula_Fake_Xray.dat")
+    fname = Path(__file__).parent / "data/CrabNebula_Fake_Xray.dat"
     xray = ascii.read(fname)
 
     B = estimate_B(xray, data_table)

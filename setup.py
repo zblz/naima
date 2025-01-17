@@ -20,6 +20,7 @@ setup(
         "scipy",
         "h5py",
         "pyyaml",
+        # "numpy<2",
     ],
     python_requires=">=3.7",
 )

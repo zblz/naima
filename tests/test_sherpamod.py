@@ -2,7 +2,7 @@
 import numpy as np
 from astropy.tests.helper import pytest
 
-from ..utils import trapz_loglog
+from naima.utils import trapz_loglog
 
 try:
     from sherpa import ui
@@ -13,9 +13,7 @@ except ImportError:
 
 energies = np.logspace(8, 10, 10)  # 0.1 to 10 TeV in keV
 test_spec_points = (
-    1e-20
-    * (energies / 1e9) ** -0.7
-    * (1 + 0.2 * np.random.randn(energies.size))
+    1e-20 * (energies / 1e9) ** -0.7 * (1 + 0.2 * np.random.randn(energies.size))
 )
 test_err_points = 0.2 * test_spec_points
 
@@ -31,7 +29,7 @@ def test_electron_models():
     test import
     """
 
-    from ..sherpa_models import Bremsstrahlung, InverseCompton, Synchrotron
+    from naima.sherpa_models import Bremsstrahlung, InverseCompton, Synchrotron
 
     for modelclass in [InverseCompton, Synchrotron, Bremsstrahlung]:
         model = modelclass()
@@ -42,13 +40,13 @@ def test_electron_models():
         print(model)
 
         # point calc
-        output = model.calc([p.val for p in model.pars], energies)
+        model.calc([p.val for p in model.pars], energies)
 
         # test as well ECPL
         model.cutoff = 100
 
         # integrated
-        output = model.calc([p.val for p in model.pars], elo, xhi=ehi)
+        model.calc([p.val for p in model.pars], elo, xhi=ehi)
 
         if modelclass is InverseCompton:
             # Perform a fit to fake data
@@ -63,9 +61,7 @@ def test_electron_models():
             model.verbose.set(1)
 
             # test with integrated data
-            ui.load_arrays(
-                1, elo, ehi, test_spec_int, test_err_int, ui.Data1DInt
-            )
+            ui.load_arrays(1, elo, ehi, test_spec_int, test_err_int, ui.Data1DInt)
             ui.set_model(model)
             ui.guess()
             ui.fit()
@@ -77,7 +73,7 @@ def test_proton_model():
     test import
     """
 
-    from ..sherpa_models import PionDecay
+    from naima.sherpa_models import PionDecay
 
     model = PionDecay()
 
@@ -85,10 +81,10 @@ def test_proton_model():
     model.index = 2.1
 
     # point calc
-    output = model.calc([p.val for p in model.pars], energies)
+    model.calc([p.val for p in model.pars], energies)
 
     # integrated
-    output = model.calc([p.val for p in model.pars], elo, xhi=ehi)
+    model.calc([p.val for p in model.pars], elo, xhi=ehi)
 
     # test as well ECPL
     model.cutoff = 1000

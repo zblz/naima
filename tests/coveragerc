@@ -4,7 +4,6 @@ omit =
    *tests*
    *setup_package*
    *version*
-   naima/_astropy_init.py
    naima/conftest.py
    naima/extern/*
 

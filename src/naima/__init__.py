@@ -9,6 +9,8 @@ properties of their parent relativistic particle distributions.
 
 """
 
+from importlib.util import find_spec
+
 # flake8: noqa
 from . import models
 from .analysis import *
@@ -16,15 +18,8 @@ from .core import *
 from .model_fitter import *
 from .plot import *
 from .utils import *
-from .version import get_version
-
-__version__ = get_version()
-del get_version
+from .version import __version__
 
 
-try:
-    import sherpa
-
+if find_spec("sherpa") is not None:
     from . import sherpa_models
-except ImportError:
-    pass

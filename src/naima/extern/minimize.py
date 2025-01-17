@@ -8,29 +8,14 @@
 
 
 import numpy
-from numpy import (
-    Inf,
-    argmin,
-    asarray,
-    asfarray,
-    atleast_1d,
-    eye,
-    isinf,
-    mgrid,
-    shape,
-    sqrt,
-    squeeze,
-    vectorize,
-    zeros,
-)
+from numpy import asarray
 
 # standard status messages of optimizers
 _status_message = {
     "success": "Optimization terminated successfully.",
     "maxfev": "Maximum number of function evaluations has " "been exceeded.",
     "maxiter": "Maximum number of iterations has been " "exceeded.",
-    "pr_loss": "Desired error not necessarily achieved due "
-    "to precision loss.",
+    "pr_loss": "Desired error not necessarily achieved due " "to precision loss.",
 }
 
 
@@ -92,7 +77,7 @@ def _minimize_neldermead(
     retall = return_all
 
     fcalls, func = wrap_function(func, args)
-    x0 = asfarray(x0).flatten()
+    x0 = asarray(x0).flatten()
     N = len(x0)
     rank = len(x0.shape)
     if not -1 < rank < 2:
@@ -139,8 +124,7 @@ def _minimize_neldermead(
 
     while fcalls[0] < maxfun and iterations < maxiter:
         if (
-            numpy.max(numpy.ravel(numpy.abs((sim[1:] - sim[0]) / sim[0])))
-            <= xtol
+            numpy.max(numpy.ravel(numpy.abs((sim[1:] - sim[0]) / sim[0]))) <= xtol
             and numpy.max(numpy.abs((fsim[0] - fsim[1:]) / fsim[0])) <= ftol
         ):
             break

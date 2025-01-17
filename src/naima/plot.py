@@ -1,10 +1,11 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from multiprocessing import Pool
+
 import astropy.units as u
 import numpy as np
 from astropy import log
 from emcee import autocorr
 
-from .extern.interruptible_pool import InterruptiblePool as Pool
 from .extern.validator import validate_array
 from .utils import sed_conversion, validate_data_table
 
@@ -74,32 +75,29 @@ def round2(x, n):
 def _latex_value_error(val, elo, ehi=0, tol=0.25):
     order = int(np.log10(abs(val)))
     if order > 2 or order < -2:
-        val /= 10 ** order
-        elo /= 10 ** order
-        ehi /= 10 ** order
+        val /= 10**order
+        elo /= 10**order
+        ehi /= 10**order
     else:
         order = 0
     nlo = -int(np.floor(np.log10(elo)))
-    if elo * 10 ** nlo < 2:
+    if elo * 10**nlo < 2:
         nlo += 1
     if ehi:
         # elo = round(elo,nlo)
         nhi = -int(np.floor(np.log10(ehi)))
-        if ehi * 10 ** nhi < 2:
+        if ehi * 10**nhi < 2:
             nhi += 1
         # ehi = round(ehi,nhi)
         if np.abs(elo - ehi) / ((elo + ehi) / 2.0) > tol:
             n = max(nlo, nhi)
             string = "{0}^{{+{1}}}_{{-{2}}}".format(
-                *[
-                    round2(x, nn)
-                    for x, nn in zip([val, ehi, elo], [n, nhi, nlo])
-                ]
+                *[round2(x, nn) for x, nn in zip([val, ehi, elo], [n, nhi, nlo])]
             )
         else:
             e = (elo + ehi) / 2.0
             n = -int(np.floor(np.log10(e)))
-            if e * 10 ** n < 2:
+            if e * 10**n < 2:
                 n += 1
             string = "{0} \\pm {1}".format(*[round2(x, n) for x in [val, e]])
     else:
@@ -127,9 +125,7 @@ def _plot_chain_func(sampler, p, last_step=False):
             # convert chain to flatchain
             dist = traces.flatten()
     else:
-        log.warning(
-            "we need the full chain to plot the traces, not a flatchain!"
-        )
+        log.warning("we need the full chain to plot the traces, not a flatchain!")
         return None
 
     nwalkers = traces.shape[0]
@@ -171,7 +167,7 @@ def _plot_chain_func(sampler, p, last_step=False):
         lw=0,
         density=True,
     )
-    kde = stats.kde.gaussian_kde(dist)
+    kde = stats.gaussian_kde(dist)
     ax2.plot(x, kde(x), color="k", label="KDE")
     quant = [16, 50, 84]
     xquant = np.percentile(dist, quant)
@@ -215,20 +211,21 @@ def _plot_chain_func(sampler, p, last_step=False):
     else:
         clen = "whole chain"
 
-    chain_props = "Walkers: {0} \nSteps in chain: {1} \n".format(
-        nwalkers, nsteps
-    )
+    chain_props = "Walkers: {0} \nSteps in chain: {1} \n".format(nwalkers, nsteps)
     if autocorr_message is not None:
         chain_props += "Autocorrelation time: {0}\n".format(autocorr_message)
-    chain_props += "Mean acceptance fraction: {0:.3f}\n".format(
-        np.mean(sampler.acceptance_fraction)
-    ) + "Distribution properties for the {clen}:\n \
+    chain_props += (
+        "Mean acceptance fraction: {0:.3f}\n".format(
+            np.mean(sampler.acceptance_fraction)
+        )
+        + "Distribution properties for the {clen}:\n \
     $-$ median: ${median}$, std: ${std}$ \n \
     $-$ median with uncertainties based on \n \
       the 16th and 84th percentiles ($\\sim$1$\\sigma$):\n".format(
-        median=_latex_float(quantiles[50]),
-        std=_latex_float(np.std(dist)),
-        clen=clen,
+            median=_latex_float(quantiles[50]),
+            std=_latex_float(np.std(dist)),
+            clen=clen,
+        )
     )
 
     info_line = (
@@ -248,7 +245,7 @@ def _plot_chain_func(sampler, p, last_step=False):
         nlabel = label.split("(")[-1].split(")")[0]
         ltype = label.split("(")[0]
         if ltype == "log10":
-            new_dist = 10 ** dist
+            new_dist = 10**dist
         elif ltype == "log":
             new_dist = np.exp(dist)
 
@@ -362,9 +359,7 @@ def _read_or_calc_samples(
         modelx, model = _process_blob(sampler, modelidx, last_step=last_step)
     else:
         # prepare bogus data for calculation
-        e_range = validate_array(
-            "e_range", u.Quantity(e_range), physical_type="energy"
-        )
+        e_range = validate_array("e_range", u.Quantity(e_range), physical_type="energy")
         e_unit = e_range.unit
         energy = (
             np.logspace(
@@ -379,19 +374,13 @@ def _read_or_calc_samples(
             "flux": np.zeros(energy.shape) * sampler.data["flux"].unit,
         }
         # init pool and select parameters
-        chain = (
-            sampler.get_chain()[-1]
-            if last_step
-            else sampler.get_chain(flat=True)
-        )
+        chain = sampler.get_chain()[-1] if last_step else sampler.get_chain(flat=True)
         pars = chain[np.random.randint(len(chain), size=n_samples)]
         args = ((p, data) for p in pars)
         blobs = []
 
-        pool = Pool(threads)
-        modelouts = pool.starmap(sampler.modelfn, args)
-        pool.close()
-        pool.terminate()
+        with Pool(threads) as pool:
+            modelouts = pool.starmap(sampler.modelfn, args)
 
         for modelout in modelouts:
             if isinstance(modelout, np.ndarray):
@@ -399,9 +388,7 @@ def _read_or_calc_samples(
             else:
                 blobs.append(modelout)
 
-        modelx, model = _process_blob(
-            blobs, modelidx=modelidx, energy=data["energy"]
-        )
+        modelx, model = _process_blob(blobs, modelidx=modelidx, energy=data["energy"])
 
     return modelx, model
 
@@ -413,9 +400,7 @@ def _calc_ML(sampler, modelidx=0, e_range=None, e_npoints=100):
 
     if e_range is not None:
         # prepare bogus data for calculation
-        e_range = validate_array(
-            "e_range", u.Quantity(e_range), physical_type="energy"
-        )
+        e_range = validate_array("e_range", u.Quantity(e_range), physical_type="energy")
         e_unit = e_range.unit
         energy = (
             np.logspace(
@@ -603,9 +588,7 @@ def plot_CI(
     _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed)
 
     if label is not None:
-        ax.set_ylabel(
-            "{0} [{1}]".format(label, f_unit.to_string("latex_inline"))
-        )
+        ax.set_ylabel("{0} [{1}]".format(label, f_unit.to_string("latex_inline")))
 
 
 def plot_samples(
@@ -678,9 +661,7 @@ def plot_samples(
     _plot_MLmodel(ax, sampler, modelidx, e_range, e_npoints, e_unit, sed)
 
     if label is not None:
-        ax.set_ylabel(
-            "{0} [{1}]".format(label, f_unit.to_string("latex_inline"))
-        )
+        ax.set_ylabel("{0} [{1}]".format(label, f_unit.to_string("latex_inline")))
 
 
 def find_ML(sampler, modelidx):
@@ -721,9 +702,7 @@ def find_ML(sampler, modelidx):
     return ML, MLp, MLerr, (modelx, model_ML)
 
 
-def plot_blob(
-    sampler, blobidx=0, label=None, last_step=False, figure=None, **kwargs
-):
+def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kwargs):
     """
     Plot a metadata blob as a fit to spectral data or value distribution
 
@@ -759,7 +738,7 @@ def plot_blob(
             last_step=last_step,
             label=label,
             figure=figure,
-            **kwargs
+            **kwargs,
         )
 
     return f
@@ -959,18 +938,10 @@ def plot_fit(
             for tl in ax1.get_xticklabels():
                 tl.set_visible(False)
         xmin = 10 ** np.floor(
-            np.log10(
-                np.min(data["energy"] - data["energy_error_lo"])
-                .to(e_unit)
-                .value
-            )
+            np.log10(np.min(data["energy"] - data["energy_error_lo"]).to(e_unit).value)
         )
         xmax = 10 ** np.ceil(
-            np.log10(
-                np.max(data["energy"] + data["energy_error_hi"])
-                .to(e_unit)
-                .value
-            )
+            np.log10(np.max(data["energy"] + data["energy_error_hi"]).to(e_unit).value)
         )
         ax1.set_xlim(xmin, xmax)
     else:
@@ -982,7 +953,7 @@ def plot_fit(
             ndecades = 20
         # restrict y axis to ndecades to avoid autoscaling deep exponentials
         xmin, xmax, ymin, ymax = ax1.axis()
-        ymin = max(ymin, ymax / 10 ** ndecades)
+        ymin = max(ymin, ymax / 10**ndecades)
         ax1.set_ylim(bottom=ymin)
         # scale x axis to largest model_ML x point within ndecades decades of
         # maximum
@@ -1013,9 +984,7 @@ def plot_fit(
         ax1.set_title(label)
 
     if xlabel is None:
-        xlaxis.set_xlabel(
-            "Energy [{0}]".format(e_unit.to_string("latex_inline"))
-        )
+        xlaxis.set_xlabel("Energy [{0}]".format(e_unit.to_string("latex_inline")))
     else:
         xlaxis.set_xlabel(xlabel)
 
@@ -1024,47 +993,25 @@ def plot_fit(
     return f
 
 
-def _plot_ulims(
-    ax, x, y, xerr, color, capsize=5, height_fraction=0.25, elinewidth=2
-):
+def _plot_ulims(ax, x, y, xerr, color, capsize=5, height_fraction=0.25, elinewidth=2):
     """
     Plot upper limits as arrows with cap at value of upper limit.
 
     uplim behaviour has been fixed in matplotlib 1.4
     """
+    ax.errorbar(x, y, xerr=xerr, ls="", color=color, elinewidth=elinewidth, capsize=0)
+
     ax.errorbar(
-        x, y, xerr=xerr, ls="", color=color, elinewidth=elinewidth, capsize=0
+        x,
+        y,
+        yerr=height_fraction * y,
+        ls="",
+        uplims=True,
+        color=color,
+        elinewidth=elinewidth,
+        capsize=capsize,
+        zorder=10,
     )
-
-    from distutils.version import LooseVersion
-
-    import matplotlib
-
-    mpl_version = LooseVersion(matplotlib.__version__)
-    if mpl_version >= LooseVersion("1.4.0"):
-        ax.errorbar(
-            x,
-            y,
-            yerr=height_fraction * y,
-            ls="",
-            uplims=True,
-            color=color,
-            elinewidth=elinewidth,
-            capsize=capsize,
-            zorder=10,
-        )
-    else:
-        ax.errorbar(
-            x,
-            (1 - height_fraction) * y,
-            yerr=height_fraction * y,
-            ls="",
-            lolims=True,
-            color=color,
-            elinewidth=elinewidth,
-            capsize=capsize,
-            zorder=10,
-        )
 
 
 def _plot_data_to_ax(
@@ -1084,9 +1031,7 @@ def _plot_data_to_ax(
     if e_unit is None:
         e_unit = data_all["energy"].unit
 
-    f_unit, sedf = sed_conversion(
-        data_all["energy"], data_all["flux"].unit, sed
-    )
+    f_unit, sedf = sed_conversion(data_all["energy"], data_all["flux"].unit, sed)
 
     if "group" not in data_all.keys():
         data_all["group"] = np.zeros(len(data_all))
@@ -1130,7 +1075,7 @@ def _plot_data_to_ax(
             (data["flux"][notul] * sedfg[notul]).to(f_unit).value,
             yerr=(yerr * sedfg[notul]).to(f_unit).value,
             xerr=xerr[:, notul].to(e_unit).value,
-            **opts
+            **opts,
         )
 
         if np.any(ul):
@@ -1143,20 +1088,16 @@ def _plot_data_to_ax(
                 (data["flux"][ul] * sedfg[ul]).to(f_unit).value,
                 (xerr[:, ul]).to(e_unit).value,
                 color,
-                **ulim_opts
+                **ulim_opts,
             )
 
     ax1.set_xscale("log")
     ax1.set_yscale("log")
     xmin = 10 ** np.floor(
-        np.log10(
-            np.min(data["energy"] - data["energy_error_lo"]).to(e_unit).value
-        )
+        np.log10(np.min(data["energy"] - data["energy_error_lo"]).to(e_unit).value)
     )
     xmax = 10 ** np.ceil(
-        np.log10(
-            np.max(data["energy"] + data["energy_error_hi"]).to(e_unit).value
-        )
+        np.log10(np.max(data["energy"] + data["energy_error_hi"]).to(e_unit).value)
     )
     ax1.set_xlim(xmin, xmax)
     # avoid autoscaling to errorbars to 0
@@ -1165,22 +1106,22 @@ def _plot_data_to_ax(
         elo = (data_all["flux"][notul] * sedf[notul]).to(f_unit).value - (
             data_all["flux_error_lo"][notul] * sedf[notul]
         ).to(f_unit).value
-        gooderr = np.where(
-            data_all["flux_error_lo"][notul] < data_all["flux"][notul]
-        )
+        gooderr = np.where(data_all["flux_error_lo"][notul] < data_all["flux"][notul])
         ymin = 10 ** np.floor(np.log10(np.min(elo[gooderr])))
         ax1.set_ylim(bottom=ymin)
 
     if ylabel is None:
         if sed:
             ax1.set_ylabel(
-                r"$E^2\mathrm{{d}}N/\mathrm{{d}}E$"
-                " [{0}]".format(u.Unit(f_unit).to_string("latex_inline"))
+                r"$E^2\mathrm{{d}}N/\mathrm{{d}}E$" " [{0}]".format(
+                    u.Unit(f_unit).to_string("latex_inline")
+                )
             )
         else:
             ax1.set_ylabel(
-                r"$\mathrm{{d}}N/\mathrm{{d}}E$"
-                " [{0}]".format(u.Unit(f_unit).to_string("latex_inline"))
+                r"$\mathrm{{d}}N/\mathrm{{d}}E$" " [{0}]".format(
+                    u.Unit(f_unit).to_string("latex_inline")
+                )
             )
     else:
         ax1.set_ylabel(ylabel)
@@ -1250,7 +1191,7 @@ def _plot_residuals_to_ax(
             (difference / dflux).decompose().value,
             yerr=(dflux / dflux).decompose().value,
             xerr=xerr[:, notul].to(e_unit).value,
-            **opts
+            **opts,
         )
 
     from matplotlib.ticker import MaxNLocator
@@ -1351,8 +1292,7 @@ def plot_data(
         ax1.set_xlabel(xlabel)
     elif xlabel is None and ax1.get_xlabel() == "":
         ax1.set_xlabel(
-            r"$\mathrm{Energy}$"
-            + " [{0}]".format(e_unit.to_string("latex_inline"))
+            r"$\mathrm{Energy}$" + " [{0}]".format(e_unit.to_string("latex_inline"))
         )
 
     ax1.autoscale()
@@ -1420,7 +1360,7 @@ def plot_distribution(samples, label, figure=None):
         density=True,
     )
 
-    kde = stats.kde.gaussian_kde(samples_nounit)
+    kde = stats.gaussian_kde(samples_nounit)
     ax.plot(x, kde(x), color="k", label="KDE")
 
     ax.axvline(
@@ -1491,9 +1431,7 @@ def plot_corner(sampler, show_ML=True, **kwargs):
 
         f = corner(sampler.get_chain(flat=True), **corner_opts)
     except ImportError:
-        log.warning(
-            "The corner package is not installed;" " corner plot not available"
-        )
+        log.warning("The corner package is not installed; corner plot not available")
         f = None
 
     plt.rcParams["lines.linewidth"] = oldlw

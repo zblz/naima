@@ -28,14 +28,14 @@ SYN = Synchrotron(ECBPL, B=125 * u.uG, Eemax=50 * u.PeV, Eemin=0.1 * u.GeV)
 Rpwn = 2.1 * u.pc
 Esy = np.logspace(-7, 9, 100) * u.eV
 Lsy = SYN.flux(Esy, distance=0 * u.cm)  # use distance 0 to get luminosity
-phn_sy = Lsy / (4 * np.pi * Rpwn ** 2 * c) * 2.24
+phn_sy = Lsy / (4 * np.pi * Rpwn**2 * c) * 2.24
 
 IC = InverseCompton(
     ECBPL,
     seed_photon_fields=[
         "CMB",
-        ["FIR", 70 * u.K, 0.5 * u.eV / u.cm ** 3],
-        ["NIR", 5000 * u.K, 1 * u.eV / u.cm ** 3],
+        ["FIR", 70 * u.K, 0.5 * u.eV / u.cm**3],
+        ["NIR", 5000 * u.K, 1 * u.eV / u.cm**3],
         ["SSC", Esy, phn_sy],
     ],
     Eemax=50 * u.PeV,
@@ -56,9 +56,7 @@ ax.loglog(
     c="k",
     label="Total",
 )
-for i, seed, ls in zip(
-    range(4), ["CMB", "FIR", "NIR", "SSC"], ["--", "-.", ":", "-"]
-):
+for i, seed, ls in zip(range(4), ["CMB", "FIR", "NIR", "SSC"], ["--", "-.", ":", "-"]):
     ax.loglog(
         energy,
         IC.sed(energy, 2 * u.kpc, seed=seed),

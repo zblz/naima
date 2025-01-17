@@ -13,7 +13,6 @@ from naima.models import ExponentialCutoffPowerLaw, InverseCompton
 
 
 def ElectronIC(pars, data):
-
     # Match parameters to ECPL properties, and give them the appropriate units
     amplitude = pars[0] / u.eV
     alpha = pars[1]
@@ -25,7 +24,7 @@ def ElectronIC(pars, data):
         ECPL,
         seed_photon_fields=[
             "CMB",
-            ["FIR", 26.5 * u.K, 0.415 * u.eV / u.cm ** 3],
+            ["FIR", 26.5 * u.K, 0.415 * u.eV / u.cm**3],
         ],
     )
 
@@ -63,7 +62,6 @@ def lnprior(pars):
 
 
 if __name__ == "__main__":
-
     # Set initial parameters and labels
 
     p0 = np.array((1e30, 3.0, np.log10(30)))
@@ -131,9 +129,7 @@ if __name__ == "__main__":
     f.subplots_adjust(hspace=0)
     f.savefig("RXJ1713_IC_model_samples.png", dpi=alabaster_dpi)
     print("Plotting samples with e_range...")
-    f = naima.plot_fit(
-        sampler, 0, e_range=e_range, ML_info=False, n_samples=500
-    )
+    f = naima.plot_fit(sampler, 0, e_range=e_range, ML_info=False, n_samples=500)
     f.axes[0].set_ylim(1e-13, 2e-10)
     f.axes[0].set_xlim(left=1e-1)
     f.tight_layout()
@@ -142,18 +138,14 @@ if __name__ == "__main__":
 
     # with confs
     print("Plotting confs...")
-    f = naima.plot_fit(
-        sampler, 0, ML_info=False, confs=[3, 1], last_step=False
-    )
+    f = naima.plot_fit(sampler, 0, ML_info=False, confs=[3, 1], last_step=False)
     f.axes[0].set_ylim(1e-13, 2e-10)
     f.axes[0].set_xlim(left=1e-1)
     f.tight_layout()
     f.subplots_adjust(hspace=0)
     f.savefig("RXJ1713_IC_model_confs.png", dpi=alabaster_dpi)
     print("Plotting confs with e_range...")
-    f = naima.plot_fit(
-        sampler, 0, e_range=e_range, ML_info=False, confs=[3, 1]
-    )
+    f = naima.plot_fit(sampler, 0, e_range=e_range, ML_info=False, confs=[3, 1])
     f.axes[0].set_ylim(1e-13, 2e-10)
     f.axes[0].set_xlim(left=1e-1)
     f.tight_layout()

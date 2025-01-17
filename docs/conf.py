@@ -35,8 +35,7 @@ try:
     from sphinx_astropy.conf.v1 import *  # noqa
 except ImportError:
     print(
-        "ERROR: the documentation requires the sphinx-astropy package "
-        "to be installed"
+        "ERROR: the documentation requires the sphinx-astropy package to be installed"
     )
     sys.exit(1)
 
@@ -76,9 +75,7 @@ rst_epilog += """
 # This does not *have* to match the package name, but typically does
 project = setup_cfg["name"]
 author = setup_cfg["author"]
-copyright = "{0}, {1}".format(
-    datetime.datetime.now().year, setup_cfg["author"]
-)
+copyright = "{0}, {1}".format(datetime.datetime.now().year, setup_cfg["author"])
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -154,7 +151,7 @@ htmlhelp_basename = project + "doc"
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-    ("index", project + ".tex", project + u" Documentation", author, "manual")
+    ("index", project + ".tex", project + " Documentation", author, "manual")
 ]
 
 
@@ -162,9 +159,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ("index", project.lower(), project + u" Documentation", [author], 1)
-]
+man_pages = [("index", project.lower(), project + " Documentation", [author], 1)]
 
 
 ## -- Options for the edit_on_github extension ----------------------------------------

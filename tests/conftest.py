@@ -1,15 +1,17 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from pathlib import Path
+
 import astropy.units as u
 import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
-from astropy.utils.data import get_pkg_data_filename
 
-from ..core import run_sampler, uniform_prior
+from naima.core import run_sampler, uniform_prior
 
 # Read data
-fname = get_pkg_data_filename("data/CrabNebula_HESS_ipac.dat")
-data_table = ascii.read(fname)
+fname = Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"
+data_table = ascii.read(str(fname))
+
 
 # Model definition
 def cutoffexp(pars, input_data):
@@ -37,43 +39,35 @@ def cutoffexp(pars, input_data):
     beta = 1.0
 
     flux = (
-        N
-        * (x / x0) ** -gamma
-        * np.exp(-((x / ecut) ** beta))
-        * u.Unit("1/(cm2 s TeV)")
+        N * (x / x0) ** -gamma * np.exp(-((x / ecut) ** beta)) * u.Unit("1/(cm2 s TeV)")
     )
 
     # save a model with different energies than the data
-    ene = (
-        np.logspace(np.log10(x[0].value) - 1, np.log10(x[-1].value) + 1, 100)
-        * x.unit
+    ene = np.logspace(np.log10(x[0].value) - 1, np.log10(x[-1].value) + 1, 100) * x.unit
+    model = (N * (ene / x0) ** -gamma * np.exp(-((ene / ecut) ** beta))) * u.Unit(
+        "1/(cm2 s TeV)"
     )
-    model = (
-        N * (ene / x0) ** -gamma * np.exp(-((ene / ecut) ** beta))
-    ) * u.Unit("1/(cm2 s TeV)")
 
     # save a particle energy distribution
-    model_part = (
-        N * (ene / x0) ** -gamma * np.exp(-((ene / ecut) ** beta))
-    ) * u.Unit("1/(TeV)")
+    model_part = (N * (ene / x0) ** -gamma * np.exp(-((ene / ecut) ** beta))) * u.Unit(
+        "1/(TeV)"
+    )
 
     # save a broken powerlaw in luminosity units
     _model1 = (
         N
-        * np.where(
-            x <= x0, (x / x0) ** -(gamma - 0.5), (x / x0) ** -(gamma + 0.5)
-        )
+        * np.where(x <= x0, (x / x0) ** -(gamma - 0.5), (x / x0) ** -(gamma + 0.5))
         * u.Unit("1/(cm2 s TeV)")
     )
 
-    model1 = (_model1 * (x ** 2) * 4 * np.pi * (2 * u.kpc) ** 2).to("erg/s")
+    model1 = (_model1 * (x**2) * 4 * np.pi * (2 * u.kpc) ** 2).to("erg/s")
 
     # save a model with no units to check that it is dealt with gracefully
     model2 = 1e-10 * np.ones(len(x))
     # save a model with wrong length to check that it is dealt with gracefully
     model3 = 1e-10 * np.ones(len(x) * 2) * u.Unit("erg/s")
     # add a scalar value to test plot_distribution
-    model4 = np.trapz(model, ene).to("1/(cm2 s)")
+    model4 = np.trapezoid(model, ene).to("1/(cm2 s)")
     # and without units
     model5 = model4.value
 

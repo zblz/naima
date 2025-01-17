@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import importlib
 import numpy as np
 from astropy import units as u
 from astropy.constants import c, hbar, m_e, sigma_sb
@@ -6,8 +7,9 @@ from astropy.modeling.physical_models import BlackBody
 from astropy.table import QTable, Table
 from astropy.tests.helper import pytest
 from numpy.testing import assert_allclose
+from importlib.util import find_spec
 
-from ..models import (
+from naima.models import (
     Bremsstrahlung,
     BrokenPowerLaw,
     EblAbsorptionModel,
@@ -20,15 +22,10 @@ from ..models import (
     Synchrotron,
     TableModel,
 )
-from ..radiative import PionDecayKelner06
-from ..utils import trapz_loglog
+from naima.radiative import PionDecayKelner06
+from naima.utils import trapz_loglog
 
-try:
-    import scipy
-
-    HAS_SCIPY = True
-except ImportError:
-    HAS_SCIPY = False
+HAS_SCIPY = find_spec("scipy") is not None
 
 e_0 = 20 * u.TeV
 e_cutoff = 10 * u.TeV
@@ -49,7 +46,7 @@ data2 = Table()
 data2["energy"] = energy
 
 
-pdist_unit = 1 / u.Unit(m_e * c ** 2)
+pdist_unit = 1 / u.Unit(m_e * c**2)
 
 
 @pytest.fixture
@@ -191,10 +188,8 @@ def test_bremsstrahlung_lum(particle_dists):
     # avoid low-energy (E<2MeV) where there are problems with cross-section
     energy2 = np.logspace(8, 14, 100) * u.eV
 
-    brems = Bremsstrahlung(ECPL, n0=1 * u.cm ** -3, Eemin=m_e * c ** 2)
-    lbrems = trapz_loglog(brems.flux(energy2, 0) * energy2, energy2).to(
-        "erg/s"
-    )
+    brems = Bremsstrahlung(ECPL, n0=1 * u.cm**-3, Eemin=m_e * c**2)
+    lbrems = trapz_loglog(brems.flux(energy2, 0) * energy2, energy2).to("erg/s")
 
     lum_ref = 2.3064095039069847e-05
     assert_allclose(lbrems.value, lum_ref)
@@ -247,10 +242,8 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
     for angle in angles:
         ic = InverseCompton(
             PL,
-            seed_photon_fields=[
-                ["Star", 20000 * u.K, 0.1 * u.erg / u.cm ** 3, angle]
-            ],
-            **electron_properties
+            seed_photon_fields=[["Star", 20000 * u.K, 0.1 * u.erg / u.cm**3, angle]],
+            **electron_properties,
         )
         lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s")
         assert lic.unit == u.erg / u.s
@@ -271,35 +264,27 @@ def test_monochromatic_inverse_compton(particle_dists):
     Ephbb = np.logspace(-3.5, -1.5, 100) * u.eV
     lambdabb = Ephbb.to("AA", equivalencies=u.equivalencies.spectral())
     T = 30 * u.K
-    w = 1 * u.eV / u.cm ** 3
+    w = 1 * u.eV / u.cm**3
 
-    bb = (BlackBody(T)(lambdabb) * 2 * u.sr / c.cgs / Ephbb / hbar).to(
-        "1/(cm3 eV)"
-    )
-    Ebbmax = Ephbb[np.argmax(Ephbb ** 2 * bb)]
+    bb = (BlackBody(T)(lambdabb) * 2 * u.sr / c.cgs / Ephbb / hbar).to("1/(cm3 eV)")
+    Ebbmax = Ephbb[np.argmax(Ephbb**2 * bb)]
 
     ar = (4 * sigma_sb / c).to("erg/(cm3 K4)")
-    bb *= (w / (ar * T ** 4)).decompose()
+    bb *= (w / (ar * T**4)).decompose()
 
     eopts = {"Eemax": 10000 * u.GeV, "Eemin": 10 * u.GeV, "nEed": 1000}
     IC_khang = InverseCompton(PL, seed_photon_fields=[["bb", T, w]], **eopts)
-    IC_mono = InverseCompton(
-        PL, seed_photon_fields=[["mono", Ebbmax, w]], **eopts
-    )
-    IC_bb = InverseCompton(
-        PL, seed_photon_fields=[["bb2", Ephbb, bb]], **eopts
-    )
+    IC_mono = InverseCompton(PL, seed_photon_fields=[["mono", Ebbmax, w]], **eopts)
+    IC_bb = InverseCompton(PL, seed_photon_fields=[["bb2", Ephbb, bb]], **eopts)
     IC_bb_ene = InverseCompton(
-        PL, seed_photon_fields=[["bb2", Ephbb, Ephbb ** 2 * bb]], **eopts
+        PL, seed_photon_fields=[["bb2", Ephbb, Ephbb**2 * bb]], **eopts
     )
 
     Eph = np.logspace(-1, 1, 3) * u.GeV
 
     assert_allclose(IC_khang.sed(Eph).value, IC_mono.sed(Eph).value, rtol=1e-2)
     assert_allclose(IC_khang.sed(Eph).value, IC_bb.sed(Eph).value, rtol=1e-2)
-    assert_allclose(
-        IC_khang.sed(Eph).value, IC_bb_ene.sed(Eph).value, rtol=1e-2
-    )
+    assert_allclose(IC_khang.sed(Eph).value, IC_bb_ene.sed(Eph).value, rtol=1e-2)
 
 
 @pytest.mark.skipif("not HAS_SCIPY")
@@ -317,32 +302,24 @@ def test_flux_sed(particle_dists):
         ECPL, seed_photon_fields=["CMB", "FIR", "NIR"], **electron_properties
     )
 
-    luminosity = (
-        trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s").value
-    )
+    luminosity = trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s").value
 
     int_flux1 = (
-        trapz_loglog(ic.flux(energy, d1) * energy, energy)
-        .to("erg/(s cm2)")
-        .value
+        trapz_loglog(ic.flux(energy, d1) * energy, energy).to("erg/(s cm2)").value
     )
     int_flux2 = (
-        trapz_loglog(ic.flux(energy, d2) * energy, energy)
-        .to("erg/(s cm2)")
-        .value
+        trapz_loglog(ic.flux(energy, d2) * energy, energy).to("erg/(s cm2)").value
     )
 
     # check distance scaling
     assert_allclose(int_flux1 / int_flux2, (d2 / d1).value ** 2.0)
 
     # check values
-    assert_allclose(
-        int_flux1, luminosity / (4 * np.pi * (d1.to("cm").value) ** 2)
-    )
+    assert_allclose(int_flux1, luminosity / (4 * np.pi * (d1.to("cm").value) ** 2))
 
     # check SED
     sed1 = ic.sed(energy, d1).to("erg/(s cm2)").value
-    sed0 = (ic.flux(energy, 0) * energy ** 2).to("erg/s").value
+    sed0 = (ic.flux(energy, 0) * energy**2).to("erg/s").value
 
     assert_allclose(sed1, sed0 / (4 * np.pi * (d1.to("cm").value) ** 2))
 
@@ -355,27 +332,27 @@ def test_ic_seed_input(particle_dists):
 
     ECPL, PL, BPL = particle_dists
 
-    ic = InverseCompton(PL, seed_photon_fields="CMB")
+    InverseCompton(PL, seed_photon_fields="CMB")
 
-    ic = InverseCompton(PL, seed_photon_fields=["CMB", "FIR", "NIR"])
+    InverseCompton(PL, seed_photon_fields=["CMB", "FIR", "NIR"])
 
     Eph = (1, 10) * u.eV
     phn = (3, 1) * u.Unit("1/(eV cm3)")
     test_seeds = [
         ["test", 5000 * u.K, 0],
         ["array", Eph, phn],
-        ["array-energy", Eph, Eph ** 2 * phn],
+        ["array-energy", Eph, Eph**2 * phn],
         ["mono", Eph[0], phn[0] * Eph[0] ** 2],
         ["mono-array", Eph[:1], phn[:1] * Eph[:1] ** 2],
         # from docs:
-        ["NIR", 50 * u.K, 1.5 * u.eV / u.cm ** 3],
-        ["star", 25000 * u.K, 3 * u.erg / u.cm ** 3, 120 * u.deg],
-        ["X-ray", [1, 10] * u.keV, [1, 1e-2] * 1 / (u.eV * u.cm ** 3)],
-        ["UV", 50 * u.eV, 15 * u.eV / u.cm ** 3],
+        ["NIR", 50 * u.K, 1.5 * u.eV / u.cm**3],
+        ["star", 25000 * u.K, 3 * u.erg / u.cm**3, 120 * u.deg],
+        ["X-ray", [1, 10] * u.keV, [1, 1e-2] * 1 / (u.eV * u.cm**3)],
+        ["UV", 50 * u.eV, 15 * u.eV / u.cm**3],
     ]
 
     for seed in test_seeds:
-        ic = InverseCompton(PL, seed_photon_fields=["CMB", seed])
+        InverseCompton(PL, seed_photon_fields=["CMB", seed])
 
 
 @pytest.mark.skipif("not HAS_SCIPY")
@@ -391,8 +368,8 @@ def test_ic_seed_fluxes(particle_dists):
         seed_photon_fields=[
             "CMB",
             ["test", 5000 * u.K, 0],
-            ["test2", 5000 * u.K, 10 * u.eV / u.cm ** 3],
-            ["test3", 5000 * u.K, 10 * u.eV / u.cm ** 3, 90 * u.deg],
+            ["test2", 5000 * u.K, 10 * u.eV / u.cm**3],
+            ["test3", 5000 * u.K, 10 * u.eV / u.cm**3, 90 * u.deg],
         ],
     )
 
@@ -455,7 +432,7 @@ def test_pion_decay_no_nuc_enh(particle_dists):
     """
     test PionDecayKelner06
     """
-    from ..radiative import PionDecay
+    from naima.radiative import PionDecay
 
     ECPL, PL, BPL = particle_dists
 
@@ -465,10 +442,8 @@ def test_pion_decay_no_nuc_enh(particle_dists):
     lum_ref = [5.693100769654807e-13]
 
     energy = np.logspace(9, 13, 20) * u.eV
-    pp = PionDecay(
-        ECPL, nuclear_enhancement=False, useLUT=False, **proton_properties
-    )
-    Wp = pp.Wp.to("erg").value
+    pp = PionDecay(ECPL, nuclear_enhancement=False, useLUT=False, **proton_properties)
+    pp.Wp.to("erg").value
     lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to("erg/s")
     assert lpp.unit == u.erg / u.s
 
@@ -508,9 +483,7 @@ def test_inputs():
     LP(10 * u.TeV)
     LP(10 * u.TeV)
 
-    ECBPL = ExponentialCutoffBrokenPowerLaw(
-        1.0, e_0, e_break, 1.5, 2.5, e_cutoff, 2.0
-    )
+    ECBPL = ExponentialCutoffBrokenPowerLaw(1.0, e_0, e_break, 1.5, 2.5, e_cutoff, 2.0)
     ECBPL._memoize = True
     ECBPL(np.logspace(1, 10, 10) * u.TeV)
 
@@ -520,7 +493,6 @@ def test_inputs():
 
 
 def test_tablemodel():
-
     lemin, lemax = -4, 2
     # test an exponential cutoff PL with index 2, cutoff at 10 TeV
     e = np.logspace(lemin, lemax, 50) * u.TeV
@@ -542,7 +514,7 @@ def test_tablemodel():
     assert_allclose(tm(e3).value, 0.0)
 
     # use tablemodel as pdist
-    from ..radiative import InverseCompton, PionDecay, Synchrotron
+    from naima.radiative import InverseCompton, PionDecay, Synchrotron
 
     SY = Synchrotron(tm)
     _ = SY.flux(e / 10)

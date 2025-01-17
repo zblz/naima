@@ -80,18 +80,14 @@ def save_diagnostic_plots(
 
     if pdf:
         plt.rc("pdf", fonttype=42)
-        log.info(
-            "Saving diagnostic plots in file " "{0}_plots.pdf".format(outname)
-        )
+        log.info("Saving diagnostic plots in file {0}_plots.pdf".format(outname))
         from matplotlib.backends.backend_pdf import PdfPages
 
         outpdf = PdfPages("{0}_plots.pdf".format(outname))
 
     # Chains
 
-    for par, label in zip(
-        range(sampler.get_chain().shape[-1]), sampler.labels
-    ):
+    for par, label in zip(range(sampler.get_chain().shape[-1]), sampler.labels):
         try:
             log.info("Plotting chain of parameter {0}...".format(label))
             f = plot_chain(sampler, par, last_step=last_step)
@@ -105,8 +101,7 @@ def save_diagnostic_plots(
             plt.close(f)
         except Exception as e:
             log.warning(
-                "plot_chain failed for paramter"
-                " {0} ({1}): {2}".format(label, par, e)
+                "plot_chain failed for paramter {0} ({1}): {2}".format(label, par, e)
             )
 
     # Corner plot
@@ -138,12 +133,9 @@ def save_diagnostic_plots(
     elif len(blob_labels) < len(modelidxs):
         # Add labels
         n = len(blob_labels)
-        blob_labels += [
-            "Model output {0}".format(idx) for idx in modelidxs[n:]
-        ]
+        blob_labels += ["Model output {0}".format(idx) for idx in modelidxs[n:]]
 
     for modelidx, plot_sed, label in zip(modelidxs, sed, blob_labels):
-
         try:
             log.info("Plotting {0}...".format(label))
             f = plot_blob(
@@ -157,9 +149,7 @@ def save_diagnostic_plots(
             if pdf:
                 f.savefig(outpdf, format="pdf", dpi=dpi)
             else:
-                f.savefig(
-                    "{0}_model{1}.png".format(outname, modelidx), dpi=dpi
-                )
+                f.savefig("{0}_model{1}.png".format(outname, modelidx), dpi=dpi)
             f.clf()
             plt.close(f)
         except Exception as e:
@@ -228,8 +218,9 @@ def save_results_table(
     if not HAS_PYYAML and format == "ascii.ecsv":
         format = "ascii.ipac"
         log.warning(
-            "PyYAML package is required for ECSV format,"
-            " falling back to {0}...".format(format)
+            "PyYAML package is required for ECSV format, falling back to {0}...".format(
+                format
+            )
         )
     elif format not in ["ascii.ecsv", "ascii.ipac"]:
         log.warning(
@@ -242,11 +233,7 @@ def save_results_table(
     if format == "ascii.ecsv":
         file_extension = "ecsv"
 
-    log.info(
-        "Saving results table in {0}_results.{1}".format(
-            outname, file_extension
-        )
-    )
+    log.info("Saving results table in {0}_results.{1}".format(outname, file_extension))
 
     labels = sampler.labels
 
@@ -265,15 +252,11 @@ def save_results_table(
     t["median"].description = "Median of the posterior distribution function"
     t["unc_lo"].description = (
         "Difference between the median and the"
-        " {0}th percentile of the pdf, ~1sigma lower uncertainty".format(
-            quant[0]
-        )
+        " {0}th percentile of the pdf, ~1sigma lower uncertainty".format(quant[0])
     )
     t["unc_hi"].description = (
         "Difference between the {0}th percentile"
-        " and the median of the pdf, ~1sigma upper uncertainty".format(
-            quant[2]
-        )
+        " and the median of the pdf, ~1sigma upper uncertainty".format(quant[2])
     )
 
     metadata = {}
@@ -305,7 +288,7 @@ def save_results_table(
             nlabel = label.split("(")[-1].split(")")[0]
             ltype = label.split("(")[0]
             if ltype == "log10":
-                new_dist = 10 ** dist
+                new_dist = 10**dist
             elif ltype == "log":
                 new_dist = np.exp(dist)
 
@@ -405,16 +388,12 @@ def save_run(filename, sampler, compression=True, clobber=False):
         raise ValueError("Filename must end in .hdf5 or .h5 suffix")
 
     if os.path.exists(filename) and not clobber:
-        log.warning(
-            "Not writing file because file exists and clobber is False"
-        )
+        log.warning("Not writing file because file exists and clobber is False")
         return
 
     with h5py.File(filename, "w") as f:
         group = f.create_group("mcmc")
-        group.create_dataset(
-            "chain", data=sampler.get_chain(), compression=compression
-        )
+        group.create_dataset("chain", data=sampler.get_chain(), compression=compression)
         group.create_dataset(
             "log_prob",
             data=sampler.get_log_prob(),
@@ -429,9 +408,9 @@ def save_run(filename, sampler, compression=True, clobber=False):
                 units = [item.unit.to_string()]
             elif isinstance(item, float):
                 units = [""]
-            elif (
-                isinstance(item, tuple) or isinstance(item, list)
-            ) and np.all([isinstance(x, np.ndarray) for x in item]):
+            elif (isinstance(item, tuple) or isinstance(item, list)) and np.all(
+                [isinstance(x, np.ndarray) for x in item]
+            ):
                 units = []
                 for x in item:
                     if isinstance(x, u.Quantity):
@@ -480,9 +459,7 @@ def save_run(filename, sampler, compression=True, clobber=False):
                     group.attrs[key] = str(val)
 
         # add other sampler info to the attrs
-        group.attrs["acceptance_fraction"] = np.mean(
-            sampler.acceptance_fraction
-        )
+        group.attrs["acceptance_fraction"] = np.mean(sampler.acceptance_fraction)
 
         # add labels as individual attrs (there might be a better way)
         for i, label in enumerate(sampler.labels):
@@ -567,9 +544,7 @@ def read_run(filename, modelfn=None):
                 blob = []
                 for j in range(np.ndim(ds[0])):
                     blob.append(
-                        u.Quantity(
-                            ds[:, j, :], unit=ds.attrs["unit{0}".format(j)]
-                        )
+                        u.Quantity(ds[:, j, :], unit=ds.attrs["unit{0}".format(j)])
                     )
                 blobs.append(blob)
         except KeyError:
