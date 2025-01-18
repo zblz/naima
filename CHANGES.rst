@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+0.10.2 (2025-01-17)
+^^^^^^^^^^^^^^^^^^^
+
+- Fix bug when Eemin and Eemax where set too close. Fixes #225.
+
 0.10.1 (2025-01-17)
 ^^^^^^^^^^^^^^^^^^^
 
