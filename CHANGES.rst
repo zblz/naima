@@ -2,7 +2,7 @@ Changelog
 ---------
 
 0.10.1 (2025-01-17)
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 - Dropped support for Python 3.9, updated to numpy v2, updated packaging.
 
