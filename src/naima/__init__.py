@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+
 """
 `naima` is a Python package for computation of non-thermal radiation from
 relativistic particle populations. It includes tools to perform MCMC fitting of
