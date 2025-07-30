@@ -13,9 +13,9 @@ from numpy import asarray
 # standard status messages of optimizers
 _status_message = {
     "success": "Optimization terminated successfully.",
-    "maxfev": "Maximum number of function evaluations has " "been exceeded.",
-    "maxiter": "Maximum number of iterations has been " "exceeded.",
-    "pr_loss": "Desired error not necessarily achieved due " "to precision loss.",
+    "maxfev": "Maximum number of function evaluations has been exceeded.",
+    "maxiter": "Maximum number of iterations has been exceeded.",
+    "pr_loss": "Desired error not necessarily achieved due to precision loss.",
 }
 
 
