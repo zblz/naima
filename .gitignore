@@ -57,3 +57,4 @@ docs/api/
 *.h5
 
 src/naima/version.py
+uv.lock

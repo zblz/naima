@@ -25,6 +25,9 @@ extend-select = ["I"]
 [tool.ruff.lint.isort]
 known-first-party = ["naima"]
 
+[tool.ruff.lint.extend-per-file-ignores]
+"src/naima/version.py" = ["I001"]
+
 [tool.hatch.build.hooks.vcs]
 version-file = "src/naima/version.py"
 
