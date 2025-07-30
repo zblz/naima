@@ -169,7 +169,7 @@ def save_results_table(
     convert_log=True,
     last_step=False,
     include_blobs=True,
-    overwrite=False
+    overwrite=False,
 ):
     """
     Save an ASCII table with the results stored in the
@@ -354,7 +354,11 @@ def save_results_table(
         # Save it directly in meta for readability in ECSV
         t.meta.update(metadata)
 
-    t.write("{0}_results.{1}".format(outname, file_extension), format=format, overwrite=overwrite)
+    t.write(
+        "{0}_results.{1}".format(outname, file_extension),
+        format=format,
+        overwrite=overwrite,
+    )
 
     return t
 
