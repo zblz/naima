@@ -7,18 +7,18 @@ license = "MIT"
 requires-python = ">=3.10"
 dynamic = ["version"]
 dependencies = [
-    "astropy>=6.1",
-    "emcee",
-    "corner",
-    "matplotlib>=1.4.0",
-    "scipy",
-    "numpy>=2.0",
-    "h5py",
-    "pyyaml",
+        "astropy>=6.1",
+        "corner>=2.0",
+        "emcee>=3.0",
+        "h5py>=3.14.0",
+        "matplotlib>=3.10.0",
+        "numpy>=2.0",
+        "pyyaml>=6.0.2",
+        "scipy>=1.15.3",
 ]
 
-[tool.uv]
-dev-dependencies = ["pytest", "sphinx", "sphinx-astropy"]
+[dependency-groups]
+dev = ["pytest>=8.3.5", "sphinx>=8.0", "sphinx-astropy>=1.9.1"]
 
 [tool.hatch.version]
 source = "vcs"
