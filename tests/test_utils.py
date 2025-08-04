@@ -1,9 +1,10 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+from pathlib import Path
+
 import astropy.units as u
 import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
-from pathlib import Path
 from numpy.testing import assert_allclose
 
 from naima.utils import (

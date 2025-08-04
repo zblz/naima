@@ -1,17 +1,16 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
+from pathlib import Path
 
 import astropy.units as u
 import numpy as np
 from astropy.io import ascii
 from astropy.tests.helper import pytest
-from pathlib import Path
 
 from naima.analysis import read_run, save_run
 from naima.model_fitter import InteractiveModelFitter
 from naima.plot import plot_chain, plot_data, plot_fit
 from naima.utils import validate_data_table
-
 
 try:
     import matplotlib
@@ -53,9 +52,9 @@ def test_roundtrip(simple_sampler, tmp_path):
     new_blobs = nresult.get_blobs()
     assert sampler_blobs.shape == new_blobs.shape
     j, k = nwalkers // 2, nsteps // 2
-    for l in range(len(sampler_blobs[j][k])):
-        b0 = sampler_blobs[j][k][l]
-        b1 = new_blobs[j][k][l]
+    for l_index in range(len(sampler_blobs[j][k])):
+        b0 = sampler_blobs[j][k][l_index]
+        b1 = new_blobs[j][k][l_index]
         if isinstance(b0, tuple) or isinstance(b0, list):
             for b0m, b1m in zip(b0, b1):
                 assert np.allclose(b0m, b1m)

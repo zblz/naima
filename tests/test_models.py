@@ -1,5 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-import importlib
+from importlib.util import find_spec
+
 import numpy as np
 from astropy import units as u
 from astropy.constants import c, hbar, m_e, sigma_sb
@@ -7,7 +8,6 @@ from astropy.modeling.physical_models import BlackBody
 from astropy.table import QTable, Table
 from astropy.tests.helper import pytest
 from numpy.testing import assert_allclose
-from importlib.util import find_spec
 
 from naima.models import (
     Bremsstrahlung,
