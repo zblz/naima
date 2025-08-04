@@ -1,7 +1,7 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
-from pathlib import Path
 import warnings
 from importlib.util import find_spec
+from pathlib import Path
 
 import astropy.units as u
 import numpy as np

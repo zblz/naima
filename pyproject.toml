@@ -2,19 +2,23 @@
 name = "naima"
 description = "Derivation of non-thermal particle distributions through MCMC spectral fitting"
 readme = "README.rst"
+authors = [{ name = "Víctor Zabalza", email = "vzabalza@gmail.com" }]
 license = "MIT"
 requires-python = ">=3.10"
 dynamic = ["version"]
 dependencies = [
         "astropy>=6.1",
-        "emcee",
-        "corner",
-        "matplotlib>=1.4.0",
-        "scipy",
+        "corner>=2.0",
+        "emcee>=3.0",
+        "h5py>=3.14.0",
+        "matplotlib>=3.10.0",
         "numpy>=2.0",
-        "h5py",
-        "pyyaml",
+        "pyyaml>=6.0.2",
+        "scipy>=1.15.3",
 ]
+
+[dependency-groups]
+dev = ["pytest>=8.3.5", "sphinx>=8.0", "sphinx-astropy>=1.9.1"]
 
 [tool.hatch.version]
 source = "vcs"

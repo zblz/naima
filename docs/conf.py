@@ -28,7 +28,9 @@
 import datetime
 import os
 import sys
+from pathlib import Path
 
+import tomllib
 from pkg_resources import get_distribution
 
 try:
@@ -39,12 +41,9 @@ except ImportError:
     )
     sys.exit(1)
 
-# Get configuration information from setup.cfg
-from configparser import ConfigParser
-
-conf = ConfigParser()
-conf.read([os.path.join(os.path.dirname(__file__), "..", "setup.cfg")])
-setup_cfg = dict(conf.items("metadata"))
+# Grab minversion from pyproject.toml
+with (Path(__file__).parents[1] / "pyproject.toml").open("rb") as f:
+    pyproject = tomllib.load(f)
 
 # -- General configuration ----------------------------------------------------
 
@@ -53,7 +52,6 @@ highlight_language = "python3"
 
 # If your documentation needs a minimal Sphinx version, state it here.
 needs_sphinx = "1.3"
-
 
 intersphinx_mapping["emcee"] = (
     "https://emcee.readthedocs.io/en/stable/",
@@ -73,15 +71,15 @@ rst_epilog += """
 # -- Project information ------------------------------------------------------
 
 # This does not *have* to match the package name, but typically does
-project = setup_cfg["name"]
-author = setup_cfg["author"]
-copyright = "{0}, {1}".format(datetime.datetime.now().year, setup_cfg["author"])
+project = pyproject["project"]["name"]
+author = pyproject["project"]["authors"][0]["name"]
+copyright = "{0}, {1}".format(datetime.datetime.now().year, author)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-package_version = get_distribution(setup_cfg["name"]).version
+package_version = get_distribution(project).version
 
 # The short X.Y version.
 version = package_version.split("-", 1)[0]
@@ -90,13 +88,6 @@ release = package_version
 
 
 # -- Options for HTML output ---------------------------------------------------
-
-# A NOTE ON HTML THEMES
-# The global astropy configuration uses a custom theme, 'bootstrap-astropy',
-# which is installed along with astropy. A different theme can be used or
-# the options for this theme can be modified by overriding some of the
-# variables set in the global configuration. The variables set in the
-# global configuration are listed below, commented out.
 
 # Add any paths that contain custom themes here, relative to this directory.
 # To use a different custom theme, add the directory containing the theme.
@@ -160,19 +151,3 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [("index", project.lower(), project + " Documentation", [author], 1)]
-
-
-## -- Options for the edit_on_github extension ----------------------------------------
-
-if eval(setup_cfg.get("edit_on_github")):
-    extensions += ["sphinx_astropy.ext.edit_on_github"]
-
-    versionmod = __import__(setup_cfg["name"] + ".version")
-    edit_on_github_project = setup_cfg["github_project"]
-    if versionmod.version.release:
-        edit_on_github_branch = "v" + versionmod.version.version
-    else:
-        edit_on_github_branch = "master"
-
-    edit_on_github_source_root = ""
-    edit_on_github_doc_root = "docs"
