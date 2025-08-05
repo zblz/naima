@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+0.10.3 (2025-08-05)
+^^^^^^^^^^^^^^^^^^^
+
+- Add overwrite keyword to ``save_results_table`` - @HealthyPear
+
 0.10.2 (2025-01-17)
 ^^^^^^^^^^^^^^^^^^^
 
