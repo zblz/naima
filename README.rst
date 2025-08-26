@@ -31,21 +31,27 @@ Attribution
 ^^^^^^^^^^^
 
 If you find ``naima`` useful in your research, you can cite `Zabalza (2015)
-<http://arxiv.org/abs/1509.03319>`_ to acknowledge its use. The BibTeX entry for
-the paper is:
+<https://ui.adsabs.harvard.edu/abs/2015ICRC...34..922Z>`_ to acknowledge its use. The
+BibTeX entry for the paper is:
 
 .. code-block:: bibtex
 
-    @ARTICLE{naima,
-       author = {{Zabalza}, V.},
-        title = {naima: a Python package for inference of relativistic particle
-                 energy distributions from observed nonthermal spectra},
-         year = 2015,
-      journal = {Proc.~of International Cosmic Ray Conference 2015},
-        pages = "922",
-       eprint = {1509.03319},
-       adsurl = {http://adsabs.harvard.edu/abs/2015arXiv150903319Z},
-    }
+   @INPROCEEDINGS{2015ICRC...34..922Z,
+          author = {{Zabalza}, V.},
+           title = {Naima: a Python package for inference of particle distribution properties from nonthermal spectra},
+       booktitle = {34th International Cosmic Ray Conference (ICRC2015)},
+            year = 2015,
+          series = {International Cosmic Ray Conference},
+          volume = {34},
+           month = jul,
+             eid = {922},
+           pages = {922},
+             doi = {10.22323/1.236.0922},
+   archivePrefix = {arXiv},
+          eprint = {1509.03319},
+          adsurl = {https://ui.adsabs.harvard.edu/abs/2015ICRC...34..922Z},
+   }
+
 
 License
 ^^^^^^^
