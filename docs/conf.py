@@ -30,8 +30,9 @@ import os
 import sys
 from pathlib import Path
 
+from importlib.metadata import version as get_version
+
 import tomllib
-from pkg_resources import get_distribution
 
 try:
     from sphinx_astropy.conf.v1 import *  # noqa
@@ -79,7 +80,7 @@ copyright = "{0}, {1}".format(datetime.datetime.now().year, author)
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 
-package_version = get_distribution(project).version
+package_version = get_version(project)
 
 # The short X.Y version.
 version = package_version.split("-", 1)[0]
