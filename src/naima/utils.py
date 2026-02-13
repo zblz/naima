@@ -105,6 +105,10 @@ def validate_data_table(data_table, sed=None):
         for row in dt:
             data_new.add_row(row)
 
+    # Sort by energy so model curves and interpolation work correctly
+    sort_idx = np.argsort(data_new["energy"])
+    data_new = data_new[sort_idx]
+
     return data_new
 
 

@@ -158,3 +158,34 @@ def test_estimate_B():
     B = estimate_B(xray, data_table)
 
     assert_allclose(B.to("uG"), 0.4848756912803697 * u.uG)
+
+
+def test_reversed_table_order():
+    """Regression test for #247: table order should not affect energy sorting."""
+    from astropy.table import QTable
+
+    t_lo = QTable()
+    t_lo["energy"] = [1, 2, 3] * u.keV
+    t_lo["flux"] = [1e-11, 8e-12, 5e-12] * u.Unit("erg/(cm2 s)")
+    t_lo["flux_error"] = [1e-12, 1e-12, 1e-12] * u.Unit("erg/(cm2 s)")
+
+    t_hi = QTable()
+    t_hi["energy"] = [1, 2, 3] * u.TeV
+    t_hi["flux"] = [1e-12, 8e-13, 5e-13] * u.Unit("erg/(cm2 s)")
+    t_hi["flux_error"] = [1e-13, 1e-13, 1e-13] * u.Unit("erg/(cm2 s)")
+
+    data_lohi = validate_data_table([t_lo, t_hi])
+    data_hilo = validate_data_table([t_hi, t_lo])
+
+    # Energies must be sorted regardless of input order
+    assert np.all(np.diff(data_lohi["energy"]) > 0)
+    assert np.all(np.diff(data_hilo["energy"]) > 0)
+
+    # Energy and flux values must match (units may differ based on first table)
+    assert_allclose(
+        data_lohi["energy"].to(u.keV).value, data_hilo["energy"].to(u.keV).value
+    )
+    assert_allclose(
+        data_lohi["flux"].to(data_lohi["flux"].unit).value,
+        data_hilo["flux"].to(data_lohi["flux"].unit).value,
+    )
