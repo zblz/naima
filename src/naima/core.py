@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import os
 import warnings
 from collections.abc import Iterable
 from multiprocessing import Pool
@@ -442,14 +443,19 @@ def get_sampler(
     if prefit and not P0_IS_ML:
         p0, P0_IS_ML = _prefit(p0, data, model, prior)
 
+    if threads is None:
+        threads = os.cpu_count() or 1
+    pool = Pool(threads) if threads > 1 else None
+
     sampler = emcee.EnsembleSampler(
         nwalkers,
         len(p0),
         lnprob,
         args=[data, model, prior],
-        pool=Pool(threads),
+        pool=pool,
         blobs_dtype=np.dtype(object),
     )
+    sampler._naima_pool = pool
 
     # Add data and parameters properties to sampler
     sampler.data_table = data_table
@@ -522,5 +528,11 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
     print("\nWalker burn in finished, running {0} steps...".format(nrun))
     sampler.reset()
     sampler, pos = _run_mcmc(sampler, pos, nrun)
+
+    # Clean up the multiprocessing pool
+    if hasattr(sampler, "_naima_pool") and sampler._naima_pool is not None:
+        sampler._naima_pool.close()
+        sampler._naima_pool.join()
+        sampler._naima_pool = None
 
     return sampler, pos

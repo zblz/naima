@@ -348,3 +348,38 @@ def test_blob_shape():
         sampler.get_blobs(flat=True)[0, 0].shape
         == sampler_blobs.get_blobs(flat=True)[0, 0].shape
     )
+
+
+@pytest.mark.skipif("not HAS_EMCEE")
+def test_multiprocessing_pool_shutdown():
+    """Regression test for #245: pool cleanup on Python 3.13+."""
+    sampler, pos = run_sampler(
+        data_table=data_table,
+        p0=p0,
+        labels=labels,
+        model=cutoffexp,
+        prior=lnprior,
+        nwalkers=10,
+        nburn=2,
+        nrun=2,
+        threads=2,
+    )
+    # Pool should be cleaned up after run_sampler
+    assert getattr(sampler, "_naima_pool", None) is None
+
+
+@pytest.mark.skipif("not HAS_EMCEE")
+def test_single_thread_no_pool():
+    """Test that threads=1 does not create a multiprocessing pool."""
+    sampler, pos = run_sampler(
+        data_table=data_table,
+        p0=p0,
+        labels=labels,
+        model=cutoffexp,
+        prior=lnprior,
+        nwalkers=10,
+        nburn=2,
+        nrun=2,
+        threads=1,
+    )
+    assert getattr(sampler, "_naima_pool", None) is None
