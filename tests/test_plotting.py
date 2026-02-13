@@ -156,3 +156,28 @@ def test_diagnostic_plots(sampler):
 def test_diagnostic_plots_noblobs(noblob_sampler):
     # Diagnostic plots
     save_diagnostic_plots("test_function_noblob", noblob_sampler)
+
+
+@pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+def test_calc_ML_uses_dense_energy_grid(sampler):
+    """Regression test for #240: _calc_ML should evaluate over a dense grid."""
+    from naima.plot import _calc_ML
+
+    data = sampler.data
+    e_range = data["energy"][[0, -1]] * np.array((1.0 / 3.0, 3.0))
+
+    ML, MLp, MLerr, (modelx, model_ML) = _calc_ML(sampler, 0, e_range=e_range)
+
+    # Model should be evaluated over a dense logspace grid, not the sparse
+    # data energy points
+    assert len(modelx) == 100
+    assert len(modelx) != len(data["energy"])
+
+    # Re-evaluate directly over the same grid and check consistency
+    eval_data = {
+        "energy": modelx,
+        "flux": np.zeros(modelx.shape) * data["flux"].unit,
+    }
+    direct_out = sampler.modelfn(MLp, eval_data)
+    direct_flux = direct_out[0] if isinstance(direct_out, (tuple, list)) else direct_out
+    np.testing.assert_allclose(model_ML.value, direct_flux.value, rtol=1e-10)

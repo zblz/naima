@@ -623,12 +623,11 @@ def plot_samples(
         Unit in which to plot energy axis.
     e_range : list of `~astropy.units.Quantity`, length 2, optional
         Limits in energy for the computation of the model samples and ML model.
-        Note that setting this parameter will mean that the samples for the
-        model are recomputed and depending on the model speed might be quite
-        slow.
+        Note that model re-evaluation may be slow depending on the model
+        complexity.
     e_npoints : int, optional
-        How many points to compute for the model samples and ML model if
-        `e_range` is set.
+        How many points to compute for the model samples and ML model over
+        the energy range. Default is 100.
     threads : int, optional
         How many parallel processing threads to use when computing the samples.
         Defaults to the number of available cores.
@@ -805,12 +804,14 @@ def plot_fit(
         of the energy array of the observed data.
     e_range : list of `~astropy.units.Quantity`, length 2, optional
         Limits in energy for the computation of the model samples and ML model.
-        Note that setting this parameter will mean that the samples for the
-        model are recomputed and depending on the model speed might be quite
-        slow.
+        When ``modelfn`` is available on the sampler and ``e_range`` is not
+        provided, it defaults to a range extending a factor of 3 beyond the
+        data energy limits so that the model is always re-evaluated over a
+        dense grid. Note that model re-evaluation may be slow depending on
+        the model complexity.
     e_npoints : int, optional
-        How many points to compute for the model samples and ML model if
-        `e_range` is set.
+        How many points to compute for the model samples and ML model over
+        the energy range. Default is 100.
     threads : int, optional
         How many parallel processing threads to use when computing the samples.
         Defaults to the number of available cores.
@@ -828,7 +829,14 @@ def plot_fit(
     """
     import matplotlib.pyplot as plt
 
-    ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
+    data = sampler.data
+
+    if e_range is None and hasattr(sampler, "modelfn") and sampler.modelfn is not None:
+        e_range = data["energy"][[0, -1]] * np.array((1.0 / 3.0, 3.0))
+
+    ML, MLp, MLerr, model_ML = _calc_ML(
+        sampler, modelidx, e_range=e_range, e_npoints=e_npoints
+    )
     infostr = "Maximum log probability: {0:.3g}\n".format(ML)
     infostr += "Maximum Likelihood values:\n"
     maxlen = np.max([len(ilabel) for ilabel in sampler.labels])
@@ -837,11 +845,6 @@ def plot_fit(
         infostr += vartemplate.format(p, v, ilabel)
 
     # log.info(infostr)
-
-    data = sampler.data
-
-    if e_range is None and not hasattr(sampler, "blobs"):
-        e_range = data["energy"][[0, -1]] * np.array((1.0 / 3.0, 3.0))
 
     if plotdata is None and len(model_ML[0]) == len(data["energy"]):
         model_unit, _ = sed_conversion(model_ML[0], model_ML[1].unit, sed)
