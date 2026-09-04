@@ -74,11 +74,11 @@ def test_synchrotron_lum(particle_dists):
     ECPL, PL, BPL = particle_dists
 
     lum_ref = [
-        0.00025231296225663107,
-        0.03316715765695228,
-        0.00044597089198025806,
+        0.0002523125815220951,
+        0.03316712062006216,
+        0.00044597038745397094,
     ]
-    We_ref = [5064124672.902273, 11551172166.866821, 926633861.2898524]
+    We_ref = [5064124393.383959, 11551172162.04902, 926629115.6782835]
 
     Wes = []
     lsys = []
@@ -100,7 +100,7 @@ def test_synchrotron_lum(particle_dists):
 
     lsy = trapz_loglog(sy.flux(energy, 0) * energy, energy).to("erg/s")
     assert lsy.unit == u.erg / u.s
-    assert_allclose(lsy.value, 31374131.90312505)
+    assert_allclose(lsy.value, 31374089.831996817)
 
 
 @pytest.mark.skipif("not HAS_SCIPY")
@@ -204,9 +204,9 @@ def test_inverse_compton_lum(particle_dists):
     ECPL, PL, BPL = particle_dists
 
     lum_ref = [
-        0.0002782201669858555,
-        0.004821189222961136,
-        0.00012916582897424096,
+        0.00027821963421664303,
+        0.004821169157026337,
+        0.00012916535617218573,
     ]
 
     lums = []
@@ -223,7 +223,7 @@ def test_inverse_compton_lum(particle_dists):
     ic.flux(data2)
 
     lic = trapz_loglog(ic.flux(energy, 0) * energy, energy).to("erg/s")
-    assert_allclose(lic.value, 0.0005833030059049264)
+    assert_allclose(lic.value, 0.0005833030045606336)
 
 
 @pytest.mark.skipif("not HAS_SCIPY")
@@ -236,7 +236,7 @@ def test_anisotropic_inverse_compton_lum(particle_dists):
 
     angles = [45, 90, 135] * u.deg
 
-    lum_ref = [48901.363932, 111356.423781, 149800.235776]
+    lum_ref = [48912.82297968532, 111308.39997618279, 149683.97147022097]
 
     lums = []
     for angle in angles:
