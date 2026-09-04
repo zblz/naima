@@ -4,7 +4,7 @@ description = "Derivation of non-thermal particle distributions through MCMC spe
 readme = "README.rst"
 authors = [{ name = "Víctor Zabalza", email = "vzabalza@gmail.com" }]
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dynamic = ["version"]
 dependencies = [
         "astropy>=6.1",
