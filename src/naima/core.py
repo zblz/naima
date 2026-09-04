@@ -41,7 +41,7 @@ def uniform_prior(value, umin, umax):
 
 def normal_prior(value, mean, sigma):
     """Normal prior distribution."""
-    return -0.5 * (2 * np.pi * sigma) - (value - mean) ** 2 / (2.0 * sigma)
+    return -0.5 * np.log(2 * np.pi * sigma**2) - (value - mean) ** 2 / (2.0 * sigma**2)
 
 
 def log_uniform_prior(value, umin=0, umax=None):
@@ -49,11 +49,11 @@ def log_uniform_prior(value, umin=0, umax=None):
     if value > 0 and value >= umin:
         if umax is not None:
             if value <= umax:
-                return 1 / value
+                return -np.log(value)
             else:
                 return -np.inf
         else:
-            return 1 / value
+            return -np.log(value)
     else:
         return -np.inf
 

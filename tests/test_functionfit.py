@@ -11,6 +11,7 @@ from astropy.tests.helper import pytest
 from naima.core import (
     get_sampler,
     lnprob,
+    log_uniform_prior,
     normal_prior,
     run_sampler,
     uniform_prior,
@@ -366,6 +367,27 @@ def test_multiprocessing_pool_shutdown():
     )
     # Pool should be cleaned up after run_sampler
     assert getattr(sampler, "_naima_pool", None) is None
+
+
+def test_normal_prior():
+    """normal_prior should match a Gaussian log-pdf."""
+    for value, mean, sigma in [(0.0, 0.0, 2.0), (1.5, 1.0, 0.3), (-2.0, 1.0, 5.0)]:
+        expected = -0.5 * np.log(2 * np.pi * sigma**2) - (value - mean) ** 2 / (
+            2.0 * sigma**2
+        )
+        assert normal_prior(value, mean, sigma) == pytest.approx(expected)
+
+    # peak of the distribution is at the mean, and decreases away from it
+    assert normal_prior(0.0, 0.0, 1.0) > normal_prior(1.0, 0.0, 1.0)
+
+
+def test_log_uniform_prior():
+    """log_uniform_prior should return -log(value) within bounds, -inf outside."""
+    assert log_uniform_prior(10.0) == pytest.approx(-np.log(10.0))
+    assert log_uniform_prior(10.0, 1.0, 100.0) == pytest.approx(-np.log(10.0))
+    assert log_uniform_prior(0.5, umin=1.0) == -np.inf
+    assert log_uniform_prior(200.0, umin=1.0, umax=100.0) == -np.inf
+    assert log_uniform_prior(-1.0) == -np.inf
 
 
 @pytest.mark.skipif("not HAS_EMCEE")
