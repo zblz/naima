@@ -7,7 +7,7 @@ import h5py
 import numpy as np
 from astropy import log
 from astropy.io.misc.hdf5 import read_table_hdf5, write_table_hdf5
-from astropy.table import Table
+from astropy.table import QTable
 
 from .plot import find_ML
 
@@ -212,8 +212,11 @@ def save_results_table(
     Returns
     -------
 
-    table : `~astropy.table.Table`
-        Table with the results.
+    table : `~astropy.table.QTable`
+        Table with the results. The ``unit`` column holds the physical unit
+        of each parameter, if any (fit parameters are dimensionless; scalar
+        blobs may carry a unit, e.g. from
+        `~naima.radiative.BaseRadiative.compute_We`).
     """
 
     if not HAS_PYYAML and format == "ascii.ecsv":
@@ -245,9 +248,9 @@ def save_results_table(
 
     quant = [16, 50, 84]
     # Do we need more info on the distributions?
-    t = Table(
-        names=["label", "median", "unc_lo", "unc_hi"],
-        dtype=["S72", "f8", "f8", "f8"],
+    t = QTable(
+        names=["label", "median", "unc_lo", "unc_hi", "unit"],
+        dtype=["S72", "f8", "f8", "f8", "S32"],
     )
     t["label"].description = "Name of the parameter"
     t["median"].description = "Median of the posterior distribution function"
@@ -258,6 +261,10 @@ def save_results_table(
     t["unc_hi"].description = (
         "Difference between the {0}th percentile"
         " and the median of the pdf, ~1sigma upper uncertainty".format(quant[2])
+    )
+    t["unit"].description = (
+        "Physical unit of median/unc_lo/unc_hi for this parameter, empty"
+        " for dimensionless fit parameters"
     )
 
     metadata = {}
@@ -283,7 +290,7 @@ def save_results_table(
         med = quantiles[50]
         lo, hi = med - quantiles[16], quantiles[84] - med
 
-        t.add_row((label, med, lo, hi))
+        t.add_row((label, med, lo, hi, ""))
 
         if convert_log and ("log10(" in label or "log(" in label):
             nlabel = label.split("(")[-1].split(")")[0]
@@ -297,7 +304,7 @@ def save_results_table(
             med = quantiles[50]
             lo, hi = med - quantiles[16], quantiles[84] - med
 
-            t.add_row((nlabel, med, lo, hi))
+            t.add_row((nlabel, med, lo, hi, ""))
 
     if include_blobs:
         blobs = sampler.get_blobs()
@@ -324,15 +331,16 @@ def save_results_table(
                             blobl.append(walkerblob[idx])
                 if unit:
                     dist = np.array([b.value for b in blobl])
-                    metadata["blob{0}_unit".format(idx)] = unit.to_string()
+                    unit_str = unit.to_string()
                 else:
                     dist = np.array(blobl)
+                    unit_str = ""
 
                 quantiles = dict(zip(quant, np.percentile(dist, quant)))
                 med = quantiles[50]
                 lo, hi = med - quantiles[16], quantiles[84] - med
 
-                t.add_row(("blob{0}".format(idx), med, lo, hi))
+                t.add_row(("blob{0}".format(idx), med, lo, hi, unit_str))
 
     if format == "ascii.ipac":
         # Only keywords are written to IPAC tables

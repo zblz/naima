@@ -56,6 +56,25 @@ def test_results_table(sampler, last_step, convert_log, include_blobs, format):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+def test_results_table_is_qtable_with_units(sampler):
+    from astropy.table import QTable
+
+    t = save_results_table("test_qtable", sampler)
+    os.unlink(glob("test_qtable_results*")[0])
+
+    assert isinstance(t, QTable)
+    assert "unit" in t.colnames
+
+    # fit parameters are dimensionless
+    assert t["unit"][t["label"] == "index"][0] == ""
+    # blob8 in the sampler fixture (model4) is a scalar Quantity in
+    # 1/(cm2 s), so its unit should be recorded
+    row = t[t["label"] == "blob8"]
+    assert len(row) == 1
+    assert u.Unit(row["unit"][0]) == u.Unit("1/(cm2 s)")
+
+
+@pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
 @pytest.mark.parametrize("last_step", [True, False])
 @pytest.mark.parametrize("p", [None, 1])
 def test_chain_plots(sampler, last_step, p):
