@@ -122,6 +122,22 @@ def test_plot_data_tables(sampler, data_tables):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+def test_fit_plot_recomputes_on_fine_grid_by_default(sampler):
+    """plot_fit used to reuse, by default, the (sparse, per-data-point)
+    blob values computed during the fit for modelidx=0. Connecting these
+    sparse points with straight lines on a log-log plot can look wildly
+    misleading for models combining several radiative components
+    (naima#240). By default it should now recompute the model on a fine,
+    independent energy grid instead."""
+    fig = plot_fit(sampler, modelidx=0)
+    ax = fig.axes[0]
+    (ml_line,) = [line for line in ax.get_lines() if line.get_color() == "k"]
+    n_data = len(sampler.data["energy"])
+    assert len(ml_line.get_xdata()) > n_data
+    plt.close("all")
+
+
+@pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
 def test_fit_data_units(sampler):
     plot_fit(sampler, modelidx=0, sed=None)
     plt.close("all")
