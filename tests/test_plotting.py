@@ -1,4 +1,5 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
+import inspect
 import os
 from glob import glob
 from importlib.util import find_spec
@@ -102,6 +103,22 @@ def test_threads_in_samples(sampler, threads):
 def test_plot_data(sampler, sed):
     plot_data(sampler, sed=sed)
     plt.close("all")
+
+
+@pytest.mark.skipif("not HAS_MATPLOTLIB")
+def test_plot_data_ulim_opts_default_not_mutated():
+    """ulim_opts/errorbar_opts used to be mutable default arguments, and
+    _plot_data_to_ax wrote errorbar_opts["elinewidth"] into ulim_opts in
+    place. Since plot_data forwarded its own default dict by reference,
+    this permanently mutated plot_data's default ulim_opts the first time
+    it was called with a custom errorbar_opts and upper limits in the data
+    (data_table has fake upper limits), leaking into later calls that rely
+    on the default."""
+    plot_data(data_table, errorbar_opts={"elinewidth": 5})
+    plt.close("all")
+
+    default_ulim_opts = inspect.signature(plot_data).parameters["ulim_opts"].default
+    assert default_ulim_opts is None or "elinewidth" not in default_ulim_opts
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")

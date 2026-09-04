@@ -762,8 +762,8 @@ def plot_fit(
     threads=None,
     xlabel=None,
     ylabel=None,
-    ulim_opts={},
-    errorbar_opts={},
+    ulim_opts=None,
+    errorbar_opts=None,
 ):
     """
     Plot data with fit confidence regions.
@@ -832,6 +832,11 @@ def plot_fit(
 
     """
     import matplotlib.pyplot as plt
+
+    if ulim_opts is None:
+        ulim_opts = {}
+    if errorbar_opts is None:
+        errorbar_opts = {}
 
     ML, MLp, MLerr, model_ML = find_ML(sampler, modelidx)
     infostr = "Maximum log probability: {0:.3g}\n".format(ML)
@@ -1033,14 +1038,18 @@ def _plot_data_to_ax(
     e_unit=None,
     sed=True,
     ylabel=None,
-    ulim_opts={},
-    errorbar_opts={},
+    ulim_opts=None,
+    errorbar_opts=None,
     label=None,
 ):
     """Plots data errorbars and upper limits onto ax.
     X label is left to plot_data and plot_fit because they depend on whether
     residuals are plotted.
     """
+    # Copy rather than mutate: these may be the caller's dicts, and
+    # ulim_opts is written to below.
+    ulim_opts = {} if ulim_opts is None else dict(ulim_opts)
+    errorbar_opts = {} if errorbar_opts is None else dict(errorbar_opts)
 
     if e_unit is None:
         e_unit = data_all["energy"].unit
@@ -1144,9 +1153,12 @@ def _plot_data_to_ax(
 
 
 def _plot_residuals_to_ax(
-    data_all, model_ML, ax, e_unit=u.eV, sed=True, errorbar_opts={}
+    data_all, model_ML, ax, e_unit=u.eV, sed=True, errorbar_opts=None
 ):
     """Function to compute and plot residuals in units of the uncertainty"""
+    if errorbar_opts is None:
+        errorbar_opts = {}
+
     if "group" not in data_all.keys():
         data_all["group"] = np.zeros(len(data_all))
 
@@ -1227,8 +1239,8 @@ def plot_data(
     sed=True,
     figure=None,
     e_unit=None,
-    ulim_opts={},
-    errorbar_opts={},
+    ulim_opts=None,
+    errorbar_opts=None,
     label=None,
 ):
     """
@@ -1264,6 +1276,11 @@ def plot_data(
     """
 
     import matplotlib.pyplot as plt
+
+    if ulim_opts is None:
+        ulim_opts = {}
+    if errorbar_opts is None:
+        errorbar_opts = {}
 
     try:
         data = validate_data_table(input_data)
