@@ -804,13 +804,18 @@ def plot_fit(
         Units for the energy axis of the plot. The default is to use the units
         of the energy array of the observed data.
     e_range : list of `~astropy.units.Quantity`, length 2, optional
-        Limits in energy for the computation of the model samples and ML model.
-        Note that setting this parameter will mean that the samples for the
-        model are recomputed and depending on the model speed might be quite
-        slow.
+        Limits in energy for the computation of the model samples and ML
+        model. By default, the model is recomputed on a fine, log-spaced
+        grid covering (a padded range around) the observed data energies,
+        rather than reusing the values stored in the sampler blobs, which
+        are typically only available at the data energies and can look
+        misleading when connected by straight lines on a log-log plot.
+        This recomputation is skipped, and the values stored in the blobs
+        are reused instead, if no model function is available (e.g. for a
+        sampler loaded with `~naima.read_run` without passing ``modelfn``).
+        Depending on the model speed, the recomputation might be quite slow.
     e_npoints : int, optional
-        How many points to compute for the model samples and ML model if
-        `e_range` is set.
+        How many points to compute for the model samples and ML model.
     threads : int, optional
         How many parallel processing threads to use when computing the samples.
         Defaults to the number of available cores.
@@ -840,7 +845,15 @@ def plot_fit(
 
     data = sampler.data
 
-    if e_range is None and not hasattr(sampler, "blobs"):
+    if e_range is None and getattr(sampler, "modelfn", None) is not None:
+        # Recompute the model on a fine, independent energy grid rather than
+        # reusing the (possibly sparse) per-data-point values stored in the
+        # blobs computed during the fit: connecting sparse points with
+        # straight lines on a log-log plot can look wildly misleading,
+        # especially for models combining several radiative components
+        # (e.g. synchrotron self-Compton). Skipped if no model function is
+        # available to recompute with (e.g. a sampler loaded with
+        # `read_run` without passing `modelfn`).
         e_range = data["energy"][[0, -1]] * np.array((1.0 / 3.0, 3.0))
 
     if plotdata is None and len(model_ML[0]) == len(data["energy"]):
