@@ -56,13 +56,10 @@ def test_results_table(sampler, last_step, convert_log, include_blobs, format):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
-def test_results_table_is_qtable_with_units(sampler):
-    from astropy.table import QTable
-
+def test_results_table_has_unit_column(sampler):
     t = save_results_table("test_qtable", sampler)
     os.unlink(glob("test_qtable_results*")[0])
 
-    assert isinstance(t, QTable)
     assert "unit" in t.colnames
 
     # fit parameters are dimensionless

@@ -7,7 +7,7 @@ import h5py
 import numpy as np
 from astropy import log
 from astropy.io.misc.hdf5 import read_table_hdf5, write_table_hdf5
-from astropy.table import QTable
+from astropy.table import Table
 
 from .plot import find_ML
 
@@ -212,7 +212,7 @@ def save_results_table(
     Returns
     -------
 
-    table : `~astropy.table.QTable`
+    table : `~astropy.table.Table`
         Table with the results. The ``unit`` column holds the physical unit
         of each parameter, if any (fit parameters are dimensionless; scalar
         blobs may carry a unit, e.g. from
@@ -248,7 +248,7 @@ def save_results_table(
 
     quant = [16, 50, 84]
     # Do we need more info on the distributions?
-    t = QTable(
+    t = Table(
         names=["label", "median", "unc_lo", "unc_hi", "unit"],
         dtype=["S72", "f8", "f8", "f8", "S32"],
     )
