@@ -1035,6 +1035,7 @@ def _plot_data_to_ax(
     ylabel=None,
     ulim_opts={},
     errorbar_opts={},
+    label=None,
 ):
     """Plots data errorbars and upper limits onto ax.
     X label is left to plot_data and plot_fit because they depend on whether
@@ -1081,6 +1082,8 @@ def _plot_data_to_ax(
             ms=5,
             color=color,
         )
+        if label is not None:
+            opts["label"] = label
         opts.update(**errorbar_opts)
 
         ax1.errorbar(
@@ -1226,6 +1229,7 @@ def plot_data(
     e_unit=None,
     ulim_opts={},
     errorbar_opts={},
+    label=None,
 ):
     """
     Plot spectral data.
@@ -1252,6 +1256,11 @@ def plot_data(
     errorbar_opts : dict
         Addtional options to pass to `matplotlib.plt.errorbar` for plotting the
         spectral flux points.
+    label : str, optional
+        Legend label for this dataset's flux points. If the data contains
+        several groups (e.g. several tables passed as ``input_data``), the
+        same label is used for all of them. Call ``ax.legend()`` (or
+        ``plt.legend()``) after plotting to display it.
     """
 
     import matplotlib.pyplot as plt
@@ -1299,6 +1308,7 @@ def plot_data(
         ylabel=ylabel,
         ulim_opts=ulim_opts,
         errorbar_opts=errorbar_opts,
+        label=label,
     )
 
     if xlabel is not None:

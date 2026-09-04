@@ -105,6 +105,15 @@ def test_plot_data(sampler, sed):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+def test_plot_data_label(sampler):
+    fig = plot_data(sampler, label="HESS")
+    ax = fig.axes[0]
+    handles, labels = ax.get_legend_handles_labels()
+    assert labels == ["HESS"]
+    plt.close("all")
+
+
+@pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
 def test_plot_data_reuse_fig(sampler):
     # change the energy units between calls
     data = sampler.data
