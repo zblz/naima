@@ -40,6 +40,22 @@ ar = (4 * sigma_sb / c).to("erg/(cm3 K4)")
 r0 = (e**2 / mec2).to("cm")
 
 
+def _set_extra_params(obj, kwargs):
+    """Set additional keyword arguments accepted by a radiative model's
+    ``__init__`` (documented under "Other parameters"), raising ``TypeError``
+    for any keyword that does not match an existing attribute -- most
+    commonly a misspelled parameter name.
+    """
+    unknown = set(kwargs) - set(obj.__dict__)
+    if unknown:
+        raise TypeError(
+            "{0}() got unexpected keyword argument(s): {1}".format(
+                type(obj).__name__, ", ".join(sorted(unknown))
+            )
+        )
+    obj.__dict__.update(kwargs)
+
+
 def _validate_ene(ene):
     from astropy.table import Table
 
@@ -277,7 +293,7 @@ class Synchrotron(BaseElectron):
         self.Eemax = 1e9 * mec2
         self.nEed = 100
         self.param_names += ["B"]
-        self.__dict__.update(**kwargs)
+        _set_extra_params(self, kwargs)
 
     def _spectrum(self, photon_energy):
         """Compute intrinsic synchrotron differential spectrum for energies in
@@ -427,7 +443,7 @@ class InverseCompton(BaseElectron):
         self.Eemax = 1e9 * mec2
         self.nEed = 100
         self.param_names += ["seed_photon_fields"]
-        self.__dict__.update(**kwargs)
+        _set_extra_params(self, kwargs)
 
     @staticmethod
     def _process_input_seed(seed_photon_fields):
@@ -833,7 +849,7 @@ class Bremsstrahlung(BaseElectron):
         self.weight_ee = np.sum(Z * X)
         self.weight_ep = np.sum(Z**2 * X)
         self.param_names += ["n0", "weight_ee", "weight_ep"]
-        self.__dict__.update(**kwargs)
+        _set_extra_params(self, kwargs)
 
     @staticmethod
     def _sigma_1(gam, eps):
@@ -1170,7 +1186,7 @@ class PionDecay(BaseProton):
         self.Epmax = 10 * u.PeV  # 10 PeV
         self.nEpd = 100
         self.param_names += ["nh", "nuclear_enhancement", "useLUT", "hiEmodel"]
-        self.__dict__.update(**kwargs)
+        _set_extra_params(self, kwargs)
 
     # define model parameters from tables
     # yapf: disable
@@ -1586,7 +1602,7 @@ class PionDecayKelner06(BaseRadiative):
             "Etrans", Etrans, domain="positive", physical_type="energy"
         )
 
-        self.__dict__.update(**kwargs)
+        _set_extra_params(self, kwargs)
 
     def _particle_distribution(self, E):
         return self.particle_distribution(E * u.TeV).to("1/TeV").value

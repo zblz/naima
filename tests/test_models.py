@@ -464,7 +464,7 @@ def test_pion_decay_kelner(particle_dists):
     lum_ref = 5.54580582494601e-13 * u.erg / u.s
 
     energy = np.logspace(9, 13, 20) * u.eV
-    pp = PionDecayKelner06(ECPL, **proton_properties)
+    pp = PionDecayKelner06(ECPL)
     lpp = trapz_loglog(pp.flux(energy, 0) * energy, energy).to("erg/s")
     assert lpp.unit == u.erg / u.s
 
@@ -490,6 +490,31 @@ def test_inputs():
     with pytest.raises(TypeError):
         data = {"flux": [1, 2, 4]}
         LP(data)
+
+
+def test_unexpected_extra_param(particle_dists):
+    """
+    Radiative model constructors used to silently swallow unrecognized
+    keyword arguments as dead attributes (e.g. a misspelling of an "Other
+    parameters" name such as Eemin/Eemax/nEed), instead of raising. They
+    should raise TypeError like a normal Python constructor.
+    """
+    ECPL, PL, BPL = particle_dists
+
+    with pytest.raises(TypeError):
+        Synchrotron(ECPL, Eemim=1 * u.GeV)
+
+    with pytest.raises(TypeError):
+        InverseCompton(ECPL, nEedd=100)
+
+    with pytest.raises(TypeError):
+        Bremsstrahlung(ECPL, weight_pe=1.0)
+
+    with pytest.raises(TypeError):
+        PionDecay(ECPL, nEpdd=100)
+
+    with pytest.raises(TypeError):
+        PionDecayKelner06(ECPL, Etranss=1 * u.TeV)
 
 
 def test_tablemodel():

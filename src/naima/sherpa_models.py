@@ -170,7 +170,7 @@ class InverseCompton(SherpaModelECPL):
             seed_photon_fields=seedspec,
             Eemin=1 * u.GeV,
             Eemax=100 * u.TeV,
-            Eed=100,
+            nEed=100,
         )
 
         return ic.flux(Eph, distance=distance * u.kpc).to("1/(s cm2 keV)")
