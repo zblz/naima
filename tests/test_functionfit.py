@@ -6,11 +6,13 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 from astropy.io import ascii
+from astropy.table import QTable
 from astropy.tests.helper import pytest
 
 from naima.core import (
     get_sampler,
     lnprob,
+    lnprobmodel,
     log_uniform_prior,
     normal_prior,
     run_sampler,
@@ -161,6 +163,44 @@ def test_sed_conversion_in_lnprobmodel():
         nburn=2,
         threads=1,
     )
+
+
+def test_lnprobmodel_upper_limits_with_varying_cl():
+    """
+    Regression test for a bug where lnprobmodel indexed data['cl'] with the
+    *count* of violated upper limits rather than a mask of which rows were
+    violated. This gave the wrong result whenever 'cl' varies across rows
+    (e.g. after combining tables from different instruments/confidence
+    levels) and raised IndexError whenever every upper limit in the table
+    was violated.
+    """
+    flux_unit = u.Unit("1/(cm2 s TeV)")
+    data = QTable(
+        {
+            "energy": [1, 2, 3] * u.TeV,
+            "flux": [1e-12, 1e-12, 1e-12] * flux_unit,
+            "flux_error_lo": [1e-13, 1e-13, 1e-13] * flux_unit,
+            "flux_error_hi": [1e-13, 1e-13, 1e-13] * flux_unit,
+            "ul": np.array([True, True, True]),
+            "cl": np.array([0.99, 0.9, 0.99]),
+        }
+    )
+
+    # model is above all three upper limits -> all are violated, and used
+    # to raise IndexError because data['cl'] only has 3 rows
+    model = [2e-12, 2e-12, 2e-12] * flux_unit
+
+    logprob = lnprobmodel(model, data)
+
+    expected = np.sum(np.log(1.0 - data["cl"]))
+    assert np.isclose(logprob, expected)
+
+    # only the middle upper limit (cl=0.9) is violated: the penalty must
+    # use *that* row's cl, not whichever row the violation count happens
+    # to match
+    model = [5e-13, 2e-12, 5e-13] * flux_unit
+    logprob = lnprobmodel(model, data)
+    assert np.isclose(logprob, np.log(1.0 - 0.9))
 
 
 @pytest.mark.skipif("not HAS_EMCEE")
