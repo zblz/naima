@@ -88,8 +88,8 @@ def lnprobmodel(model, data):
 
     if np.sum(ul) > 0:
         # deal with upper limits at CL set by data['cl']
-        violated_uls = np.sum(model[ul] > data["flux"][ul])
-        totallogprob += violated_uls * np.log(1.0 - data["cl"][violated_uls])
+        violated = model[ul] > data["flux"][ul]
+        totallogprob += np.sum(np.log(1.0 - data["cl"][ul][violated]))
 
     return totallogprob
 
