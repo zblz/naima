@@ -1,6 +1,23 @@
 Changelog
 ---------
 
+0.10.4 (2026-09-05)
+^^^^^^^^^^^^^^^^^^^
+
+- Fix incorrect log-prior formulas in ``normal_prior`` and ``log_uniform_prior``.
+  Fixes #253.
+- Fix a mutable default argument bug in ``plot_data`` and ``plot_fit`` that could
+  leak upper-limit styling between calls.
+- Add a ``label`` keyword to ``plot_data`` for setting a legend label on the
+  plotted flux points. Fixes #237.
+- ``plot_fit`` now recomputes the model on a fine energy grid by default
+  instead of reusing the (possibly sparse) values stored in the sampler
+  blobs, fixing inconsistent plots for models such as synchrotron
+  self-Compton. Fixes #240.
+- ``save_results_table`` now records the physical unit of each parameter in a
+  new ``unit`` column. Fixes #243.
+- Dropped support for Python 3.10, following astropy.
+
 0.10.3 (2025-08-05)
 ^^^^^^^^^^^^^^^^^^^
 
