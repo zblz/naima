@@ -11,6 +11,7 @@ from naima.utils import (
     build_data_table,
     estimate_B,
     generate_energy_edges,
+    trapz_loglog,
     validate_data_table,
 )
 
@@ -189,3 +190,19 @@ def test_reversed_table_order():
         data_lohi["flux"].to(data_lohi["flux"].unit).value,
         data_hilo["flux"].to(data_lohi["flux"].unit).value,
     )
+
+
+def test_trapz_loglog_steep_bin():
+    """
+    A bin with an extremely steep local power-law index must not overflow
+    (https://github.com/zblz/naima/issues/263)
+    """
+    x = np.array([1.0, 1.001, 1.002, 1.003])
+    y = np.array([0.0, 1e-250, 1e250, 1e255])
+    result = trapz_loglog(y, x)
+    assert np.isfinite(result)
+
+    # steep bin integral is y2 * x2 / (b + 1), negligible next to the last bin
+    b = np.log10(y[2] / y[1]) / np.log10(x[2] / x[1])
+    steep = trapz_loglog(y[1:3], x[1:3])
+    assert_allclose(steep, y[2] * x[2] / (b + 1), rtol=1e-6)

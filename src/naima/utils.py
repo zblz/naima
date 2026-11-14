@@ -339,8 +339,9 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
         # normal powerlaw integration
         trapzs = np.where(
             np.abs(b + 1.0) > 1e-10,
-            (y[slice1] * (x[slice2] * (x[slice2] / x[slice1]) ** b - x[slice1]))
-            / (b + 1),
+            # y1 * (x2/x1)**b == y2 for a power law; using y2 directly avoids
+            # overflowing the power when the local index b is very large
+            (y[slice2] * x[slice2] - y[slice1] * x[slice1]) / (b + 1),
             x[slice1] * y[slice1] * np.log(x[slice2] / x[slice1]),
         )
 
