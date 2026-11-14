@@ -570,3 +570,26 @@ def test_eblabsorptionmodel():
     #   Make sure the transmission at z = 0. is always larger than the one at z = 0.5
     difference = EBL_zero.transmission(e) - EBL_moderate.transmission(e)
     assert np.all(difference > -1e-10)
+
+
+@pytest.mark.skipif("not HAS_SCIPY")
+def test_ic_flux_finite_steep_cross_section():
+    """
+    IC flux must be finite when the electron grid has a point just above the
+    kinematic limit, where the cross-section rises by hundreds of orders of
+    magnitude between adjacent grid points
+    (https://github.com/zblz/naima/issues/263)
+    """
+    pdist = ExponentialCutoffPowerLaw(
+        1.84056456e35 / u.eV, 1 * u.TeV, 2.64871359, 2.39138152 * u.TeV, 1.0
+    )
+    ic = InverseCompton(
+        pdist,
+        seed_photon_fields=["CMB", "NIR", "FIR"],
+        Eemin=57.4484471 * u.GeV,
+        Eemax=1000 * u.TeV,
+        nEed=1000,
+    )
+    flux = ic.flux([4.21696503] * u.TeV, distance=5.2 * u.kpc)
+    assert np.all(np.isfinite(flux.value))
+    assert_allclose(flux.value, 9.27047484e-28, rtol=1e-3)

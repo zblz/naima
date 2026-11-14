@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+0.10.5 (unreleased)
+^^^^^^^^^^^^^^^^^^^
+
+- Fix ``trapz_loglog`` overflowing to ``inf`` in bins with a very steep local
+  power-law index, which made the inverse Compton flux jump to ``inf`` for some
+  parameter and energy combinations. Fixes #263.
+
 0.10.4 (2026-09-05)
 ^^^^^^^^^^^^^^^^^^^
 
