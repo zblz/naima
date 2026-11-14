@@ -1,9 +1,17 @@
 Changelog
 ---------
 
-0.10.5 (unreleased)
+0.10.5 (2026-11-14)
 ^^^^^^^^^^^^^^^^^^^
 
+- Fix the upper-limit likelihood in ``lnprobmodel`` indexing the per-row
+  confidence level with the number of violated upper limits instead of a mask.
+  This applied the wrong confidence level when ``cl`` varies between rows, and
+  raised an ``IndexError`` when every upper limit was violated. See #261.
+- The radiative model constructors (``Synchrotron``, ``InverseCompton``,
+  ``Bremsstrahlung``, ``PionDecay`` and ``PionDecayKelner06``) now raise a
+  ``TypeError`` for unknown keyword arguments instead of silently ignoring
+  them, e.g. a misspelled ``Eemin``. See #262.
 - Fix ``trapz_loglog`` overflowing to ``inf`` in bins with a very steep local
   power-law index, which made the inverse Compton flux jump to ``inf`` for some
   parameter and energy combinations. Fixes #263.
