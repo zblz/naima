@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import logging
+import numbers
 import os
 import warnings
 from collections import OrderedDict
@@ -743,36 +744,40 @@ class InverseCompton(BaseElectron):
             is required. If set to None it will return the sum of all
             contributions (default).
         """
-        model = super().flux(photon_energy, distance=distance)
+        if seed is None:
+            return super().flux(photon_energy, distance=distance)
 
-        if seed is not None:
-            # Test seed argument
-            if not isinstance(seed, int):
-                if seed not in self.seed_photon_fields:
-                    raise ValueError(
-                        "Provided seed photon field name is not in"
-                        " the definition of the InverseCompton instance"
-                    )
-                else:
-                    seed = list(self.seed_photon_fields.keys()).index(seed)
-            elif seed > len(self.seed_photon_fields):
+        # Test seed argument
+        seed_names = list(self.seed_photon_fields.keys())
+        if not isinstance(seed, numbers.Integral):
+            if seed not in self.seed_photon_fields:
                 raise ValueError(
-                    "Provided seed photon field number is larger"
-                    " than the number of seed photon fields defined in the"
-                    " InverseCompton instance"
+                    "Provided seed photon field name is not in"
+                    " the definition of the InverseCompton instance"
                 )
+            seed = seed_names.index(seed)
+        elif not 0 <= seed < len(seed_names):
+            raise ValueError(
+                "Provided seed photon field number is out of range for the"
+                " {0} seed photon fields defined in the InverseCompton"
+                " instance".format(len(seed_names))
+            )
 
-            if distance != 0:
-                distance = validate_scalar("distance", distance, physical_type="length")
-                dfac = 4 * np.pi * distance.to("cm") ** 2
-                out_unit = "1/(s cm2 eV)"
-            else:
-                dfac = 1
-                out_unit = "1/(s eV)"
+        if distance != 0:
+            distance = validate_scalar("distance", distance, physical_type="length")
+            dfac = 4 * np.pi * distance.to("cm") ** 2
+            out_unit = "1/(s cm2 eV)"
+        else:
+            dfac = 1
+            out_unit = "1/(s eV)"
 
-            model = (self.specic[seed] / dfac).to(out_unit)
+        # Compute the requested seed photon field directly instead of reading
+        # the ``specic`` attribute, which holds the results of the last
+        # uncached ``_spectrum`` call and can belong to different energies
+        outspecene = _validate_ene(photon_energy)
+        specic = self._calc_specic(seed_names[seed], outspecene).to("1/(s eV)")
 
-        return model
+        return (specic / dfac).to(out_unit)
 
     def sed(self, photon_energy, distance=1 * u.kpc, seed=None):
         """Spectral energy distribution at a given distance from the source
