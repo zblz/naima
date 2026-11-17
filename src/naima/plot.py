@@ -666,8 +666,12 @@ def plot_samples(
 
 def find_ML(sampler, modelidx):
     """
-    Find Maximum Likelihood parameters as those in the chain with a highest log
-    probability.
+    Find the parameters in the chain with the highest log probability.
+
+    The log probability includes the prior, so strictly these are the maximum a
+    posteriori (MAP) parameters, which are the maximum likelihood ones only for
+    flat priors. The first returned value is that maximum log probability, not
+    the log likelihood.
     """
     lnprobability = sampler.get_log_prob()
     index = np.unravel_index(np.argmax(lnprobability), lnprobability.shape)

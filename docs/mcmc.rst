@@ -117,6 +117,8 @@ the Bayes Factor is often non-trivial, and a simpler way to obtain an estimate
 is using the `Bayesian Information Criterion (BIC)
 <https://en.wikipedia.org/wiki/Bayesian_Information_Criterion>`_. The BIC for a
 Naima run can be found as a metadata keyword in the results table saved with
-`naima.save_results_table`. Note that the BIC is only a valid approximation for
-the Bayes factor when the number of datapoints is much larger than the number of
-parameters.
+`naima.save_results_table`. It is computed from the log-likelihood (without the
+prior) at the parameter vector with the highest posterior probability, and the
+number of datapoints does not include upper limits. Note that the BIC is only a
+valid approximation for the Bayes factor when the number of datapoints is much
+larger than the number of parameters.
