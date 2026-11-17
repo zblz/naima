@@ -295,7 +295,7 @@ def save_results_table(
     MAP, MAPp, MAPerr, _ = find_ML(sampler, None)
     metadata["MAP_pars"] = [float(p) for p in MAPp]
     # kept for backwards compatibility, same as MAP_pars
-    metadata["ML_pars"] = metadata["MAP_pars"]
+    metadata["ML_pars"] = list(metadata["MAP_pars"])
     metadata["MaxLogProb"] = float(MAP)
 
     loglike = _loglikelihood_at(sampler, MAPp)

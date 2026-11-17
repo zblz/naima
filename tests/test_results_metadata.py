@@ -59,15 +59,31 @@ def test_max_loglikelihood_excludes_prior(tmp_path):
 
 def test_bic_uses_loglikelihood_and_excludes_upper_limits(tmp_path):
     data = data_table.copy()
-    data["ul"] = np.zeros(len(data), dtype=bool)
+    # keep the upper limits of the table (their errors are zero, so they cannot
+    # be treated as data points) and add more
+    data["ul"] = np.asarray(data["ul"], dtype=bool)
     data["ul"][-3:] = True
+    nreal = int(np.sum(~data["ul"]))
+    assert 0 < nreal < len(data) - 3
     sampler, _ = run(data=data, prior=informative_prior)
     t = save_results_table(str(tmp_path / "res"), sampler, include_blobs=False)
 
-    nreal = len(data) - 3
     assert t.meta["n_data"] == nreal
+    # the BIC must be finite, otherwise comparing it proves nothing
+    assert np.isfinite(t.meta["MaxLogLikelihood"])
     expected = 2 * np.log(nreal) - 2 * t.meta["MaxLogLikelihood"]
+    assert np.isfinite(expected)
     assert t.meta["BIC"] == pytest.approx(expected)
+
+
+def test_ml_pars_is_not_a_yaml_alias_of_map_pars(tmp_path):
+    """The same list object in two keys is written as a YAML anchor/alias,
+    which readers other than astropy see as '*id001' instead of the values."""
+    sampler, _ = run()
+    save_results_table(str(tmp_path / "res"), sampler, include_blobs=False)
+    text = next(tmp_path.glob("res_results*")).read_text()
+    assert "&id" not in text
+    assert "*id" not in text
 
 
 def test_without_model_function_falls_back_to_logprob(tmp_path):
