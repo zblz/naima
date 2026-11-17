@@ -146,9 +146,10 @@ def test_init():
 
 @pytest.mark.skipif("not HAS_EMCEE")
 def test_inf_prior():
-    pars = p0
+    # copy so that the p0 shared with the other tests is not modified
+    pars = p0.copy()
     pars[0] = -1e-9
-    _ = lnprob(pars, data_table, cutoffexp, lnprior)
+    assert lnprob(pars, data_table, cutoffexp, lnprior)[0] == -np.inf
 
 
 @pytest.mark.skipif("not HAS_EMCEE")
