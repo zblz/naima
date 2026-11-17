@@ -1,7 +1,7 @@
 Changelog
 ---------
 
-0.10.6 (unreleased)
+0.11.0 (unreleased)
 ^^^^^^^^^^^^^^^^^^^
 
 - ``run_sampler`` can now continue a sampler that has already been run,
