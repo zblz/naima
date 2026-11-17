@@ -217,23 +217,36 @@ def _prefit(p0, data, model, prior):
     return p0, P0_IS_ML
 
 
-def _initial_walkers(p0, nwalkers, spread, labels, prior=None, max_tries=30):
+def _initial_walkers(
+    p0, nwalkers, spread, labels, prior=None, max_tries=30, log_spread=0.5
+):
     """Generate the initial walker positions in a ball around ``p0``.
 
-    The spread is relative to the value of each parameter, except for
-    parameters that are exactly zero or whose label starts with ``log`` (which
-    are already logarithmic), for which it is absolute. Walkers that fall in a
-    region forbidden by ``prior`` are drawn again, in a ball that shrinks by a
-    factor of two on each of up to ``max_tries`` attempts, so that the walkers
-    stay distinct (emcee requires linearly independent walkers) even if the
-    allowed region is much narrower than the initial ball.
+    The spread is relative to the value of each parameter, except for:
+
+    - parameters that are exactly zero, for which the spread is absolute,
+    - parameters whose label starts with ``log``, which are already
+      logarithmic, so a relative spread would depend on the units (it vanishes
+      if the value is close to zero): the spread is absolute, ``log_spread``
+      orders of magnitude (dex), or the same factor in natural logarithm units
+      for labels that do not start with ``log10``.
+
+    Walkers that fall in a region forbidden by ``prior`` are drawn again, in a
+    ball that shrinks by a factor of two on each of up to ``max_tries``
+    attempts, so that the walkers stay distinct (emcee requires linearly
+    independent walkers) even if the allowed region is much narrower than the
+    initial ball.
     """
     p0 = np.asarray(p0, dtype=float)
     npars = len(p0)
-    absolute = np.array(
-        [pp == 0 or str(labels[i]).lower().startswith("log") for i, pp in enumerate(p0)]
-    )
-    scale = spread * np.where(absolute, 1.0, np.abs(p0))
+
+    scale = spread * np.where(p0 == 0, 1.0, np.abs(p0))
+    for i, label in enumerate(labels[:npars]):
+        label = str(label).lower()
+        if label.startswith("log10"):
+            scale[i] = log_spread
+        elif label.startswith("log"):
+            scale[i] = log_spread * np.log(10)
 
     def draw(n, factor=1.0):
         return p0 + factor * scale * np.random.normal(size=(n, npars))
@@ -536,7 +549,9 @@ def get_sampler(
     # Initialize walkers in a ball of relative size 0.5% in all dimensions if
     # the parameters have been fit to their ML values, or to 10% otherwise
     spread = 0.005 if P0_IS_ML else 0.1
-    p0 = _initial_walkers(p0, nwalkers, spread, labels, prior)
+    # Logarithmic parameters use an absolute spread in orders of magnitude
+    log_spread = 0.1 if P0_IS_ML else 0.5
+    p0 = _initial_walkers(p0, nwalkers, spread, labels, prior, log_spread=log_spread)
 
     if nburn > 0:
         print("Burning in the {0} walkers with {1} steps...".format(nwalkers, nburn))

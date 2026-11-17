@@ -3,6 +3,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
+import pytest
 from astropy import log
 from astropy.io import ascii
 
@@ -33,14 +34,55 @@ def test_walkers_spread_around_zero_parameter():
     assert np.all(np.std(state.coords, axis=0) > 0)
 
 
-def test_log_parameters_get_absolute_spread():
-    """10% of a log10 parameter at -12 is 1.2 dex; the spread must be absolute."""
+def test_log_parameters_get_absolute_spread_in_dex():
+    """A relative spread on a logarithmic value depends on the units: it is
+    1.2 dex at -12 but vanishes at values close to zero. It is half an order of
+    magnitude for any value."""
+    np.random.seed(0)
+    labels = ["log10(norm)", "log10(cutoff)", "log10(other)", "index"]
+    p0 = np.array([-12.0, 0.01, 0.0, 2.0])
+    walkers = _initial_walkers(p0, 4000, 0.1, labels)
+    assert np.std(walkers[:, :3], axis=0) == pytest.approx(0.5, rel=0.05)
+    # the others keep a relative spread
+    assert np.std(walkers[:, 3]) == pytest.approx(0.2, rel=0.05)
+
+
+def test_log_spread_is_configurable():
     np.random.seed(0)
     walkers = _initial_walkers(
-        np.array([-12.0, 2.0]), 2000, 0.1, ["log10(norm)", "index"]
+        np.array([-12.0]), 4000, 0.005, ["log10(n)"], log_spread=0.1
     )
-    assert np.std(walkers[:, 0]) < 0.2
-    assert np.std(walkers[:, 1]) > 0.15
+    assert np.std(walkers[:, 0]) == pytest.approx(0.1, rel=0.05)
+
+
+def test_natural_log_parameters_use_the_same_factor():
+    """0.5 dex is 0.5 ln(10) in natural logarithm units."""
+    np.random.seed(0)
+    walkers = _initial_walkers(np.array([-27.0]), 4000, 0.1, ["log(norm)"])
+    assert np.std(walkers[:, 0]) == pytest.approx(0.5 * np.log(10), rel=0.05)
+
+
+def test_small_linear_parameters_keep_a_relative_spread():
+    """Only exact zeros get an absolute spread: a normalization of 1e-12 is a
+    legitimate value that needs a relative spread."""
+    np.random.seed(0)
+    walkers = _initial_walkers(np.array([1e-12, 0.0]), 4000, 0.1, ["norm", "beta"])
+    assert np.std(walkers[:, 0]) == pytest.approx(1e-13, rel=0.05)
+    assert np.std(walkers[:, 1]) == pytest.approx(0.1, rel=0.05)
+
+
+def test_sampler_uses_half_an_order_of_magnitude_for_log_parameters():
+    sampler, state = get_sampler(
+        data_table=data_table,
+        p0=np.array([-10.0, 2.0]),
+        labels=["log10(norm)", "index"],
+        model=lambda pars, data: powerlaw_extra([10 ** pars[0], pars[1]], data),
+        nwalkers=2000,
+        nburn=0,
+        guess=False,
+        threads=1,
+    )
+    assert np.std(state.coords[:, 0]) == pytest.approx(0.5, rel=0.1)
 
 
 def test_walkers_start_inside_prior():
