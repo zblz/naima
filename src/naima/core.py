@@ -217,6 +217,43 @@ def _prefit(p0, data, model, prior):
     return p0, P0_IS_ML
 
 
+def _initial_walkers(p0, nwalkers, spread, labels, prior=None, max_tries=100):
+    """Generate the initial walker positions in a ball around ``p0``.
+
+    The spread is relative to the value of each parameter, except for
+    parameters that are exactly zero or whose label starts with ``log`` (which
+    are already logarithmic), for which it is absolute. Walkers that fall in a
+    region forbidden by ``prior`` are drawn again up to ``max_tries`` times.
+    """
+    p0 = np.asarray(p0, dtype=float)
+    npars = len(p0)
+    absolute = np.array(
+        [pp == 0 or str(labels[i]).lower().startswith("log") for i, pp in enumerate(p0)]
+    )
+    scale = spread * np.where(absolute, 1.0, np.abs(p0))
+
+    def draw(n):
+        return p0 + scale * np.random.normal(size=(n, npars))
+
+    walkers = draw(nwalkers)
+
+    if prior is not None:
+        bad = np.array([np.isneginf(prior(w)) for w in walkers])
+        for _ in range(max_tries):
+            if not bad.any():
+                break
+            walkers[bad] = draw(bad.sum())
+            bad = np.array([np.isneginf(prior(w)) for w in walkers])
+        if bad.any():
+            log.warning(
+                "{0} of {1} walkers could not be initialized within the prior"
+                " and start at the initial position vector.".format(bad.sum(), nwalkers)
+            )
+            walkers[bad] = p0
+
+    return walkers
+
+
 def get_sampler(
     data_table=None,
     p0=None,
@@ -484,10 +521,7 @@ def get_sampler(
     # Initialize walkers in a ball of relative size 0.5% in all dimensions if
     # the parameters have been fit to their ML values, or to 10% otherwise
     spread = 0.005 if P0_IS_ML else 0.1
-    p0var = np.array([spread * pp for pp in p0])
-    p0 = np.vstack(
-        [p0 + p0var * np.random.normal(size=len(p0)) for i in range(nwalkers)]
-    )
+    p0 = _initial_walkers(p0, nwalkers, spread, labels, prior)
 
     if nburn > 0:
         print("Burning in the {0} walkers with {1} steps...".format(nwalkers, nburn))
