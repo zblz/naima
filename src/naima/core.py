@@ -218,7 +218,7 @@ def _prefit(p0, data, model, prior):
 
 
 def _initial_walkers(
-    p0, nwalkers, spread, labels, prior=None, max_tries=30, log_spread=0.5
+    p0, nwalkers, spread, labels, prior=None, max_tries=30, log_spread=1.0
 ):
     """Generate the initial walker positions in a ball around ``p0``.
 
@@ -550,9 +550,9 @@ def get_sampler(
     # the parameters have been fit to their ML values, or to 10% otherwise
     spread = 0.005 if P0_IS_ML else 0.1
     # Logarithmic parameters use an absolute spread in orders of magnitude (dex),
-    # half an order of magnitude for the default relative spread of 10%, scaled
+    # one order of magnitude for the default relative spread of 10%, scaled
     # in the same proportion when the relative spread is smaller
-    log_spread = 0.5 * spread / 0.1
+    log_spread = 1.0 * spread / 0.1
     p0 = _initial_walkers(p0, nwalkers, spread, labels, prior, log_spread=log_spread)
 
     if nburn > 0:

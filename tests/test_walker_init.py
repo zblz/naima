@@ -36,13 +36,13 @@ def test_walkers_spread_around_zero_parameter():
 
 def test_log_parameters_get_absolute_spread_in_dex():
     """A relative spread on a logarithmic value depends on the units: it is
-    1.2 dex at -12 but vanishes at values close to zero. It is half an order of
+    1.2 dex at -12 but vanishes at values close to zero. It is one order of
     magnitude for any value."""
     np.random.seed(0)
     labels = ["log10(norm)", "log10(cutoff)", "log10(other)", "index"]
     p0 = np.array([-12.0, 0.01, 0.0, 2.0])
     walkers = _initial_walkers(p0, 4000, 0.1, labels)
-    assert np.std(walkers[:, :3], axis=0) == pytest.approx(0.5, rel=0.05)
+    assert np.std(walkers[:, :3], axis=0) == pytest.approx(1.0, rel=0.05)
     # the others keep a relative spread
     assert np.std(walkers[:, 3]) == pytest.approx(0.2, rel=0.05)
 
@@ -56,10 +56,10 @@ def test_log_spread_is_configurable():
 
 
 def test_natural_log_parameters_use_the_same_factor():
-    """0.5 dex is 0.5 ln(10) in natural logarithm units."""
+    """1 dex is ln(10) in natural logarithm units."""
     np.random.seed(0)
     walkers = _initial_walkers(np.array([-27.0]), 4000, 0.1, ["log(norm)"])
-    assert np.std(walkers[:, 0]) == pytest.approx(0.5 * np.log(10), rel=0.05)
+    assert np.std(walkers[:, 0]) == pytest.approx(np.log(10), rel=0.05)
 
 
 def test_small_linear_parameters_keep_a_relative_spread():
@@ -71,7 +71,7 @@ def test_small_linear_parameters_keep_a_relative_spread():
     assert np.std(walkers[:, 1]) == pytest.approx(0.1, rel=0.05)
 
 
-def test_sampler_uses_half_an_order_of_magnitude_for_log_parameters():
+def test_sampler_uses_one_order_of_magnitude_for_log_parameters():
     sampler, state = get_sampler(
         data_table=data_table,
         p0=np.array([-10.0, 2.0]),
@@ -82,7 +82,7 @@ def test_sampler_uses_half_an_order_of_magnitude_for_log_parameters():
         guess=False,
         threads=1,
     )
-    assert np.std(state.coords[:, 0]) == pytest.approx(0.5, rel=0.1)
+    assert np.std(state.coords[:, 0]) == pytest.approx(1.0, rel=0.1)
 
 
 def test_walkers_start_inside_prior():
@@ -151,7 +151,7 @@ def test_nan_prior_counts_as_forbidden():
 
 def test_ml_start_narrows_log_and_relative_spreads_in_the_same_proportion(monkeypatch):
     """With p0 at the ML point the relative spread goes from 10% to 0.5%, and
-    the absolute spread of log parameters from 0.5 dex to 0.025 dex."""
+    the absolute spread of log parameters from 1 dex to 0.05 dex."""
     import naima.core
 
     monkeypatch.setattr(naima.core, "_prefit", lambda p0, *args: (p0, True))
@@ -166,5 +166,5 @@ def test_ml_start_narrows_log_and_relative_spreads_in_the_same_proportion(monkey
         prefit=True,
         threads=1,
     )
-    assert np.std(state.coords[:, 0]) == pytest.approx(0.025, rel=0.05)
+    assert np.std(state.coords[:, 0]) == pytest.approx(0.05, rel=0.05)
     assert np.std(state.coords[:, 1]) == pytest.approx(0.01, rel=0.05)
