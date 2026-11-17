@@ -217,13 +217,16 @@ def _prefit(p0, data, model, prior):
     return p0, P0_IS_ML
 
 
-def _initial_walkers(p0, nwalkers, spread, labels, prior=None, max_tries=100):
+def _initial_walkers(p0, nwalkers, spread, labels, prior=None, max_tries=30):
     """Generate the initial walker positions in a ball around ``p0``.
 
     The spread is relative to the value of each parameter, except for
     parameters that are exactly zero or whose label starts with ``log`` (which
     are already logarithmic), for which it is absolute. Walkers that fall in a
-    region forbidden by ``prior`` are drawn again up to ``max_tries`` times.
+    region forbidden by ``prior`` are drawn again, in a ball that shrinks by a
+    factor of two on each of up to ``max_tries`` attempts, so that the walkers
+    stay distinct (emcee requires linearly independent walkers) even if the
+    allowed region is much narrower than the initial ball.
     """
     p0 = np.asarray(p0, dtype=float)
     npars = len(p0)
@@ -232,24 +235,36 @@ def _initial_walkers(p0, nwalkers, spread, labels, prior=None, max_tries=100):
     )
     scale = spread * np.where(absolute, 1.0, np.abs(p0))
 
-    def draw(n):
-        return p0 + scale * np.random.normal(size=(n, npars))
+    def draw(n, factor=1.0):
+        return p0 + factor * scale * np.random.normal(size=(n, npars))
+
+    def forbidden(walkers):
+        # NaN is not accepted either
+        return np.array([not prior(w) > -np.inf for w in walkers], dtype=bool)
 
     walkers = draw(nwalkers)
 
-    if prior is not None:
-        bad = np.array([np.isneginf(prior(w)) for w in walkers])
-        for _ in range(max_tries):
-            if not bad.any():
-                break
-            walkers[bad] = draw(bad.sum())
-            bad = np.array([np.isneginf(prior(w)) for w in walkers])
-        if bad.any():
-            log.warning(
-                "{0} of {1} walkers could not be initialized within the prior"
-                " and start at the initial position vector.".format(bad.sum(), nwalkers)
-            )
-            walkers[bad] = p0
+    if prior is None:
+        return walkers
+
+    if forbidden([p0])[0]:
+        log.warning(
+            "The prior is not finite at the initial position vector {0}: the"
+            " walkers cannot be initialized inside it.".format(p0)
+        )
+        return walkers
+
+    bad = forbidden(walkers)
+    for attempt in range(1, max_tries + 1):
+        if not bad.any():
+            break
+        walkers[bad] = draw(bad.sum(), 0.5**attempt)
+        bad[bad] = forbidden(walkers[bad])
+    if bad.any():
+        log.warning(
+            "{0} of {1} walkers could not be initialized within the prior and"
+            " have zero probability.".format(bad.sum(), nwalkers)
+        )
 
     return walkers
 

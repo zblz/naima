@@ -3,6 +3,7 @@ from pathlib import Path
 
 import astropy.units as u
 import numpy as np
+from astropy import log
 from astropy.io import ascii
 
 from naima.core import _initial_walkers, get_sampler, uniform_prior
@@ -55,10 +56,52 @@ def test_walkers_start_inside_prior():
     assert np.all(np.isfinite([prior(w) for w in walkers]))
 
 
-def test_walkers_forbidden_p0_falls_back_to_p0():
-    """If the prior forbids everything, walkers fall back to p0."""
-    p0 = np.array([1.0, 2.0])
+def test_walkers_in_a_prior_much_narrower_than_the_ball_stay_distinct():
+    """Collapsing the walkers onto p0 makes emcee fail with 'Initial state has
+    a large condition number'."""
+
+    def prior(pars):
+        return uniform_prior(pars[1], 2.0, 2.0 + 1e-6)
+
+    np.random.seed(1)
     walkers = _initial_walkers(
-        p0, 5, 0.1, ["a", "b"], lambda pars: -np.inf, max_tries=2
+        np.array([1e-11, 2.0]), 16, 0.1, ["norm", "index"], prior
     )
-    assert np.all(walkers == p0)
+    assert np.all(np.isfinite([prior(w) for w in walkers]))
+    assert len(np.unique(walkers[:, 1])) == 16
+
+
+def test_sampler_with_a_narrow_prior_runs():
+    def prior(pars):
+        return uniform_prior(pars[1], 2.0, 2.0 + 1e-6)
+
+    np.random.seed(1)
+    sampler, state = get_sampler(
+        data_table=data_table,
+        p0=np.array([1e-11, 2.0]),
+        labels=["norm", "index"],
+        model=powerlaw_extra,
+        prior=prior,
+        nwalkers=16,
+        nburn=2,
+        guess=False,
+        threads=1,
+    )
+    assert np.all(np.isfinite(state.log_prob))
+
+
+def test_p0_outside_the_prior_is_reported():
+    p0 = np.array([1.0, 2.0])
+    with log.log_to_list() as messages:
+        walkers = _initial_walkers(p0, 5, 0.1, ["a", "b"], lambda pars: -np.inf)
+    assert walkers.shape == (5, 2)
+    assert any("not finite at the initial position" in m.message for m in messages)
+
+
+def test_nan_prior_counts_as_forbidden():
+    def prior(pars):
+        return np.nan if pars[0] > 1.0 else 0.0
+
+    np.random.seed(0)
+    walkers = _initial_walkers(np.array([1.0, 2.0]), 100, 0.1, ["a", "b"], prior)
+    assert np.all(walkers[:, 0] <= 1.0)
