@@ -4,8 +4,10 @@ from pathlib import Path
 import astropy.units as u
 import numpy as np
 import pytest
+from astropy import log
 from astropy.io import ascii
 
+import naima.core
 from naima.core import get_sampler, lnprob, run_sampler
 
 data_table = ascii.read(str(Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"))
@@ -101,3 +103,80 @@ def data_table_validated():
     from naima.utils import validate_data_table
 
     return validate_data_table(data_table)
+
+
+def buggy_above_index(pars, data):
+    if pars[1] > 2.1:
+        raise TypeError("bug in the model")
+    return powerlaw(pars, data)
+
+
+def invalid_above_index(pars, data):
+    if pars[1] > 2.1:
+        raise ValueError("parameter out of domain")
+    return powerlaw(pars, data)
+
+
+def test_bugs_in_the_model_are_not_swallowed():
+    """Only numerical failures are mapped to -inf: a TypeError is a bug in the
+    model and silently turning it into zero probability gives garbage."""
+    data = data_table_validated()
+    fallback = (powerlaw(P0, data), np.nan)
+    with pytest.raises(TypeError):
+        lnprob(
+            np.array([1e-11, 3.0]),
+            data,
+            buggy_above_index,
+            None,
+            fallback_blob=fallback,
+        )
+
+
+def test_run_with_a_buggy_model_raises():
+    with pytest.raises(TypeError):
+        run_sampler(
+            data_table=data_table,
+            p0=P0,
+            labels=LABELS,
+            model=buggy_above_index,
+            nwalkers=20,
+            nburn=3,
+            nrun=3,
+            threads=1,
+            guess=False,
+        )
+
+
+def test_first_model_failure_is_warned(monkeypatch):
+    monkeypatch.setattr(naima.core, "_model_failure_warned", False)
+    data = data_table_validated()
+    fallback = (powerlaw(P0, data), np.nan)
+    with log.log_to_list() as messages:
+        for _ in range(3):
+            lnprob(
+                np.array([1e-11, 3.0]),
+                data,
+                invalid_above_index,
+                None,
+                fallback_blob=fallback,
+            )
+    warnings = [m for m in messages if m.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert "parameter out of domain" in warnings[0].message
+
+
+def test_no_finite_walker_is_warned():
+    with log.log_to_list() as messages:
+        run_sampler(
+            data_table=data_table,
+            p0=P0,
+            labels=LABELS,
+            model=powerlaw,
+            prior=lambda pars: -np.inf,
+            nwalkers=10,
+            nburn=0,
+            nrun=2,
+            threads=1,
+            guess=False,
+        )
+    assert any("finite log-probability" in m.message for m in messages)
