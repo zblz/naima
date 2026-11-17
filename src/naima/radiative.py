@@ -17,7 +17,6 @@ from .extern.validator import (
     validate_physical_type,
     validate_scalar,
 )
-from .model_utils import memoize
 from .utils import trapz_loglog
 
 __all__ = [
@@ -102,7 +101,6 @@ class BaseRadiative:
                 physical_type="differential energy",
             )
 
-    @memoize
     def flux(self, photon_energy, distance=1 * u.kpc):
         """Differential flux at a given distance from the source.
 
@@ -157,9 +155,6 @@ class BaseElectron(BaseRadiative):
     def __init__(self, particle_distribution):
         super().__init__(particle_distribution)
         self.param_names = ["Eemin", "Eemax", "nEed"]
-        self._memoize = True
-        self._cache = {}
-        self._queue = []
 
     @property
     def _gam(self):
@@ -1016,9 +1011,6 @@ class BaseProton(BaseRadiative):
     def __init__(self, particle_distribution):
         super().__init__(particle_distribution)
         self.param_names = ["Epmin", "Epmax", "nEpd"]
-        self._memoize = True
-        self._cache = {}
-        self._queue = []
 
     @property
     def _Ep(self):
@@ -1594,9 +1586,6 @@ class PionDecayKelner06(BaseRadiative):
 
     # This class doesn't inherit from BaseProton
     param_names = ["nh", "Etrans"]
-    _memoize = True
-    _cache = {}
-    _queue = []
 
     def __init__(
         self, particle_distribution, nh=1.0 / u.cm**3, Etrans=0.1 * u.TeV, **kwargs
