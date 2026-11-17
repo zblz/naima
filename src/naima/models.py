@@ -457,11 +457,13 @@ def _load_tau_dominguez11():
 
 class EblAbsorptionModel(TableModel):
     """
-    A TableModel containing the EBL transmission (``exp(-tau)``) from a
-    specific model.
+    A TableModel containing the EBL absorption factor (``exp(-tau)``, where
+    ``tau`` is the optical depth) from a specific model.
 
-    Calling the instance returns the dimensionless transmission, that can be
-    multiplied to any model. Note that the optical depth tau is not returned.
+    Calling the instance returns the dimensionless absorption factor, which is
+    1 for no absorption and decreases towards 0 for stronger absorption. It can
+    be multiplied to any model to obtain the absorbed one. Note that the optical
+    depth ``tau`` itself is not returned.
 
     Parameters
     ----------
@@ -523,7 +525,7 @@ class EblAbsorptionModel(TableModel):
         self._emin = energy[0]
 
     def __call__(self, e):
-        """Transmission ``exp(-tau)`` at energies ``e``.
+        """Absorption factor ``exp(-tau)`` at energies ``e``.
 
         It is 1 below the lower energy limit of the table (1 GeV) and 0 above
         the upper limit (100 TeV), where the optical depth is above 200 for all
@@ -538,9 +540,9 @@ class EblAbsorptionModel(TableModel):
         return transmission * u.dimensionless_unscaled
 
     def transmission(self, e):
-        """Fraction of the flux that survives EBL absorption at energies ``e``.
+        """Absorption factor ``exp(-tau)`` at energies ``e``, without units.
 
-        Returns a dimensionless array (or scalar) that can be multiplied to any
-        model.
+        Same values as calling the instance, returned as a dimensionless array
+        (or scalar) that can be multiplied to any model.
         """
         return self(e).to_value("")

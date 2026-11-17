@@ -19,7 +19,7 @@ def test_transmission_is_exp_minus_tau():
     assert t == pytest.approx(np.exp(-TAU_Z01_10TEV), rel=1e-3)
 
 
-def test_call_is_a_transmission_not_an_amplification():
+def test_call_is_an_absorption_factor_not_an_amplification():
     ebl = EblAbsorptionModel(0.1)
     e = np.logspace(-4, 3, 30) * u.TeV
     out = ebl(e)
@@ -28,8 +28,8 @@ def test_call_is_a_transmission_not_an_amplification():
     assert np.allclose(out.value, ebl.transmission(e))
 
 
-def test_transmission_vanishes_above_table_range():
-    """Above 100 TeV the optical depth is >200, so nothing survives."""
+def test_absorption_factor_vanishes_above_table_range():
+    """Above 100 TeV the optical depth is >200, so the flux is fully absorbed."""
     ebl = EblAbsorptionModel(0.1)
     t = ebl.transmission([150, 200, 1000] * u.TeV)
     assert np.all(t < 1e-30)
