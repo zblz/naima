@@ -147,3 +147,24 @@ def test_nan_prior_counts_as_forbidden():
     np.random.seed(0)
     walkers = _initial_walkers(np.array([1.0, 2.0]), 100, 0.1, ["a", "b"], prior)
     assert np.all(walkers[:, 0] <= 1.0)
+
+
+def test_ml_start_narrows_log_and_relative_spreads_in_the_same_proportion(monkeypatch):
+    """With p0 at the ML point the relative spread goes from 10% to 0.5%, and
+    the absolute spread of log parameters from 0.5 dex to 0.025 dex."""
+    import naima.core
+
+    monkeypatch.setattr(naima.core, "_prefit", lambda p0, *args: (p0, True))
+    sampler, state = get_sampler(
+        data_table=data_table,
+        p0=np.array([-10.0, 2.0]),
+        labels=["log10(norm)", "index"],
+        model=lambda pars, data: powerlaw_extra([10 ** pars[0], pars[1]], data),
+        nwalkers=4000,
+        nburn=0,
+        guess=False,
+        prefit=True,
+        threads=1,
+    )
+    assert np.std(state.coords[:, 0]) == pytest.approx(0.025, rel=0.05)
+    assert np.std(state.coords[:, 1]) == pytest.approx(0.01, rel=0.05)

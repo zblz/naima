@@ -549,8 +549,10 @@ def get_sampler(
     # Initialize walkers in a ball of relative size 0.5% in all dimensions if
     # the parameters have been fit to their ML values, or to 10% otherwise
     spread = 0.005 if P0_IS_ML else 0.1
-    # Logarithmic parameters use an absolute spread in orders of magnitude
-    log_spread = 0.1 if P0_IS_ML else 0.5
+    # Logarithmic parameters use an absolute spread in orders of magnitude (dex),
+    # half an order of magnitude for the default relative spread of 10%, scaled
+    # in the same proportion when the relative spread is smaller
+    log_spread = 0.5 * spread / 0.1
     p0 = _initial_walkers(p0, nwalkers, spread, labels, prior, log_spread=log_spread)
 
     if nburn > 0:
