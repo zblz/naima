@@ -510,11 +510,20 @@ def _ensure_pool(sampler):
         sampler.pool = sampler._naima_pool
 
 
-def _close_pool(sampler):
-    """Close the process pool created by naima, if any"""
+def _close_pool(sampler, terminate=False):
+    """Close the process pool created by naima, if any.
+
+    If ``terminate`` is True the workers are stopped without waiting for the
+    pending tasks. This is required after an interruption (e.g. Ctrl-C, which
+    reaches the workers too), since joining a pool with an interrupted map
+    blocks forever.
+    """
     pool = getattr(sampler, "_naima_pool", None)
     if pool is not None:
-        pool.close()
+        if terminate:
+            pool.terminate()
+        else:
+            pool.close()
         pool.join()
         sampler._naima_pool = None
         sampler.pool = None
@@ -560,14 +569,17 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
 
     try:
         if continuing:
-            sampler.run_info["n_run"] += nrun
             print("\nContinuing the run for {0} steps...".format(nrun))
         else:
-            sampler.run_info["n_run"] = nrun
             print("\nWalker burn in finished, running {0} steps...".format(nrun))
             sampler.reset()
         sampler, pos = _run_mcmc(sampler, pos, nrun)
-    finally:
-        _close_pool(sampler)
+    except BaseException:
+        _close_pool(sampler, terminate=True)
+        raise
+    _close_pool(sampler)
+
+    # Only set once the steps have been run, so that it always matches the chain
+    sampler.run_info["n_run"] = sampler.iteration
 
     return sampler, pos
