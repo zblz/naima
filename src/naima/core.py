@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
+import re
 import warnings
+import weakref
 from collections.abc import Iterable
 from multiprocessing import Pool
 
@@ -221,7 +223,8 @@ def _prefit(p0, data, model, prior):
         prior = flat_prior
 
     def nll(*args):
-        return -lnprob(*args)[0]
+        # an empty fallback blob makes failures of the model count as -inf
+        return -lnprob(*args, fallback_blob=())[0]
 
     log.info("Finding Maximum Likelihood parameters through Nelder-Mead fitting...")
     log.info("   Initial parameters: {0}".format(p0))
@@ -235,7 +238,7 @@ def _prefit(p0, data, model, prior):
             method="Nelder-Mead",
             options={"maxfev": 500, "xtol": 1e-1, "ftol": 1e-3},
         )
-        ll_prior = lnprob(result["x"], data, model, prior)[0]
+        ll_prior = lnprob(result["x"], data, model, prior, fallback_blob=())[0]
 
     if (result["success"] or result["status"] == 1) and not np.isinf(ll_prior):
         # also keep result if we have reached maxiter, it is likely
@@ -267,6 +270,11 @@ def _prefit(p0, data, model, prior):
     return p0, P0_IS_ML
 
 
+# Labels of logarithmic parameters: ``log10(...)``, ``log(...)``, ``log10_x``...
+# but not other words that start with the same letters, such as ``logistic``
+_LOG_LABEL = re.compile(r"log(10)?(?![a-z])")
+
+
 def _initial_walkers(
     p0, nwalkers, spread, labels, prior=None, max_tries=30, log_spread=1.0
 ):
@@ -275,7 +283,8 @@ def _initial_walkers(
     The spread is relative to the value of each parameter, except for:
 
     - parameters that are exactly zero, for which the spread is absolute,
-    - parameters whose label starts with ``log``, which are already
+    - parameters whose label starts with ``log`` or ``log10`` (as in
+      ``log10(cutoff)``, not followed by a letter), which are already
       logarithmic, so a relative spread would depend on the units (it vanishes
       if the value is close to zero): the spread is absolute, ``log_spread``
       orders of magnitude (dex), or the same factor in natural logarithm units
@@ -292,10 +301,10 @@ def _initial_walkers(
 
     scale = spread * np.where(p0 == 0, 1.0, np.abs(p0))
     for i, label in enumerate(labels[:npars]):
-        label = str(label).lower()
-        if label.startswith("log10"):
+        match = _LOG_LABEL.match(str(label).lower())
+        if match and match.group(1):
             scale[i] = log_spread
-        elif label.startswith("log"):
+        elif match:
             scale[i] = log_spread * np.log(10)
 
     def draw(n, factor=1.0):
@@ -414,7 +423,11 @@ def get_sampler(
         the maximum of the parameter space density. Default is 100.
     labels : iterable of strings, optional
         Labels for the parameters included in the position vector ``p0``. If
-        not provided ``['par1','par2', ... ,'parN']`` will be used.
+        not provided ``['par1','par2', ... ,'parN']`` will be used. Labels
+        starting with ``log10`` or ``log`` (e.g. ``log10(cutoff)``) mark
+        logarithmic parameters, for which the initial walkers are spread by an
+        absolute amount of 1 dex (0.05 dex if ``p0`` is the maximum
+        likelihood) instead of by a fraction of the value.
     threads : int, optional
         Number of parallel processes to use for sampling. Default is the number
         of CPU cores.
@@ -453,6 +466,11 @@ def get_sampler(
     --------
     emcee.EnsembleSampler
     """
+    # Report the first failure of the model of this fit, also if the model
+    # failed in a previous fit of the same session
+    global _model_failure_warned
+    _model_failure_warned = False
+
     if data_table is None:
         raise TypeError("Data table is missing!")
     else:
@@ -593,8 +611,10 @@ def get_sampler(
         pool=pool,
         blobs_dtype=np.dtype(object),
     )
-    sampler._naima_pool = pool if owns_pool else None
+    sampler._naima_pool = None
     sampler._naima_threads = threads if owns_pool else None
+    if owns_pool and pool is not None:
+        _own_pool(sampler, pool)
 
     # Add data and parameters properties to sampler
     sampler.data_table = data_table
@@ -633,12 +653,23 @@ def get_sampler(
     return sampler, state
 
 
+def _own_pool(sampler, pool):
+    """Set a process pool created by naima as the pool of the sampler.
+
+    The pool is terminated if the sampler is garbage collected or the
+    interpreter exits before `run_sampler` closes it, e.g. if the sampler
+    returned by `get_sampler` is used without `run_sampler`.
+    """
+    sampler._naima_pool = pool
+    sampler.pool = pool
+    sampler._naima_finalizer = weakref.finalize(sampler, pool.terminate)
+
+
 def _ensure_pool(sampler):
     """Recreate the process pool of a sampler whose pool has been closed."""
     threads = getattr(sampler, "_naima_threads", None)
     if threads is not None and threads > 1 and sampler._naima_pool is None:
-        sampler._naima_pool = Pool(threads)
-        sampler.pool = sampler._naima_pool
+        _own_pool(sampler, Pool(threads))
 
 
 def _close_pool(sampler, terminate=False):
@@ -656,6 +687,7 @@ def _close_pool(sampler, terminate=False):
         else:
             pool.close()
         pool.join()
+        sampler._naima_finalizer.detach()
         sampler._naima_pool = None
         sampler.pool = None
 
@@ -681,11 +713,16 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
         parameters. `emcee.utils.sample_ball` can be used to generate a
         multidimensional gaussian distribution around a single initial
         position.
+    **kwargs
+        Passed to `get_sampler` if no sampler and initial position are given
+        (e.g. ``threads`` or ``pool``). They are ignored otherwise, as the
+        sampler keeps the pool it was created with.
 
     Returns
     -------
     sampler : :class:`~emcee.EnsembleSampler` instance
-        Sampler containing the paths of the walkers during the ``nrun`` steps.
+        Sampler containing the paths of the walkers during the ``nrun`` steps,
+        and during the steps of previous runs if the sampler was continued.
     pos : array
         List of final position vectors after the run.
     """

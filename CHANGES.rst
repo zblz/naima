@@ -8,9 +8,9 @@ Changelog
   appending the new steps to its chain (a sampler fresh from ``get_sampler``
   still has its burn-in discarded), and ``n_run`` is set to the number of steps
   in the chain. The process pool created by naima is recreated when needed and
-  is closed also if the run fails or is interrupted. ``get_sampler`` and
-  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
-  user, which is never closed by naima.
+  is closed also if the run fails or is interrupted. ``get_sampler`` has a
+  new ``pool`` argument to use a pool provided by the user, which is never
+  closed by naima (``run_sampler`` passes it on when it creates the sampler).
 - Fix the initial walkers of ``get_sampler`` for parameters that start at zero,
   which got no spread because it is relative to the value. Parameters whose
   label starts with ``log`` now use an absolute spread of 1 dex (0.05 dex
@@ -31,7 +31,8 @@ Changelog
   returned the results for the previous parameters, and ``PionDecayKelner06``
   shared its cache between instances. The cache did not help when fitting, as
   the models are created again for each evaluation. The ``_memoize`` attribute
-  no longer has any effect.
+  no longer has any effect, and the ``naima.model_utils`` module, which only
+  contained the ``memoize`` decorator, has been removed.
 - Fix ``EblAbsorptionModel``. Calling the instance returned ``10**tau`` instead
   of the absorption factor ``exp(-tau)`` described in its docstring, which
   amplified the flux when multiplied to a model. The code read the optical
@@ -52,7 +53,8 @@ Changelog
   probability of zero for that parameter vector instead of stopping the run
   with emcee's "Probability function returned NaN". The first failure in each
   process is logged as a warning, and a warning is logged if no walker has a
-  finite probability. Other exceptions are still raised. ``lnprob`` has a new
+  finite probability. This also applies to the maximum likelihood prefit of
+  ``get_sampler``. Other exceptions are still raised. ``lnprob`` has a new
   ``fallback_blob`` argument for this.
 - ``save_results_table`` reported the parameters with the highest posterior
   probability, including the prior, as ``ML_pars`` and their log-probability as
@@ -63,6 +65,24 @@ Changelog
   counted as data points in the BIC, and the number of data points is saved as
   ``n_data``. If the sampler has no model function, the log-probability is used
   with a warning.
+- The process pool created by ``get_sampler`` is terminated when the sampler is
+  garbage collected or the interpreter exits, instead of staying open if
+  ``run_sampler`` is not used. The warning about the first failure of the model
+  is shown again in every new fit of the same session, and ``labels`` that start
+  with ``log`` are only taken as logarithmic parameters for the initial walkers
+  if what follows is not a letter (``log10(cutoff)`` and ``log_cutoff``, but not
+  ``logistic``).
+- ``flux`` and ``sed`` of the radiative models (also with ``seed`` for
+  ``InverseCompton``) accept scalar energies and return scalars. ``InverseCompton``
+  accepts a tuple of ``seed_photon_fields``, raises a ``ValueError`` with a
+  message for an unknown seed photon field name instead of a bare ``TypeError``,
+  and ``seed=True`` is no longer taken as the index 1.
+- Fix docstrings: the default ``nEed`` of ``InverseCompton`` is 100, the
+  ``FIR`` and ``NIR`` seed photon fields were swapped, ``Epmax`` of ``PionDecay``
+  is a maximum energy, and a table without an energy column mentions the
+  ``energy`` column in the error. The ``run_sampler`` docstring describes
+  continued runs and the ``**kwargs``, and ``get_sampler`` documents the
+  ``log`` labels.
 
 0.10.5 (2026-11-14)
 ^^^^^^^^^^^^^^^^^^^

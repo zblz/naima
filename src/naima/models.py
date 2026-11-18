@@ -37,7 +37,7 @@ def _validate_ene(ene):
                 "energy", u.Quantity(ene["energy"]), physical_type="energy"
             )
         except KeyError:
-            raise TypeError("Table or dict does not have 'ene' column")
+            raise TypeError("Table or dict does not have 'energy' column")
     else:
         if not isinstance(ene, u.Quantity):
             ene = u.Quantity(ene)
