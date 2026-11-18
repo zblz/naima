@@ -332,18 +332,31 @@ def trapz_loglog(y, x, axis=-1, intervals=False):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        # Compute the power law indices in each integration bin
-        b = np.log10(y[slice2] / y[slice1]) / np.log10(x[slice2] / x[slice1])
-
-        # if local powerlaw index is -1, use \int 1/x = log(x); otherwise use
-        # normal powerlaw integration
-        trapzs = np.where(
-            np.abs(b + 1.0) > 1e-10,
-            # y1 * (x2/x1)**b == y2 for a power law; using y2 directly avoids
-            # overflowing the power when the local index b is very large
-            (y[slice2] * x[slice2] - y[slice1] * x[slice1]) / (b + 1),
-            x[slice1] * y[slice1] * np.log(x[slice2] / x[slice1]),
+        # The power law y = y1 (x/x1)**b integrates over a bin to
+        # y1 x1 dlx expm1(r) / r, with dlx = log(x2/x1) and
+        # r = (b + 1) dlx = log(y2 x2 / (y1 x1)). Factoring out the endpoint
+        # with the larger |y x| leaves -expm1(-|r|) / |r|, which lies in
+        # (0, 1], so for x well within the float range nothing overflows
+        # unless the integral itself does. The logarithms are taken separately
+        # so that y2/y1 and y x cannot overflow, and expm1 keeps the precision
+        # near b = -1, where the integral tends to y1 x1 dlx. A bin where y
+        # changes sign is not a power law, and is also integrated as y1 x1 dlx.
+        y1, y2 = y[slice1], y[slice2]
+        x1, x2 = x[slice1], x[slice2]
+        # log1p is precise for narrow bins, log for wide ones
+        dlx = np.where(
+            np.abs(x2 - x1) < 0.5 * x1,
+            np.log1p((x2 - x1) / x1),
+            np.log(x2 / x1),
         )
+        r = np.log(np.abs(y2)) - np.log(np.abs(y1)) + dlx
+        r = np.where(np.sign(y1) == np.sign(y2), r, 0.0)
+        upper = r > 0
+        y_dom = np.where(upper, y2, y1)
+        x_dom = np.where(upper, x2, x1)
+        s = np.abs(r)
+        factor = np.where(s > 0, -np.expm1(-s) / s, 1.0)
+        trapzs = y_dom * (x_dom * dlx * factor)
 
     tozero = (y[slice1] == 0.0) + (y[slice2] == 0.0) + (x[slice1] == x[slice2])
     trapzs[tozero] = 0.0

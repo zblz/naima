@@ -97,7 +97,10 @@ Changelog
   them, e.g. a misspelled ``Eemin``. See #262.
 - Fix ``trapz_loglog`` overflowing to ``inf`` in bins with a very steep local
   power-law index, which made the inverse Compton flux jump to ``inf`` for some
-  parameter and energy combinations. Fixes #263.
+  parameter and energy combinations. Fixes #263. Bins where the ratio of the
+  ``y`` values or the product ``y * x`` overflows no longer give ``0`` or
+  ``nan``, and the integral is now precise and continuous for a local
+  power-law index close to -1 and for very narrow bins.
 
 0.10.4 (2026-09-05)
 ^^^^^^^^^^^^^^^^^^^

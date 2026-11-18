@@ -203,6 +203,69 @@ def test_trapz_loglog_steep_bin():
     assert np.isfinite(result)
 
     # steep bin integral is y2 * x2 / (b + 1), negligible next to the last bin
-    b = np.log10(y[2] / y[1]) / np.log10(x[2] / x[1])
+    b = (np.log(y[2]) - np.log(y[1])) / np.log(x[2] / x[1])
     steep = trapz_loglog(y[1:3], x[1:3])
     assert_allclose(steep, y[2] * x[2] / (b + 1), rtol=1e-6)
+
+
+@pytest.mark.parametrize(
+    "y, x",
+    [
+        # y2/y1 overflows
+        ([1e-200, 1e200], [1.0, 2.0]),
+        # y2/y1 underflows
+        ([1e200, 1e-200], [1.0, 2.0]),
+    ],
+)
+def test_trapz_loglog_no_overflow(y, x):
+    y, x = np.array(y), np.array(x)
+    # the bin is dominated by the larger endpoint: y x / |b + 1|
+    b = (np.log(y[1]) - np.log(y[0])) / np.log(x[1] / x[0])
+    imax = np.argmax(y)
+    assert_allclose(trapz_loglog(y, x), y[imax] * x[imax] / abs(b + 1), rtol=1e-10)
+
+
+def test_trapz_loglog_no_product_overflow():
+    """y x overflows although the integral over the narrow bin does not"""
+    x = np.array([1e10, 1e10 * (1 + 1e-12)])
+    y = np.array([1e300, 1e300])
+    assert_allclose(trapz_loglog(y, x), 1e300 * (x[1] - x[0]), rtol=1e-6)
+
+
+def test_trapz_loglog_index_near_minus_one():
+    """The integral is continuous and precise across a local index of -1"""
+    x = np.array([1.0, 2.0])
+    for eps in [0.0, 1e-12, -1e-12, 1e-9, 1e-6]:
+        b = -1.0 + eps
+        y = x**b
+        expected = np.log(2.0) if eps == 0 else np.expm1(eps * np.log(2.0)) / eps
+        assert_allclose(trapz_loglog(y, x), expected, rtol=1e-12)
+
+
+def test_trapz_loglog_negative_and_zero():
+    x = np.array([1.0, 2.0, 3.0])
+    assert_allclose(trapz_loglog(-(x**2), x), -26.0 / 3, rtol=1e-12)
+    # the bin touching zero is dropped, the other is y = x - 1 as a power law
+    b = np.log(2.0) / np.log(1.5)
+    assert_allclose(
+        trapz_loglog(np.array([0.0, 1.0, 2.0]), x), (6.0 - 2.0) / (b + 1), rtol=1e-12
+    )
+    # a sign change falls back to y1 x1 log(x2/x1), as before
+    assert_allclose(trapz_loglog(np.array([-1.0, 1.0]), x[:2]), -np.log(2.0))
+
+
+@pytest.mark.parametrize("ratio", [0.9, 1e-3, 1e-9])
+def test_trapz_loglog_decreasing_x(ratio):
+    """Integrating towards lower x, over narrow and wide bins"""
+    x = np.array([1.0, ratio])
+    # integral of x**-2 from 1 to ratio
+    assert_allclose(trapz_loglog(x**-2, x), 1.0 - 1.0 / ratio, rtol=1e-12)
+
+
+def test_trapz_loglog_axis():
+    x = np.logspace(0, 2, 5)
+    y = np.vstack([x**-2, 3 * x**0.5, x**-1])
+    expected = [trapz_loglog(row, x) for row in y]
+    assert_allclose(trapz_loglog(y, x, axis=1), expected, rtol=1e-14)
+    assert_allclose(trapz_loglog(y.T, x, axis=0), expected, rtol=1e-14)
+    assert_allclose(trapz_loglog(y.T, x[:, None], axis=0), expected, rtol=1e-14)
