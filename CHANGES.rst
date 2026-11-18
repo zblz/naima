@@ -11,6 +11,15 @@ Changelog
   is closed also if the run fails or is interrupted. ``get_sampler`` and
   ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
   user, which is never closed by naima.
+- Fix the initial walkers of ``get_sampler`` for parameters that start at zero,
+  which got no spread because it is relative to the value. Parameters whose
+  label starts with ``log`` now use an absolute spread of 1 dex (0.05 dex
+  when ``p0`` is already the maximum likelihood, in the same proportion as the
+  relative spread of the other parameters), since a relative spread of a
+  logarithmic value depends on the units and vanishes close to zero. Walkers
+  that start in a region forbidden by the prior are drawn again in a shrinking
+  ball, so that they remain distinct, and a warning is logged if ``p0`` is
+  outside the prior.
 
 0.10.5 (2026-11-14)
 ^^^^^^^^^^^^^^^^^^^
