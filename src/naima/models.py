@@ -449,6 +449,10 @@ class TableModel:
         return self.amplitude * interpy * self.unit
 
 
+# exp(-tau) is a normal float64 up to tau = 708 and underflows to 0 at tau = 744
+_MAX_TAU = 700.0
+
+
 @functools.lru_cache(maxsize=None)
 def _load_tau_dominguez11():
     filename = get_pkg_data_filename(os.path.join("data", "tau_dominguez11.npz"))
@@ -510,10 +514,11 @@ class EblAbsorptionModel(TableModel):
                 colname = "col%s" % (
                     2 + (np.abs(redshift_list - self.redshift)).argmin()
                 )
-                # Set maximum value of tau to 150, which is high enough that
-                # the transmission is zero for all practical purposes. This
-                # avoids later underflow problems.
-                taus = np.minimum(taus_table[colname], 150.0)
+                # The table contains the optical depth tau itself (not its
+                # log10). It is limited to _MAX_TAU, the largest value for
+                # which exp(-tau) does not underflow: for tau > 744 it is
+                # exactly 0, which TableModel cannot interpolate in log space.
+                taus = np.minimum(taus_table[colname], _MAX_TAU)
             else:
                 taus = np.zeros(len(energy))
         else:
@@ -528,8 +533,8 @@ class EblAbsorptionModel(TableModel):
         """Absorption factor ``exp(-tau)`` at energies ``e``.
 
         It is 1 below the lower energy limit of the table (1 GeV) and 0 above
-        the upper limit (100 TeV), where the optical depth is above 200 for all
-        redshifts of the table.
+        the upper limit (100 TeV), where it is below 3e-9 for all redshifts of the
+        table.
         """
         e = _validate_ene(e)
         if self.redshift < 0.01:

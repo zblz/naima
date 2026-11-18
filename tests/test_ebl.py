@@ -73,3 +73,11 @@ def test_table_is_loaded_once(monkeypatch):
     for _ in range(5):
         EblAbsorptionModel(0.3)
     assert len(calls) == 1
+
+
+def test_no_underflow_at_high_redshift():
+    """The table has optical depths in the thousands, which must not underflow."""
+    ebl = EblAbsorptionModel(3.99)
+    t = ebl.transmission(np.logspace(-3, 2, 200) * u.TeV)
+    assert np.all(np.isfinite(t))
+    assert np.all((t >= 0) & (t <= 1))
