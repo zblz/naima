@@ -20,25 +20,11 @@ Changelog
   that start in a region forbidden by the prior are drawn again in a shrinking
   ball, so that they remain distinct, and a warning is logged if ``p0`` is
   outside the prior.
-- ``run_sampler`` can now continue a sampler that has already been run,
-  appending the new steps to its chain (a sampler fresh from ``get_sampler``
-  still has its burn-in discarded), and ``n_run`` is set to the number of steps
-  in the chain. The process pool created by naima is recreated when needed and
-  is closed also if the run fails or is interrupted. ``get_sampler`` and
-  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
-  user, which is never closed by naima.
 - Fix ``InverseCompton.flux`` and ``InverseCompton.sed`` with the ``seed``
   argument returning the contribution computed for the energies of a previous
   call. A ``seed`` equal to the number of seed photon fields, or negative, now
   raises a ``ValueError`` instead of an ``IndexError`` or selecting the wrong
   field, and numpy integers are accepted.
-- ``run_sampler`` can now continue a sampler that has already been run,
-  appending the new steps to its chain (a sampler fresh from ``get_sampler``
-  still has its burn-in discarded), and ``n_run`` is set to the number of steps
-  in the chain. The process pool created by naima is recreated when needed and
-  is closed also if the run fails or is interrupted. ``get_sampler`` and
-  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
-  user, which is never closed by naima.
 - Remove the caching of results in the radiative models and particle
   distributions. The cache key ignored particle distributions without
   ``param_names`` (plain functions and ``TableModel``), so changing them
@@ -46,39 +32,21 @@ Changelog
   shared its cache between instances. The cache did not help when fitting, as
   the models are created again for each evaluation. The ``_memoize`` attribute
   no longer has any effect.
-- ``run_sampler`` can now continue a sampler that has already been run,
-  appending the new steps to its chain (a sampler fresh from ``get_sampler``
-  still has its burn-in discarded), and ``n_run`` is set to the number of steps
-  in the chain. The process pool created by naima is recreated when needed and
-  is closed also if the run fails or is interrupted. ``get_sampler`` and
-  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
-  user, which is never closed by naima.
 - Fix ``EblAbsorptionModel``. Calling the instance returned ``10**tau`` instead
   of the absorption factor ``exp(-tau)`` described in its docstring, which
-  amplified the flux when multiplied to a model. ``transmission`` returned the
-  same factor, but a constant 0.023 above 100 TeV where the optical depth is
-  above 200 and the factor is 0. It now returns 0 there, 1 for redshifts below
-  0.01 at any energy, and accepts scalar energies. The optical depth table is
-  now read from disk once instead of for every instance.
-- ``run_sampler`` can now continue a sampler that has already been run,
-  appending the new steps to its chain (a sampler fresh from ``get_sampler``
-  still has its burn-in discarded), and ``n_run`` is set to the number of steps
-  in the chain. The process pool created by naima is recreated when needed and
-  is closed also if the run fails or is interrupted. ``get_sampler`` and
-  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
-  user, which is never closed by naima.
+  amplified the flux when multiplied to a model. The code read the optical
+  depth table as if it contained ``log10(tau)``, when it contains ``tau``.
+  ``transmission`` returned the correct factor, but a constant 0.023 above
+  100 TeV where the factor is below 3e-9. It now returns 0 there, 1 for
+  redshifts below 0.01 at any energy, and accepts scalar energies. The optical
+  depth is limited to 700, the largest value for which ``exp(-tau)`` does not
+  underflow, and the table is now read from disk once instead of for every
+  instance.
 - ``get_sampler`` no longer modifies the ``p0`` array and ``labels`` list given
   by the caller (the normalization guess was applied in place and short
   ``labels`` were extended in place). The normalization guess is skipped, with
   a warning, when the ratio between the data and model fluxes is not finite and
   positive, instead of setting ``p0`` to ``inf``.
-- ``run_sampler`` can now continue a sampler that has already been run,
-  appending the new steps to its chain (a sampler fresh from ``get_sampler``
-  still has its burn-in discarded), and ``n_run`` is set to the number of steps
-  in the chain. The process pool created by naima is recreated when needed and
-  is closed also if the run fails or is interrupted. ``get_sampler`` and
-  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
-  user, which is never closed by naima.
 - Models that return NaN, or raise an arithmetic error or ``ValueError`` (e.g.
   for parameters outside of the domain of a radiative model), now give a
   probability of zero for that parameter vector instead of stopping the run
@@ -86,13 +54,6 @@ Changelog
   process is logged as a warning, and a warning is logged if no walker has a
   finite probability. Other exceptions are still raised. ``lnprob`` has a new
   ``fallback_blob`` argument for this.
-- ``run_sampler`` can now continue a sampler that has already been run,
-  appending the new steps to its chain (a sampler fresh from ``get_sampler``
-  still has its burn-in discarded), and ``n_run`` is set to the number of steps
-  in the chain. The process pool created by naima is recreated when needed and
-  is closed also if the run fails or is interrupted. ``get_sampler`` and
-  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
-  user, which is never closed by naima.
 - ``save_results_table`` reported the parameters with the highest posterior
   probability, including the prior, as ``ML_pars`` and their log-probability as
   ``MaxLogLikelihood``, which was also used for the BIC. The metadata now has
