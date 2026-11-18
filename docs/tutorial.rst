@@ -202,9 +202,11 @@ the fitting procedure. These are `~naima.save_diagnostic_plots` and
 
 The saved table will include information in the metadata about the run such as
 the number of walkers ``n_walkers`` and steps ``n_run`` sampled, the initial
-parameter vectori ``p0``, the parameter vector with the maximum likelihood
-``ML_pars`` and the maximum value of the negative log-likelihood
-``MaxLogLikelihood``. The table itself shows the median and upper and lower
+parameter vector ``p0``, the parameter vector with the highest posterior
+probability ``MAP_pars`` (also saved as ``ML_pars``, which is the maximum
+likelihood vector only for flat priors), the log-probability at that point
+``MaxLogProb`` (including the prior) and the log-likelihood at that point
+``MaxLogLikelihood`` (without the prior). The table itself shows the median and upper and lower
 uncertainties (50th, 84th, and 16th percentiles of the posterior distribution)
 for the parameters sampled:
 

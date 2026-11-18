@@ -1,5 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 import os
+from collections.abc import Iterable
 from pathlib import Path
 
 import astropy.units as u
@@ -9,6 +10,7 @@ from astropy import log
 from astropy.io.misc.hdf5 import read_table_hdf5, write_table_hdf5
 from astropy.table import Table
 
+from .core import lnprobmodel
 from .plot import find_ML
 
 try:
@@ -162,6 +164,23 @@ def save_diagnostic_plots(
     plt.rcParams["interactive"] = old_interactive
 
 
+def _loglikelihood_at(sampler, pars):
+    """Log-likelihood of the data at ``pars``, without the prior.
+
+    Returns None if the sampler does not have a model function.
+    """
+    modelfn = getattr(sampler, "modelfn", None)
+    if modelfn is None:
+        return None
+    modelout = modelfn(pars, sampler.data)
+    if isinstance(modelout, Iterable) and not isinstance(modelout, np.ndarray):
+        modelout = modelout[0]
+    loglike = lnprobmodel(modelout, sampler.data)
+    if isinstance(loglike, u.Quantity):
+        loglike = loglike.decompose().value
+    return float(loglike)
+
+
 def save_results_table(
     outname,
     sampler,
@@ -270,14 +289,29 @@ def save_results_table(
     metadata = {}
     # Start with info from the distributions used for storing the results
     metadata["n_samples"] = dists.shape[0]
-    # save ML parameter vector and best/median loglikelihood
-    ML, MLp, MLerr, _ = find_ML(sampler, None)
-    metadata["ML_pars"] = [float(p) for p in MLp]
-    metadata["MaxLogLikelihood"] = float(ML)
+    # save the parameter vector with the highest posterior probability (MAP),
+    # and the log-probability and log-likelihood at that point. The latter does
+    # not include the prior
+    MAP, MAPp, MAPerr, _ = find_ML(sampler, None)
+    metadata["MAP_pars"] = [float(p) for p in MAPp]
+    # kept for backwards compatibility, same as MAP_pars
+    metadata["ML_pars"] = list(metadata["MAP_pars"])
+    metadata["MaxLogProb"] = float(MAP)
 
-    # compute and save BIC
-    BIC = len(MLp) * np.log(len(sampler.data)) - 2 * ML
-    metadata["BIC"] = BIC
+    loglike = _loglikelihood_at(sampler, MAPp)
+    if loglike is None:
+        log.warning(
+            "The model function of the sampler is not available, so the"
+            " log-likelihood cannot be separated from the prior: the maximum"
+            " log-probability will be used for MaxLogLikelihood and the BIC."
+        )
+        loglike = float(MAP)
+    metadata["MaxLogLikelihood"] = loglike
+
+    # compute and save BIC. Upper limits are not counted as data points
+    ndata = max(int(np.sum(~np.asarray(sampler.data["ul"], dtype=bool))), 1)
+    metadata["n_data"] = ndata
+    metadata["BIC"] = float(len(MAPp) * np.log(ndata) - 2 * loglike)
 
     # And add all info stored in the sampler.run_info dict
     if hasattr(sampler, "run_info"):
