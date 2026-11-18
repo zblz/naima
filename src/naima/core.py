@@ -411,12 +411,17 @@ def get_sampler(
     if model is None:
         raise TypeError("Model function is missing!")
 
+    # Work on copies so that the arguments of the caller are not modified
+    p0 = np.array(p0, dtype=float)
+
     # Add parameter labels if not provided or too short
     if labels is None:
         # First is normalization
         labels = ["norm"] + ["par{0}".format(i) for i in range(1, len(p0))]
-    elif len(labels) < len(p0):
-        labels += ["par{0}".format(i) for i in range(len(labels), len(p0))]
+    else:
+        labels = list(labels)
+        if len(labels) < len(p0):
+            labels += ["par{0}".format(i) for i in range(len(labels), len(p0))]
 
     # Check that the model returns fluxes in same physical type as data
     modelout = model(p0, data)
@@ -469,8 +474,14 @@ def get_sampler(
                 data["energy"] * (data["flux"] * sedf).to(nunit),
                 data["energy"],
             )
-            ratio = dataFlux / currFlux
-            if labels[idxs[0]].startswith("log("):
+            with np.errstate(divide="ignore", invalid="ignore"):
+                ratio = (dataFlux / currFlux).decompose().value
+            if not (np.isfinite(ratio) and ratio > 0):
+                log.warning(
+                    "The ratio between the data and model fluxes is {0}: not"
+                    " applying normalization guess.".format(ratio)
+                )
+            elif labels[idxs[0]].startswith("log("):
                 p0[idxs[0]] += np.log(ratio)
             elif labels[idxs[0]].startswith("log10("):
                 p0[idxs[0]] += np.log10(ratio)
