@@ -94,29 +94,74 @@ def lnprobmodel(model, data):
     return totallogprob
 
 
-def lnprob(pars, data, modelfunc, priorfunc):
+def _split_modelout(modelout):
+    """Return the model and the tuple of blobs from the output of a model"""
+    # Save blobs or save model if no blobs given
+    if isinstance(modelout, Iterable) and not isinstance(modelout, np.ndarray):
+        return modelout[0], tuple(modelout)
+    # Avoid squeezing of the model output in order to retain units by
+    # adding a second dummy object blob
+    return modelout, (modelout, np.nan)
+
+
+# Exceptions raised by models for parameter vectors where they cannot be
+# evaluated, e.g. a parameter outside of the domain accepted by a radiative
+# model or an overflow. Other exceptions are bugs in the model and are raised.
+_MODEL_FAILURES = (ArithmeticError, ValueError)
+
+_model_failure_warned = False
+
+
+def _warn_model_failure(exception, pars):
+    """Warn at the first failure of the model in this process, so that a model
+    that fails systematically does not go unnoticed."""
+    global _model_failure_warned
+    if _model_failure_warned:
+        log.debug("Model raised {0!r} for {1}".format(exception, pars))
+        return
+    _model_failure_warned = True
+    log.warning(
+        "The model raised {0!r} for the parameter vector {1}: its probability is"
+        " set to zero. Further failures are only reported in the debug log.".format(
+            exception, pars
+        )
+    )
+
+
+def lnprob(pars, data, modelfunc, priorfunc, fallback_blob=None):
+    """Log-probability of the parameter vector ``pars``.
+
+    Parameter vectors for which the model returns NaN values result in a
+    log-probability of ``-inf``. If ``fallback_blob`` is given, those for which
+    the model raises an arithmetic error or ``ValueError`` do too, and
+    ``fallback_blob`` is returned as their blobs. Otherwise, and for any other
+    exception, the exception is raised.
+    """
     if priorfunc is None:
         lnprob_priors = 0.0
     else:
         lnprob_priors = priorfunc(pars)
 
-    modelout = modelfunc(pars, data)
+    try:
+        modelout = modelfunc(pars, data)
+    except _MODEL_FAILURES as e:
+        if fallback_blob is None:
+            raise
+        _warn_model_failure(e, pars)
+        return (-np.inf, *fallback_blob)
 
-    # Save blobs or save model if no blobs given
-    if isinstance(modelout, Iterable) and not isinstance(modelout, np.ndarray):
-        model = modelout[0]
-        blob = modelout
-    else:
-        model = modelout
-        # Avoid squeezing of the model output in order to retain units by
-        # adding a second dummy object blob
-        blob = (modelout, np.nan)
+    model, blob = _split_modelout(modelout)
 
     if not np.isinf(lnprob_priors):
         lnprob_model = lnprobmodel(model, data)
         total_lnprob = lnprob_model + lnprob_priors
     else:
         total_lnprob = lnprob_priors
+
+    # Models routinely overflow at the edges of the prior, and emcee does not
+    # accept NaN
+    if np.isnan(total_lnprob):
+        total_lnprob = -np.inf
 
     return (total_lnprob, *blob)
 
@@ -157,6 +202,11 @@ def _run_mcmc(sampler, pos, nrun):
                     np.average(state.log_prob), np.max(state.log_prob)
                 )
             )
+    if not np.any(np.isfinite(state.log_prob)):
+        log.warning(
+            "None of the walkers has a finite log-probability: the model could"
+            " not be evaluated or the prior forbids all of the walker positions."
+        )
     return sampler, state
 
 
@@ -425,6 +475,9 @@ def get_sampler(
 
     # Check that the model returns fluxes in same physical type as data
     modelout = model(p0, data)
+    # Blobs with the structure of the model output, used for the parameter
+    # vectors for which the model fails
+    _, fallback_blob = _split_modelout(modelout)
     if (type(modelout) is tuple or type(modelout) is list) and (
         type(modelout) is not np.ndarray
     ):
@@ -536,6 +589,7 @@ def get_sampler(
         len(p0),
         lnprob,
         args=[data, model, prior],
+        kwargs={"fallback_blob": fallback_blob},
         pool=pool,
         blobs_dtype=np.dtype(object),
     )

@@ -72,6 +72,20 @@ Changelog
   ``labels`` were extended in place). The normalization guess is skipped, with
   a warning, when the ratio between the data and model fluxes is not finite and
   positive, instead of setting ``p0`` to ``inf``.
+- ``run_sampler`` can now continue a sampler that has already been run,
+  appending the new steps to its chain (a sampler fresh from ``get_sampler``
+  still has its burn-in discarded), and ``n_run`` is set to the number of steps
+  in the chain. The process pool created by naima is recreated when needed and
+  is closed also if the run fails or is interrupted. ``get_sampler`` and
+  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
+  user, which is never closed by naima.
+- Models that return NaN, or raise an arithmetic error or ``ValueError`` (e.g.
+  for parameters outside of the domain of a radiative model), now give a
+  probability of zero for that parameter vector instead of stopping the run
+  with emcee's "Probability function returned NaN". The first failure in each
+  process is logged as a warning, and a warning is logged if no walker has a
+  finite probability. Other exceptions are still raised. ``lnprob`` has a new
+  ``fallback_blob`` argument for this.
 
 0.10.5 (2026-11-14)
 ^^^^^^^^^^^^^^^^^^^
