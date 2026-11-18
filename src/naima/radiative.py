@@ -408,8 +408,8 @@ class InverseCompton(BaseElectron):
           the GALPROP values for a location at a distance of 6.5 kpc from the
           galactic center).
 
-        * A list of length three (isotropic source) or four (anisotropic
-          source) composed of:
+        * A list or tuple of length three (isotropic source) or four
+          (anisotropic source) composed of:
 
             1. A name for the seed photon field.
             2. Its temperature (thermal source) or energy (monochromatic or
@@ -486,9 +486,9 @@ class InverseCompton(BaseElectron):
                 else:
                     raise ValueError(
                         "Unknown seed photon field {0!r}: it must be CMB, FIR"
-                        " or NIR, or a list defining the field".format(inseed)
+                        " or NIR, or a list or tuple defining the field".format(inseed)
                     )
-            elif type(inseed) is list and (len(inseed) == 3 or len(inseed) == 4):
+            elif isinstance(inseed, (list, tuple)) and len(inseed) in (3, 4):
                 isotropic = len(inseed) == 3
 
                 if isotropic:
@@ -798,21 +798,18 @@ class InverseCompton(BaseElectron):
             is required. If set to None it will return the sum of all
             contributions (default).
         """
-        sed = super().sed(photon_energy, distance=distance)
+        if seed is None:
+            return super().sed(photon_energy, distance=distance)
 
-        if seed is not None:
-            if distance != 0:
-                out_unit = "erg/(cm2 s)"
-            else:
-                out_unit = "erg/s"
+        if distance != 0:
+            out_unit = "erg/(cm2 s)"
+        else:
+            out_unit = "erg/s"
 
-            photon_energy = _validate_ene(photon_energy)
-            sed = (
-                self.flux(photon_energy, distance=distance, seed=seed)
-                * photon_energy**2.0
-            ).to(out_unit)
-
-        return sed
+        photon_energy = _validate_ene(photon_energy)
+        return (
+            self.flux(photon_energy, distance=distance, seed=seed) * photon_energy**2.0
+        ).to(out_unit)
 
 
 class Bremsstrahlung(BaseElectron):

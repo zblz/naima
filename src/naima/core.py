@@ -106,9 +106,32 @@ def _split_modelout(modelout):
     return modelout, (modelout, np.nan)
 
 
+def _nan_blob(blob):
+    """Blob with the structure of ``blob`` and its values replaced by NaN.
+
+    Units are kept, and the energy array of a ``(energy, flux)`` model output
+    is kept so that the blobs of all walkers share it.
+    """
+    if isinstance(blob, (list, tuple)):
+        if (
+            len(blob) == 2
+            and isinstance(blob[0], u.Quantity)
+            and isinstance(blob[1], u.Quantity)
+        ):
+            return type(blob)((blob[0], _nan_blob(blob[1])))
+        return type(blob)(_nan_blob(b) for b in blob)
+    nans = np.full(np.shape(blob), np.nan)
+    if isinstance(blob, u.Quantity):
+        return nans * blob.unit
+    return nans if np.ndim(blob) else np.nan
+
+
 # Exceptions raised by models for parameter vectors where they cannot be
 # evaluated, e.g. a parameter outside of the domain accepted by a radiative
 # model or an overflow. Other exceptions are bugs in the model and are raised.
+# Note that ValueError also covers bugs such as astropy's UnitConversionError or
+# numpy broadcasting errors: these are only raised by get_sampler if they occur
+# at the initial parameter vector, and are reported once as a warning otherwise.
 _MODEL_FAILURES = (ArithmeticError, ValueError)
 
 _model_failure_warned = False
@@ -270,9 +293,10 @@ def _prefit(p0, data, model, prior):
     return p0, P0_IS_ML
 
 
-# Labels of logarithmic parameters: ``log10(...)``, ``log(...)``, ``log10_x``...
-# but not other words that start with the same letters, such as ``logistic``
-_LOG_LABEL = re.compile(r"log(10)?(?![a-z])")
+# Labels of logarithmic parameters: ``log10(...)``, ``log10x``, ``log(...)``,
+# ``log_x``... but not other words that start with the same letters, such as
+# ``logistic``, or other bases, such as ``log2``
+_LOG_LABEL = re.compile(r"log(?:(10)|(?![a-z0-9]))")
 
 
 def _initial_walkers(
@@ -283,8 +307,9 @@ def _initial_walkers(
     The spread is relative to the value of each parameter, except for:
 
     - parameters that are exactly zero, for which the spread is absolute,
-    - parameters whose label starts with ``log`` or ``log10`` (as in
-      ``log10(cutoff)``, not followed by a letter), which are already
+    - parameters whose label starts with ``log10``, or with ``log`` not
+      followed by a letter or digit (as in ``log10(cutoff)``, ``log10cutoff``
+      or ``log_cutoff``, but not ``logistic``), which are already
       logarithmic, so a relative spread would depend on the units (it vanishes
       if the value is close to zero): the spread is absolute, ``log_spread``
       orders of magnitude (dex), or the same factor in natural logarithm units
@@ -410,6 +435,14 @@ def get_sampler(
         sampler chain, see `the emcee documentation for the
         format
         <http://dan.iel.fm/emcee/current/user/advanced/#arbitrary-metadata-blobs>`_.
+        Parameter vectors for which the model returns NaN, or raises an
+        `ArithmeticError` or `ValueError`, are given a probability of zero (and
+        NaN blobs) instead of stopping the run, and the first failure is logged
+        as a warning. Note that this includes errors that are bugs in the model
+        rather than invalid parameters, such as a
+        `~astropy.units.UnitConversionError` or a numpy broadcasting error:
+        these are only raised if they happen at ``p0``, so check the warnings
+        of the run. Other exceptions are always raised.
     prior : function, optional
         A function that takes a vector in the parameter space and returns the
         log-likelihood of the Bayesian prior. Parameter limits can be specified
@@ -493,9 +526,9 @@ def get_sampler(
 
     # Check that the model returns fluxes in same physical type as data
     modelout = model(p0, data)
-    # Blobs with the structure of the model output, used for the parameter
-    # vectors for which the model fails
-    _, fallback_blob = _split_modelout(modelout)
+    # Blobs with the structure of the model output and NaN values, used for the
+    # parameter vectors for which the model fails
+    fallback_blob = _nan_blob(_split_modelout(modelout)[1])
     if (type(modelout) is tuple or type(modelout) is list) and (
         type(modelout) is not np.ndarray
     ):
