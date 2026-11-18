@@ -60,6 +60,18 @@ Changelog
   above 200 and the factor is 0. It now returns 0 there, 1 for redshifts below
   0.01 at any energy, and accepts scalar energies. The optical depth table is
   now read from disk once instead of for every instance.
+- ``run_sampler`` can now continue a sampler that has already been run,
+  appending the new steps to its chain (a sampler fresh from ``get_sampler``
+  still has its burn-in discarded), and ``n_run`` is set to the number of steps
+  in the chain. The process pool created by naima is recreated when needed and
+  is closed also if the run fails or is interrupted. ``get_sampler`` and
+  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
+  user, which is never closed by naima.
+- ``get_sampler`` no longer modifies the ``p0`` array and ``labels`` list given
+  by the caller (the normalization guess was applied in place and short
+  ``labels`` were extended in place). The normalization guess is skipped, with
+  a warning, when the ratio between the data and model fluxes is not finite and
+  positive, instead of setting ``p0`` to ``inf``.
 
 0.10.5 (2026-11-14)
 ^^^^^^^^^^^^^^^^^^^
