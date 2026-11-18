@@ -423,8 +423,9 @@ def test_pion_decay(particle_dists):
     assert_allclose(Wps, Wp_ref)
 
     # test LUT not found
-    pp = PionDecay(PL, useLUT=True, hiEmodel="Geant4", **proton_properties)
-    pp.flux(energy, 0)
+    with pytest.warns(UserWarning, match="not found, reverting to useLUT = False"):
+        pp = PionDecay(PL, useLUT=True, hiEmodel="Geant4", **proton_properties)
+        pp.flux(energy, 0)
 
 
 @pytest.mark.skipif("not HAS_SCIPY")

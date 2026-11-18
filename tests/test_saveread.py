@@ -94,6 +94,7 @@ def test_plot_fit(simple_sampler, tmp_path):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+@pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
 def test_plot_chain(simple_sampler, tmp_path):
     filename = tmp_path / "naima_test_sampler.hdf5"
     save_run(filename, simple_sampler, clobber=True)
@@ -105,6 +106,7 @@ def test_plot_chain(simple_sampler, tmp_path):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+@pytest.mark.filterwarnings("ignore:FigureCanvasAgg is non-interactive")
 def test_imf(simple_sampler, tmp_path):
     filename = tmp_path / "naima_test_sampler.hdf5"
     save_run(filename, simple_sampler, clobber=True)

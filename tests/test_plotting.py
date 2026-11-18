@@ -74,6 +74,7 @@ def test_results_table_has_unit_column(sampler):
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
 @pytest.mark.parametrize("last_step", [True, False])
 @pytest.mark.parametrize("p", [None, 1])
+@pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
 def test_chain_plots(sampler, last_step, p):
     plot_chain(sampler, last_step=last_step, p=p)
     plt.close("all")
@@ -186,6 +187,7 @@ def test_fit_data_units(sampler):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+@pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
 def test_diagnostic_plots(sampler):
     # Diagnostic plots
     # try to plot all models, including those with wrong format/units
@@ -211,6 +213,7 @@ def test_diagnostic_plots(sampler):
 
 
 @pytest.mark.skipif("not HAS_MATPLOTLIB or not HAS_EMCEE")
+@pytest.mark.filterwarnings("ignore:invalid value encountered in divide:RuntimeWarning")
 def test_diagnostic_plots_noblobs(noblob_sampler):
     # Diagnostic plots
     save_diagnostic_plots("test_function_noblob", noblob_sampler)

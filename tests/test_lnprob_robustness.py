@@ -67,6 +67,7 @@ def test_lnprob_exception_without_fallback_is_raised():
         lnprob(np.array([1e-11, 3.0]), data_table_validated(), raises_above_index, None)
 
 
+@pytest.mark.filterwarnings("ignore:invalid value encountered in scalar subtract")
 @pytest.mark.parametrize("model", [nan_above_index, raises_above_index, nan_with_blobs])
 def test_run_survives_failing_model(model):
     """emcee used to stop with 'Probability function returned NaN' or crash."""
@@ -165,6 +166,7 @@ def test_first_model_failure_is_warned(monkeypatch):
     assert "parameter out of domain" in warnings[0].message
 
 
+@pytest.mark.filterwarnings("ignore:invalid value encountered in scalar subtract")
 def test_no_finite_walker_is_warned():
     with log.log_to_list() as messages:
         run_sampler(
