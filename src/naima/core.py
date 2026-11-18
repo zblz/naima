@@ -230,6 +230,7 @@ def get_sampler(
     labels=None,
     threads=None,
     data_sed=None,
+    pool=None,
 ):
     """Generate a new MCMC sampler.
 
@@ -321,6 +322,10 @@ def get_sampler(
         When providing more than one data table, whether to convert them to SED
         format. If unset or None, all tables will be converted to the format of
         the first table.
+    pool : pool-like object, optional
+        A pool with a ``map`` method (e.g. `multiprocessing.pool.Pool`, an MPI
+        pool) to use for the sampling. If given, ``threads`` is ignored and the
+        pool is not closed by naima, so it can be reused after `run_sampler`.
 
     Returns
     -------
@@ -443,9 +448,12 @@ def get_sampler(
     if prefit and not P0_IS_ML:
         p0, P0_IS_ML = _prefit(p0, data, model, prior)
 
-    if threads is None:
-        threads = os.cpu_count() or 1
-    pool = Pool(threads) if threads > 1 else None
+    # A pool given by the user is not owned by naima: it is never closed
+    owns_pool = pool is None
+    if owns_pool:
+        if threads is None:
+            threads = os.cpu_count() or 1
+        pool = Pool(threads) if threads > 1 else None
 
     sampler = emcee.EnsembleSampler(
         nwalkers,
@@ -455,7 +463,8 @@ def get_sampler(
         pool=pool,
         blobs_dtype=np.dtype(object),
     )
-    sampler._naima_pool = pool
+    sampler._naima_pool = pool if owns_pool else None
+    sampler._naima_threads = threads if owns_pool else None
 
     # Add data and parameters properties to sampler
     sampler.data_table = data_table
@@ -493,11 +502,41 @@ def get_sampler(
     return sampler, state
 
 
+def _ensure_pool(sampler):
+    """Recreate the process pool of a sampler whose pool has been closed."""
+    threads = getattr(sampler, "_naima_threads", None)
+    if threads is not None and threads > 1 and sampler._naima_pool is None:
+        sampler._naima_pool = Pool(threads)
+        sampler.pool = sampler._naima_pool
+
+
+def _close_pool(sampler, terminate=False):
+    """Close the process pool created by naima, if any.
+
+    If ``terminate`` is True the workers are stopped without waiting for the
+    pending tasks. This is required after an interruption (e.g. Ctrl-C, which
+    reaches the workers too), since joining a pool with an interrupted map
+    blocks forever.
+    """
+    pool = getattr(sampler, "_naima_pool", None)
+    if pool is not None:
+        if terminate:
+            pool.terminate()
+        else:
+            pool.close()
+        pool.join()
+        sampler._naima_pool = None
+        sampler.pool = None
+
+
 def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
     """Run an MCMC sampler.
 
     If no sampler or initial position vector is provided, extra ``kwargs`` are
-    passed to `get_sampler` to generate a new sampler.
+    passed to `get_sampler` to generate a new sampler. A sampler returned by
+    `get_sampler` has its burn-in chain discarded before the run. A sampler that
+    has already been run with `run_sampler` is continued from ``pos``, and the
+    new steps are appended to its chain.
 
     Parameters
     ----------
@@ -523,16 +562,24 @@ def run_sampler(nrun=100, sampler=None, pos=None, **kwargs):
     if sampler is None or pos is None:
         sampler, pos = get_sampler(**kwargs)
 
-    sampler.run_info["n_run"] = nrun
+    # A sampler that has already been run is continued: its chain is extended
+    # instead of being reset. Otherwise the burn-in steps are discarded.
+    continuing = "n_run" in sampler.run_info
+    _ensure_pool(sampler)
 
-    print("\nWalker burn in finished, running {0} steps...".format(nrun))
-    sampler.reset()
-    sampler, pos = _run_mcmc(sampler, pos, nrun)
+    try:
+        if continuing:
+            print("\nContinuing the run for {0} steps...".format(nrun))
+        else:
+            print("\nWalker burn in finished, running {0} steps...".format(nrun))
+            sampler.reset()
+        sampler, pos = _run_mcmc(sampler, pos, nrun)
+    except BaseException:
+        _close_pool(sampler, terminate=True)
+        raise
+    _close_pool(sampler)
 
-    # Clean up the multiprocessing pool
-    if hasattr(sampler, "_naima_pool") and sampler._naima_pool is not None:
-        sampler._naima_pool.close()
-        sampler._naima_pool.join()
-        sampler._naima_pool = None
+    # Only set once the steps have been run, so that it always matches the chain
+    sampler.run_info["n_run"] = sampler.iteration
 
     return sampler, pos
