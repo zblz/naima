@@ -114,7 +114,10 @@ class BaseRadiative:
             luminosity will be returned. Default is 1 kpc.
         """
 
-        spec = self._spectrum(photon_energy)
+        photon_energy = _validate_ene(photon_energy)
+        scalar = photon_energy.isscalar
+
+        spec = self._spectrum(np.atleast_1d(photon_energy))
 
         if distance != 0:
             distance = validate_scalar("distance", distance, physical_type="length")
@@ -123,7 +126,8 @@ class BaseRadiative:
         else:
             out_unit = "1/(s eV)"
 
-        return spec.to(out_unit)
+        spec = spec.to(out_unit)
+        return spec[0] if scalar else spec
 
     def sed(self, photon_energy, distance=1 * u.kpc):
         """Spectral energy distribution at a given distance from the source.
@@ -398,7 +402,7 @@ class InverseCompton(BaseElectron):
         A list of gray-body or non-thermal seed photon fields to use for IC
         calculation. Each of the items of the iterable can be either:
 
-        * A string equal to ``CMB`` (default), ``NIR``, or ``FIR``, for which
+        * A string equal to ``CMB`` (default), ``FIR``, or ``NIR``, for which
           radiation fields with temperatures of 2.72 K, 30 K, and 3000 K, and
           energy densities of 0.261, 0.5, and 1 eV/cm³ will be used (these are
           the GALPROP values for a location at a distance of 6.5 kpc from the
@@ -429,7 +433,7 @@ class InverseCompton(BaseElectron):
 
     nEed : scalar
         Number of points per decade in energy for the electron energy and
-        distribution arrays. Default is 300.
+        distribution arrays. Default is 100.
     """
 
     def __init__(self, particle_distribution, seed_photon_fields=["CMB"], **kwargs):
@@ -455,8 +459,10 @@ class InverseCompton(BaseElectron):
 
         # Allow for seed_photon_fields definitions of the type 'CMB-NIR-FIR' or
         # 'CMB'
-        if type(seed_photon_fields) is not list:
+        if isinstance(seed_photon_fields, str):
             seed_photon_fields = seed_photon_fields.split("-")
+        else:
+            seed_photon_fields = list(seed_photon_fields)
 
         result = OrderedDict()
 
@@ -478,11 +484,10 @@ class InverseCompton(BaseElectron):
                     seed["u"] = unir
                     seed["isotropic"] = True
                 else:
-                    log.warning(
-                        "Will not use seed {0} because it is not "
-                        "CMB, FIR or NIR".format(inseed)
+                    raise ValueError(
+                        "Unknown seed photon field {0!r}: it must be CMB, FIR"
+                        " or NIR, or a list defining the field".format(inseed)
                     )
-                    raise TypeError
             elif type(inseed) is list and (len(inseed) == 3 or len(inseed) == 4):
                 isotropic = len(inseed) == 3
 
@@ -744,7 +749,7 @@ class InverseCompton(BaseElectron):
 
         # Test seed argument
         seed_names = list(self.seed_photon_fields.keys())
-        if not isinstance(seed, numbers.Integral):
+        if isinstance(seed, bool) or not isinstance(seed, numbers.Integral):
             if seed not in self.seed_photon_fields:
                 raise ValueError(
                     "Provided seed photon field name is not in"
@@ -768,11 +773,13 @@ class InverseCompton(BaseElectron):
 
         # Compute the requested seed photon field directly instead of reading
         # the ``specic`` attribute, which holds the results of the last
-        # uncached ``_spectrum`` call and can belong to different energies
+        # ``_spectrum`` call and can belong to different energies
         outspecene = _validate_ene(photon_energy)
-        specic = self._calc_specic(seed_names[seed], outspecene).to("1/(s eV)")
+        scalar = outspecene.isscalar
+        specic = self._calc_specic(seed_names[seed], np.atleast_1d(outspecene))
+        flux = (specic.to("1/(s eV)") / dfac).to(out_unit)
 
-        return (specic / dfac).to(out_unit)
+        return flux[0] if scalar else flux
 
     def sed(self, photon_energy, distance=1 * u.kpc, seed=None):
         """Spectral energy distribution at a given distance from the source
@@ -799,6 +806,7 @@ class InverseCompton(BaseElectron):
             else:
                 out_unit = "erg/s"
 
+            photon_energy = _validate_ene(photon_energy)
             sed = (
                 self.flux(photon_energy, distance=distance, seed=seed)
                 * photon_energy**2.0
@@ -1146,7 +1154,7 @@ class PionDecay(BaseProton):
         the dynamical threshold for pion production in pp interactions.
 
     Epmax : `~astropy.units.Quantity` float
-        Minimum proton energy for the proton
+        Maximum proton energy for the proton
         distribution. Default is 10 PeV.
 
     nEpd : scalar
