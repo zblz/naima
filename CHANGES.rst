@@ -32,6 +32,20 @@ Changelog
   call. A ``seed`` equal to the number of seed photon fields, or negative, now
   raises a ``ValueError`` instead of an ``IndexError`` or selecting the wrong
   field, and numpy integers are accepted.
+- ``run_sampler`` can now continue a sampler that has already been run,
+  appending the new steps to its chain (a sampler fresh from ``get_sampler``
+  still has its burn-in discarded), and ``n_run`` is set to the number of steps
+  in the chain. The process pool created by naima is recreated when needed and
+  is closed also if the run fails or is interrupted. ``get_sampler`` and
+  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
+  user, which is never closed by naima.
+- Remove the caching of results in the radiative models and particle
+  distributions. The cache key ignored particle distributions without
+  ``param_names`` (plain functions and ``TableModel``), so changing them
+  returned the results for the previous parameters, and ``PionDecayKelner06``
+  shared its cache between instances. The cache did not help when fitting, as
+  the models are created again for each evaluation. The ``_memoize`` attribute
+  no longer has any effect.
 
 0.10.5 (2026-11-14)
 ^^^^^^^^^^^^^^^^^^^
