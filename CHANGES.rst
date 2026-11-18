@@ -46,6 +46,20 @@ Changelog
   shared its cache between instances. The cache did not help when fitting, as
   the models are created again for each evaluation. The ``_memoize`` attribute
   no longer has any effect.
+- ``run_sampler`` can now continue a sampler that has already been run,
+  appending the new steps to its chain (a sampler fresh from ``get_sampler``
+  still has its burn-in discarded), and ``n_run`` is set to the number of steps
+  in the chain. The process pool created by naima is recreated when needed and
+  is closed also if the run fails or is interrupted. ``get_sampler`` and
+  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
+  user, which is never closed by naima.
+- Fix ``EblAbsorptionModel``. Calling the instance returned ``10**tau`` instead
+  of the absorption factor ``exp(-tau)`` described in its docstring, which
+  amplified the flux when multiplied to a model. ``transmission`` returned the
+  same factor, but a constant 0.023 above 100 TeV where the optical depth is
+  above 200 and the factor is 0. It now returns 0 there, 1 for redshifts below
+  0.01 at any energy, and accepts scalar energies. The optical depth table is
+  now read from disk once instead of for every instance.
 
 0.10.5 (2026-11-14)
 ^^^^^^^^^^^^^^^^^^^
