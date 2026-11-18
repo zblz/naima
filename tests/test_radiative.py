@@ -92,6 +92,28 @@ def test_seed_photon_fields_accept_a_tuple():
     assert list(ic.seed_photon_fields) == ["CMB", "FIR"]
 
 
+def test_seed_photon_field_definition_accepts_a_tuple(ic):
+    ecpl = ExponentialCutoffPowerLaw(1e36 / u.eV, 1 * u.TeV, 2.0, 50 * u.TeV)
+    ic_tuple = InverseCompton(
+        ecpl, seed_photon_fields=("CMB", tuple(FIR)), Eemin=1 * u.GeV
+    )
+    assert list(ic_tuple.seed_photon_fields) == ["CMB", "FIR"]
+    assert u.allclose(ic_tuple.flux(E1), ic.flux(E1))
+
+
+def test_seed_sed_only_computes_the_requested_field(ic, monkeypatch):
+    calls = []
+    calc_specic = ic._calc_specic
+
+    def counting(seed, energy):
+        calls.append(seed)
+        return calc_specic(seed, energy)
+
+    monkeypatch.setattr(ic, "_calc_specic", counting)
+    ic.sed(E1, seed="FIR")
+    assert calls == ["FIR"]
+
+
 def test_unknown_seed_photon_field_raises_with_a_message():
     ecpl = ExponentialCutoffPowerLaw(1e36 / u.eV, 1 * u.TeV, 2.0, 50 * u.TeV)
     with pytest.raises(ValueError, match="XYZ"):

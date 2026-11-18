@@ -4,6 +4,34 @@ Changelog
 0.11.0 (unreleased)
 ^^^^^^^^^^^^^^^^^^^
 
+API changes
+~~~~~~~~~~~
+
+These changes can alter the results of existing code without raising an error.
+See the entries below for details.
+
+- Calling ``run_sampler`` with a sampler that has already been run with
+  ``run_sampler`` now continues it and appends the new steps to its chain,
+  instead of resetting the chain and starting over.
+- Calling an ``EblAbsorptionModel`` instance now returns the absorption factor
+  ``exp(-tau)`` instead of ``10**tau``. Code that worked around the old value
+  must be updated. ``transmission`` is 0 above 100 TeV instead of 0.023.
+- The initial walkers of logarithmic parameters (labels starting with ``log10``
+  or ``log``) are spread by 1 dex (0.05 dex at the maximum likelihood) instead
+  of a fraction of their value, which changes the starting point of these fits.
+- Models that return NaN or raise an ``ArithmeticError`` or ``ValueError`` for
+  a parameter vector give it a probability of zero instead of stopping the
+  run.
+- ``save_results_table`` computes ``MaxLogLikelihood`` and ``BIC`` without the
+  prior and without counting upper limits as data points.
+- An unknown seed photon field name in ``InverseCompton`` raises a
+  ``ValueError`` instead of a ``TypeError``.
+- The ``naima.model_utils`` module and the ``_memoize`` attribute of the models
+  have been removed.
+
+Bug fixes and other changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 - ``run_sampler`` can now continue a sampler that has already been run,
   appending the new steps to its chain (a sampler fresh from ``get_sampler``
   still has its burn-in discarded), and ``n_run`` is set to the number of steps
@@ -54,8 +82,11 @@ Changelog
   with emcee's "Probability function returned NaN". The first failure in each
   process is logged as a warning, and a warning is logged if no walker has a
   finite probability. This also applies to the maximum likelihood prefit of
-  ``get_sampler``. Other exceptions are still raised. ``lnprob`` has a new
-  ``fallback_blob`` argument for this.
+  ``get_sampler``. Other exceptions are still raised. The blobs saved for those
+  parameter vectors are NaN, and the plots ignore them. ``lnprob`` has a new
+  ``fallback_blob`` argument for this. Note that ``ValueError`` also covers
+  errors that are bugs in the model, such as an ``UnitConversionError``: they
+  are only raised if they happen for the initial ``p0``.
 - ``save_results_table`` reported the parameters with the highest posterior
   probability, including the prior, as ``ML_pars`` and their log-probability as
   ``MaxLogLikelihood``, which was also used for the BIC. The metadata now has
@@ -70,13 +101,20 @@ Changelog
   ``run_sampler`` is not used. The warning about the first failure of the model
   is shown again in every new fit of the same session, and ``labels`` that start
   with ``log`` are only taken as logarithmic parameters for the initial walkers
-  if what follows is not a letter (``log10(cutoff)`` and ``log_cutoff``, but not
-  ``logistic``).
+  if they start with ``log10`` or what follows ``log`` is not a letter or digit
+  (``log10(cutoff)``, ``log10cutoff`` and ``log_cutoff``, but not ``logistic``
+  or ``log2``).
 - ``flux`` and ``sed`` of the radiative models (also with ``seed`` for
   ``InverseCompton``) accept scalar energies and return scalars. ``InverseCompton``
-  accepts a tuple of ``seed_photon_fields``, raises a ``ValueError`` with a
+  accepts tuples both for ``seed_photon_fields`` and for the definition of each
+  field (e.g. ``("star", 5000 * u.K, 1 * u.eV / u.cm**3)``), raises a ``ValueError`` with a
   message for an unknown seed photon field name instead of a bare ``TypeError``,
-  and ``seed=True`` is no longer taken as the index 1.
+  and ``seed=True`` is no longer taken as the index 1. ``InverseCompton.sed``
+  with ``seed`` only computes the requested field instead of all of them.
+- ``trapz_loglog`` integrates each bin from the logarithms of its values, so
+  that bins where the ratio of the ``y`` values or the product ``y * x``
+  overflows no longer give ``0`` or ``nan``, and the integral is precise and
+  continuous for a local power-law index close to -1 and for very narrow bins.
 - Fix docstrings: the default ``nEed`` of ``InverseCompton`` is 100, the
   ``FIR`` and ``NIR`` seed photon fields were swapped, ``Epmax`` of ``PionDecay``
   is a maximum energy, and a table without an energy column mentions the
@@ -97,10 +135,7 @@ Changelog
   them, e.g. a misspelled ``Eemin``. See #262.
 - Fix ``trapz_loglog`` overflowing to ``inf`` in bins with a very steep local
   power-law index, which made the inverse Compton flux jump to ``inf`` for some
-  parameter and energy combinations. Fixes #263. Bins where the ratio of the
-  ``y`` values or the product ``y * x`` overflows no longer give ``0`` or
-  ``nan``, and the integral is now precise and continuous for a local
-  power-law index close to -1 and for very narrow bins.
+  parameter and energy combinations. Fixes #263.
 
 0.10.4 (2026-09-05)
 ^^^^^^^^^^^^^^^^^^^

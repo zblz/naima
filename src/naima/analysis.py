@@ -122,8 +122,14 @@ def save_diagnostic_plots(
     # Fit
 
     if modelidxs is None:
-        nmodels = len(sampler.get_blobs()[-1][0])
-        modelidxs = list(range(nmodels))
+        # Skip the NaN placeholder blob added for models without blobs, which
+        # cannot be plotted
+        blob0 = sampler.get_blobs()[-1][0]
+        modelidxs = [
+            idx
+            for idx, blob in enumerate(blob0)
+            if not (isinstance(blob, float) and np.isnan(blob))
+        ]
 
     if isinstance(sed, bool):
         sed = [sed for idx in modelidxs]

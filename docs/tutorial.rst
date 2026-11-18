@@ -32,6 +32,15 @@ obtain the flux of the model at the values of the energy array. If they are
 called with a data table as argument, the energy values from the ``energy``
 column will be used.
 
+If the model function returns NaN values, or raises an `ArithmeticError` or a
+`ValueError` (e.g. for parameters outside of the domain of a radiative model),
+the probability of that parameter vector is set to zero and the sampling
+continues. Only the first failure of a fit is reported, as a warning. Note that
+this also applies to errors that indicate a bug in the model function rather
+than invalid parameters, such as an `~astropy.units.UnitConversionError` or a
+numpy broadcasting error, if they do not happen at the initial parameter vector,
+so pay attention to this warning.
+
 Building the model function from one of the radiative models is easy. In the
 following example, the three model parameters in the ``pars`` array are the
 amplitude, the spectral index, and the logarith or the cutoff energy. We first

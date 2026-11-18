@@ -217,3 +217,25 @@ def test_diagnostic_plots(sampler):
 def test_diagnostic_plots_noblobs(noblob_sampler):
     # Diagnostic plots
     save_diagnostic_plots("test_function_noblob", noblob_sampler)
+
+
+def test_confidence_band_ignores_nan_blobs():
+    """Parameter vectors for which the model failed have NaN blobs."""
+    from naima.plot import _calc_CI
+
+    energy = np.logspace(0, 1, 4) * u.TeV
+    unit = 1 / (u.cm**2 * u.s * u.TeV)
+
+    class Sampler:
+        data = {"energy": energy}
+
+        def get_blobs(self):
+            good = [(np.full(4, float(i)) * unit, np.nan) for i in range(1, 100)]
+            bad = [(np.full(4, np.nan) * unit, np.nan)] * 50
+            return [good + bad]
+
+    _, CI = _calc_CI(Sampler(), confs=[1])
+    ymin, ymax = CI[0]
+    assert np.all(np.isfinite(ymin)) and np.all(np.isfinite(ymax))
+    assert u.allclose(ymin, 16 * unit, rtol=0.1)
+    assert u.allclose(ymax, 84 * unit, rtol=0.1)

@@ -16,7 +16,14 @@ from astropy import log
 from astropy.io import ascii
 
 import naima.core
-from naima.core import _initial_walkers, get_sampler, lnprob, run_sampler, uniform_prior
+from naima.core import (
+    _initial_walkers,
+    _nan_blob,
+    get_sampler,
+    lnprob,
+    run_sampler,
+    uniform_prior,
+)
 
 data_table = ascii.read(str(Path(__file__).parent / "data/CrabNebula_HESS_ipac.dat"))
 UNIT = u.Unit("1/(cm2 s TeV)")
@@ -235,7 +242,10 @@ def test_ml_start_narrows_log_and_relative_spreads_in_the_same_proportion(monkey
         ("log10(cutoff)", 1.0),
         ("log(norm)", np.log(10)),
         ("log10_cutoff", 1.0),
+        ("log10cutoff", 1.0),
+        ("log_cutoff", np.log(10)),
         ("logistic_k", None),
+        ("log2_x", None),
         ("index", None),
     ],
 )
@@ -311,6 +321,42 @@ def test_run_survives_failing_model(model):
         guess=False,
     )
     assert np.all(np.isfinite(pos.coords))
+
+
+def test_nan_blob_keeps_structure_units_and_energy():
+    energy = np.logspace(0, 1, 3) * u.TeV
+    flux = np.ones(3) / (u.cm**2 * u.s * u.TeV)
+    blob = (flux, (energy, flux), 1.0 * u.erg, 2.0)
+    nan = _nan_blob(blob)
+    assert isinstance(nan, tuple) and len(nan) == 4
+    assert nan[0].unit == flux.unit and np.all(np.isnan(nan[0]))
+    assert u.allclose(nan[1][0], energy)
+    assert nan[1][1].unit == flux.unit and np.all(np.isnan(nan[1][1]))
+    assert nan[2].unit == u.erg and np.isnan(nan[2])
+    assert np.isnan(nan[3])
+
+
+def test_failed_parameters_get_nan_blobs():
+    """The blobs used to be the model output at p0, a different parameter vector."""
+    sampler, _ = get_sampler(
+        data_table=data_table,
+        p0=P0,
+        labels=LABELS,
+        model=raises_above_index,
+        nwalkers=10,
+        nburn=0,
+        threads=1,
+        guess=False,
+    )
+    out = lnprob(
+        np.array([1e-11, 3.0]),
+        sampler.data,
+        raises_above_index,
+        None,
+        **sampler.log_prob_fn.kwargs,
+    )
+    assert out[0] == -np.inf
+    assert np.all(np.isnan(out[1]))
 
 
 def test_exception_in_model_at_p0_is_still_raised():

@@ -482,6 +482,8 @@ def _calc_CI(
         n_samples=minsamples,
         threads=threads,
     )
+    # Discard the NaN blobs of parameter vectors for which the model failed
+    model = model[~np.all(np.isnan(model), axis=1)]
 
     nwalkers = len(model) - 1
     CI = []
@@ -733,8 +735,9 @@ def plot_blob(sampler, blobidx=0, label=None, last_step=False, figure=None, **kw
         label = "Model output {0}".format(blobidx)
 
     if modelx is None:
-        # Blob is scalar, plot distribution
-        f = plot_distribution(model, label, figure=figure)
+        # Blob is scalar, plot distribution without the NaN blobs of parameter
+        # vectors for which the model failed
+        f = plot_distribution(model[~np.isnan(model)], label, figure=figure)
     else:
         f = plot_fit(
             sampler,
