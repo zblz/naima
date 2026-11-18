@@ -89,6 +89,11 @@ estimates of the parameters and their names:
     p0 = np.array((1e33, 3.0, np.log10(30)))
     labels = ["norm", "index", "log10(cutoff)"]
 
+Labels starting with ``log10`` or ``log`` mark logarithmic parameters. The
+initial positions of the walkers are spread by 1 dex around these (0.05 dex if
+the initial vector is already the maximum likelihood) instead of by a fraction
+of their value, which would depend on the units of the logarithm.
+
 This example is relatively simple, but for more complicated models (in
 particular those with more than one emission channel, such as Synchrotron and
 Inverse Compton) it may be difficult to provide an adequate initial parameter
