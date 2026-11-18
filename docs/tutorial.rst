@@ -160,6 +160,20 @@ and ``nrun`` specifies how many steps to run after the *burn-in* and save these
 samples in the sampler object. For details on these parameters, see the
 `documentation of the emcee package <https://emcee.readthedocs.io>`_.
 
+Calling `~naima.run_sampler` again with the returned ``sampler`` and ``pos``
+continues the run and appends the new steps to the existing chain, instead of
+starting over:
+
+.. code-block:: python
+
+    sampler, pos = naima.run_sampler(nrun=100, sampler=sampler, pos=pos)
+
+When ``threads`` is greater than one, Naima creates the pool of worker processes
+itself, shuts it down when the run finishes or is interrupted (e.g. with
+Ctrl-C), and recreates it if the run is continued. To use your own pool (e.g.
+from ``multiprocessing`` or ``schwimmbad``), provide it with the ``pool`` argument
+of `~naima.get_sampler`; Naima will not close it.
+
 .. _plotting:
 
 Inspecting and analysing results of the run
