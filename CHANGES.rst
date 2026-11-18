@@ -86,6 +86,22 @@ Changelog
   process is logged as a warning, and a warning is logged if no walker has a
   finite probability. Other exceptions are still raised. ``lnprob`` has a new
   ``fallback_blob`` argument for this.
+- ``run_sampler`` can now continue a sampler that has already been run,
+  appending the new steps to its chain (a sampler fresh from ``get_sampler``
+  still has its burn-in discarded), and ``n_run`` is set to the number of steps
+  in the chain. The process pool created by naima is recreated when needed and
+  is closed also if the run fails or is interrupted. ``get_sampler`` and
+  ``run_sampler`` have a new ``pool`` argument to use a pool provided by the
+  user, which is never closed by naima.
+- ``save_results_table`` reported the parameters with the highest posterior
+  probability, including the prior, as ``ML_pars`` and their log-probability as
+  ``MaxLogLikelihood``, which was also used for the BIC. The metadata now has
+  ``MAP_pars`` and ``MaxLogProb`` for these, and ``MaxLogLikelihood`` and
+  ``BIC`` are computed from the log-likelihood without the prior at that point.
+  ``ML_pars`` is kept as an alias of ``MAP_pars``. Upper limits are no longer
+  counted as data points in the BIC, and the number of data points is saved as
+  ``n_data``. If the sampler has no model function, the log-probability is used
+  with a warning.
 
 0.10.5 (2026-11-14)
 ^^^^^^^^^^^^^^^^^^^
