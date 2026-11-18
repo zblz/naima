@@ -12,7 +12,6 @@ from .extern.validator import (
     validate_physical_type,
     validate_scalar,
 )
-from .model_utils import memoize
 from .radiative import Bremsstrahlung, InverseCompton, PionDecay, Synchrotron
 
 __all__ = [
@@ -73,9 +72,6 @@ class PowerLaw:
     """
 
     param_names = ["amplitude", "e_0", "alpha"]
-    _memoize = False
-    _cache = {}
-    _queue = []
 
     def __init__(self, amplitude, e_0, alpha):
         self.amplitude = amplitude
@@ -91,7 +87,6 @@ class PowerLaw:
         xx = e / e_0
         return amplitude * xx ** (-alpha)
 
-    @memoize
     def _calc(self, e):
         return self.eval(
             e.to("eV").value,
@@ -138,9 +133,6 @@ class ExponentialCutoffPowerLaw:
     """
 
     param_names = ["amplitude", "e_0", "alpha", "e_cutoff", "beta"]
-    _memoize = False
-    _cache = {}
-    _queue = []
 
     def __init__(self, amplitude, e_0, alpha, e_cutoff, beta=1.0):
         self.amplitude = amplitude
@@ -160,7 +152,6 @@ class ExponentialCutoffPowerLaw:
         xx = e / e_0
         return amplitude * xx ** (-alpha) * np.exp(-((e / e_cutoff) ** beta))
 
-    @memoize
     def _calc(self, e):
         return self.eval(
             e.to("eV").value,
@@ -215,9 +206,6 @@ class BrokenPowerLaw:
     """
 
     param_names = ["amplitude", "e_0", "e_break", "alpha_1", "alpha_2"]
-    _memoize = False
-    _cache = {}
-    _queue = []
 
     def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2):
         self.amplitude = amplitude
@@ -237,7 +225,6 @@ class BrokenPowerLaw:
         alpha = np.where(e < e_break, alpha_1, alpha_2)
         return amplitude * K * (e / e_0) ** -alpha
 
-    @memoize
     def _calc(self, e):
         return self.eval(
             e.to("eV").value,
@@ -307,9 +294,6 @@ class ExponentialCutoffBrokenPowerLaw:
         "e_cutoff",
         "beta",
     ]
-    _memoize = False
-    _cache = {}
-    _queue = []
 
     def __init__(self, amplitude, e_0, e_break, alpha_1, alpha_2, e_cutoff, beta=1.0):
         self.amplitude = amplitude
@@ -334,7 +318,6 @@ class ExponentialCutoffBrokenPowerLaw:
         ee2 = e / e_cutoff
         return amplitude * K * (e / e_0) ** -alpha * np.exp(-(ee2**beta))
 
-    @memoize
     def _calc(self, e):
         return self.eval(
             e.to("eV").value,
@@ -386,9 +369,6 @@ class LogParabola:
     """
 
     param_names = ["amplitude", "e_0", "alpha", "beta"]
-    _memoize = False
-    _cache = {}
-    _queue = []
 
     def __init__(self, amplitude, e_0, alpha, beta):
         self.amplitude = amplitude
@@ -406,7 +386,6 @@ class LogParabola:
         eeponent = -alpha - beta * np.log(ee)
         return amplitude * ee**eeponent
 
-    @memoize
     def _calc(self, e):
         return self.eval(
             e.to("eV").value,
